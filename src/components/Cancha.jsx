@@ -8,6 +8,8 @@ const AVATAR_COLORS = [
   {bg:"#E1F5EE",tc:"#085041"},{bg:"#FCEBEB",tc:"#791F1F"},
 ];
 
+const inputStyle = { width:"100%", fontSize:12, border:"1px solid #e5e7eb", borderRadius:6, padding:"5px 8px", background:"#f9fafb", color:"#111827", boxSizing:"border-box", fontFamily:"inherit" };
+
 function initials(name) { return name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase(); }
 
 export default function Cancha({ athletes, setAthletes, onGuardar }) {
@@ -40,7 +42,7 @@ export default function Cancha({ athletes, setAthletes, onGuardar }) {
           { label:"RPE promedio", value:rpeAvg, sub:"percepción sesión", color:"#1D9E75" },
         ].map((m,i) => (
           <div key={i} style={{ background:"#f9fafb", borderRadius:8, padding:12 }}>
-            <div style={{ fontSize:11, color:"#111827", marginBottom:6 }}>{m.label}</div>
+            <div style={{ fontSize:11, color:"#6b7280", marginBottom:6 }}>{m.label}</div>
             <div style={{ fontSize:22, fontWeight:500, color:m.color }}>{m.value}</div>
             <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{m.sub}</div>
           </div>
@@ -95,12 +97,12 @@ export default function Cancha({ athletes, setAthletes, onGuardar }) {
                     }}>{n}</button>
                   ))}
                 </div>
-                <input placeholder="Observación individual..." style={{ marginTop:8, width:"100%", fontSize:12, border:"1px solid #e5e7eb", borderRadius:6, padding:"5px 8px", background:"#f9fafb", boxSizing:"border-box" }} />
+                <input placeholder="Observación individual..." style={{ ...inputStyle, marginTop:8 }} />
               </div>
             )}
             {!showRpe && (
               <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #f3f4f6" }}>
-                <input placeholder={a.status==="A"?"Motivo de ausencia...":"Estado de lesión..."} style={{ width:"100%", fontSize:12, border:"1px solid #e5e7eb", borderRadius:6, padding:"5px 8px", background:"#f9fafb", boxSizing:"border-box" }} />
+                <input placeholder={a.status==="A"?"Motivo de ausencia...":"Estado de lesión..."} style={inputStyle} />
               </div>
             )}
           </div>
@@ -110,7 +112,7 @@ export default function Cancha({ athletes, setAthletes, onGuardar }) {
       {/* Nota de sesión */}
       <div style={{ fontSize:11, fontWeight:500, color:"#6b7280", margin:"1rem 0 8px", textTransform:"uppercase", letterSpacing:"0.5px" }}>Nota de sesión</div>
       <div style={{ background:"#f9fafb", borderLeft:"3px solid #1D9E75", borderRadius:"0 8px 8px 0", padding:"10px 14px", marginBottom:"1rem" }}>
-        <textarea rows={2} value={nota} onChange={e=>setNota(e.target.value)} placeholder="Observaciones generales de la sesión..." style={{ width:"100%", background:"transparent", border:"none", outline:"none", fontSize:13, resize:"none", fontFamily:"inherit", lineHeight:1.6, boxSizing:"border-box" }} />
+        <textarea rows={2} value={nota} onChange={e=>setNota(e.target.value)} placeholder="Observaciones generales de la sesión..." style={{ width:"100%", background:"transparent", border:"none", outline:"none", fontSize:13, resize:"none", fontFamily:"inherit", lineHeight:1.6, boxSizing:"border-box", color:"#111827" }} />
       </div>
 
       <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>

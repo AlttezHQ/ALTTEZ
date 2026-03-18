@@ -38,7 +38,7 @@ export default function Plantel({ athletes, setAthletes }) {
     }
   };
 
-  const inp = { width:"100%", fontSize:13, border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", background:"#f9fafb", fontFamily:"inherit", boxSizing:"border-box" };
+  const inp = { width:"100%", fontSize:13, border:"1px solid #e5e7eb", borderRadius:8, padding:"8px 10px", background:"#f9fafb", color:"#111827", fontFamily:"inherit", boxSizing:"border-box" };
 
   return (
     <div>
@@ -60,7 +60,7 @@ export default function Plantel({ athletes, setAthletes }) {
 
       {/* Toolbar */}
       <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-        <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Buscar deportista..." style={{ flex:1, fontSize:13, border:"1px solid #e5e7eb", borderRadius:8, padding:"7px 12px", background:"#f9fafb" }} />
+        <input value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Buscar deportista..." style={{ flex:1, fontSize:13, border:"1px solid #e5e7eb", borderRadius:8, padding:"7px 12px", background:"#f9fafb", color:"#111827" }} />
         <button onClick={openAdd} style={{ background:"#1D9E75", color:"white", border:"none", borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:500, cursor:"pointer", whiteSpace:"nowrap" }}>+ Agregar</button>
       </div>
 
