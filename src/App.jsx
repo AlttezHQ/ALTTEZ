@@ -3,8 +3,10 @@ import Cancha from "./components/Cancha";
 import Plantel from "./components/Plantel";
 import Analisis from "./components/Analisis";
 import Historial from "./components/Historial";
+import Club from "./components/Club";
+import Reportes from "./components/Reportes";
 
-const TABS = ["Cancha", "Plantel", "Análisis", "Historial"];
+const TABS = ["Cancha", "Plantel", "Análisis", "Historial", "Club", "Reportes"];
 
 const initialAthletes = [
   { name: "Carlos Ríos", pos: "Delantero", dob: "2008-03-12", contact: "300 111 2233", status: "P", rpe: null },
@@ -27,6 +29,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("Cancha");
   const [athletes, setAthletes] = useState(initialAthletes);
   const [historial, setHistorial] = useState(initialHistorial);
+  const [clubInfo, setClubInfo] = useState({
+    nombre: "", disciplina: "", categoria: "", ciudad: "",
+    entrenador: "", telefono: "", descripcion: "", logo: null,
+  });
 
   const guardarSesion = (nota) => {
     const p = athletes.filter((a) => a.status === "P");
@@ -42,43 +48,40 @@ export default function App() {
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem", fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
+    <div style={{ maxWidth: 780, margin: "0 auto", padding: "1rem", fontFamily: "system-ui, sans-serif" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-        <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.3px" }}>
-          Elevate <span style={{ color: "#1D9E75" }}>Sports</span>
+        <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.3px", display: "flex", alignItems: "center", gap: 8 }}>
+          {clubInfo.logo && <img src={clubInfo.logo} alt="logo" style={{ width: 32, height: 32, objectFit: "contain", borderRadius: 6 }} />}
+          {clubInfo.nombre
+            ? <span>{clubInfo.nombre}</span>
+            : <span>Elevate <span style={{ color: "#1D9E75" }}>Sports</span></span>
+          }
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={{ fontSize: 12, background: "#E1F5EE", color: "#0F6E56", padding: "4px 12px", borderRadius: 20 }}>
-            Sub-17 Fútbol
+            {clubInfo.categoria || "Sub-17"} {clubInfo.disciplina || "Fútbol"}
           </span>
           <span style={{ fontSize: 12, color: "#888" }}>{athletes.length} deportistas</span>
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", marginBottom: "1.5rem", overflowX: "auto" }}>
         {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              fontSize: 13, padding: "8px 16px", cursor: "pointer", background: "transparent",
-              border: "none", borderBottom: activeTab === tab ? "2px solid #1D9E75" : "2px solid transparent",
-              color: activeTab === tab ? "#1D9E75" : "#6b7280", fontWeight: activeTab === tab ? 500 : 400,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {tab}
-          </button>
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{
+            fontSize: 13, padding: "8px 14px", cursor: "pointer", background: "transparent",
+            border: "none", borderBottom: activeTab === tab ? "2px solid #1D9E75" : "2px solid transparent",
+            color: activeTab === tab ? "#1D9E75" : "#6b7280", fontWeight: activeTab === tab ? 500 : 400,
+            whiteSpace: "nowrap",
+          }}>{tab}</button>
         ))}
       </div>
 
-      {/* Content */}
       {activeTab === "Cancha" && <Cancha athletes={athletes} setAthletes={setAthletes} onGuardar={guardarSesion} />}
       {activeTab === "Plantel" && <Plantel athletes={athletes} setAthletes={setAthletes} />}
       {activeTab === "Análisis" && <Analisis athletes={athletes} historial={historial} />}
       {activeTab === "Historial" && <Historial historial={historial} />}
+      {activeTab === "Club" && <Club clubInfo={clubInfo} setClubInfo={setClubInfo} />}
+      {activeTab === "Reportes" && <Reportes athletes={athletes} historial={historial} clubInfo={clubInfo} />}
     </div>
   );
 }
