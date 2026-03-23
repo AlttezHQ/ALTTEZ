@@ -1,221 +1,189 @@
 /**
- * @component TacticalBoard v3
- * @description Pizarra táctica rediseñada con estética EA Sports FC / FIFA 18.
+ * @component TacticalBoard v6
+ * @description Pizarra táctica horizontal estilo FIFA con:
+ * - Cancha horizontal (porterías izq/der)
+ * - Sin títulos duplicados
+ * - Sin hueco inferior
+ * - Panel de click con radar hexagonal + jugadores similares
+ * - Drag & drop persistente
  *
- * @visual-architecture
- * - Fondo: imagen de estadio con blur + overlay oscuro (layering FIFA)
- * - Campo: panel flotante con box-shadow pronunciada, césped verde con franjas
- * - Tokens: tarjetas rectangulares con número, posición, nombre y valoración
- * - Suplentes: panel inferior horizontal flotante (igual que FIFA)
- * - Detalle jugador: panel lateral al hacer click con hexágono de atributos
- * - Recomendaciones: al click en un token, muestra jugadores de esa posición
- *
- * @drag-drop
- * HTML5 nativo. dragSource guarda { type, index }.
- * Swap automático entre titulares y entre titular ↔ suplente.
- *
- * @new-features-v3
- * - Navbar superior: Plantilla / Formaciones / Instrucciones / Tácticas
- * - Badge de formación elegante junto al navbar
- * - Fondo estadio con CSS backdrop-filter blur
- * - Panel de detalle con gráfico radar hexagonal SVG
- * - Recomendaciones de posición al seleccionar un jugador
- * - Animación de entrada al panel de suplentes
- * - Efectos hover/drag premium
- *
- * @version 3.0
+ * @version 6.0
  * @author Elevate Sports
  */
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback } from "react";
 
-// ─────────────────────────────────────────────
-// PALETA FIFA
-// ─────────────────────────────────────────────
 const C = {
   neon:        "#c8ff00",
-  neonDim:     "rgba(200,255,0,0.12)",
-  neonBorder:  "rgba(200,255,0,0.35)",
+  neonDim:     "rgba(200,255,0,0.1)",
+  neonBorder:  "rgba(200,255,0,0.3)",
+  amber:       "#EF9F27",
+  amberDim:    "rgba(239,159,39,0.12)",
+  amberBorder: "rgba(239,159,39,0.4)",
+  green:       "#1D9E75",
+  purple:      "#7F77DD",
+  danger:      "#E24B4A",
   drag:        "#00e5ff",
-  dragDim:     "rgba(0,229,255,0.18)",
-  surface:     "rgba(10,14,20,0.88)",
-  surfaceHi:   "rgba(255,255,255,0.06)",
-  border:      "rgba(255,255,255,0.12)",
-  borderHi:    "rgba(255,255,255,0.28)",
+  dragDim:     "rgba(0,229,255,0.15)",
+  surface:     "rgba(5,10,5,0.92)",
+  border:      "rgba(255,255,255,0.08)",
+  borderHi:    "rgba(255,255,255,0.22)",
   text:        "white",
-  textMuted:   "rgba(255,255,255,0.5)",
-  textHint:    "rgba(255,255,255,0.25)",
-  cardRed:     "#b91c1c",
-  cardRedHi:   "#dc2626",
-  cardGK:      "#065f46",
-  cardGKHi:    "#047857",
-  gold:        "#f59e0b",
-  fieldGreen:  "#2d5a1b",
-  fieldDark:   "#264f17",
+  textMuted:   "rgba(255,255,255,0.45)",
+  textHint:    "rgba(255,255,255,0.22)",
 };
 
 // ─────────────────────────────────────────────
-// FORMACIONES
-// Coordenadas en % sobre media cancha
-// top=5 (ataque) → top=92 (portería)
+// FORMACIONES — coordenadas HORIZONTALES
+// left: 5% (portería propia) → 95% (portería rival)
+// top:  5% (arriba) → 95% (abajo)
 // ─────────────────────────────────────────────
 const FORMATIONS = {
-  "4-4-2": {
-    label: "Holding",
-    positions: [
-      { posCode:"GK",  left:50, top:90 },
-      { posCode:"LB",  left:10, top:74 },
-      { posCode:"LCB", left:32, top:78 },
-      { posCode:"RCB", left:68, top:78 },
-      { posCode:"RB",  left:90, top:74 },
-      { posCode:"LM",  left:10, top:51 },
-      { posCode:"LDM", left:34, top:54 },
-      { posCode:"RDM", left:66, top:54 },
-      { posCode:"RM",  left:90, top:51 },
-      { posCode:"LS",  left:36, top:17 },
-      { posCode:"RS",  left:64, top:17 },
-    ],
-  },
   "4-3-3": {
     label: "Ataque",
     positions: [
-      { posCode:"GK",  left:50, top:90 },
-      { posCode:"LB",  left:10, top:74 },
-      { posCode:"CB",  left:34, top:78 },
-      { posCode:"CB",  left:66, top:78 },
-      { posCode:"RB",  left:90, top:74 },
-      { posCode:"CM",  left:26, top:51 },
-      { posCode:"CM",  left:50, top:47 },
-      { posCode:"CM",  left:74, top:51 },
-      { posCode:"LW",  left:12, top:19 },
-      { posCode:"ST",  left:50, top:12 },
-      { posCode:"RW",  left:88, top:19 },
+      { posCode:"GK",  left:6,  top:50 },
+      { posCode:"LB",  left:22, top:15 },
+      { posCode:"CB",  left:24, top:38 },
+      { posCode:"CB",  left:24, top:62 },
+      { posCode:"RB",  left:22, top:85 },
+      { posCode:"CM",  left:45, top:25 },
+      { posCode:"CM",  left:47, top:50 },
+      { posCode:"CM",  left:45, top:75 },
+      { posCode:"LW",  left:72, top:12 },
+      { posCode:"ST",  left:78, top:50 },
+      { posCode:"RW",  left:72, top:88 },
+    ],
+  },
+  "4-4-2": {
+    label: "Holding",
+    positions: [
+      { posCode:"GK",  left:6,  top:50 },
+      { posCode:"LB",  left:22, top:15 },
+      { posCode:"LCB", left:24, top:38 },
+      { posCode:"RCB", left:24, top:62 },
+      { posCode:"RB",  left:22, top:85 },
+      { posCode:"LM",  left:45, top:15 },
+      { posCode:"LDM", left:47, top:38 },
+      { posCode:"RDM", left:47, top:62 },
+      { posCode:"RM",  left:45, top:85 },
+      { posCode:"LS",  left:76, top:33 },
+      { posCode:"RS",  left:76, top:67 },
     ],
   },
   "3-5-2": {
     label: "Compacto",
     positions: [
-      { posCode:"GK",  left:50, top:90 },
-      { posCode:"CB",  left:24, top:78 },
-      { posCode:"CB",  left:50, top:80 },
-      { posCode:"CB",  left:76, top:78 },
-      { posCode:"LWB", left:8,  top:55 },
-      { posCode:"CM",  left:30, top:52 },
-      { posCode:"CM",  left:50, top:49 },
-      { posCode:"CM",  left:70, top:52 },
-      { posCode:"RWB", left:92, top:55 },
-      { posCode:"ST",  left:36, top:17 },
-      { posCode:"ST",  left:64, top:17 },
+      { posCode:"GK",  left:6,  top:50 },
+      { posCode:"CB",  left:22, top:25 },
+      { posCode:"CB",  left:24, top:50 },
+      { posCode:"CB",  left:22, top:75 },
+      { posCode:"LWB", left:42, top:10 },
+      { posCode:"CM",  left:44, top:32 },
+      { posCode:"CM",  left:47, top:50 },
+      { posCode:"CM",  left:44, top:68 },
+      { posCode:"RWB", left:42, top:90 },
+      { posCode:"ST",  left:76, top:33 },
+      { posCode:"ST",  left:76, top:67 },
     ],
   },
   "4-2-3-1": {
     label: "Control",
     positions: [
-      { posCode:"GK",  left:50, top:90 },
-      { posCode:"LB",  left:10, top:74 },
-      { posCode:"CB",  left:34, top:78 },
-      { posCode:"CB",  left:66, top:78 },
-      { posCode:"RB",  left:90, top:74 },
-      { posCode:"DM",  left:37, top:61 },
-      { posCode:"DM",  left:63, top:61 },
-      { posCode:"LW",  left:16, top:37 },
-      { posCode:"CAM", left:50, top:35 },
-      { posCode:"RW",  left:84, top:37 },
-      { posCode:"ST",  left:50, top:12 },
+      { posCode:"GK",  left:6,  top:50 },
+      { posCode:"LB",  left:22, top:15 },
+      { posCode:"CB",  left:24, top:38 },
+      { posCode:"CB",  left:24, top:62 },
+      { posCode:"RB",  left:22, top:85 },
+      { posCode:"DM",  left:40, top:38 },
+      { posCode:"DM",  left:40, top:62 },
+      { posCode:"LW",  left:58, top:18 },
+      { posCode:"CAM", left:62, top:50 },
+      { posCode:"RW",  left:58, top:82 },
+      { posCode:"ST",  left:80, top:50 },
     ],
   },
   "5-3-2": {
     label: "Defensivo",
     positions: [
-      { posCode:"GK",  left:50, top:90 },
-      { posCode:"LWB", left:7,  top:65 },
-      { posCode:"CB",  left:26, top:78 },
-      { posCode:"CB",  left:50, top:80 },
-      { posCode:"CB",  left:74, top:78 },
-      { posCode:"RWB", left:93, top:65 },
-      { posCode:"CM",  left:28, top:50 },
-      { posCode:"CM",  left:50, top:47 },
-      { posCode:"CM",  left:72, top:50 },
-      { posCode:"ST",  left:36, top:17 },
-      { posCode:"ST",  left:64, top:17 },
+      { posCode:"GK",  left:6,  top:50 },
+      { posCode:"LWB", left:20, top:8  },
+      { posCode:"CB",  left:23, top:28 },
+      { posCode:"CB",  left:25, top:50 },
+      { posCode:"CB",  left:23, top:72 },
+      { posCode:"RWB", left:20, top:92 },
+      { posCode:"CM",  left:46, top:28 },
+      { posCode:"CM",  left:48, top:50 },
+      { posCode:"CM",  left:46, top:72 },
+      { posCode:"ST",  left:76, top:33 },
+      { posCode:"ST",  left:76, top:67 },
     ],
   },
 };
 
-// Grupos de posición para recomendaciones
 const POSITION_GROUPS = {
   GK:  ["GK"],
   DEF: ["CB","LB","RB","LCB","RCB","LWB","RWB"],
-  MID: ["CM","DM","LDM","RDM","CAM","LM","RM","LW","RW","LWB","RWB"],
-  FWD: ["ST","LS","RS","CF"],
+  MID: ["CM","DM","LDM","RDM","CAM","LM","RM"],
+  FWD: ["ST","LS","RS","LW","RW","CF"],
 };
 
-const getPositionGroup = (posCode) => {
-  for (const [group, codes] of Object.entries(POSITION_GROUPS)) {
-    if (codes.includes(posCode)) return group;
+const getGroup = (posCode) => {
+  for (const [g, codes] of Object.entries(POSITION_GROUPS)) {
+    if (codes.includes(posCode)) return g;
   }
   return "MID";
 };
 
+const avatar = (seed, bg = "059669") =>
+  `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=${bg}`;
+
+const getStatusStyle = (status) => ({
+  P: { color: "#1D9E75", label: "Disponible" },
+  A: { color: "#E24B4A", label: "Ausente"    },
+  L: { color: "#EF9F27", label: "Lesionado"  },
+}[status] || { color: C.textMuted, label: "—" });
+
+const calcAge = (dob) => {
+  if (!dob) return "—";
+  return Math.floor((Date.now() - new Date(dob)) / (1000*60*60*24*365.25)) + " años";
+};
+
 // ─────────────────────────────────────────────
-// GRÁFICO RADAR HEXAGONAL
-// Dibuja los 6 atributos del jugador como hexágono SVG.
+// RADAR HEXAGONAL
 // ─────────────────────────────────────────────
-function HexRadar({ attrs, size = 80 }) {
-  const cx = size / 2;
-  const cy = size / 2;
-  const r  = size * 0.38;
-
-  // 6 vértices del hexágono base, empezando desde arriba
-  const hexPoints = Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 2;
-    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+function HexRadar({ attrs, size = 100 }) {
+  const cx = size / 2, cy = size / 2, r = size * 0.36;
+  const keys = Object.keys(attrs);
+  const hex = keys.map((_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
   });
-
-  // Escala cada atributo (0–99) al radio correspondiente
-  const attrKeys = Object.keys(attrs);
-  const dataPoints = hexPoints.map((pt, i) => {
-    const scale = (attrs[attrKeys[i]] || 50) / 99;
-    const angle = (Math.PI / 3) * i - Math.PI / 2;
-    return {
-      x: cx + r * scale * Math.cos(angle),
-      y: cy + r * scale * Math.sin(angle),
-    };
+  const data = keys.map((k, i) => {
+    const scale = Math.min((attrs[k] || 50) / 99, 1);
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    return { x: cx + r * scale * Math.cos(a), y: cy + r * scale * Math.sin(a) };
   });
-
-  const toPath = (pts) => pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
+  const toPath = pts => pts.map((p,i) => `${i===0?"M":"L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ") + " Z";
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Grid hexagonal de fondo */}
-      {[0.33, 0.66, 1].map((scale, si) => (
-        <polygon
-          key={si}
-          points={hexPoints.map(p => `${(cx + (p.x - cx) * scale).toFixed(1)},${(cy + (p.y - cy) * scale).toFixed(1)}`).join(" ")}
-          fill="none"
-          stroke="rgba(255,255,255,0.15)"
-          strokeWidth="0.5"
-        />
+      {[0.33,0.66,1].map((s,si) => (
+        <polygon key={si}
+          points={hex.map(p=>`${(cx+(p.x-cx)*s).toFixed(1)},${(cy+(p.y-cy)*s).toFixed(1)}`).join(" ")}
+          fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5"/>
       ))}
-      {/* Líneas radiales */}
-      {hexPoints.map((p, i) => (
-        <line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>
-      ))}
-      {/* Área de datos */}
-      <path d={toPath(dataPoints)} fill="rgba(200,255,0,0.22)" stroke={C.neon} strokeWidth="1.2"/>
-      {/* Puntos de datos */}
-      {dataPoints.map((p, i) => (
-        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="1.8" fill={C.neon}/>
-      ))}
-      {/* Etiquetas */}
-      {hexPoints.map((p, i) => {
-        const label = attrKeys[i]?.slice(0, 3).toUpperCase() || "";
-        const lx = cx + (p.x - cx) * 1.28;
-        const ly = cy + (p.y - cy) * 1.28;
+      {hex.map((p,i) => <line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>)}
+      <path d={toPath(data)} fill="rgba(200,255,0,0.2)" stroke={C.neon} strokeWidth="1.2"/>
+      {data.map((p,i) => <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2" fill={C.neon}/>)}
+      {hex.map((p,i) => {
+        const lx = cx + (p.x-cx)*1.3, ly = cy + (p.y-cy)*1.3;
         return (
-          <text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-            fontSize="5.5" fill="rgba(255,255,255,0.55)" fontFamily="Arial Narrow, Arial, sans-serif" fontWeight="700">
-            {label}
+          <text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)}
+            textAnchor="middle" dominantBaseline="middle"
+            fontSize="6" fill="rgba(255,255,255,0.5)"
+            fontFamily="Arial Narrow,Arial,sans-serif" fontWeight="700">
+            {keys[i]?.slice(0,3).toUpperCase()}
           </text>
         );
       })}
@@ -224,226 +192,238 @@ function HexRadar({ attrs, size = 80 }) {
 }
 
 // ─────────────────────────────────────────────
-// TARJETA DE JUGADOR EN EL CAMPO
-// Diseño rectangular con número, posición, nombre y rating
+// PANEL DE DETALLE — con radar + similares
+// Se mantiene hasta que el usuario cierre
 // ─────────────────────────────────────────────
-function PlayerCard({ starter, isSelected, isDragged, isTarget, onSelect, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop }) {
-  const [hovered, setHovered] = useState(false);
-  const isGK     = starter.posCode === "GK";
-  const athlete  = starter.athlete;
-  const rating   = athlete?.rating || Math.floor(70 + Math.random() * 20);
-  const active   = isSelected || hovered;
+function PlayerDetailPanel({ starter, allAthletes, onClose, onSwapSimilar, onMoveToBank }) {
+  const athlete = starter?.athlete;
+  if (!athlete) return null;
 
-  const cardBg   = isTarget
-    ? C.dragDim
-    : isGK
-      ? (active ? C.cardGKHi : C.cardGK)
-      : (active ? C.cardRedHi : C.cardRed);
-
-  return (
-    <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onSelect}
-      style={{
-        position:   "relative",
-        width:      58,
-        background: cardBg,
-        border:     `${isSelected ? 2 : 1}px solid ${isSelected ? C.neon : isTarget ? C.drag : active ? C.borderHi : C.border}`,
-        boxShadow:  isSelected
-          ? `0 0 0 1px ${C.neon}, 0 0 14px rgba(200,255,0,0.35)`
-          : isTarget
-            ? `0 0 0 1px ${C.drag}, 0 0 12px ${C.dragDim}`
-            : active
-              ? "0 4px 16px rgba(0,0,0,0.7)"
-              : "0 2px 8px rgba(0,0,0,0.5)",
-        cursor:     "grab",
-        opacity:    isDragged ? 0.25 : 1,
-        transform:  `scale(${isTarget ? 1.08 : active && !isDragged ? 1.04 : 1})`,
-        transition: "transform 180ms ease, box-shadow 180ms ease, opacity 120ms",
-        userSelect: "none",
-        pointerEvents: isDragged ? "none" : "auto",
-        borderRadius: 3,
-        overflow:   "hidden",
-      }}
-    >
-      {/* Franja superior de color por posición */}
-      <div style={{ height: 3, background: isGK ? "#10b981" : isSelected ? C.neon : "#f87171", transition:"background 200ms" }}/>
-
-      {/* Rating y posición */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"3px 5px 1px" }}>
-        <div style={{ fontSize:13, fontWeight:900, color: C.text, lineHeight:1, letterSpacing:"-0.5px" }}>
-          {rating}
-        </div>
-        <div style={{ fontSize:7, color: isGK ? "#6ee7b7" : "rgba(255,200,200,0.8)", textTransform:"uppercase", fontWeight:700, letterSpacing:"0.3px" }}>
-          {starter.posCode}
-        </div>
-      </div>
-
-      {/* Nombre */}
-      <div style={{ padding:"1px 5px 4px", fontSize:7, color: C.text, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.2px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-        {athlete?.name?.split(" ").pop() || starter.posCode}
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// PANEL DETALLE + RECOMENDACIONES
-// Aparece al hacer click en un jugador del campo
-// ─────────────────────────────────────────────
-function PlayerDetailPanel({ starter, allAthletes, onSwapRecommended, onClose }) {
-  if (!starter) return null;
-  const athlete = starter.athlete;
-  const group   = getPositionGroup(starter.posCode);
-
-  // Jugadores recomendados de la misma posición que no son titulares
-  const recommended = allAthletes.filter(a =>
-    getPositionGroup(a.posCode) === group &&
-    a.id !== athlete?.id
-  ).slice(0, 4);
+  const status = getStatusStyle(athlete.status);
+  const group  = getGroup(starter.posCode);
 
   const attrs = {
-    Ritmo:   athlete?.speed    || 78,
-    Tiro:    athlete?.shooting || 72,
-    Pases:   athlete?.passing  || 80,
-    Regate:  athlete?.dribble  || 75,
-    Defensa: athlete?.defense  || 65,
-    Físico:  athlete?.physical || 77,
+    Ritmo:   athlete.speed    || 78,
+    Tiro:    athlete.shooting || 72,
+    Pases:   athlete.passing  || 80,
+    Regate:  athlete.dribble  || 75,
+    Defensa: athlete.defense  || 65,
+    Físico:  athlete.physical || 77,
   };
+
+  const similar = allAthletes
+    .filter(a => getGroup(a.posCode) === group && a.id !== athlete.id)
+    .slice(0, 3);
+
+  const overallRating = athlete.rating ||
+    Math.round(Object.values(attrs).reduce((a,b) => a+b, 0) / 6);
 
   return (
     <div style={{
-      position:    "absolute",
-      top:         10,
-      left:        10,
-      width:       200,
-      background:  "rgba(8,12,20,0.96)",
-      border:      `1px solid ${C.neonBorder}`,
-      boxShadow:   `0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(200,255,0,0.1)`,
-      zIndex:      40,
-      borderRadius:4,
-      overflow:    "hidden",
+      width:        220,
+      flexShrink:   0,
+      background:   "rgba(8,14,8,0.97)",
+      borderLeft:   `1px solid ${C.border}`,
+      display:      "flex",
+      flexDirection:"column",
+      overflowY:    "auto",
     }}>
-      {/* Header */}
-      <div style={{ background:"rgba(200,255,0,0.08)", borderBottom:`1px solid ${C.border}`, padding:"10px 12px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <div style={{ fontSize:14, fontWeight:900, color: C.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1 }}>
-            {athlete?.name?.split(" ").pop() || starter.posCode}
+
+      {/* Header con nombre, OVR y botón cerrar */}
+      <div style={{ padding:"12px 14px 10px", background:"rgba(200,255,0,0.07)", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+          <div>
+            <div style={{ fontSize:16, fontWeight:900, color:C.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1 }}>
+              {athlete.name.split(" ").pop()}
+            </div>
+            <div style={{ fontSize:9, color:C.neon, textTransform:"uppercase", letterSpacing:"1.5px", marginTop:3 }}>
+              {starter.posCode} · {athlete.pos}
+            </div>
+            <div style={{ fontSize:9, color:status.color, textTransform:"uppercase", marginTop:2 }}>
+              {status.label}
+            </div>
           </div>
-          <div style={{ fontSize:9, color: C.neon, textTransform:"uppercase", letterSpacing:"1px", marginTop:2 }}>
-            {starter.posCode} · {athlete?.pos || "—"}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
+            <div style={{ fontSize:28, fontWeight:900, color:C.neon, lineHeight:1 }}>{overallRating}</div>
+            <div style={{ fontSize:7, color:C.textHint, textTransform:"uppercase", letterSpacing:"1px" }}>OVR</div>
           </div>
+          <div onClick={onClose} style={{ fontSize:14, color:C.textMuted, cursor:"pointer", padding:"2px 6px" }}>✕</div>
         </div>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-          <div style={{ fontSize:22, fontWeight:900, color: C.neon, lineHeight:1 }}>
-            {athlete?.rating || 82}
-          </div>
-          <div style={{ fontSize:7, color: C.textHint, textTransform:"uppercase", letterSpacing:"1px" }}>OVR</div>
-        </div>
-        <div onClick={onClose} style={{ fontSize:14, color: C.textMuted, cursor:"pointer", padding:"2px 6px", marginLeft:4 }}>✕</div>
       </div>
 
       {/* Radar */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", padding:"10px 0 6px" }}>
-        <HexRadar attrs={attrs} size={96}/>
+      <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 6px", borderBottom:`1px solid ${C.border}` }}>
+        <HexRadar attrs={attrs} size={110}/>
       </div>
 
-      {/* Atributos en lista */}
-      <div style={{ padding:"4px 12px 10px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"3px 12px" }}>
+      {/* Atributos en grid 2 columnas */}
+      <div style={{ padding:"8px 14px 10px", borderBottom:`1px solid ${C.border}`, display:"grid", gridTemplateColumns:"1fr 1fr", rowGap:6, columnGap:12 }}>
         {Object.entries(attrs).map(([k, v]) => (
           <div key={k} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <span style={{ fontSize:9, color: C.textMuted, textTransform:"uppercase", letterSpacing:"0.3px" }}>{k}</span>
-            <span style={{ fontSize:10, fontWeight:700, color: v >= 80 ? C.neon : v >= 70 ? C.gold : C.textMuted }}>{v}</span>
+            <span style={{ fontSize:9, color:C.textMuted, textTransform:"uppercase", letterSpacing:"0.3px" }}>{k}</span>
+            <span style={{ fontSize:11, fontWeight:700, color: v>=80 ? C.neon : v>=70 ? C.amber : C.textMuted }}>{v}</span>
           </div>
         ))}
       </div>
 
-      {/* Recomendados */}
-      {recommended.length > 0 && (
-        <div style={{ borderTop:`1px solid ${C.border}`, padding:"8px 12px" }}>
-          <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color: C.textHint, marginBottom:6 }}>
+      {/* Jugadores similares */}
+      {similar.length > 0 && (
+        <div style={{ padding:"8px 14px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:8 }}>
             Jugadores similares
           </div>
-          {recommended.map(a => (
-            <div
-              key={a.id}
-              onClick={() => onSwapRecommended(a)}
-              style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", marginBottom:3, background: C.surfaceHi, border:`1px solid ${C.border}`, cursor:"pointer", borderRadius:2 }}
-            >
-              <div style={{ fontSize:13, fontWeight:900, color: C.neon, minWidth:24 }}>
-                {a.rating || Math.floor(70 + Math.random() * 18)}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:9, color: C.text, fontWeight:700, textTransform:"uppercase", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                  {a.name?.split(" ").pop() || "—"}
+          {similar.map(a => {
+            const aRating = a.rating || Math.floor(72 + (a.id % 20));
+            return (
+              <div
+                key={a.id}
+                onClick={() => onSwapSimilar(a)}
+                style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 8px", marginBottom:4, background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, cursor:"pointer", borderRadius:2, transition:"background 150ms" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(200,255,0,0.08)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+              >
+                <div style={{ fontSize:16, fontWeight:900, color:C.neon, minWidth:28 }}>{aRating}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:10, color:C.text, fontWeight:700, textTransform:"uppercase", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {a.name.split(" ").pop()}
+                  </div>
+                  <div style={{ fontSize:8, color:C.textMuted, textTransform:"uppercase" }}>{a.posCode}</div>
                 </div>
-                <div style={{ fontSize:7, color: C.textMuted, textTransform:"uppercase" }}>{a.posCode}</div>
+                <div style={{ fontSize:9, color:C.neon, fontWeight:700, whiteSpace:"nowrap" }}>↑ CAMBIAR</div>
               </div>
-              <div style={{ fontSize:8, color: C.neon, textTransform:"uppercase", letterSpacing:"0.5px" }}>↑ Cambiar</div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Info básica */}
+      <div style={{ padding:"8px 14px", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+          {[
+            { label:"Edad",     value: calcAge(athlete.dob)      },
+            { label:"Estado",   value: status.label, color: status.color },
+            { label:"Posición", value: athlete.pos,  small:true },
+            { label:"Contacto", value: athlete.contact, small:true },
+          ].map(m => (
+            <div key={m.label} style={{ background:"rgba(255,255,255,0.04)", padding:"6px 8px" }}>
+              <div style={{ fontSize:7, color:C.textHint, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:2 }}>{m.label}</div>
+              <div style={{ fontSize: m.small ? 9 : 11, fontWeight:600, color: m.color || C.text }}>{m.value}</div>
             </div>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* Acciones */}
+      <div style={{ padding:"10px 14px", display:"flex", flexDirection:"column", gap:5, marginTop:"auto" }}>
+        <div style={{ padding:7, fontSize:9, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", background:"transparent", border:`1px solid ${C.borderHi}`, color:C.textMuted, textAlign:"center" }}>
+          Ver ficha completa
+        </div>
+        <div style={{ padding:7, fontSize:9, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", background:C.green, color:C.text, textAlign:"center" }}>
+          Cambiar posición
+        </div>
+        <div onClick={onMoveToBank} style={{ padding:7, fontSize:9, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", background:C.amber, color:"#1a0f00", textAlign:"center", fontWeight:700 }}>
+          Pasar a suplentes
+        </div>
+      </div>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────
-// TARJETA EN EL BANCO
+// TOKEN DE JUGADOR EN EL CAMPO
 // ─────────────────────────────────────────────
-function BenchCard({ benchItem, isDragged, isTarget, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop }) {
+function PlayerToken({ starter, isSelected, isDragged, isTarget, onSelect, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop }) {
   const [hovered, setHovered] = useState(false);
-  const athlete = benchItem.athlete;
-  const isGK    = athlete?.posCode === "GK";
-  const rating  = athlete?.rating || Math.floor(70 + Math.random() * 18);
+  const isGK    = starter.posCode === "GK";
+  const athlete = starter.athlete;
+  const isEmpty = !athlete;
+  const active  = isSelected || hovered;
+
+  if (isEmpty) {
+    return (
+      <div
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        style={{
+          width:    52,
+          height:   58,
+          border:   `1.5px dashed ${isTarget ? C.drag : "rgba(255,255,255,0.2)"}`,
+          borderRadius: 3,
+          display:  "flex",
+          alignItems:"center",
+          justifyContent:"center",
+          background: isTarget ? C.dragDim : "rgba(255,255,255,0.03)",
+          transition:"all 200ms",
+        }}
+      >
+        <div style={{ fontSize:18, color:"rgba(255,255,255,0.18)" }}>+</div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display:    "flex",
-        flexDirection:"column",
-        alignItems: "center",
-        gap:        4,
-        padding:    "6px 8px",
-        width:      72,
-        flexShrink: 0,
-        background: isDragged ? C.dragDim : hovered ? C.surfaceHi : "rgba(255,255,255,0.04)",
-        border:     `1px solid ${isDragged ? C.drag : isTarget ? C.drag : hovered ? C.borderHi : C.border}`,
-        cursor:     "grab",
-        opacity:    isDragged ? 0.35 : 1,
-        transform:  `scale(${isTarget ? 1.06 : hovered ? 1.03 : 1})`,
-        transition: "all 180ms ease",
-        borderRadius:3,
-      }}
-    >
-      {/* Rating grande */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", width:"100%" }}>
-        <div style={{ fontSize:16, fontWeight:900, color: C.neon, lineHeight:1 }}>{rating}</div>
-        <div style={{ fontSize:7, color: isGK ? "#6ee7b7" : C.textMuted, textTransform:"uppercase", fontWeight:700 }}>
-          {athlete?.posCode || "—"}
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, userSelect:"none" }}>
+      <div
+        draggable
+        onClick={onSelect}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+        style={{
+          width:      56,
+          background: isTarget ? "rgba(0,60,80,0.88)" : "rgba(5,10,5,0.92)",
+          border:     `${isSelected?2:1}px solid ${isTarget ? C.drag : isSelected ? C.neon : isGK ? "rgba(29,158,117,0.6)" : "rgba(239,159,39,0.4)"}`,
+          overflow:   "hidden",
+          cursor:     isDragged ? "grabbing" : "grab",
+          opacity:    isDragged ? 0.2 : 1,
+          transform:  `scale(${isTarget?1.1:active&&!isDragged?1.04:1})`,
+          boxShadow:  isSelected
+            ? `0 0 0 1px ${C.neon}, 0 0 14px rgba(200,255,0,0.4)`
+            : isTarget
+              ? `0 0 0 1px ${C.drag}, 0 0 12px rgba(0,229,255,0.4)`
+              : active
+                ? "0 4px 16px rgba(0,0,0,0.8)"
+                : "0 2px 6px rgba(0,0,0,0.5)",
+          transition: "transform 180ms ease, box-shadow 180ms ease, opacity 120ms",
+          borderRadius: 2,
+        }}
+      >
+        {/* Franja color */}
+        <div style={{ height:3, background: isGK ? C.green : isSelected ? C.neon : C.amber, transition:"background 200ms" }}/>
+
+        {/* Avatar */}
+        <div style={{ width:56, height:44, overflow:"hidden", background:"rgba(255,255,255,0.04)", position:"relative" }}>
+          <img
+            src={avatar(athlete.photo)}
+            alt={athlete.name}
+            style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block", pointerEvents:"none" }}
+          />
+          {athlete.status !== "P" && (
+            <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ fontSize:7, color: getStatusStyle(athlete.status).color, border:`1px solid ${getStatusStyle(athlete.status).color}`, padding:"1px 3px", fontWeight:700, textTransform:"uppercase" }}>
+                {athlete.status==="L"?"LES":"AUS"}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Nombre y pos */}
+        <div style={{ padding:"2px 4px 3px", background:"rgba(0,0,0,0.75)", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{ fontSize:7, color:C.text, textTransform:"uppercase", fontWeight:700, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", letterSpacing:"0.2px" }}>
+            {athlete.name.split(" ")[0][0]}. {athlete.name.split(" ").pop()}
+          </div>
+          <div style={{ fontSize:6, color: isGK ? C.green : C.amber, textTransform:"uppercase", marginTop:1 }}>
+            {starter.posCode}
+          </div>
         </div>
       </div>
-      {/* Color strip */}
-      <div style={{ width:"100%", height:2, background: isGK ? "#10b981" : C.cardRed, borderRadius:1 }}/>
-      {/* Nombre */}
-      <div style={{ fontSize:8, color: C.text, fontWeight:700, textTransform:"uppercase", textAlign:"center", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", width:"100%" }}>
-        {athlete?.name?.split(" ").pop() || "—"}
-      </div>
+      {/* Sombra */}
+      <div style={{ width:16, height:3, background:"rgba(0,0,0,0.4)", borderRadius:"50%" }}/>
     </div>
   );
 }
@@ -452,70 +432,73 @@ function BenchCard({ benchItem, isDragged, isTarget, onDragStart, onDragEnd, onD
 // COMPONENTE PRINCIPAL
 // ─────────────────────────────────────────────
 export default function TacticalBoard({ athletes = [] }) {
-  const [activeTab,    setActiveTab]    = useState("plantilla");
-  const [formationKey, setFormationKey] = useState("4-4-2");
-  const [showFormMenu, setShowFormMenu] = useState(false);
-  const [dragging,     setDragging]     = useState(null);
-  const [dropTarget,   setDropTarget]   = useState(null);
-  const [selectedIdx,  setSelectedIdx]  = useState(null);
+  const [formationKey,      setFormationKey]      = useState("4-3-3");
+  const [showFormMenu,      setShowFormMenu]       = useState(false);
+  const [dragging,          setDragging]           = useState(null);
+  const [dropTarget,        setDropTarget]         = useState(null);
+  const [selectedStarterIdx,setSelectedStarterIdx] = useState(null);
 
   const [starters, setStarters] = useState(() =>
-    FORMATIONS["4-4-2"].positions.map((pos, i) => ({
+    FORMATIONS["4-3-3"].positions.map((pos, i) => ({
       ...pos,
       currentLeft: pos.left,
       currentTop:  pos.top,
       athlete:     athletes[i] || null,
-      id:          `starter-${i}`,
+      id:          `s${i}`,
     }))
   );
   const [bench, setBench] = useState(() =>
-    athletes.slice(11).map((a, i) => ({ athlete: a, id:`bench-${i}` }))
+    athletes.slice(11).map((a, i) => ({ athlete: a, id:`b${i}` }))
   );
 
   const fieldRef = useRef(null);
-
-  const selectedStarter = selectedIdx !== null ? starters[selectedIdx] : null;
 
   // ── Cambio de formación ─────────────────────
   const handleFormationChange = useCallback((key) => {
     setFormationKey(key);
     setShowFormMenu(false);
+    setSelectedStarterIdx(null);
     const newPos = FORMATIONS[key].positions;
-    setStarters(prev => prev.map((s, i) => ({
-      ...s,
-      posCode:     newPos[i]?.posCode    ?? s.posCode,
-      currentLeft: newPos[i]?.left       ?? s.currentLeft,
-      currentTop:  newPos[i]?.top        ?? s.currentTop,
+    setStarters(prev => newPos.map((pos, i) => ({
+      ...pos,
+      currentLeft: pos.left,
+      currentTop:  pos.top,
+      athlete:     prev[i]?.athlete ?? null,
+      id:          prev[i]?.id ?? `s${i}`,
     })));
   }, []);
 
   // ── Drag ────────────────────────────────────
-  const handleDragStart = useCallback((e, type, index) => {
+  const startDrag = useCallback((e, type, index) => {
     setDragging({ type, index });
-    setSelectedIdx(null);
-    e.dataTransfer.effectAllowed = "move";
+    setSelectedStarterIdx(null);
     const g = document.createElement("div");
-    g.style.cssText = "position:absolute;top:-9999px;";
+    g.style.cssText = "position:absolute;top:-9999px;opacity:0;";
     document.body.appendChild(g);
     e.dataTransfer.setDragImage(g, 0, 0);
     setTimeout(() => document.body.removeChild(g), 0);
+    e.dataTransfer.effectAllowed = "move";
   }, []);
 
   const handleFieldDrop = useCallback((e) => {
     e.preventDefault();
     if (!dragging || !fieldRef.current) return;
     const rect = fieldRef.current.getBoundingClientRect();
-    const left = Math.min(Math.max(((e.clientX - rect.left)  / rect.width)  * 100, 5), 95);
-    const top  = Math.min(Math.max(((e.clientY - rect.top)   / rect.height) * 100, 5), 95);
+    const left = Math.min(Math.max(((e.clientX-rect.left)/rect.width)*100, 4), 96);
+    const top  = Math.min(Math.max(((e.clientY-rect.top)/rect.height)*100, 4), 96);
 
     if (dragging.type === "starter") {
-      setStarters(prev => prev.map((s, i) => i === dragging.index ? { ...s, currentLeft: left, currentTop: top } : s));
+      setStarters(prev => prev.map((s,i) =>
+        i===dragging.index ? {...s, currentLeft:left, currentTop:top} : s
+      ));
     } else if (dragging.type === "bench") {
       const entering = bench[dragging.index];
       const emptyIdx = starters.findIndex(s => !s.athlete);
       if (emptyIdx >= 0) {
-        setStarters(prev => prev.map((s, i) => i === emptyIdx ? { ...s, athlete: entering.athlete, currentLeft: left, currentTop: top } : s));
-        setBench(prev => prev.filter((_, i) => i !== dragging.index));
+        setStarters(prev => prev.map((s,i) =>
+          i===emptyIdx ? {...s, athlete:entering.athlete, currentLeft:left, currentTop:top} : s
+        ));
+        setBench(prev => prev.filter((_,i) => i!==dragging.index));
       }
     }
     setDragging(null); setDropTarget(null);
@@ -525,122 +508,87 @@ export default function TacticalBoard({ athletes = [] }) {
     e.preventDefault(); e.stopPropagation();
     if (!dragging) return;
 
-    if (dragging.type === "starter" && targetType === "starter") {
+    if (dragging.type==="starter" && targetType==="starter") {
       setStarters(prev => {
         const next = [...prev];
-        const src = { currentLeft: next[dragging.index].currentLeft, currentTop: next[dragging.index].currentTop };
-        const dst = { currentLeft: next[targetIndex].currentLeft,    currentTop: next[targetIndex].currentTop    };
-        next[dragging.index] = { ...next[dragging.index], ...dst };
-        next[targetIndex]    = { ...next[targetIndex],    ...src };
+        const tmp  = next[dragging.index].athlete;
+        next[dragging.index] = {...next[dragging.index], athlete: next[targetIndex].athlete};
+        next[targetIndex]    = {...next[targetIndex],    athlete: tmp};
         return next;
       });
-    } else if (dragging.type === "bench" && targetType === "starter") {
+    } else if (dragging.type==="bench" && targetType==="starter") {
       const entering = bench[dragging.index];
       const leaving  = starters[targetIndex].athlete;
-      setStarters(prev => prev.map((s, i) => i === targetIndex ? { ...s, athlete: entering.athlete } : s));
+      setStarters(prev => prev.map((s,i) => i===targetIndex ? {...s, athlete:entering.athlete} : s));
       setBench(prev => {
-        const next = prev.filter((_, i) => i !== dragging.index);
-        return leaving ? [...next, { athlete: leaving, id:`bench-${Date.now()}` }] : next;
+        const next = prev.filter((_,i) => i!==dragging.index);
+        return leaving ? [...next, {athlete:leaving, id:`b${Date.now()}`}] : next;
       });
-    } else if (dragging.type === "starter" && targetType === "bench") {
+    } else if (dragging.type==="starter" && targetType==="bench") {
       const leaving  = starters[dragging.index].athlete;
       const entering = bench[targetIndex];
-      setStarters(prev => prev.map((s, i) => i === dragging.index ? { ...s, athlete: entering.athlete } : s));
+      setStarters(prev => prev.map((s,i) => i===dragging.index ? {...s, athlete:entering.athlete} : s));
       setBench(prev => {
-        const next = prev.filter((_, i) => i !== targetIndex);
-        return leaving ? [...next, { athlete: leaving, id:`bench-${Date.now()}` }] : next;
+        const next = prev.filter((_,i) => i!==targetIndex);
+        return leaving ? [...next, {athlete:leaving, id:`b${Date.now()}`}] : next;
       });
     }
+
     setDragging(null); setDropTarget(null);
   }, [dragging, bench, starters]);
 
-  // ── Swap desde recomendaciones ──────────────
-  const handleSwapFromRecommended = useCallback((newAthlete) => {
-    if (selectedIdx === null) return;
-    const leavingAthlete = starters[selectedIdx].athlete;
-    setStarters(prev => prev.map((s, i) => i === selectedIdx ? { ...s, athlete: newAthlete } : s));
-    if (leavingAthlete) {
-      setBench(prev => [...prev, { athlete: leavingAthlete, id:`bench-${Date.now()}` }]);
-    }
+  // ── Swap desde similares ────────────────────
+  const handleSwapSimilar = useCallback((newAthlete) => {
+    if (selectedStarterIdx === null) return;
+    const leaving = starters[selectedStarterIdx].athlete;
+    setStarters(prev => prev.map((s,i) =>
+      i===selectedStarterIdx ? {...s, athlete:newAthlete} : s
+    ));
+    if (leaving) setBench(prev => [...prev, {athlete:leaving, id:`b${Date.now()}`}]);
     setBench(prev => prev.filter(b => b.athlete?.id !== newAthlete.id));
-    setSelectedIdx(null);
-  }, [selectedIdx, starters]);
+    setSelectedStarterIdx(null);
+  }, [selectedStarterIdx, starters]);
 
-  const isDraggingThis = (type, idx) => dragging?.type === type && dragging?.index === idx;
+  const handleMoveToBank = useCallback(() => {
+    if (selectedStarterIdx === null) return;
+    const leaving = starters[selectedStarterIdx].athlete;
+    if (!leaving) return;
+    setStarters(prev => prev.map((s,i) => i===selectedStarterIdx ? {...s, athlete:null} : s));
+    setBench(prev => [...prev, {athlete:leaving, id:`b${Date.now()}`}]);
+    setSelectedStarterIdx(null);
+  }, [selectedStarterIdx, starters]);
 
-  const TABS = ["plantilla","formaciones","instrucciones","tácticas"];
+  const isDraggingThis = (type, idx) => dragging?.type===type && dragging?.index===idx;
+  const selectedStarter = selectedStarterIdx !== null ? starters[selectedStarterIdx] : null;
 
   return (
-    <div style={{
-      position:   "relative",
-      height:     "100%",
-      minHeight:  0,
-      background: "#0d1117",
-      fontFamily: "'Arial Narrow', Arial, sans-serif",
-      display:    "flex",
-      flexDirection:"column",
-      overflow:   "hidden",
-    }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 80px)", background:"#0a150a", fontFamily:"'Arial Narrow',Arial,sans-serif", overflow:"hidden" }}>
 
-      {/* ── FONDO ESTADIO CON BLUR ──────────────
-          Usamos un gradiente que simula la perspectiva
-          del estadio FIFA: oscuro arriba, verde difuminado abajo */}
-      <div style={{
-        position:   "absolute",
-        inset:      0,
-        background: "radial-gradient(ellipse at 50% 110%, rgba(20,60,10,0.7) 0%, rgba(5,10,20,0.95) 60%)",
-        zIndex:     0,
-      }}/>
-
-      {/* ── NAVBAR SUPERIOR ──────────────────── */}
-      <div style={{ position:"relative", zIndex:10, display:"flex", alignItems:"stretch", background:"rgba(0,0,0,0.82)", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
-        {TABS.map(tab => (
-          <div
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding:       "0 18px",
-              height:        36,
-              display:       "flex",
-              alignItems:    "center",
-              fontSize:      10,
-              textTransform: "uppercase",
-              letterSpacing: "2px",
-              fontWeight:    700,
-              color:         activeTab === tab ? C.text : C.textMuted,
-              cursor:        "pointer",
-              borderBottom:  activeTab === tab ? `2px solid ${C.neon}` : "2px solid transparent",
-              background:    activeTab === tab ? C.neonDim : "transparent",
-              transition:    "all 150ms",
-            }}
-          >
+      {/* ── SUBTABS (una sola fila, sin duplicados) */}
+      <div style={{ display:"flex", alignItems:"stretch", height:34, background:"rgba(0,0,0,0.85)", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
+        {["plantilla","formaciones","instrucciones","tácticas"].map(tab => (
+          <div key={tab} style={{ padding:"0 16px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color: tab==="plantilla" ? C.text : C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${C.border}`, borderBottom: tab==="plantilla" ? `2px solid ${C.amber}` : "2px solid transparent", background: tab==="plantilla" ? C.amberDim : "transparent", whiteSpace:"nowrap" }}>
             {tab}
           </div>
         ))}
 
-        {/* Badge de formación */}
-        <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:0, paddingRight:16, position:"relative" }}>
+        {/* Badge formación — esquina derecha */}
+        <div style={{ marginLeft:"auto", position:"relative", display:"flex", alignItems:"center" }}>
           <div
             onClick={() => setShowFormMenu(v => !v)}
-            style={{ display:"flex", alignItems:"center", gap:10, padding:"0 14px", height:36, background:"rgba(200,255,0,0.08)", border:`1px solid ${C.neonBorder}`, cursor:"pointer" }}
+            style={{ display:"flex", alignItems:"center", gap:10, padding:"0 16px", height:"100%", background:C.amberDim, borderLeft:`1px solid ${C.amberBorder}`, cursor:"pointer" }}
           >
-            <div style={{ fontSize:16, fontWeight:900, color: C.neon, letterSpacing:"-1px", lineHeight:1 }}>
-              {formationKey}
-            </div>
-            <div style={{ display:"flex", flexDirection:"column" }}>
-              <div style={{ fontSize:7, color: C.neon, textTransform:"uppercase", letterSpacing:"1.5px", lineHeight:1 }}>
-                {FORMATIONS[formationKey].label}
-              </div>
-              <div style={{ fontSize:7, color: C.textHint, textTransform:"uppercase", letterSpacing:"1px", marginTop:1 }}>
-                ▼ Cambiar
-              </div>
+            <div style={{ fontSize:17, fontWeight:900, color:C.amber, letterSpacing:"-1px" }}>{formationKey}</div>
+            <div>
+              <div style={{ fontSize:7, color:C.amber, textTransform:"uppercase", letterSpacing:"1.5px" }}>{FORMATIONS[formationKey].label}</div>
+              <div style={{ fontSize:7, color:C.textHint, textTransform:"uppercase", letterSpacing:"1px", marginTop:1 }}>▼ CAMBIAR</div>
             </div>
           </div>
           {showFormMenu && (
-            <div style={{ position:"absolute", top:"100%", right:0, background:"rgba(5,10,20,0.98)", border:`1px solid ${C.border}`, zIndex:30, minWidth:160 }}>
-              {Object.entries(FORMATIONS).map(([key, f]) => (
+            <div style={{ position:"absolute", top:"100%", right:0, background:"rgba(5,10,5,0.98)", border:`1px solid ${C.border}`, zIndex:50, minWidth:160 }}>
+              {Object.entries(FORMATIONS).map(([key,f]) => (
                 <div key={key} onClick={() => handleFormationChange(key)}
-                  style={{ padding:"8px 14px", fontSize:11, color: formationKey===key ? C.neon : C.textMuted, cursor:"pointer", borderBottom:`1px solid rgba(255,255,255,0.04)`, background: formationKey===key ? C.neonDim : "transparent", fontWeight: formationKey===key ? 700 : 400, display:"flex", justifyContent:"space-between" }}>
+                  style={{ padding:"8px 14px", fontSize:11, color: formationKey===key ? C.amber : C.textMuted, cursor:"pointer", borderBottom:`1px solid rgba(255,255,255,0.04)`, background: formationKey===key ? C.amberDim : "transparent", fontWeight: formationKey===key ? 700 : 400, display:"flex", justifyContent:"space-between" }}>
                   <span style={{ fontWeight:700, marginRight:10 }}>{key}</span>
                   <span style={{ fontSize:9 }}>{f.label}</span>
                 </div>
@@ -650,136 +598,170 @@ export default function TacticalBoard({ athletes = [] }) {
         </div>
       </div>
 
-      {/* ── CUERPO PRINCIPAL ─────────────────── */}
-      <div style={{ flex:1, display:"flex", minHeight:0, position:"relative", zIndex:5 }}>
+      {/* ── LAYOUT: sidebar + campo + panel ─── */}
+      <div style={{ flex:1, display:"grid", gridTemplateColumns:"160px 1fr auto", minHeight:0, overflow:"hidden" }}>
 
-        {/* ── CAMPO FLOTANTE ─────────────────── */}
-        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"10px 12px 80px 12px" }}>
+        {/* SIDEBAR IZQ */}
+        <div style={{ background:"rgba(0,0,0,0.82)", borderRight:`1px solid ${C.border}`, display:"flex", flexDirection:"column", overflowY:"auto" }}>
+          <div style={{ padding:"10px 12px 6px" }}>
+            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:8 }}>Formación activa</div>
+            {Object.keys(FORMATIONS).map(f => (
+              <div key={f} onClick={() => handleFormationChange(f)}
+                style={{ padding:"6px 10px", fontSize:11, color: formationKey===f ? C.amber : C.textMuted, cursor:"pointer", display:"flex", justifyContent:"space-between", borderBottom:`1px solid rgba(255,255,255,0.04)`, background: formationKey===f ? C.amberDim : "transparent", borderLeft: formationKey===f ? `2px solid ${C.amber}` : "2px solid transparent", marginBottom:1 }}>
+                {f} {formationKey===f && <span style={{ fontSize:8, color:C.amber }}>●</span>}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ borderTop:`1px solid ${C.border}`, padding:"10px 12px 6px" }}>
+            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:8 }}>Suplentes</div>
+            {bench.map((b,i) => (
+              <div key={b.id}
+                draggable
+                onDragStart={e => startDrag(e,"bench",i)}
+                onDragEnd={() => setDragging(null)}
+                onDragOver={e => { e.preventDefault(); setDropTarget(`bench-${i}`); }}
+                onDragLeave={() => setDropTarget(null)}
+                onDrop={e => handlePlayerDrop(e,"bench",i)}
+                style={{ display:"flex", alignItems:"center", gap:6, padding:"5px 8px", borderBottom:`1px solid rgba(255,255,255,0.04)`, cursor:"grab", opacity: isDraggingThis("bench",i) ? 0.3 : 1, background: dropTarget===`bench-${i}` ? C.dragDim : "transparent", transition:"background 150ms" }}
+              >
+                <div style={{ width:26, height:26, borderRadius:"50%", overflow:"hidden", border:`1px solid ${b.athlete?.status==="L" ? C.danger : "rgba(255,255,255,0.12)"}`, flexShrink:0 }}>
+                  <img src={avatar(b.athlete?.photo||"sub")} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.7)", textTransform:"uppercase", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                    {b.athlete?.name?.split(" ")[0]||"—"}
+                  </div>
+                  <div style={{ fontSize:7, color:C.textHint, textTransform:"uppercase" }}>{b.athlete?.posCode||"—"}</div>
+                </div>
+                <div style={{ width:5, height:5, borderRadius:"50%", background: getStatusStyle(b.athlete?.status).color, flexShrink:0 }}/>
+              </div>
+            ))}
+            {bench.length === 0 && (
+              <div style={{ fontSize:9, color:C.textHint, textAlign:"center", padding:"10px 0", lineHeight:1.8 }}>
+                Arrastra titulares<br/>aquí para suplirlos
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* CAMPO HORIZONTAL */}
+        <div style={{ display:"flex", flexDirection:"column", minHeight:0 }}>
+          {/* Header del campo */}
+          <div style={{ padding:"7px 14px", background:"rgba(0,0,0,0.7)", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+            <div style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted }}>
+              Formación {formationKey} · Arrastra para mover
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", padding:"4px 12px", background:"transparent", border:`1px solid ${C.borderHi}`, color:C.textMuted, cursor:"pointer" }}>Guardar</div>
+              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", padding:"4px 12px", background:C.amber, color:"#1a0f00", cursor:"pointer", fontWeight:700 }}>Usar en partido →</div>
+            </div>
+          </div>
+
+          {/* Cancha */}
           <div
             ref={fieldRef}
             onDragOver={e => e.preventDefault()}
             onDrop={handleFieldDrop}
-            onClick={() => { setShowFormMenu(false); }}
+            onClick={() => setShowFormMenu(false)}
             style={{
+              flex:       1,
               position:   "relative",
-              width:      "100%",
-              // Media cancha con proporciones correctas
-              aspectRatio:"68 / 52",
-              maxHeight:  "calc(100vh - 200px)",
               background: `
                 repeating-linear-gradient(
-                  180deg,
-                  rgba(0,0,0,0) 0px, rgba(0,0,0,0) 28px,
-                  rgba(0,0,0,0.08) 28px, rgba(0,0,0,0.08) 56px
+                  90deg,
+                  rgba(0,0,0,0) 0px, rgba(0,0,0,0) 50px,
+                  rgba(0,0,0,0.1) 50px, rgba(0,0,0,0.1) 100px
                 ),
-                linear-gradient(180deg, #2d5e1a 0%, #337a1c 40%, #2d5e1a 100%)
+                linear-gradient(90deg, #1e4a10 0%, #265c15 50%, #1e4a10 100%)
               `,
-              border:     `2px solid rgba(255,255,255,0.2)`,
-              borderRadius:4,
               overflow:   "hidden",
               cursor:     "crosshair",
-              // Sombra pronunciada — efecto panel flotante FIFA
-              boxShadow:  "0 8px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06)",
             }}
           >
-            {/* SVG líneas del campo */}
-            <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}
-              viewBox="0 0 68 52" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="66" height="50" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.4"/>
-              <line x1="1" y1="1" x2="67" y2="1" stroke="rgba(255,255,255,0.7)" strokeWidth="0.6"/>
-              <path d="M 25.5 1 A 9 9 0 0 0 42.5 1" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.4"/>
-              <rect x="11" y="33" width="46" height="18" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.4"/>
-              <rect x="22" y="41" width="24" height="10" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35"/>
-              <circle cx="34" cy="44" r="0.5" fill="rgba(255,255,255,0.6)"/>
-              <path d="M 14 33 A 9 9 0 0 1 54 33" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.35"/>
-              <rect x="24.5" y="51" width="19" height="2.5" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.5"/>
-              <path d="M 1 3 A 1.5 1.5 0 0 0 3 1"  fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
-              <path d="M 67 3 A 1.5 1.5 0 0 1 65 1" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
+            {/* SVG CANCHA HORIZONTAL */}
+            <svg
+              style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }}
+              viewBox="0 0 135 90"
+              preserveAspectRatio="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* Perímetro */}
+              <rect x="3" y="3" width="129" height="84" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45"/>
+
+              {/* Línea de medio campo */}
+              <line x1="67.5" y1="3" x2="67.5" y2="87" stroke="rgba(255,255,255,0.5)" strokeWidth="0.4"/>
+
+              {/* Círculo central */}
+              <circle cx="67.5" cy="45" r="10" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.4"/>
+              <circle cx="67.5" cy="45" r="0.7" fill="rgba(255,255,255,0.6)"/>
+
+              {/* Área grande IZQUIERDA */}
+              <rect x="3" y="22" width="20" height="46" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.4"/>
+              {/* Área chica IZQ */}
+              <rect x="3" y="33" width="8" height="24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35"/>
+              {/* Punto penal IZQ */}
+              <circle cx="16" cy="45" r="0.6" fill="rgba(255,255,255,0.55)"/>
+              {/* Semicírculo IZQ */}
+              <path d="M 23 22 A 10 10 0 0 1 23 68" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.35"/>
+              {/* Portería IZQ */}
+              <rect x="0" y="37.5" width="3" height="15" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
+
+              {/* Área grande DERECHA */}
+              <rect x="112" y="22" width="20" height="46" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.4"/>
+              {/* Área chica DER */}
+              <rect x="124" y="33" width="8" height="24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35"/>
+              {/* Punto penal DER */}
+              <circle cx="119" cy="45" r="0.6" fill="rgba(255,255,255,0.55)"/>
+              {/* Semicírculo DER */}
+              <path d="M 112 22 A 10 10 0 0 0 112 68" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.35"/>
+              {/* Portería DER */}
+              <rect x="132" y="37.5" width="3" height="15" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.5"/>
+
+              {/* Esquinas */}
+              <path d="M 3 6 A 2 2 0 0 0 6 3"    fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
+              <path d="M 3 84 A 2 2 0 0 1 6 87"   fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
+              <path d="M 132 6 A 2 2 0 0 1 129 3"  fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
+              <path d="M 132 84 A 2 2 0 0 0 129 87" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.35"/>
             </svg>
 
-            {/* Tokens de titulares */}
+            {/* TOKENS */}
             {starters.map((starter, i) => (
-              <div key={starter.id}
-                style={{ position:"absolute", left:`${starter.currentLeft}%`, top:`${starter.currentTop}%`, transform:"translate(-50%,-50%)", zIndex: isDraggingThis("starter",i) ? 1 : selectedIdx===i ? 15 : 5 }}>
-                <PlayerCard
+              <div key={starter.id} style={{ position:"absolute", left:`${starter.currentLeft}%`, top:`${starter.currentTop}%`, transform:"translate(-50%,-50%)", zIndex: isDraggingThis("starter",i) ? 1 : selectedStarterIdx===i ? 15 : 5 }}>
+                <PlayerToken
                   starter={starter}
-                  isSelected={selectedIdx === i}
-                  isDragged={isDraggingThis("starter", i)}
+                  isSelected={selectedStarterIdx === i}
+                  isDragged={isDraggingThis("starter",i)}
                   isTarget={dropTarget === i}
-                  onSelect={(e) => { e.stopPropagation(); setSelectedIdx(selectedIdx===i ? null : i); }}
-                  onDragStart={e => handleDragStart(e, "starter", i)}
+                  onSelect={e => { e.stopPropagation(); setSelectedStarterIdx(prev => prev===i ? null : i); }}
+                  onDragStart={e => startDrag(e,"starter",i)}
                   onDragEnd={() => { setDragging(null); setDropTarget(null); }}
                   onDragOver={e => { e.preventDefault(); setDropTarget(i); }}
                   onDragLeave={() => setDropTarget(null)}
-                  onDrop={e => handlePlayerDrop(e, "starter", i)}
+                  onDrop={e => handlePlayerDrop(e,"starter",i)}
                 />
               </div>
             ))}
-
-            {/* Panel de detalle del jugador seleccionado */}
-            {selectedStarter && (
-              <PlayerDetailPanel
-                starter={selectedStarter}
-                allAthletes={athletes}
-                onSwapRecommended={handleSwapFromRecommended}
-                onClose={() => setSelectedIdx(null)}
-              />
-            )}
           </div>
         </div>
-      </div>
 
-      {/* ── BANCO INFERIOR FLOTANTE ──────────────
-          Posicionado sobre el campo, panel horizontal
-          idéntico al estilo FIFA */}
-      <div style={{
-        position:  "absolute",
-        bottom:    0,
-        left:      0,
-        right:     0,
-        zIndex:    20,
-        background:"rgba(8,12,20,0.92)",
-        borderTop: `1px solid ${C.border}`,
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.6)",
-      }}
-        onDragOver={e => e.preventDefault()}
-        onDrop={e => {
-          e.preventDefault();
-          if (dragging?.type === "starter") {
-            const leaving = starters[dragging.index].athlete;
-            if (leaving) {
-              setBench(prev => [...prev, { athlete: leaving, id:`bench-${Date.now()}` }]);
-              setStarters(prev => prev.map((s,i) => i===dragging.index ? {...s, athlete:null} : s));
-            }
-            setDragging(null);
-          }
-        }}
-      >
-        <div style={{ padding:"6px 14px", display:"flex", alignItems:"center", gap:4 }}>
-          <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color: C.textHint, marginRight:8, flexShrink:0 }}>
-            Suplentes
+        {/* PANEL DETALLE o placeholder */}
+        {selectedStarter?.athlete ? (
+          <PlayerDetailPanel
+            starter={selectedStarter}
+            allAthletes={athletes}
+            onClose={() => setSelectedStarterIdx(null)}
+            onSwapSimilar={handleSwapSimilar}
+            onMoveToBank={handleMoveToBank}
+          />
+        ) : (
+          <div style={{ width:220, background:"rgba(0,0,0,0.88)", borderLeft:`1px solid ${C.border}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+            <div style={{ fontSize:28, opacity:0.12, marginBottom:10 }}>⚽</div>
+            <div style={{ fontSize:9, color:C.textHint, textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", lineHeight:1.9 }}>
+              Toca un jugador<br/>para ver su ficha
+            </div>
           </div>
-          <div style={{ display:"flex", gap:6, overflowX:"auto", flex:1 }}>
-            {bench.map((b, i) => (
-              <BenchCard
-                key={b.id}
-                benchItem={b}
-                isDragged={isDraggingThis("bench", i)}
-                isTarget={dropTarget === `bench-${i}`}
-                onDragStart={e => handleDragStart(e, "bench", i)}
-                onDragEnd={() => setDragging(null)}
-                onDragOver={e => { e.preventDefault(); setDropTarget(`bench-${i}`); }}
-                onDragLeave={() => setDropTarget(null)}
-                onDrop={e => handlePlayerDrop(e, "bench", i)}
-              />
-            ))}
-            {bench.length === 0 && (
-              <div style={{ fontSize:10, color: C.textHint, padding:"10px 0" }}>
-                Arrastra titulares aquí para enviarlos al banco
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
