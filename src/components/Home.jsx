@@ -36,8 +36,8 @@ const NAV_ITEMS = [
   { key:"home",          label:"Inicio",               navigable:false },
   { key:"entrenamiento", label:"Entrenamiento",         navigable:true  },
   { key:"plantilla",     label:"Gestión de plantilla",  navigable:true  },
-  { key:"admin",         label:"Administración",        navigable:false },
-  { key:"reportes",      label:"Reportes",              navigable:false },
+  { key:"admin",         label:"Administración",        navigable:true  },
+  { key:"reportes",      label:"Reportes",              navigable:true  },
   { key:"miclub",        label:"Mi club",               navigable:true  },
 ];
 
@@ -259,7 +259,7 @@ function InteractiveTile({
 // ─────────────────────────────────────────────
 // HOME PRINCIPAL
 // ─────────────────────────────────────────────
-export default function Home({ club, athletes, stats, onNavigate }) {
+export default function Home({ club, athletes, stats, matchStats, onNavigate, mode, onLogout }) {
   const { playHover, playSelect } = useGameAudio();
 
   const clubInitials = (club.nombre || "ES")
@@ -289,16 +289,16 @@ export default function Home({ club, athletes, stats, onNavigate }) {
 
   const METRICS = [
     { label:"Deportistas",    value:athletes.length,        icon:Icon.Users },
-    { label:"Partidos",       value:3,                       icon:Icon.Ball  },
+    { label:"Partidos",       value:matchStats.played,        icon:Icon.Ball  },
     { label:"Entrenamientos", value:stats.sesiones,          icon:Icon.Train },
     { label:"Asistencia",     value:stats.asistencia + "%",  icon:Icon.Chart },
   ];
 
   const STATS = [
-    { val:stats.asistencia+"%", lbl:"Asistencia",  color:PALETTE.neon   },
-    { val:stats.rpeAvg,         lbl:"RPE prom.",   color:PALETTE.text   },
-    { val:stats.sesiones,       lbl:"Sesiones",    color:PALETTE.text   },
-    { val:stats.lesionados,     lbl:"Lesionados",  color:PALETTE.danger },
+    { val:matchStats.won,         lbl:"Ganados",   color:"#1D9E75" },
+    { val:matchStats.lost,        lbl:"Perdidos",  color:"#E24B4A" },
+    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.neon },
+    { val:`${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl:"Goles F/C", color:"white" },
   ];
 
   return (
@@ -317,15 +317,28 @@ export default function Home({ club, athletes, stats, onNavigate }) {
           </div>
         ))}
         <div style={css.clubBadge}>
+          {mode === "demo" && (
+            <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:"rgba(239,159,39,0.2)", color:"#EF9F27", border:"1px solid rgba(239,159,39,0.4)", marginRight:6 }}>
+              Demo
+            </div>
+          )}
           <div style={css.clubLogo}>{clubInitials}</div>
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"1px", whiteSpace:"nowrap" }}>
               {club.nombre || "Mi Club"}
             </div>
             <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>
-              {(club.categorias||[])[0]||"Sub-17"} · {club.temporada||"2025-26"}
+              {(club.categorias||[])[0]||"General"} · {club.temporada||"2025-26"}
             </div>
           </div>
+          {onLogout && (
+            <div
+              onClick={onLogout}
+              style={{ marginLeft:10, padding:"4px 10px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)", border:"1px solid rgba(255,255,255,0.12)", cursor:"pointer", whiteSpace:"nowrap" }}
+            >
+              Cerrar sesion
+            </div>
+          )}
         </div>
       </div>
 
@@ -396,7 +409,10 @@ export default function Home({ club, athletes, stats, onNavigate }) {
             <>
               <div style={css.tag}>Próximo partido</div>
               <div style={css.titleMid}>vs Atlético Sur</div>
-              <div style={css.btn(hov)}>Ver partido →</div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", marginTop:4, letterSpacing:"0.5px" }}>
+                {matchStats.won}G · {matchStats.drawn}E · {matchStats.lost}P — {matchStats.points} pts
+              </div>
+              <div style={{ ...css.btn(hov), marginTop:10 }}>Ver partido →</div>
             </>
           )}
         </InteractiveTile>
@@ -415,27 +431,26 @@ export default function Home({ club, athletes, stats, onNavigate }) {
           </div>
         </div>
 
-        {/* TILE 5 — PRÓXIMA SESIÓN */}
+        {/* TILE 5 — OFICINA */}
         <InteractiveTile
-          tileKey="proxima"
+          tileKey="oficina"
           gridColumn="3" gridRow="2"
           image={imgOficina}
           overlayType="bottom"
           borderTopWidth={2}
           borderTopColor={PALETTE.neonBorder}
-          onClick={() => onNavigate("entrenamiento")}
+          onClick={() => onNavigate("admin")}
           playHover={playHover}
           playSelect={playSelect}
         >
           {(hov) => (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", height:"100%", paddingBottom:4 }}>
               <div>
-                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Próxima sesión</div>
-                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Entren. táctico</div>
-                <div style={{ fontSize:9, color:PALETTE.textMuted, marginTop:3 }}>Mié 20 Mar · 4:00 PM</div>
+                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Oficina</div>
+                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Administración y pagos</div>
               </div>
-              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.neon : "rgba(200,255,0,0.3)", color: hov ? "white" : PALETTE.neon, transition:"color 200ms, border-color 200ms" }}>
-                Planificar →
+              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.purple : "rgba(127,119,221,0.4)", color: hov ? "white" : PALETTE.purple, transition:"color 200ms, border-color 200ms" }}>
+                Entrar →
               </div>
             </div>
           )}

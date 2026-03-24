@@ -1,107 +1,111 @@
 /**
  * @component App
- * @description Componente raíz de Elevate Sports.
- * Gestiona el estado global, el enrutamiento entre módulos
- * y provee el contexto de datos a todos los componentes hijo.
+ * @description Componente raiz de Elevate Sports.
+ * Gestiona onboarding (Landing → Demo/Produccion), estado global,
+ * enrutamiento entre modulos y persistencia en localStorage.
  *
  * @architecture
- * App (estado global)
- * ├── Home          → pantalla principal con mosaicos FIFA
- * ├── Entrenamiento → asistencia, RPE, planificación, historial
- * ├── GestionPlantilla → pizarra táctica y gestión del plantel
- * └── MiClub        → configuración del club, categorías y campos
+ * App
+ * ├── LandingPage     → onboarding: demo o registro de club
+ * ├── Home            → pantalla principal con mosaicos FIFA
+ * ├── Entrenamiento   → asistencia, RPE, planificacion, historial
+ * ├── GestionPlantilla → pizarra tactica y gestion del plantel
+ * ├── MiClub          → configuracion del club
+ * ├── Administracion  → pagos, movimientos, resumen financiero
+ * └── Reportes        → resumen ejecutivo (inline)
  *
  * @state
- * - activeModule  {string}  Módulo activo (home | entrenamiento | plantilla | miclub)
- * - athletes      {Array}   Plantel completo con estado, RPE y datos personales
- * - historial     {Array}   Sesiones registradas con métricas
- * - clubInfo      {Object}  Configuración del club (nombre, categorías, campos, etc.)
+ * - elevate_mode     {string|null}  null=landing, "demo", "production"
+ * - activeModule     {string}       Modulo activo
+ * - athletes/historial/clubInfo/matchStats/finanzas → datos del club
  *
- * @notes
- * - El topbar/navegación principal vive en Home.jsx (no aquí)
- *   para mantener la estética FIFA sin duplicar la barra.
- * - Los módulos Administración y Reportes están en construcción.
- * - La función guardarSesion calcula automáticamente el RPE promedio.
- *
- * @version 4.0
+ * @version 5.0
  * @author Elevate Sports
  */
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import useLocalStorage from "./hooks/useLocalStorage";
 import FieldBackground from "./components/FieldBackground";
+import LandingPage from "./components/LandingPage";
 import Home from "./components/Home";
 import Entrenamiento from "./components/Entrenamiento";
 import GestionPlantilla from "./components/GestionPlantilla";
 import MiClub from "./components/MiClub";
+import Administracion from "./components/Administracion";
+import {
+  DEMO_ATHLETES, DEMO_HISTORIAL, DEMO_CLUB_INFO, DEMO_MATCH_STATS, DEMO_FINANZAS,
+  EMPTY_ATHLETES, EMPTY_HISTORIAL, EMPTY_MATCH_STATS, EMPTY_FINANZAS,
+  createEmptyClubInfo, STORAGE_KEYS,
+} from "./constants/initialStates";
 
 // ─────────────────────────────────────────────
-// DATOS INICIALES DEL PLANTEL
-// En producción estos datos vendrán de Supabase.
-// Estructura: { id, name, pos, posCode, dob, contact,
-//               status (P|A|L), rpe, photo, available }
+// DEFAULTS — usados por useLocalStorage como fallback
+// Se inicializan vacios; el onboarding los llena.
 // ─────────────────────────────────────────────
-const INITIAL_ATHLETES = [
-  { id:1,  name:"Carlos Ríos",    pos:"Delantero",     posCode:"ST", dob:"2008-03-12", contact:"300 111 2233", status:"P", rpe:8,    photo:"carlos",    available:true  },
-  { id:2,  name:"David Cano",     pos:"Mediocampista", posCode:"CM", dob:"2008-07-08", contact:"318 667 7788", status:"P", rpe:7,    photo:"david",     available:true  },
-  { id:3,  name:"Miguel Torres",  pos:"Portero",       posCode:"GK", dob:"2007-09-15", contact:"315 445 5566", status:"P", rpe:6,    photo:"miguel",    available:true  },
-  { id:4,  name:"Felipe Ruiz",    pos:"Defensa",       posCode:"LB", dob:"2007-12-22", contact:"314 778 8899", status:"P", rpe:9,    photo:"felipe",    available:true  },
-  { id:5,  name:"Pablo Vargas",   pos:"Mediocampista", posCode:"CM", dob:"2008-05-10", contact:"312 334 5566", status:"P", rpe:8,    photo:"pablo",     available:true  },
-  { id:6,  name:"Roberto Castro", pos:"Defensa",       posCode:"CB", dob:"2008-01-22", contact:"311 445 6677", status:"P", rpe:7,    photo:"roberto",   available:true  },
-  { id:7,  name:"Héctor Díaz",    pos:"Defensa",       posCode:"RB", dob:"2007-08-14", contact:"310 556 7788", status:"P", rpe:5,    photo:"hector",    available:true  },
-  { id:8,  name:"Nicolás Ossa",   pos:"Delantero",     posCode:"LW", dob:"2008-11-03", contact:"313 667 8899", status:"P", rpe:7,    photo:"nicolas",   available:true  },
-  { id:9,  name:"Kevin Pinto",    pos:"Delantero",     posCode:"RW", dob:"2009-02-18", contact:"317 778 9900", status:"P", rpe:6,    photo:"kevin",     available:true  },
-  { id:10, name:"Luis Mora",      pos:"Defensa",       posCode:"CB", dob:"2008-04-25", contact:"316 889 0011", status:"P", rpe:7,    photo:"luis",      available:true  },
-  { id:11, name:"Edgar Largo",    pos:"Mediocampista", posCode:"CM", dob:"2007-06-30", contact:"319 990 1122", status:"P", rpe:null, photo:"edgar",     available:true  },
-  { id:12, name:"Andrés Mena",    pos:"Mediocampista", posCode:"CM", dob:"2007-11-05", contact:"311 223 3344", status:"P", rpe:null, photo:"andres",    available:true  },
-  { id:13, name:"Sebastián Gil",  pos:"Defensa",       posCode:"CB", dob:"2008-06-20", contact:"320 334 4455", status:"A", rpe:null, photo:"sebastian", available:false },
-  { id:14, name:"Tomás Vera",     pos:"Mediocampista", posCode:"CM", dob:"2009-04-17", contact:"316 889 9900", status:"A", rpe:null, photo:"tomas",     available:false },
-  { id:15, name:"Julián Pérez",   pos:"Delantero",     posCode:"ST", dob:"2009-01-30", contact:"312 556 6677", status:"L", rpe:null, photo:"julian",    available:false },
-];
-
-// ─────────────────────────────────────────────
-// HISTORIAL DE SESIONES INICIAL
-// En producción vendrá de Supabase.
-// ─────────────────────────────────────────────
-const INITIAL_HISTORIAL = [
-  { num:14, fecha:"Mar 18 Mar", presentes:14, total:18, rpeAvg:7.2, tipo:"Táctica",      nota:"Buena respuesta al pressing alto."              },
-  { num:13, fecha:"Sáb 15 Mar", presentes:16, total:18, rpeAvg:8.1, tipo:"Físico",       nota:"Buena respuesta al trabajo de fuerza."           },
-  { num:12, fecha:"Jue 13 Mar", presentes:15, total:18, rpeAvg:6.4, tipo:"Recuperación", nota:"Sesión suave post competencia."                  },
-  { num:11, fecha:"Mar 11 Mar", presentes:13, total:18, rpeAvg:9.2, tipo:"Partido",      nota:"Alta intensidad. Revisar carga semana próxima."  },
-  { num:10, fecha:"Sáb 08 Mar", presentes:17, total:18, rpeAvg:7.8, tipo:"Físico",       nota:"Excelente disposición del grupo."                },
-];
-
-// ─────────────────────────────────────────────
-// DATOS INICIALES DEL CLUB
-// En producción vendrán de Supabase.
-// ─────────────────────────────────────────────
-const INITIAL_CLUB_INFO = {
-  nombre:      "Águilas de Lucero",
-  disciplina:  "Fútbol",
-  ciudad:      "Medellín",
-  entrenador:  "Juan Felipe Cuervo",
-  temporada:   "2025-26",
-  categorias:  ["Sub-17"],
-  campos:      ["Campo principal", "Campo auxiliar"],
-  descripcion: "",
-  telefono:    "",
-  email:       "",
-};
+const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
 export default function App() {
-  // ── Estado global ──────────────────────────
-  const [activeModule, setActiveModule] = useState("home");
-  const [athletes,     setAthletes]     = useLocalStorage('elevate_athletes',  INITIAL_ATHLETES);
-  const [historial,    setHistorial]    = useLocalStorage('elevate_historial', INITIAL_HISTORIAL);
-  const [clubInfo,     setClubInfo]     = useLocalStorage('elevate_clubInfo',  INITIAL_CLUB_INFO);
+  // ── Modo de la app: null=landing, "demo", "production" ──
+  const [mode, setMode] = useLocalStorage("elevate_mode", null);
 
-  // ── Guardar sesión ─────────────────────────
-  /**
-   * Registra una nueva sesión en el historial.
-   * Calcula automáticamente el RPE promedio de los jugadores presentes.
-   * @param {string} nota  - Nota general del entrenador
-   * @param {string} tipo  - Tipo de sesión (Táctica | Físico | Recuperación | Partido)
-   */
+  // ── Estado global (persiste en localStorage) ──
+  const [activeModule, setActiveModule] = useState("home");
+  const [athletes,   setAthletes]   = useLocalStorage("elevate_athletes",   EMPTY_ATHLETES);
+  const [historial,  setHistorial]  = useLocalStorage("elevate_historial",  EMPTY_HISTORIAL);
+  const [clubInfo,   setClubInfo]   = useLocalStorage("elevate_clubInfo",   DEFAULT_CLUB);
+  const [matchStats, setMatchStats] = useLocalStorage("elevate_matchStats", EMPTY_MATCH_STATS);
+  const [finanzas,   setFinanzas]   = useLocalStorage("elevate_finanzas",   EMPTY_FINANZAS);
+
+  // ── Onboarding: DEMO ──
+  const handleDemo = useCallback(() => {
+    // Limpieza selectiva antes de cargar demo
+    STORAGE_KEYS.forEach(k => window.localStorage.removeItem(k));
+    setAthletes(DEMO_ATHLETES);
+    setHistorial(DEMO_HISTORIAL);
+    setClubInfo(DEMO_CLUB_INFO);
+    setMatchStats(DEMO_MATCH_STATS);
+    setFinanzas(DEMO_FINANZAS);
+    setActiveModule("home");
+    setMode("demo");
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+
+  // ── Onboarding: REGISTRO DE CLUB REAL ──
+  const handleRegister = useCallback((form) => {
+    // Limpieza selectiva — elimina cualquier residuo demo
+    STORAGE_KEYS.forEach(k => window.localStorage.removeItem(k));
+    const newClub = createEmptyClubInfo(form);
+    setAthletes(EMPTY_ATHLETES);
+    setHistorial(EMPTY_HISTORIAL);
+    setClubInfo(newClub);
+    setMatchStats(EMPTY_MATCH_STATS);
+    setFinanzas(EMPTY_FINANZAS);
+    setActiveModule("home");
+    setMode("production");
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+
+  // ── Cerrar sesion / volver a landing ──
+  const handleLogout = useCallback(() => {
+    STORAGE_KEYS.forEach(k => window.localStorage.removeItem(k));
+    setAthletes(EMPTY_ATHLETES);
+    setHistorial(EMPTY_HISTORIAL);
+    setClubInfo(DEFAULT_CLUB);
+    setMatchStats(EMPTY_MATCH_STATS);
+    setFinanzas(EMPTY_FINANZAS);
+    setActiveModule("home");
+    setMode(null);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+
+  // ── Si no hay modo, mostrar Landing ──
+  if (!mode) {
+    return (
+      <div style={{ minHeight:"100vh", background:"#050a14", position:"relative" }}>
+        <FieldBackground />
+        <LandingPage onDemo={handleDemo} onRegister={handleRegister} />
+      </div>
+    );
+  }
+
+  // ── Guardar sesion ──
   const guardarSesion = (nota, tipo) => {
     const presentes = athletes.filter(a => a.status === "P");
     const rpesValidos = presentes.filter(a => a.rpe).map(a => a.rpe);
@@ -111,28 +115,23 @@ export default function App() {
 
     const num = historial.length > 0 ? historial[0].num + 1 : 1;
     const hoy = new Date();
-    const dias   = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
-    const meses  = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-    const fecha  = `${dias[hoy.getDay()]} ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
+    const dias  = ["Dom","Lun","Mar","Mie","Jue","Vie","Sab"];
+    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    const fecha = `${dias[hoy.getDay()]} ${hoy.getDate()} ${meses[hoy.getMonth()]}`;
 
     setHistorial(prev => [{
-      num,
-      fecha,
+      num, fecha,
       presentes: presentes.length,
       total:     athletes.length,
       rpeAvg:    rpePromedio,
-      tipo:      tipo || "Sesión",
+      tipo:      tipo || "Sesion",
       nota,
     }, ...prev]);
 
-    alert(`Sesión #${num} guardada correctamente.`);
+    alert(`Sesion #${num} guardada correctamente.`);
   };
 
-  // ── Métricas calculadas ────────────────────
-  /**
-   * Objeto de KPIs calculados en tiempo real desde el estado.
-   * Se pasa como prop a Home y Entrenamiento.
-   */
+  // ── Metricas calculadas ──
   const stats = {
     presentes:  athletes.filter(a => a.status === "P").length,
     ausentes:   athletes.filter(a => a.status === "A").length,
@@ -141,7 +140,7 @@ export default function App() {
       const rpes = athletes.filter(a => a.status === "P" && a.rpe).map(a => a.rpe);
       return rpes.length
         ? (rpes.reduce((a, b) => a + b, 0) / rpes.length).toFixed(1)
-        : "—";
+        : "\u2014";
     })(),
     sesiones:   historial.length,
     asistencia: Math.round(
@@ -150,108 +149,158 @@ export default function App() {
     ),
   };
 
-  // ── Props del club para los hijos ──────────
   const clubProps = {
     ...clubInfo,
-    categoria: (clubInfo.categorias || [])[0] || "Sub-17",
+    categoria: (clubInfo.categorias || [])[0] || "General",
   };
 
-  // ── Render ─────────────────────────────────
+  // ── Mini topbar reutilizable ──
+  const MiniTopbar = ({ title, accent = "#c8ff00", accentBg = "rgba(200,255,0,0.05)" }) => (
+    <div style={{ height:38, background:"rgba(0,0,0,0.92)", borderBottom:`1px solid ${accent}33`, display:"flex", alignItems:"stretch" }}>
+      <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.4)", display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(255,255,255,0.08)" }}>
+        ← Inicio
+      </div>
+      <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:`2px solid ${accent}`, background:accentBg }}>
+        {title}
+      </div>
+      <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px" }}>
+        {mode === "demo" && (
+          <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:"rgba(239,159,39,0.2)", color:"#EF9F27", border:"1px solid rgba(239,159,39,0.4)" }}>
+            Demo
+          </div>
+        )}
+        <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px" }}>
+          <span style={{ width:6, height:6, borderRadius:"50%", background:accent, display:"inline-block", marginRight:6 }}/>
+          {clubInfo.nombre || "Mi Club"} · {(clubInfo.categorias||[])[0]||"General"}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Render principal ──
   return (
-    <div style={{ minHeight: "100vh", background: "#050a14", position: "relative" }}>
-      {/* Fondo de estadio fijo — visible en todos los módulos */}
+    <div style={{ minHeight:"100vh", background:"#050a14", position:"relative" }}>
       <FieldBackground />
+      <div style={{ position:"relative", zIndex:2 }}>
 
-      {/* Contenido por encima del fondo */}
-      <div style={{ position: "relative", zIndex: 2 }}>
-
-        {/* ── MÓDULO: HOME ──────────────────────
-            Incluye su propio topbar + navegación.
-            No renderizamos barra externa aquí. */}
         {activeModule === "home" && (
           <Home
             club={clubProps}
             athletes={athletes}
             historial={historial}
             stats={stats}
+            matchStats={matchStats}
             onNavigate={setActiveModule}
+            mode={mode}
+            onLogout={handleLogout}
           />
         )}
 
-        {/* ── MÓDULO: ENTRENAMIENTO ─────────────
-            Gestión de sesiones: asistencia, RPE,
-            planificación e historial. */}
         {activeModule === "entrenamiento" && (
           <>
-            {/* Mini topbar para volver al home */}
-            <div style={{ height:38, background:"rgba(0,0,0,0.92)", borderBottom:"1px solid rgba(200,255,0,0.15)", display:"flex", alignItems:"stretch" }}>
-              <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.4)", display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(255,255,255,0.08)" }}>
-                ← Inicio
-              </div>
-              <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:"2px solid #c8ff00", background:"rgba(200,255,0,0.05)" }}>
-                Entrenamiento
-              </div>
-              <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", padding:"0 18px", fontSize:10, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px" }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#c8ff00", marginRight:6 }}/>
-                {clubInfo.nombre} · {(clubInfo.categorias||[])[0]||"Sub-17"}
-              </div>
-            </div>
-            <Entrenamiento
-              athletes={athletes}
-              setAthletes={setAthletes}
-              historial={historial}
-              onGuardar={guardarSesion}
-              stats={stats}
-              clubInfo={clubInfo}
-            />
+            <MiniTopbar title="Entrenamiento" />
+            <Entrenamiento athletes={athletes} setAthletes={setAthletes} historial={historial} onGuardar={guardarSesion} stats={stats} clubInfo={clubInfo} />
           </>
         )}
 
-        {/* ── MÓDULO: GESTIÓN DE PLANTILLA ──────
-            Pizarra táctica y gestión del plantel. */}
         {activeModule === "plantilla" && (
           <>
-            <div style={{ height:38, background:"rgba(0,0,0,0.92)", borderBottom:"1px solid rgba(200,255,0,0.15)", display:"flex", alignItems:"stretch" }}>
-              <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.4)", display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(255,255,255,0.08)" }}>
-                ← Inicio
-              </div>
-              <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:"2px solid #c8ff00", background:"rgba(200,255,0,0.05)" }}>
-                Gestión de plantilla
-              </div>
-              <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", padding:"0 18px", fontSize:10, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px" }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:"#c8ff00", marginRight:6 }}/>
-                {clubInfo.nombre} · {(clubInfo.categorias||[])[0]||"Sub-17"}
-              </div>
-            </div>
+            <MiniTopbar title="Gestion de plantilla" />
             <GestionPlantilla athletes={athletes} setAthletes={setAthletes} />
           </>
         )}
 
-        {/* ── MÓDULO: MI CLUB ───────────────────
-            Configuración: categorías, campos, datos. */}
         {activeModule === "miclub" && (
           <>
-            <div style={{ height:38, background:"rgba(0,0,0,0.92)", borderBottom:"1px solid rgba(200,255,0,0.15)", display:"flex", alignItems:"stretch" }}>
-              <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.4)", display:"flex", alignItems:"center", cursor:"pointer", borderRight:"1px solid rgba(255,255,255,0.08)" }}>
-                ← Inicio
-              </div>
-              <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:"2px solid #c8ff00", background:"rgba(200,255,0,0.05)" }}>
-                Mi club
-              </div>
-            </div>
+            <MiniTopbar title="Mi club" />
             <MiClub clubInfo={clubInfo} setClubInfo={setClubInfo} />
           </>
         )}
 
-        {/* ── MÓDULOS EN CONSTRUCCIÓN ───────────
-            Administración y Reportes — próximamente. */}
-        {(activeModule === "admin" || activeModule === "reportes") && (
-          <div style={{ padding:60, textAlign:"center", color:"rgba(255,255,255,0.25)", fontSize:14 }}>
-            <div style={{ fontSize:40, marginBottom:16, opacity:0.2 }}>🔧</div>
-            <div style={{ textTransform:"uppercase", letterSpacing:"3px", fontSize:11 }}>
-              Módulo en construcción — próximamente
+        {activeModule === "admin" && (
+          <>
+            <MiniTopbar title="Administracion" accent="#7F77DD" accentBg="rgba(127,119,221,0.08)" />
+            <Administracion athletes={athletes} finanzas={finanzas} setFinanzas={setFinanzas} />
+          </>
+        )}
+
+        {activeModule === "reportes" && (
+          <>
+            <MiniTopbar title="Reportes" />
+            <div style={{ padding:24 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
+                {[
+                  { label:"Jugadores", value:athletes.length, color:"#c8ff00" },
+                  { label:"Sesiones", value:historial.length, color:"#1D9E75" },
+                  { label:"Partidos", value:matchStats.played, color:"#7F77DD" },
+                ].map((m,i) => (
+                  <div key={i} style={{ padding:"18px 20px", background:"rgba(0,0,0,0.7)", borderTop:`3px solid ${m.color}`, border:"1px solid rgba(255,255,255,0.08)" }}>
+                    <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.35)", marginBottom:8 }}>{m.label}</div>
+                    <div style={{ fontSize:32, fontWeight:700, color:m.color }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div style={{ background:"rgba(0,0,0,0.7)", border:"1px solid rgba(255,255,255,0.08)", padding:18 }}>
+                  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.35)", marginBottom:14 }}>Record de partidos</div>
+                  <div style={{ display:"flex", gap:20 }}>
+                    {[
+                      { val:matchStats.won, lbl:"G", color:"#1D9E75" },
+                      { val:matchStats.drawn, lbl:"E", color:"rgba(255,255,255,0.5)" },
+                      { val:matchStats.lost, lbl:"P", color:"#E24B4A" },
+                    ].map((s,i) => (
+                      <div key={i}>
+                        <div style={{ fontSize:28, fontWeight:700, color:s.color }}>{s.val}</div>
+                        <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px" }}>{s.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop:12, fontSize:11, color:"rgba(255,255,255,0.4)" }}>
+                    Goles: {matchStats.goalsFor} a favor / {matchStats.goalsAgainst} en contra · {matchStats.points} pts
+                  </div>
+                </div>
+                <div style={{ background:"rgba(0,0,0,0.7)", border:"1px solid rgba(255,255,255,0.08)", padding:18 }}>
+                  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.35)", marginBottom:14 }}>Resumen financiero</div>
+                  {(() => {
+                    const movs = finanzas.movimientos || [];
+                    const ingresos = movs.filter(m => m.tipo === "ingreso").reduce((s,m) => s+m.monto, 0);
+                    const egresos = movs.filter(m => m.tipo === "egreso").reduce((s,m) => s+m.monto, 0);
+                    const balance = ingresos - egresos;
+                    const pagados = (finanzas.pagos || []).filter(p => p.estado === "pagado").length;
+                    return (
+                      <>
+                        <div style={{ display:"flex", gap:20, marginBottom:8 }}>
+                          <div>
+                            <div style={{ fontSize:22, fontWeight:700, color: balance >= 0 ? "#1D9E75" : "#E24B4A" }}>
+                              ${balance.toLocaleString("es-CO")}
+                            </div>
+                            <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", textTransform:"uppercase" }}>Balance</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize:22, fontWeight:700, color:"#7F77DD" }}>{pagados}/{athletes.length}</div>
+                            <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", textTransform:"uppercase" }}>Al dia</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)" }}>
+                          Ingresos: ${ingresos.toLocaleString("es-CO")} · Egresos: ${egresos.toLocaleString("es-CO")}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+              <div style={{ marginTop:16, background:"rgba(0,0,0,0.7)", border:"1px solid rgba(255,255,255,0.08)", padding:18 }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.35)", marginBottom:14 }}>Ultimas 5 sesiones</div>
+                {historial.slice(0,5).map((s,i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                    <div style={{ fontSize:12, color:"white" }}>#{s.num} — {s.fecha} <span style={{ color:"rgba(255,255,255,0.3)", fontSize:10 }}>({s.tipo})</span></div>
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>{s.presentes}/{s.total} · RPE {s.rpeAvg ?? "\u2014"}</div>
+                  </div>
+                ))}
+                {historial.length === 0 && <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)" }}>Sin sesiones registradas</div>}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
       </div>

@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Elevate Sports — Schema Model v1.0",
+  "description": "Esquema relacional para todas las entidades del CRM deportivo. Single source of truth para persistencia en localStorage (fase actual) y migración futura a Supabase.",
+  "version": "1.0.0",
+  "author": "@Data (Mateo-Data_Engine)",
+  "storageBackend": "localStorage",
+  "entities": {
+    "Athlete": {
+      "storageKey": "elevate_athletes",
+      "description": "Jugador registrado en el plantel. Unidad base del sistema.",
+      "primaryKey": "id",
+      "fields": {
+        "id":        { "type": "integer",      "required": true,  "unique": true,  "autoIncrement": true, "description": "Identificador unico" },
+        "name":      { "type": "string",       "required": true,  "minLength": 1,  "description": "Nombre completo" },
+        "pos":       { "type": "string",       "required": true,  "description": "Posicion legible (Delantero, Defensa, Mediocampista, Portero)" },
+        "posCode":   { "type": "string",       "required": true,  "pattern": "^[A-Z]{2,3}$", "description": "Codigo corto (ST, CM, GK, LB, RB, CB, LW, RW)" },
+        "dob":       { "type": "string",       "required": true,  "format": "date", "description": "Fecha nacimiento ISO YYYY-MM-DD" },
+        "contact":   { "type": "string",       "required": false, "description": "Telefono de contacto" },
+        "status":    { "type": "string",       "required": true,  "enum": ["P", "A", "L"], "description": "P=Presente, A=Ausente, L=Lesionado" },
+        "rpe":       { "type": ["integer","null"], "required": false, "minimum": 1, "maximum": 10, "description": "Ultimo RPE registrado" },
+        "photo":     { "type": "string",       "required": false, "description": "Slug de foto" },
+        "available": { "type": "boolean",      "required": true,  "description": "Disponible para convocatoria (derivado de status)" }
+      },
+      "relationships": {
+        "pagos": { "type": "oneToMany", "target": "Pago", "foreignKey": "athleteId" }
+      }
+    },
+
+    "Sesion": {
+      "storageKey": "elevate_historial",
+      "description": "Registro historico de una sesion de entrenamiento.",
+      "primaryKey": "num",
+      "fields": {
+        "num":       { "type": "integer",             "required": true,  "unique": true, "autoIncrement": true, "description": "Numero secuencial" },
+        "fecha":     { "type": "string",              "required": true,  "minLength": 1, "description": "Fecha formateada legible" },
+        "presentes": { "type": "integer",             "required": true,  "minimum": 0,   "description": "Jugadores presentes" },
+        "total":     { "type": "integer",             "required": true,  "minimum": 0,   "description": "Total jugadores en plantilla" },
+        "rpeAvg":    { "type": ["number","string","null"], "required": false, "description": "RPE promedio (null si no hay datos)" },
+        "tipo":      { "type": "string",              "required": true,  "enum": ["Tactica","Tactia","Fisico","Fisico","Recuperacion","Recuperacion","Partido","Partido interno","Sesion","Sesion"], "description": "Tipo de sesion" },
+        "nota":      { "type": "string",              "required": false, "description": "Nota del entrenador" }
+      },
+      "constraints": [
+        "presentes <= total"
+      ]
+    },
+
+    "Pago": {
+      "storageKey": "elevate_finanzas.pagos",
+      "description": "Pago mensual de un jugador.",
+      "primaryKey": ["athleteId", "mes"],
+      "fields": {
+        "athleteId": { "type": "integer",          "required": true,  "description": "FK -> Athlete.id" },
+        "mes":       { "type": "string",           "required": true,  "pattern": "^\\d{4}-\\d{2}$", "description": "Mes YYYY-MM" },
+        "monto":     { "type": "integer",          "required": true,  "minimum": 1, "description": "Monto en COP" },
+        "estado":    { "type": "string",           "required": true,  "enum": ["pendiente", "pagado", "parcial"], "description": "Estado del pago" },
+        "fechaPago": { "type": ["string","null"],  "required": false, "format": "date", "description": "Fecha ISO del pago o null" }
+      },
+      "relationships": {
+        "athlete": { "type": "manyToOne", "target": "Athlete", "foreignKey": "athleteId" }
+      }
+    },
+
+    "Movimiento": {
+      "storageKey": "elevate_finanzas.movimientos",
+      "description": "Movimiento financiero (ingreso o egreso).",
+      "primaryKey": "id",
+      "fields": {
+        "id":       { "type": "integer", "required": true,  "unique": true,  "autoIncrement": true, "description": "ID unico" },
+        "tipo":     { "type": "string",  "required": true,  "enum": ["ingreso", "egreso"], "description": "Tipo" },
+        "concepto": { "type": "string",  "required": true,  "minLength": 1, "description": "Descripcion" },
+        "monto":    { "type": "number",  "required": true,  "minimum": 1, "description": "Monto en COP" },
+        "fecha":    { "type": "string",  "required": true,  "format": "date", "description": "Fecha ISO YYYY-MM-DD" }
+      }
+    },
+
+    "MatchStats": {
+      "storageKey": "elevate_matchStats",
+      "description": "Estadisticas acumuladas de partidos.",
+      "fields": {
+        "played":       { "type": "integer", "required": true, "minimum": 0 },
+        "won":          { "type": "integer", "required": true, "minimum": 0 },
+        "drawn":        { "type": "integer", "required": true, "minimum": 0 },
+        "lost":         { "type": "integer", "required": true, "minimum": 0 },
+        "goalsFor":     { "type": "integer", "required": true, "minimum": 0 },
+        "goalsAgainst": { "type": "integer", "required": true, "minimum": 0 },
+        "points":       { "type": "integer", "required": true, "minimum": 0 }
+      },
+      "constraints": [
+        "played == won + drawn + lost"
+      ]
+    },
+
+    "ClubInfo": {
+      "storageKey": "elevate_clubInfo",
+      "description": "Configuracion general del club.",
+      "fields": {
+        "nombre":      { "type": "string",   "required": true },
+        "disciplina":  { "type": "string",   "required": true },
+        "ciudad":      { "type": "string",   "required": true },
+        "entrenador":  { "type": "string",   "required": true },
+        "temporada":   { "type": "string",   "required": true },
+        "categorias":  { "type": "array",    "items": "string", "required": true, "minItems": 1 },
+        "campos":      { "type": "array",    "items": "string", "required": true },
+        "descripcion": { "type": "string",   "required": false },
+        "telefono":    { "type": "string",   "required": false },
+        "email":       { "type": "string",   "required": false }
+      }
+    }
+  },
+
+  "relationshipDiagram": [
+    "Athlete 1──N Pago    (athleteId -> Athlete.id)",
+    "Athlete *──* Sesion  (status P al guardar -> presentes count)",
+    "Finanzas { pagos: Pago[], movimientos: Movimiento[] }"
+  ],
+
+  "localStorageKeys": {
+    "elevate_athletes":   "Athlete[]",
+    "elevate_historial":  "Sesion[]",
+    "elevate_finanzas":   "{ pagos: Pago[], movimientos: Movimiento[] }",
+    "elevate_clubInfo":   "ClubInfo",
+    "elevate_matchStats": "MatchStats"
+  }
+}

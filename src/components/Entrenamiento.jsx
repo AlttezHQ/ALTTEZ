@@ -1,13 +1,98 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../utils/helpers";
+import { PALETTE } from "../constants/palette";
 const RPE_COLOR = (v) => v <= 3 ? "#1D9E75" : v <= 8 ? "#EF9F27" : "#E24B4A";
+
+/* ── Helper: agrupa sesiones del historial por semana ISO ── */
+function groupByWeek(sessions) {
+  const weeks = [];
+  const weekMap = {};
+  sessions.forEach(s => {
+    const d = new Date(s.fecha);
+    if (isNaN(d.getTime())) {
+      const key = "unknown";
+      if (!weekMap[key]) { weekMap[key] = { key, label: "FECHA DESCONOCIDA", sessions: [] }; weeks.push(weekMap[key]); }
+      weekMap[key].sessions.push(s);
+      return;
+    }
+    const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    const weekNum = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const fmt = (dt) => dt.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+    const key = `${mon.getFullYear()}-W${weekNum}`;
+    if (!weekMap[key]) {
+      weekMap[key] = { key, weekNum, label: `Semana ${weekNum} — ${fmt(mon)}-${fmt(sun)}`, sessions: [] };
+      weeks.push(weekMap[key]);
+    }
+    weekMap[key].sessions.push(s);
+  });
+  return weeks;
+}
+
+/* ── Keyframe CSS inyectada una sola vez para el pulso verde ── */
+if (typeof document !== "undefined" && !document.getElementById("elevate-pulse-kf")) {
+  const style = document.createElement("style");
+  style.id = "elevate-pulse-kf";
+  style.textContent = "@keyframes elv_pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.45)}}";
+  document.head.appendChild(style);
+}
+
+/* ── Colores por tipo de tarea (Feature C) ── */
+const TIPO_COLORS = {
+  "Táctica": PALETTE.purple,
+  "Físico": PALETTE.amber,
+  "Recuperación": PALETTE.green,
+  "Partido": PALETTE.danger,
+  "Partido interno": PALETTE.danger,
+};
 
 export default function Entrenamiento({ athletes, setAthletes, historial, onGuardar, stats, clubInfo }) {
   const [tab, setTab] = useState("sesion");
   const [tipo, setTipo] = useState("Táctica");
   const [nota, setNota] = useState("");
   const [expandedHist, setExpandedHist] = useState(null);
+  const [collapsedWeeks, setCollapsedWeeks] = useState({});
+
+  /* ── Feature B: elapsed timer ── */
+  const [elapsed, setElapsed] = useState(0);
+  const sessionActive = athletes.some(a => a.status === "P" && a.rpe != null);
+
+  useEffect(() => {
+    if (!sessionActive) { setElapsed(0); return; }
+    const t0 = Date.now();
+    const iv = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    return () => clearInterval(iv);
+  }, [sessionActive]);
+
+  const fmtElapsed = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  /* ── Feature A: historial agrupado ── */
+  const weekGroups = useMemo(() => groupByWeek(historial), [historial]);
+
+  const toggleWeek = (key) => setCollapsedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
+
+  /* ── Feature C: estadísticas por tipo ── */
+  const tipoStats = useMemo(() => {
+    const counts = {};
+    const total = historial.length || 1;
+    historial.forEach(s => {
+      const t = s.tipo || "Sin tipo";
+      counts[t] = (counts[t] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+  }, [historial]);
 
   const setStatus = (i, s) => {
     const u = [...athletes];
@@ -25,6 +110,56 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
 
   return (
     <div>
+      {/* ── Feature B: SESIÓN ACTIVA — banner prominente ── */}
+      {sessionActive && (() => {
+        const presentes = athletes.filter(a => a.status === "P");
+        const conRpe = presentes.filter(a => a.rpe != null).length;
+        const sinRpe = presentes.length - conRpe;
+        const rpeAvg = conRpe > 0
+          ? (presentes.filter(a => a.rpe != null).reduce((s, a) => s + a.rpe, 0) / conRpe).toFixed(1)
+          : "—";
+        return (
+          <div style={{ background:"linear-gradient(135deg, rgba(29,158,117,0.15) 0%, rgba(29,158,117,0.05) 100%)", borderBottom:`2px solid ${PALETTE.green}`, padding:"12px 20px" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ position:"relative", width:14, height:14 }}>
+                  <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:PALETTE.green, animation:"elv_pulse 1.4s ease-in-out infinite" }} />
+                  <div style={{ position:"absolute", inset:2, borderRadius:"50%", background:PALETTE.green }} />
+                </div>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.green }}>
+                    Sesion activa
+                  </div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>
+                    {tipo} · {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, fontFamily:"monospace", color:"white" }}>{fmtElapsed(elapsed)}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>Tiempo</div>
+                </div>
+                <div style={{ width:1, height:28, background:"rgba(255,255,255,0.1)" }} />
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, color:PALETTE.green }}>{conRpe}/{presentes.length}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE reg.</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, color: rpeAvg === "—" ? "rgba(255,255,255,0.3)" : PALETTE.amber }}>{rpeAvg}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE prom</div>
+                </div>
+                {sinRpe > 0 && (
+                  <div style={{ padding:"4px 10px", background:"rgba(239,159,39,0.15)", border:`1px solid ${PALETTE.amber}`, fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.amber }}>
+                    {sinRpe} sin RPE
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* MÉTRICAS */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:2 }}>
         {[
@@ -132,45 +267,183 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
         <Planificacion athletes={athletes} clubInfo={clubInfo} sessionCount={historial.length} />
       )}
 
+      {/* ── Feature A: Historial agrupado por semana/microciclo ── */}
       {tab === "historial" && (
         <div style={{ padding:16 }}>
-          {historial.map((s,i) => (
-            <div key={i}>
-              <div onClick={()=>setExpandedHist(expandedHist===i?null:i)} style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, cursor:"pointer" }}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:500, color:"white" }}>Sesión #{s.num} — {s.fecha}</div>
-                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{s.presentes} presentes · RPE: {s.rpeAvg ?? "—"} · {s.tipo}</div>
-                </div>
-                <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{i===0?"más reciente":expandedHist===i?"▲":"▼"}</div>
-              </div>
-              {expandedHist===i && (
-                <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", padding:14, marginBottom:4 }}>
-                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginBottom:4 }}>Nota:</div>
-                  <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>{s.nota || "Sin nota."}</div>
-                </div>
-              )}
+          {weekGroups.length === 0 && (
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px", textAlign:"center", padding:32 }}>
+              Sin sesiones registradas
             </div>
-          ))}
+          )}
+          {weekGroups.map(week => {
+            const isCollapsed = !!collapsedWeeks[week.key];
+            const weekRpeAvg = week.sessions.filter(s => s.rpeAvg != null).length > 0
+              ? (week.sessions.reduce((sum, s) => sum + (s.rpeAvg || 0), 0) / week.sessions.filter(s => s.rpeAvg != null).length).toFixed(1)
+              : "—";
+            return (
+              <div key={week.key} style={{ marginBottom:8 }}>
+                {/* Week header */}
+                <div
+                  onClick={() => toggleWeek(week.key)}
+                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:"rgba(127,119,221,0.08)", borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2 }}
+                >
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:600, color:PALETTE.purple, textTransform:"uppercase", letterSpacing:"1.5px" }}>
+                      {week.label}
+                    </div>
+                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px", marginTop:2 }}>
+                      {week.sessions.length} sesión{week.sessions.length !== 1 ? "es" : ""} · RPE prom: {weekRpeAvg}
+                    </div>
+                  </div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{isCollapsed ? "▶" : "▼"}</div>
+                </div>
+                {/* Sessions inside week */}
+                {!isCollapsed && week.sessions.map((s, i) => {
+                  const globalIdx = `${week.key}-${i}`;
+                  return (
+                    <div key={globalIdx} style={{ marginLeft:12 }}>
+                      <div onClick={() => setExpandedHist(expandedHist === globalIdx ? null : globalIdx)} style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, cursor:"pointer" }}>
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:500, color:"white" }}>Sesión #{s.num} — {s.fecha}</div>
+                          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{s.presentes} presentes · RPE: {s.rpeAvg ?? "—"} · {s.tipo}</div>
+                        </div>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{expandedHist === globalIdx ? "▲" : "▼"}</div>
+                      </div>
+                      {expandedHist === globalIdx && (
+                        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", padding:14, marginBottom:4, marginLeft:0 }}>
+                          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginBottom:4 }}>Nota:</div>
+                          <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>{s.nota || "Sin nota."}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {tab === "analisis" && (
-        <div style={{ padding:16 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:10, marginBottom:16 }}>
-            {[
-              { label:"Asistencia promedio", value:"83%", color:"#1D9E75" },
-              { label:"RPE promedio", value:"7.4", color:"white" },
-              { label:"Pico RPE", value:"9.2", color:"#EF9F27" },
-              { label:"Sesiones totales", value:historial.length, color:"white" },
-            ].map((m,i) => (
-              <div key={i} style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:14 }}>
-                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
-                <div style={{ fontSize:24, fontWeight:500, color:m.color }}>{m.value}</div>
+      {/* ── ANÁLISIS tab — datos reales desde localStorage/historial ── */}
+      {tab === "analisis" && (() => {
+        /* Metricas calculadas desde datos reales */
+        const totalSesiones = historial.length;
+        const sesionesConRpe = historial.filter(s => s.rpeAvg != null && s.rpeAvg !== "—");
+        const rpeGlobal = sesionesConRpe.length > 0
+          ? (sesionesConRpe.reduce((s, h) => s + Number(h.rpeAvg), 0) / sesionesConRpe.length).toFixed(1)
+          : "—";
+        const picoRpe = sesionesConRpe.length > 0
+          ? Math.max(...sesionesConRpe.map(h => Number(h.rpeAvg))).toFixed(1)
+          : "—";
+        const asistenciaGlobal = totalSesiones > 0
+          ? Math.round((historial.reduce((s, h) => s + h.presentes, 0) / historial.reduce((s, h) => s + h.total, 0)) * 100)
+          : 0;
+
+        /* Agrupacion tecnico vs fisico con RPE promedio por categoria */
+        const categorias = {
+          "Tecnico/Tactico": { tipos: ["Táctica", "Tactica"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.purple },
+          "Fisico":          { tipos: ["Físico", "Fisico"],   count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.amber },
+          "Competitivo":     { tipos: ["Partido", "Partido interno"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.danger },
+          "Recuperacion":    { tipos: ["Recuperación", "Recuperacion"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.green },
+        };
+        historial.forEach(s => {
+          for (const [cat, cfg] of Object.entries(categorias)) {
+            if (cfg.tipos.includes(s.tipo)) {
+              cfg.count++;
+              if (s.rpeAvg != null && s.rpeAvg !== "—") { cfg.rpeSum += Number(s.rpeAvg); cfg.rpeN++; }
+              break;
+            }
+          }
+        });
+        const maxCount = Math.max(...Object.values(categorias).map(c => c.count), 1);
+
+        return (
+          <div style={{ padding:16 }}>
+            {/* KPIs reales */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,minmax(0,1fr))", gap:10, marginBottom:16 }}>
+              {[
+                { label:"Asistencia promedio", value: asistenciaGlobal + "%", color:"#1D9E75" },
+                { label:"RPE promedio", value: rpeGlobal, color:"white" },
+                { label:"Pico RPE", value: picoRpe, color:"#EF9F27" },
+                { label:"Sesiones totales", value: totalSesiones, color:"white" },
+              ].map((m,i) => (
+                <div key={i} style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:14 }}>
+                  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
+                  <div style={{ fontSize:24, fontWeight:500, color:m.color }}>{m.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Grafico de barras verticales: Tecnico vs Fisico vs Competitivo vs Recuperacion */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+              <div style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:16 }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.3)", marginBottom:16 }}>
+                  Distribucion por categoria
+                </div>
+                <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
+                  {Object.entries(categorias).map(([cat, cfg]) => {
+                    const h = maxCount > 0 ? Math.max((cfg.count / maxCount) * 100, cfg.count > 0 ? 8 : 0) : 0;
+                    return (
+                      <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
+                        <div style={{ fontSize:12, fontWeight:700, color: cfg.color, marginBottom:4 }}>{cfg.count}</div>
+                        <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: cfg.color, minHeight: cfg.count > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0" }} />
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            ))}
+
+              {/* RPE promedio por categoria */}
+              <div style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:16 }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.3)", marginBottom:16 }}>
+                  RPE promedio por categoria
+                </div>
+                <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
+                  {Object.entries(categorias).map(([cat, cfg]) => {
+                    const avg = cfg.rpeN > 0 ? (cfg.rpeSum / cfg.rpeN) : 0;
+                    const h = avg > 0 ? Math.max((avg / 10) * 100, 8) : 0;
+                    const rpeColor = avg <= 3 ? "#1D9E75" : avg <= 7 ? "#EF9F27" : "#E24B4A";
+                    return (
+                      <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
+                        <div style={{ fontSize:12, fontWeight:700, color: rpeColor, marginBottom:4 }}>{avg > 0 ? avg.toFixed(1) : "—"}</div>
+                        <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: rpeColor, minHeight: avg > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0", opacity: avg > 0 ? 1 : 0.2 }} />
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Barras horizontales por tipo detallado */}
+            <div style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:16 }}>
+              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.3)", marginBottom:14 }}>
+                Detalle por tipo de tarea
+              </div>
+              {tipoStats.length === 0 && (
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:16 }}>Sin datos</div>
+              )}
+              {tipoStats.map(t => {
+                const color = TIPO_COLORS[t.name] || "rgba(255,255,255,0.4)";
+                return (
+                  <div key={t.name} style={{ marginBottom:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
+                      <div style={{ fontSize:11, fontWeight:500, color:"white", textTransform:"uppercase", letterSpacing:"0.8px" }}>{t.name}</div>
+                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.45)" }}>
+                        {t.count} sesion{t.count !== 1 ? "es" : ""} · <span style={{ color, fontWeight:600 }}>{t.pct}%</span>
+                      </div>
+                    </div>
+                    <div style={{ width:"100%", height:6, background:"rgba(255,255,255,0.06)" }}>
+                      <div style={{ width:`${t.pct}%`, height:"100%", background:color, transition:"width 0.4s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

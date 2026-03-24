@@ -1,0 +1,331 @@
+/**
+ * @component LandingPage
+ * @description Pantalla de bienvenida / onboarding de Elevate Sports.
+ * Estetica EA Sports/FIFA con dos caminos: Demo o Nuevo Club.
+ *
+ * @props { onDemo, onRegister }
+ * @author @Desarrollador (Andres)
+ * @version 1.0.0
+ */
+
+import { useState } from "react";
+import { PALETTE } from "../constants/palette";
+
+/* ── Keyframe para glow pulsante ── */
+if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
+  const s = document.createElement("style");
+  s.id = "landing-kf";
+  s.textContent = [
+    "@keyframes ldg_glow{0%,100%{box-shadow:0 0 30px rgba(200,255,0,0.2)}50%{box-shadow:0 0 60px rgba(200,255,0,0.45)}}",
+    "@keyframes ldg_float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}",
+    "@keyframes ldg_fade{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}",
+  ].join("");
+  document.head.appendChild(s);
+}
+
+const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
+
+export default function LandingPage({ onDemo, onRegister }) {
+  const [step, setStep] = useState("landing"); // landing | register
+  const [form, setForm] = useState({
+    nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
+    temporada: "2025-26", categorias: "", campo: "",
+    telefono: "", email: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [hoverDemo, setHoverDemo] = useState(false);
+  const [hoverReg, setHoverReg] = useState(false);
+
+  const updateField = (key, val) => {
+    setForm(prev => ({ ...prev, [key]: val }));
+    if (errors[key]) setErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
+  };
+
+  const validateAndSubmit = () => {
+    const errs = {};
+    REQUIRED_FIELDS.forEach(k => {
+      if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
+    });
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errs.email = "Email invalido";
+    }
+    setErrors(errs);
+    if (Object.keys(errs).length === 0) onRegister(form);
+  };
+
+  const css = {
+    page: {
+      minHeight: "100vh", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      background: "radial-gradient(ellipse at 50% 30%, rgba(200,255,0,0.04) 0%, #050a14 70%)",
+      fontFamily: "'Arial Narrow', Arial, sans-serif", padding: 24, position: "relative", zIndex: 2,
+    },
+    logo: {
+      fontSize: 48, fontWeight: 900, letterSpacing: "-2px", color: "white",
+      textTransform: "uppercase", marginBottom: 6, animation: "ldg_fade 0.6s ease-out",
+    },
+    subtitle: {
+      fontSize: 11, textTransform: "uppercase", letterSpacing: "6px",
+      color: "rgba(255,255,255,0.3)", marginBottom: 50, animation: "ldg_fade 0.8s ease-out",
+    },
+    cards: {
+      display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24,
+      maxWidth: 700, width: "100%", animation: "ldg_fade 1s ease-out",
+    },
+    card: (hover, accent) => ({
+      padding: "40px 32px", background: hover ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.6)",
+      border: `1px solid ${hover ? accent : "rgba(255,255,255,0.08)"}`,
+      borderTop: `4px solid ${accent}`,
+      cursor: "pointer", transition: "all 0.25s ease",
+      transform: hover ? "translateY(-4px)" : "translateY(0)",
+      boxShadow: hover ? `0 8px 40px ${accent}33` : "none",
+    }),
+    cardTag: (color) => ({
+      fontSize: 9, textTransform: "uppercase", letterSpacing: "3px",
+      color, marginBottom: 16, fontWeight: 700,
+    }),
+    cardTitle: {
+      fontSize: 26, fontWeight: 900, color: "white", textTransform: "uppercase",
+      letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 12,
+    },
+    cardDesc: { fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: 20 },
+    btn: (hover, accent) => ({
+      display: "inline-flex", alignItems: "center",
+      fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px",
+      padding: "12px 28px", background: hover ? "white" : accent,
+      color: "#0a0a0a", border: "none", cursor: "pointer",
+      transition: "background 200ms, transform 200ms",
+    }),
+    // Register form styles
+    formContainer: {
+      maxWidth: 560, width: "100%", animation: "ldg_fade 0.5s ease-out",
+    },
+    formTitle: {
+      fontSize: 28, fontWeight: 900, color: "white", textTransform: "uppercase",
+      letterSpacing: "-0.5px", marginBottom: 6,
+    },
+    formSubtitle: {
+      fontSize: 11, color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
+      letterSpacing: "2px", marginBottom: 32,
+    },
+    fieldGroup: { marginBottom: 16 },
+    label: {
+      fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px",
+      color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block",
+    },
+    input: (hasError) => ({
+      width: "100%", fontSize: 14, padding: "10px 14px",
+      background: "rgba(255,255,255,0.05)",
+      border: `1px solid ${hasError ? PALETTE.danger : "rgba(255,255,255,0.1)"}`,
+      color: "white", fontFamily: "inherit", outline: "none",
+      transition: "border-color 0.2s",
+    }),
+    errorText: { fontSize: 10, color: PALETTE.danger, marginTop: 4 },
+    row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
+  };
+
+  // ── LANDING: dos opciones ──
+  if (step === "landing") {
+    return (
+      <div style={css.page}>
+        <div style={css.logo}>
+          Elevate<span style={{ color: PALETTE.neon }}>Sports</span>
+        </div>
+        <div style={css.subtitle}>Plataforma de gestion deportiva</div>
+
+        <div style={css.cards}>
+          {/* DEMO */}
+          <div
+            style={css.card(hoverDemo, PALETTE.neon)}
+            onMouseEnter={() => setHoverDemo(true)}
+            onMouseLeave={() => setHoverDemo(false)}
+            onClick={onDemo}
+          >
+            <div style={css.cardTag(PALETTE.neon)}>Modo exploracion</div>
+            <div style={css.cardTitle}>Probar Demo</div>
+            <div style={css.cardDesc}>
+              Explora la plataforma con datos simulados de un club de ejemplo.
+              Perfecto para conocer todas las funcionalidades sin configurar nada.
+            </div>
+            <div style={css.btn(hoverDemo, PALETTE.neon)}>Iniciar demo →</div>
+          </div>
+
+          {/* REGISTRO */}
+          <div
+            style={css.card(hoverReg, PALETTE.purple)}
+            onMouseEnter={() => setHoverReg(true)}
+            onMouseLeave={() => setHoverReg(false)}
+            onClick={() => setStep("register")}
+          >
+            <div style={css.cardTag(PALETTE.purple)}>Club real</div>
+            <div style={css.cardTitle}>Registrar Nuevo Club</div>
+            <div style={css.cardDesc}>
+              Configura tu club desde cero con datos reales.
+              Nombre, categorias, entrenador y todo lo necesario para arrancar.
+            </div>
+            <div style={css.btn(hoverReg, PALETTE.purple)}>Crear club →</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 40, fontSize: 10, color: "rgba(255,255,255,0.15)", textTransform: "uppercase", letterSpacing: "2px" }}>
+          v1.0 · Elevate Sports
+        </div>
+      </div>
+    );
+  }
+
+  // ── REGISTER: formulario de nuevo club ──
+  return (
+    <div style={css.page}>
+      <div style={css.formContainer}>
+        <div style={{ marginBottom: 32 }}>
+          <div
+            onClick={() => setStep("landing")}
+            style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", cursor: "pointer", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 20 }}
+          >
+            ← Volver
+          </div>
+          <div style={css.formTitle}>Registrar tu club</div>
+          <div style={css.formSubtitle}>Completa los datos para comenzar</div>
+        </div>
+
+        {/* Nombre + Disciplina */}
+        <div style={css.row}>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Nombre del club *</label>
+            <input
+              style={css.input(errors.nombre)}
+              value={form.nombre}
+              onChange={e => updateField("nombre", e.target.value.replace(/[<>{}]/g, ""))}
+              placeholder="Ej: Aguilas FC"
+              maxLength={60}
+            />
+            {errors.nombre && <div style={css.errorText}>{errors.nombre}</div>}
+          </div>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Disciplina</label>
+            <select
+              style={{ ...css.input(false), cursor: "pointer" }}
+              value={form.disciplina}
+              onChange={e => updateField("disciplina", e.target.value)}
+            >
+              {["Futbol", "Futsal", "Baloncesto", "Voleibol", "Otro"].map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Ciudad + Entrenador */}
+        <div style={css.row}>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Ciudad *</label>
+            <input
+              style={css.input(errors.ciudad)}
+              value={form.ciudad}
+              onChange={e => updateField("ciudad", e.target.value.replace(/[<>{}]/g, ""))}
+              placeholder="Ej: Medellin"
+              maxLength={60}
+            />
+            {errors.ciudad && <div style={css.errorText}>{errors.ciudad}</div>}
+          </div>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Director tecnico *</label>
+            <input
+              style={css.input(errors.entrenador)}
+              value={form.entrenador}
+              onChange={e => updateField("entrenador", e.target.value.replace(/[<>{}]/g, ""))}
+              placeholder="Nombre completo"
+              maxLength={60}
+            />
+            {errors.entrenador && <div style={css.errorText}>{errors.entrenador}</div>}
+          </div>
+        </div>
+
+        {/* Categoria + Temporada */}
+        <div style={css.row}>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Categoria principal *</label>
+            <input
+              style={css.input(errors.categorias)}
+              value={form.categorias}
+              onChange={e => updateField("categorias", e.target.value.replace(/[<>{}]/g, ""))}
+              placeholder="Ej: Sub-17"
+              maxLength={30}
+            />
+            {errors.categorias && <div style={css.errorText}>{errors.categorias}</div>}
+          </div>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Temporada</label>
+            <input
+              style={css.input(false)}
+              value={form.temporada}
+              onChange={e => updateField("temporada", e.target.value)}
+              placeholder="2025-26"
+              maxLength={10}
+            />
+          </div>
+        </div>
+
+        {/* Campo + Telefono */}
+        <div style={css.row}>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Campo / Cancha</label>
+            <input
+              style={css.input(false)}
+              value={form.campo}
+              onChange={e => updateField("campo", e.target.value.replace(/[<>{}]/g, ""))}
+              placeholder="Ej: Cancha La Floresta"
+              maxLength={60}
+            />
+          </div>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Telefono</label>
+            <input
+              style={css.input(false)}
+              value={form.telefono}
+              onChange={e => updateField("telefono", e.target.value.replace(/[^0-9 +()-]/g, ""))}
+              placeholder="300 123 4567"
+              maxLength={20}
+            />
+          </div>
+        </div>
+
+        {/* Email */}
+        <div style={css.fieldGroup}>
+          <label style={css.label}>Email de contacto</label>
+          <input
+            style={css.input(errors.email)}
+            value={form.email}
+            onChange={e => updateField("email", e.target.value)}
+            placeholder="club@email.com"
+            maxLength={80}
+            type="email"
+          />
+          {errors.email && <div style={css.errorText}>{errors.email}</div>}
+        </div>
+
+        {/* Submit */}
+        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          <button
+            onClick={validateAndSubmit}
+            style={{
+              flex: 1, padding: "14px 24px", fontSize: 12, fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "2px",
+              background: PALETTE.neon, color: "#0a0a0a", border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Crear club y comenzar →
+          </button>
+        </div>
+
+        {Object.keys(errors).length > 0 && (
+          <div style={{ marginTop: 12, fontSize: 10, color: PALETTE.danger, textTransform: "uppercase", letterSpacing: "1px" }}>
+            Completa los campos obligatorios marcados con *
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
