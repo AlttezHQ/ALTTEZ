@@ -159,6 +159,16 @@ const YEAR_MONTH_RE = /^\d{4}-\d{2}$/;
 /** Generate a simple unique numeric id based on timestamp + random offset */
 const generateId = () => Date.now() + Math.floor(Math.random() * 1000);
 
+/** Handler de errores de validacion — inyectado desde App para Toast visual */
+let _onValidationError = null;
+export function setValidationErrorHandler(handler) { _onValidationError = handler; }
+
+/** Notifica error de validacion: visual (Toast) + console */
+function notifyError(context, message) {
+  console.warn(`[${context}] ${message}`);
+  if (_onValidationError) _onValidationError(message);
+}
+
 // ─────────────────────────────────────────────────────────────
 // VALIDATORS
 // ─────────────────────────────────────────────────────────────
@@ -308,12 +318,12 @@ const DEFAULT_MONTHLY_FEE = 80000;
  */
 export function createPago(athleteId, mes, overrides = {}) {
   if (typeof athleteId !== "number" || athleteId <= 0) {
-    console.warn("[schemas.createPago] athleteId must be a positive number. Received:", athleteId);
+    notifyError("createPago", "athleteId debe ser un numero positivo");
     return null;
   }
 
   if (typeof mes !== "string" || !YEAR_MONTH_RE.test(mes)) {
-    console.warn("[schemas.createPago] mes must be in YYYY-MM format. Received:", mes);
+    notifyError("createPago", "Mes debe estar en formato YYYY-MM");
     return null;
   }
 
@@ -327,7 +337,7 @@ export function createPago(athleteId, mes, overrides = {}) {
 
   const validation = validatePago(pago);
   if (!validation.valid) {
-    console.warn("[schemas.createPago] Validation failed:", validation.errors);
+    notifyError("createPago", `Pago invalido: ${validation.errors[0]}`);
     return null;
   }
 
@@ -350,12 +360,12 @@ export function createPago(athleteId, mes, overrides = {}) {
  */
 export function createSesion(data = {}) {
   if (typeof data.num !== "number" || data.num <= 0) {
-    console.warn("[schemas.createSesion] num must be a positive integer. Received:", data.num);
+    notifyError("createSesion", "Numero de sesion debe ser un entero positivo");
     return null;
   }
 
   if (typeof data.presentes !== "number" || typeof data.total !== "number") {
-    console.warn("[schemas.createSesion] presentes and total are required numbers.");
+    notifyError("createSesion", "Presentes y total son numeros requeridos");
     return null;
   }
 
@@ -380,7 +390,7 @@ export function createSesion(data = {}) {
 
   const validation = validateSesion(sesion);
   if (!validation.valid) {
-    console.warn("[schemas.createSesion] Validation failed:", validation.errors);
+    notifyError("createSesion", `Sesion invalida: ${validation.errors[0]}`);
     return null;
   }
 
@@ -401,17 +411,17 @@ export function createSesion(data = {}) {
  */
 export function createMovimiento(data = {}) {
   if (typeof data.tipo !== "string" || !["ingreso", "egreso"].includes(data.tipo)) {
-    console.warn("[schemas.createMovimiento] tipo must be 'ingreso' or 'egreso'. Received:", data.tipo);
+    notifyError("createMovimiento", "Tipo debe ser 'ingreso' o 'egreso'");
     return null;
   }
 
   if (typeof data.concepto !== "string" || data.concepto.trim() === "") {
-    console.warn("[schemas.createMovimiento] concepto must be a non-empty string.");
+    notifyError("createMovimiento", "Concepto no puede estar vacio");
     return null;
   }
 
   if (typeof data.monto !== "number" || data.monto <= 0) {
-    console.warn("[schemas.createMovimiento] monto must be a positive number. Received:", data.monto);
+    notifyError("createMovimiento", "Monto debe ser un numero positivo");
     return null;
   }
 
@@ -425,7 +435,7 @@ export function createMovimiento(data = {}) {
 
   const validation = validateMovimiento(mov);
   if (!validation.valid) {
-    console.warn("[schemas.createMovimiento] Validation failed:", validation.errors);
+    notifyError("createMovimiento", `Movimiento invalido: ${validation.errors[0]}`);
     return null;
   }
 

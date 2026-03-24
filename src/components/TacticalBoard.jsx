@@ -13,7 +13,7 @@
  * @author @Desarrollador (Andres)
  */
 
-import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../constants/palette";
 import { FORMATIONS_HORIZONTAL as FORMATIONS } from "../constants/formations";
@@ -143,7 +143,7 @@ const ROLE_OPTIONS = {
 };
 
 // ── Mini cancha SVG para thumbnails de formacion ──
-function MiniPitch({ positions, isActive, onClick }) {
+const MiniPitch = memo(function MiniPitch({ positions, isActive, onClick }) {
   return (
     <div onClick={onClick} style={{ width:64, height:48, background: isActive ? "rgba(200,255,0,0.12)" : "rgba(255,255,255,0.04)", border:`1px solid ${isActive ? C.neon : C.border}`, cursor:"pointer", position:"relative", overflow:"hidden", borderRadius:2 }}>
       <svg viewBox="0 0 100 70" style={{ width:"100%", height:"100%", position:"absolute", inset:0 }}>
@@ -156,7 +156,7 @@ function MiniPitch({ positions, isActive, onClick }) {
       </svg>
     </div>
   );
-}
+});
 
 // ── Barra de salud ──
 function HealthBar({ salud, width = 48 }) {
@@ -168,7 +168,7 @@ function HealthBar({ salud, width = 48 }) {
 }
 
 // ── Radar hexagonal ──
-function HexRadar({ attrs, size=120 }) {
+const HexRadar = memo(function HexRadar({ attrs, size=120 }) {
   const cx=size/2, cy=size/2, r=size*0.38;
   const keys=Object.keys(attrs);
   const hex=keys.map((_,i)=>{const a=(Math.PI/3)*i-Math.PI/2;return{x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};});
@@ -183,16 +183,15 @@ function HexRadar({ attrs, size=120 }) {
       {hex.map((p,i)=>{const lx=cx+(p.x-cx)*1.28,ly=cy+(p.y-cy)*1.28;return(<text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="rgba(255,255,255,0.5)" fontWeight="700">{keys[i]?.slice(0,3).toUpperCase()}</text>);})}
     </svg>
   );
-}
+});
 
 // ── Token de jugador grande estilo FIFA ──
-function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, onSelect, onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop }) {
+const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, onSelect, onPointerDown }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
   if (!athlete) {
     return (
-      <div onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-        style={{ width:68, height:80, border:`1.5px dashed ${isTarget ? C.drag : "rgba(255,255,255,0.2)"}`, borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center", background: isTarget ? C.dragDim : "rgba(255,255,255,0.03)" }}>
+      <div style={{ width:68, height:80, border:`1.5px dashed ${isTarget ? C.drag : "rgba(255,255,255,0.2)"}`, borderRadius:3, display:"flex", alignItems:"center", justifyContent:"center", background: isTarget ? C.dragDim : "rgba(255,255,255,0.03)" }}>
         <div style={{ fontSize:22, color:"rgba(255,255,255,0.15)" }}>+</div>
       </div>
     );
@@ -210,22 +209,22 @@ function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, onSelect
         {ovr}
       </div>
       <div
-        draggable onClick={onSelect}
+        onClick={onSelect}
         onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}
-        onDragStart={onDragStart} onDragEnd={onDragEnd}
-        onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+        onPointerDown={onPointerDown}
         style={{
           width:68, overflow:"hidden", cursor: isDragged?"grabbing":"grab",
+          touchAction:"none",
           opacity: isDragged?0.2:1,
-          border: `2px solid ${isTarget ? C.drag : isSelected ? C.neon : isGK ? "rgba(29,158,117,0.7)" : "rgba(255,255,255,0.35)"}`,
+          border: `2px solid ${isTarget ? C.drag : isSelected ? C.neon : saludColor(saludVal)}`,
           background: isTarget ? "rgba(0,60,80,0.9)" : "rgba(5,12,5,0.92)",
           transform: `scale(${isTarget?1.08:active&&!isDragged?1.04:1})`,
-          boxShadow: isSelected ? `0 0 0 1px ${C.neon}, 0 0 18px rgba(200,255,0,0.5)` : isTarget ? `0 0 14px rgba(0,229,255,0.5)` : active ? "0 6px 20px rgba(0,0,0,0.8)" : "0 3px 10px rgba(0,0,0,0.6)",
+          boxShadow: isSelected ? `0 0 0 1px ${C.neon}, 0 0 18px rgba(200,255,0,0.5)` : isTarget ? `0 0 14px rgba(0,229,255,0.5)` : active ? `0 6px 20px rgba(0,0,0,0.8), 0 0 8px ${saludColor(saludVal)}44` : `0 3px 10px rgba(0,0,0,0.6), 0 0 4px ${saludColor(saludVal)}33`,
           transition:"transform 180ms, box-shadow 180ms, opacity 120ms", borderRadius:3,
         }}
       >
-        {/* Color stripe top */}
-        <div style={{ height:3, background: isGK ? C.green : isSelected ? C.neon : C.amber }} />
+        {/* Health Signal stripe — refleja Borg CR-10 individual */}
+        <div style={{ height:3, background: isSelected ? C.neon : saludColor(saludVal) }} />
         {/* Photo */}
         <div style={{ width:68, height:56, overflow:"hidden", position:"relative" }}>
           <img src={avatar(athlete.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block", pointerEvents:"none" }} />
@@ -253,14 +252,21 @@ function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, onSelect
       </div>
     </div>
   );
-}
+}, (prev, next) =>
+  prev.starter?.athlete?.id === next.starter?.athlete?.id &&
+  prev.starter?.posCode === next.starter?.posCode &&
+  prev.salud?.salud === next.salud?.salud &&
+  prev.isSelected === next.isSelected &&
+  prev.isDragged === next.isDragged &&
+  prev.isTarget === next.isTarget
+);
 
 // ── Panel detalle FIFA Card ──
 function PlayerDetail({ starter, allAthletes, historial, onClose, onSwapSimilar }) {
   const athlete = starter?.athlete;
   if (!athlete) return null;
   const status = getStatusStyle(athlete.status);
-  const { salud, rpeAvg7d } = calcSaludActual(athlete.rpe, historial);
+  const { salud, rpeAvg7d } = calcSaludActual(athlete.rpe, historial, athlete.id);
   const attrs = { Ritmo:athlete.speed||78, Tiro:athlete.shooting||72, Pases:athlete.passing||80, Regate:athlete.dribble||75, Defensa:athlete.defense||65, Fisico:athlete.physical||77 };
   const ovr = athlete.rating || Math.round(Object.values(attrs).reduce((a,b)=>a+b,0)/6);
   const group = getGroup(starter.posCode);
@@ -360,8 +366,13 @@ function PlayerDetail({ starter, allAthletes, historial, onClose, onSwapSimilar 
 // ════════════════════════════════════════════════
 export default function TacticalBoard({ athletes = [], historial = [] }) {
   const [formationKey, setFormationKey] = useState("4-3-3");
-  const [dragging, setDragging] = useState(null);
-  const [dropTarget, setDropTarget] = useState(null);
+  const [dragInfo, setDragInfo] = useState(null);
+  const [nearTarget, setNearTarget] = useState(null);
+  const ghostRef = useRef(null);
+  const benchAreaRef = useRef(null);
+  const startersRef = useRef(null);
+  const benchInfoRef = useRef(null);
+  const dragInfoRef = useRef(null);
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [activeTab, setActiveTab] = useState("plantilla");
 
@@ -382,9 +393,12 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
 
   const fieldRef = useRef(null);
 
+  useEffect(() => { startersRef.current = starters; }, [starters]);
+  useEffect(() => { benchInfoRef.current = bench; }, [bench]);
+
   const saludMap = useMemo(() => {
     const m = new Map();
-    athletes.forEach(a => m.set(a.id, calcSaludActual(a.rpe, historial)));
+    athletes.forEach(a => m.set(a.id, calcSaludActual(a.rpe, historial, a.id)));
     return m;
   }, [athletes, historial]);
 
@@ -392,55 +406,120 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
   const changeFormation = useCallback((key) => {
     setFormationKey(key); setSelectedIdx(null);
     const np = VERT_FORMATIONS[key].positions;
-    setStarters(prev => np.map((pos,i) => ({
-      ...pos, currentLeft:pos.left, currentTop:pos.top,
-      athlete: prev[i]?.athlete??null, id: prev[i]?.id??`s${i}`,
-    })));
+    setStarters(prev => np.map((pos,i) => {
+      const g = getGroup(pos.posCode);
+      const stagger = g==="GK"?0 : g==="DEF"?0.04 : g==="MID"?0.09 : 0.14;
+      return {
+        ...pos, currentLeft:pos.left, currentTop:pos.top,
+        athlete: prev[i]?.athlete??null, id: prev[i]?.id??`s${i}`, stagger,
+      };
+    }));
   }, []);
 
-  // ── Drag ──
-  const startDrag = useCallback((e,type,index) => {
-    setDragging({type,index}); setSelectedIdx(null);
-    const g=document.createElement("div"); g.style.cssText="position:absolute;top:-9999px;opacity:0;";
-    document.body.appendChild(g); e.dataTransfer.setDragImage(g,0,0);
-    setTimeout(()=>document.body.removeChild(g),0); e.dataTransfer.effectAllowed="move";
-  }, []);
-
-  const fieldDrop = useCallback((e) => {
+  // ── Pointer Drag System (FIFA-style: ghost + spring + touch) ──
+  const handlePointerDown = useCallback((e, type, index) => {
+    if (e.button !== 0) return;
     e.preventDefault();
-    if (!dragging||!fieldRef.current) return;
-    const r=fieldRef.current.getBoundingClientRect();
-    const left=Math.min(Math.max(((e.clientX-r.left)/r.width)*100,4),96);
-    const top=Math.min(Math.max(((e.clientY-r.top)/r.height)*100,4),96);
-    if (dragging.type==="starter") {
-      setStarters(p=>p.map((s,i)=>i===dragging.index?{...s,currentLeft:left,currentTop:top}:s));
-    } else if (dragging.type==="bench") {
-      const entering=bench[dragging.index];
-      const ei=starters.findIndex(s=>!s.athlete);
-      if (ei>=0) {
-        setStarters(p=>p.map((s,i)=>i===ei?{...s,athlete:entering.athlete,currentLeft:left,currentTop:top}:s));
-        setBench(p=>p.filter((_,i)=>i!==dragging.index));
-      }
-    }
-    setDragging(null); setDropTarget(null);
-  }, [dragging,bench,starters]);
+    const info = { type, index, x: e.clientX, y: e.clientY };
+    setDragInfo(info);
+    dragInfoRef.current = info;
+    setSelectedIdx(null);
+  }, []);
 
-  const playerDrop = useCallback((e,tType,tIdx) => {
-    e.preventDefault(); e.stopPropagation();
-    if (!dragging) return;
-    if (dragging.type==="starter"&&tType==="starter") {
-      setStarters(p=>{const n=[...p];const t=n[dragging.index].athlete;n[dragging.index]={...n[dragging.index],athlete:n[tIdx].athlete};n[tIdx]={...n[tIdx],athlete:t};return n;});
-    } else if (dragging.type==="bench"&&tType==="starter") {
-      const en=bench[dragging.index],lv=starters[tIdx].athlete;
-      setStarters(p=>p.map((s,i)=>i===tIdx?{...s,athlete:en.athlete}:s));
-      setBench(p=>{const n=p.filter((_,i)=>i!==dragging.index);return lv?[...n,{athlete:lv,id:`b${Date.now()}`}]:n;});
-    } else if (dragging.type==="starter"&&tType==="bench") {
-      const lv=starters[dragging.index].athlete,en=bench[tIdx];
-      setStarters(p=>p.map((s,i)=>i===dragging.index?{...s,athlete:en.athlete}:s));
-      setBench(p=>{const n=p.filter((_,i)=>i!==tIdx);return lv?[...n,{athlete:lv,id:`b${Date.now()}`}]:n;});
-    }
-    setDragging(null); setDropTarget(null);
-  }, [dragging,bench,starters]);
+  useEffect(() => {
+    if (!dragInfo) return;
+    const onMove = (e) => {
+      e.preventDefault();
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${e.clientX - 36}px`;
+        ghostRef.current.style.top = `${e.clientY - 42}px`;
+      }
+      if (!fieldRef.current) return;
+      const rect = fieldRef.current.getBoundingClientRect();
+      const px = ((e.clientX - rect.left) / rect.width) * 100;
+      const py = ((e.clientY - rect.top) / rect.height) * 100;
+      let nearest = null, minDist = 10;
+      (startersRef.current || []).forEach((st, i) => {
+        if (dragInfoRef.current?.type === "starter" && dragInfoRef.current?.index === i) return;
+        const dx = st.currentLeft - px, dy = st.currentTop - py;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minDist) { minDist = d; nearest = i; }
+      });
+      setNearTarget(prev => prev === nearest ? prev : nearest);
+    };
+    const onUp = (e) => {
+      const di = dragInfoRef.current;
+      const curSt = startersRef.current || [];
+      const curBn = benchInfoRef.current || [];
+      if (!di) { cleanup(); return; }
+
+      if (fieldRef.current) {
+        const rect = fieldRef.current.getBoundingClientRect();
+        const inField = e.clientX >= rect.left && e.clientX <= rect.right &&
+                        e.clientY >= rect.top && e.clientY <= rect.bottom;
+        const px = ((e.clientX - rect.left) / rect.width) * 100;
+        const py = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Buscar jugador mas cercano para swap
+        let nearest = null, minDist = 10;
+        curSt.forEach((st, i) => {
+          if (di.type === "starter" && di.index === i) return;
+          const dx = st.currentLeft - px, dy = st.currentTop - py;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < minDist) { minDist = d; nearest = i; }
+        });
+
+        if (inField && nearest !== null) {
+          // Drop sobre otro jugador → swap
+          if (di.type === "starter") {
+            setStarters(p => { const n = [...p]; const t = n[di.index].athlete; n[di.index] = { ...n[di.index], athlete: n[nearest].athlete }; n[nearest] = { ...n[nearest], athlete: t }; return n; });
+          } else if (di.type === "bench") {
+            const en = curBn[di.index], lv = curSt[nearest]?.athlete;
+            setStarters(p => p.map((s, i) => i === nearest ? { ...s, athlete: en.athlete } : s));
+            setBench(p => { const n = p.filter((_, i) => i !== di.index); return lv ? [...n, { athlete: lv, id: `b${Date.now()}` }] : n; });
+          }
+          cleanup(); return;
+        }
+        if (inField && di.type === "starter") {
+          // Reposicionar en campo libre
+          const left = Math.min(Math.max(px, 4), 96);
+          const top = Math.min(Math.max(py, 4), 96);
+          setStarters(p => p.map((s, i) => i === di.index ? { ...s, currentLeft: left, currentTop: top } : s));
+          cleanup(); return;
+        }
+        if (inField && di.type === "bench") {
+          // Suplente a slot vacio
+          const ei = curSt.findIndex(s => !s.athlete);
+          if (ei >= 0) {
+            const left = Math.min(Math.max(px, 4), 96), top = Math.min(Math.max(py, 4), 96);
+            setStarters(p => p.map((s, i) => i === ei ? { ...s, athlete: curBn[di.index]?.athlete, currentLeft: left, currentTop: top } : s));
+            setBench(p => p.filter((_, i) => i !== di.index));
+          }
+          cleanup(); return;
+        }
+      }
+      // Drop en zona suplentes → mover al banquillo
+      if (benchAreaRef.current && di.type === "starter") {
+        const br = benchAreaRef.current.getBoundingClientRect();
+        if (e.clientX >= br.left && e.clientX <= br.right && e.clientY >= br.top && e.clientY <= br.bottom) {
+          const lv = curSt[di.index]?.athlete;
+          if (lv) {
+            setStarters(p => p.map((s, i) => i === di.index ? { ...s, athlete: null } : s));
+            setBench(p => [...p, { athlete: lv, id: `b${Date.now()}` }]);
+          }
+        }
+      }
+      cleanup();
+    };
+    const cleanup = () => {
+      setDragInfo(null); dragInfoRef.current = null;
+      setNearTarget(null);
+      if (ghostRef.current) ghostRef.current.style.display = "none";
+    };
+    document.addEventListener("pointermove", onMove, { passive: false });
+    document.addEventListener("pointerup", onUp);
+    return () => { document.removeEventListener("pointermove", onMove); document.removeEventListener("pointerup", onUp); };
+  }, [dragInfo]);
 
   const doSwap = useCallback((na) => {
     if (selectedIdx===null) return;
@@ -478,7 +557,7 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
     });
   }, [selectedIdx, starters, doMoveToBank]);
 
-  const isDrag = (t,i) => dragging?.type===t&&dragging?.index===i;
+  const isDrag = (t,i) => dragInfo?.type===t&&dragInfo?.index===i;
   const selStarter = selectedIdx!==null ? starters[selectedIdx] : null;
 
   const TABS = [
@@ -490,6 +569,14 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
   ];
 
   const ta = { width:"100%", minHeight:220, background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, color:"white", fontSize:12, fontFamily:"inherit", padding:12, outline:"none", resize:"vertical", lineHeight:1.7 };
+
+  // ── Ghost data ──
+  const ghostAthlete = dragInfo
+    ? (dragInfo.type === "starter" ? starters[dragInfo.index]?.athlete : bench[dragInfo.index]?.athlete)
+    : null;
+  const ghostOvr = ghostAthlete
+    ? (ghostAthlete.rating || Math.round(((ghostAthlete.speed||78)+(ghostAthlete.shooting||72)+(ghostAthlete.passing||80)+(ghostAthlete.dribble||75)+(ghostAthlete.defense||65)+(ghostAthlete.physical||77))/6))
+    : 0;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"#0a1020", fontFamily:"'Arial Narrow',Arial,sans-serif", overflow:"hidden" }}>
@@ -537,7 +624,6 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
           <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0 }}>
             <div
               ref={fieldRef}
-              onDragOver={e=>e.preventDefault()} onDrop={fieldDrop}
               style={{
                 flex:1, position:"relative", cursor:"crosshair", overflow:"hidden",
                 background:`
@@ -563,26 +649,24 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
                 <rect x="37.5" y="127" width="15" height="3" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45"/>
               </svg>
 
-              {/* Tokens animados */}
+              {/* Tokens animados — spring con micro-rebote FIFA */}
               {starters.map((st, i) => (
                 <motion.div key={st.id}
                   animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
-                  transition={{ type:"spring", stiffness:100, damping:16, mass:0.9 }}
+                  transition={{ type:"spring", stiffness:170, damping:14, mass:0.8, delay: st.stagger||0 }}
                   style={{ position:"absolute", transform:"translate(-50%,-50%)", zIndex: isDrag("starter",i)?1:selectedIdx===i?15:5 }}>
                   <PlayerToken
                     starter={st} salud={st.athlete ? saludMap.get(st.athlete.id) : null}
-                    isSelected={selectedIdx===i} isDragged={isDrag("starter",i)} isTarget={dropTarget===i}
+                    isSelected={selectedIdx===i} isDragged={isDrag("starter",i)} isTarget={nearTarget===i}
                     onSelect={e=>{e.stopPropagation();setSelectedIdx(p=>p===i?null:i);}}
-                    onDragStart={e=>startDrag(e,"starter",i)} onDragEnd={()=>{setDragging(null);setDropTarget(null);}}
-                    onDragOver={e=>{e.preventDefault();setDropTarget(i);}} onDragLeave={()=>setDropTarget(null)}
-                    onDrop={e=>playerDrop(e,"starter",i)}
+                    onPointerDown={e=>handlePointerDown(e,"starter",i)}
                   />
                 </motion.div>
               ))}
             </div>
 
             {/* ── SUPLENTES — barra horizontal inferior ── */}
-            <div style={{ flexShrink:0, background:"rgba(0,0,0,0.85)", borderTop:`2px solid ${C.border}`, padding:"10px 16px" }}>
+            <div ref={benchAreaRef} style={{ flexShrink:0, background:"rgba(0,0,0,0.85)", borderTop:`2px solid ${C.border}`, padding:"10px 16px" }}>
               <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
                 <div style={{ fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"2px", color:"white" }}>Suplentes</div>
                 <div style={{ fontSize:9, color:C.textMuted }}>({bench.length})</div>
@@ -590,20 +674,18 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
               <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:4 }}>
                 {bench.map((b,i) => {
                   const bSalud = b.athlete ? saludMap.get(b.athlete.id) : null;
+                  const bSaludVal = bSalud?.salud ?? 100;
                   const bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
                   return (
                     <div key={b.id}
-                      draggable
-                      onDragStart={e=>startDrag(e,"bench",i)} onDragEnd={()=>setDragging(null)}
-                      onDragOver={e=>{e.preventDefault();setDropTarget(`bench-${i}`);}} onDragLeave={()=>setDropTarget(null)}
-                      onDrop={e=>playerDrop(e,"bench",i)}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 12px", background: dropTarget===`bench-${i}` ? C.dragDim : "rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, cursor:"grab", opacity:isDrag("bench",i)?0.3:1, flexShrink:0, borderRadius:3, minWidth:140 }}
+                      onPointerDown={e=>handlePointerDown(e,"bench",i)}
+                      style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 12px", background:"rgba(255,255,255,0.04)", border:`1px solid ${saludColor(bSaludVal)}55`, cursor:"grab", opacity:isDrag("bench",i)?0.3:1, touchAction:"none", flexShrink:0, borderRadius:3, minWidth:140, userSelect:"none" }}
                     >
                       <div style={{ display:"flex", alignItems:"center", gap:3 }}>
-                        <div style={{ width:5, height:5, borderRadius:"50%", background: getStatusStyle(b.athlete?.status).color }} />
+                        <div style={{ width:5, height:5, borderRadius:"50%", background: saludColor(bSaludVal) }} />
                         <div style={{ fontSize:9, fontWeight:700, color:C.textMuted, textTransform:"uppercase" }}>{b.athlete?.posCode}</div>
                       </div>
-                      <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`1px solid rgba(255,255,255,0.15)`, flexShrink:0 }}>
+                      <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`2px solid ${saludColor(bSaludVal)}`, flexShrink:0 }}>
                         <img src={avatar(b.athlete?.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
                       </div>
                       <div style={{ fontSize:22, fontWeight:900, color:C.neon }}>{bOvr}</div>
@@ -687,6 +769,35 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
           />
         )}
       </AnimatePresence>
+
+      {/* ── Ghost token FIFA — sigue el cursor durante drag ── */}
+      {dragInfo && ghostAthlete && (
+        <div ref={ghostRef} style={{
+          position:"fixed", left: dragInfo.x - 36, top: dragInfo.y - 42,
+          zIndex:9999, pointerEvents:"none",
+          filter:`drop-shadow(0 0 18px ${C.neonGlow}) drop-shadow(0 0 6px rgba(200,255,0,0.3))`,
+          opacity:0.92,
+        }}>
+          <div style={{
+            width:72, background:"rgba(5,12,5,0.95)",
+            border:`2px solid ${C.neon}`, borderRadius:3, overflow:"hidden",
+            transform:"scale(1.12)",
+            boxShadow:`0 0 24px ${C.neonGlow}, inset 0 0 8px rgba(200,255,0,0.08)`,
+          }}>
+            <div style={{ height:3, background:C.neon }} />
+            <img src={avatar(ghostAthlete.photo)} alt=""
+              style={{ width:72, height:58, objectFit:"cover", objectPosition:"top", display:"block" }} />
+            <div style={{ padding:"3px 4px", background:"rgba(0,0,0,0.85)", textAlign:"center" }}>
+              <div style={{ fontSize:8, color:"white", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px" }}>
+                {ghostAthlete.name.split(" ").pop()}
+              </div>
+            </div>
+          </div>
+          <div style={{ textAlign:"center", fontSize:16, fontWeight:900, color:C.neon, textShadow:`0 2px 10px rgba(0,0,0,0.9), 0 0 8px ${C.neonGlow}`, marginTop:2 }}>
+            {ghostOvr}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

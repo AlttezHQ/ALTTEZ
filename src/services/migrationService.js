@@ -103,7 +103,7 @@ function readAllData() {
  */
 function writeAllData(data) {
   const write = (key, val) => {
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* quota */ }
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(`[migrationService] Quota exceeded writing ${key}:`, e.name); }
   };
   write("elevate_athletes", data.athletes);
   write("elevate_historial", data.historial);

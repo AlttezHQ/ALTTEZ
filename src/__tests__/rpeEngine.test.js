@@ -1,20 +1,27 @@
 /**
  * @file rpeEngine.test.js
- * @description Tests unitarios para el motor RPE de Salud Actual.
- * Formula: SaludActual = 100 - (RPE_avg_7d * 10)
+ * @description Tests unitarios para el motor RPE de Salud Actual v2.0.
  *
- * @author @QA (Sara-QA_Seguridad)
- * @version 1.0.0
+ * Modelo: SaludActual = clamp(100 - RPE_avg_7d × 10, 0, 100)
+ * v2.0: RPE per-athlete via rpeByAthlete, ventana 7d via savedAt ISO
+ *
+ * @author @QA (Sara-QA_Seguridad) + @Data (Mateo-Data_Engine)
+ * @version 2.0.0
  */
 
 import { describe, it, expect } from "vitest";
 import { calcSaludActual, calcSaludPlantel, saludColor } from "../utils/rpeEngine";
 
+// Helper: genera savedAt dentro de los ultimos N dias
+function daysAgo(n) {
+  return new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
+}
+
 // ════════════════════════════════════════════════
-// calcSaludActual
+// calcSaludActual — casos basicos (compatibilidad v1)
 // ════════════════════════════════════════════════
 
-describe("calcSaludActual", () => {
+describe("calcSaludActual — basico", () => {
   it("retorna salud 100 y sin_datos cuando no hay RPE", () => {
     const result = calcSaludActual(null, []);
     expect(result.salud).toBe(100);
@@ -41,67 +48,151 @@ describe("calcSaludActual", () => {
     expect(result.riskLevel).toBe("riesgo");
   });
 
-  it("promedia RPE actual + historial correctamente", () => {
-    const historial = [
-      { rpeAvg: 6, fecha: "fecha no parseable" },
-      { rpeAvg: 8, fecha: "otra fecha" },
-    ];
-    // RPE actual=4, historial=[6,8] → avg = (4+6+8)/3 = 6 → salud = 100-60 = 40
-    const result = calcSaludActual(4, historial);
-    expect(result.salud).toBe(40);
-    expect(result.rpeAvg7d).toBe(6);
-    expect(result.riskLevel).toBe("precaucion");
+  it("clamps salud entre 0 y 100", () => {
+    expect(calcSaludActual(10, []).salud).toBe(0);
+    expect(calcSaludActual(null, []).salud).toBe(100);
   });
 
-  it("ignora RPE fuera de rango en historial", () => {
+  it("retorna rpeAvg7d con 1 decimal", () => {
+    const historial = [{ rpeAvg: 8, savedAt: daysAgo(1) }];
+    const result = calcSaludActual(7, historial);
+    expect(result.rpeAvg7d).toBe(7.5);
+  });
+
+  it("limita a 7 entradas maximo", () => {
+    const historial = Array.from({ length: 20 }, () => ({
+      rpeAvg: 5, savedAt: daysAgo(1),
+    }));
+    const result = calcSaludActual(5, historial);
+    expect(result.salud).toBe(50);
+  });
+});
+
+// ════════════════════════════════════════════════
+// calcSaludActual — RPE per-athlete (v2.0)
+// ════════════════════════════════════════════════
+
+describe("calcSaludActual — per-athlete RPE", () => {
+  it("usa rpeByAthlete cuando athleteId es proporcionado", () => {
     const historial = [
-      { rpeAvg: 15, fecha: "x" }, // fuera de rango, ignorado
-      { rpeAvg: 0, fecha: "x" },  // fuera de rango, ignorado
-      { rpeAvg: 5, fecha: "x" },  // valido
+      { rpeByAthlete: { 1: 8, 2: 3 }, rpeAvg: 5.5, savedAt: daysAgo(1) },
     ];
-    // RPE actual=3, validos del historial=[5] → avg = (3+5)/2 = 4 → salud = 60
-    const result = calcSaludActual(3, historial);
-    expect(result.salud).toBe(60);
-    expect(result.riskLevel).toBe("optimo");
+    // Atleta 1: RPE actual 7, historico 8 → avg (7+8)/2 = 7.5 → salud 25
+    const r1 = calcSaludActual(7, historial, 1);
+    expect(r1.rpeAvg7d).toBe(7.5);
+    expect(r1.salud).toBe(25);
+    expect(r1.riskLevel).toBe("riesgo");
+
+    // Atleta 2: RPE actual 2, historico 3 → avg (2+3)/2 = 2.5 → salud 75
+    const r2 = calcSaludActual(2, historial, 2);
+    expect(r2.rpeAvg7d).toBe(2.5);
+    expect(r2.salud).toBe(75);
+    expect(r2.riskLevel).toBe("optimo");
+  });
+
+  it("diferencia correctamente entre atletas del mismo equipo", () => {
+    const historial = [
+      { rpeByAthlete: { 10: 9, 20: 2 }, savedAt: daysAgo(2) },
+      { rpeByAthlete: { 10: 8, 20: 3 }, savedAt: daysAgo(1) },
+    ];
+    const fatigued = calcSaludActual(null, historial, 10);
+    const fresh    = calcSaludActual(null, historial, 20);
+
+    // Atleta 10: avg(9,8) = 8.5 → salud 15
+    expect(fatigued.salud).toBe(15);
+    expect(fatigued.riskLevel).toBe("riesgo");
+
+    // Atleta 20: avg(2,3) = 2.5 → salud 75
+    expect(fresh.salud).toBe(75);
+    expect(fresh.riskLevel).toBe("optimo");
+  });
+
+  it("fallback a rpeAvg cuando rpeByAthlete no tiene el atleta", () => {
+    const historial = [
+      { rpeByAthlete: { 1: 8 }, rpeAvg: 5, savedAt: daysAgo(1) },
+    ];
+    // Atleta 99 no esta en rpeByAthlete → usa rpeAvg=5
+    const r = calcSaludActual(null, historial, 99);
+    expect(r.rpeAvg7d).toBe(5);
+    expect(r.salud).toBe(50);
+  });
+
+  it("fallback a rpeAvg para sesiones legacy sin rpeByAthlete", () => {
+    const historial = [
+      { rpeAvg: 6, fecha: "Mar 18 Mar" }, // sesion legacy: sin savedAt ni rpeByAthlete
+    ];
+    const r = calcSaludActual(4, historial, 1);
+    // avg(4,6) = 5 → salud 50
+    expect(r.salud).toBe(50);
+  });
+});
+
+// ════════════════════════════════════════════════
+// calcSaludActual — ventana temporal 7 dias
+// ════════════════════════════════════════════════
+
+describe("calcSaludActual — ventana temporal", () => {
+  it("excluye sesiones fuera de la ventana de 7 dias", () => {
+    const historial = [
+      { rpeByAthlete: { 1: 9 }, savedAt: daysAgo(10) }, // fuera de ventana
+      { rpeByAthlete: { 1: 3 }, savedAt: daysAgo(2) },  // dentro
+    ];
+    // Solo toma RPE=3 del dia 2 → salud = 100 - 30 = 70
+    const r = calcSaludActual(null, historial, 1);
+    expect(r.rpeAvg7d).toBe(3);
+    expect(r.salud).toBe(70);
+  });
+
+  it("incluye sesiones del limite exacto de 7 dias", () => {
+    const historial = [
+      { rpeByAthlete: { 1: 6 }, savedAt: daysAgo(7) }, // justo en el limite
+    ];
+    const r = calcSaludActual(4, historial, 1);
+    // avg(4,6) = 5 → salud 50
+    expect(r.salud).toBe(50);
+  });
+
+  it("usa savedAt ISO sobre fecha display", () => {
+    const historial = [
+      { rpeByAthlete: { 1: 9 }, rpeAvg: 9, savedAt: daysAgo(20), fecha: "Hoy" },
+    ];
+    // savedAt es 20 dias atras → fuera de ventana → excluido
+    const r = calcSaludActual(null, historial, 1);
+    expect(r.riskLevel).toBe("sin_datos");
+  });
+});
+
+// ════════════════════════════════════════════════
+// calcSaludActual — validacion de rangos
+// ════════════════════════════════════════════════
+
+describe("calcSaludActual — validacion", () => {
+  it("ignora RPE fuera de rango [1,10] en historial", () => {
+    const historial = [
+      { rpeByAthlete: { 1: 15 }, savedAt: daysAgo(1) }, // invalido
+      { rpeByAthlete: { 1: 0 },  savedAt: daysAgo(1) }, // invalido
+      { rpeByAthlete: { 1: 5 },  savedAt: daysAgo(1) }, // valido
+    ];
+    const r = calcSaludActual(3, historial, 1);
+    // avg(3,5) = 4 → salud 60
+    expect(r.salud).toBe(60);
   });
 
   it("ignora RPE null y '—' en historial", () => {
     const historial = [
-      { rpeAvg: null, fecha: "x" },
-      { rpeAvg: "\u2014", fecha: "x" },
-      { rpeAvg: 7, fecha: "x" },
+      { rpeAvg: null, savedAt: daysAgo(1) },
+      { rpeAvg: "\u2014", savedAt: daysAgo(1) },
+      { rpeAvg: 7, savedAt: daysAgo(1) },
     ];
-    // RPE actual=null → solo historial [7] → avg=7 → salud=30
-    const result = calcSaludActual(null, historial);
-    expect(result.salud).toBe(30);
-    expect(result.riskLevel).toBe("precaucion");
+    const r = calcSaludActual(null, historial);
+    expect(r.salud).toBe(30);
+    expect(r.riskLevel).toBe("precaucion");
   });
 
-  it("limita a 7 entradas maximo", () => {
-    const historial = Array.from({ length: 20 }, (_, i) => ({
-      rpeAvg: 5, fecha: "x",
-    }));
-    // RPE actual=5, + 20 del historial pero limita a 7 total
-    // avg = 5, salud = 50
-    const result = calcSaludActual(5, historial);
-    expect(result.salud).toBe(50);
-  });
-
-  it("clamps salud entre 0 y 100", () => {
-    // RPE=10 → salud=0 (no negativo)
-    expect(calcSaludActual(10, []).salud).toBe(0);
-    // Sin RPE → salud=100 (no mayor a 100)
-    expect(calcSaludActual(null, []).salud).toBe(100);
-  });
-
-  it("retorna null para rpeAvg7d cuando no hay RPE", () => {
-    expect(calcSaludActual(null, []).rpeAvg7d).toBeNull();
-  });
-
-  it("retorna rpeAvg7d con 1 decimal", () => {
-    const result = calcSaludActual(7, [{ rpeAvg: 8, fecha: "x" }]);
-    // avg = (7+8)/2 = 7.5
-    expect(result.rpeAvg7d).toBe(7.5);
+  it("ignora currentRpe fuera de rango", () => {
+    expect(calcSaludActual(0, []).riskLevel).toBe("sin_datos");
+    expect(calcSaludActual(11, []).riskLevel).toBe("sin_datos");
+    expect(calcSaludActual(-1, []).riskLevel).toBe("sin_datos");
   });
 });
 
@@ -134,7 +225,7 @@ describe("saludColor", () => {
 // ════════════════════════════════════════════════
 
 describe("calcSaludPlantel", () => {
-  it("retorna Map con salud para cada atleta", () => {
+  it("retorna Map con salud individual para cada atleta", () => {
     const athletes = [
       { id: 1, rpe: 3 },
       { id: 2, rpe: 8 },
@@ -142,8 +233,8 @@ describe("calcSaludPlantel", () => {
     ];
     const map = calcSaludPlantel(athletes, []);
     expect(map.size).toBe(3);
-    expect(map.get(1).salud).toBe(70); // 100 - 30
-    expect(map.get(2).salud).toBe(20); // 100 - 80
+    expect(map.get(1).salud).toBe(70);
+    expect(map.get(2).salud).toBe(20);
     expect(map.get(3).riskLevel).toBe("sin_datos");
   });
 
@@ -152,11 +243,19 @@ describe("calcSaludPlantel", () => {
     expect(map.size).toBe(0);
   });
 
-  it("incorpora historial en calculo", () => {
-    const athletes = [{ id: 1, rpe: 5 }];
-    const historial = [{ rpeAvg: 7, fecha: "x" }];
+  it("usa RPE individual del historial, no promedio equipo", () => {
+    const athletes = [
+      { id: 1, rpe: 5 },
+      { id: 2, rpe: 5 },
+    ];
+    const historial = [
+      { rpeByAthlete: { 1: 9, 2: 2 }, rpeAvg: 5.5, savedAt: daysAgo(1) },
+    ];
     const map = calcSaludPlantel(athletes, historial);
-    // avg = (5+7)/2 = 6 → salud = 40
-    expect(map.get(1).salud).toBe(40);
+    // Atleta 1: avg(5,9) = 7 → salud 30
+    expect(map.get(1).salud).toBe(30);
+    // Atleta 2: avg(5,2) = 3.5 → salud 65
+    expect(map.get(2).salud).toBe(65);
+    // Con la v1 ambos hubieran dado salud 48 (avg con rpeAvg=5.5 del equipo)
   });
 });

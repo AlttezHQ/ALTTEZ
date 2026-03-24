@@ -137,4 +137,5 @@ export const STORAGE_KEYS = [
   "elevate_tacticas",
   "elevate_healthSnapshots",
   "elevate_schema_version",
+  "elevate_session",
 ];

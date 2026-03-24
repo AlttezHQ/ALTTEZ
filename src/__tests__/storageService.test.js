@@ -61,6 +61,21 @@ describe("buildSesion", () => {
     expect(sesion.savedAt).toBeDefined();
   });
 
+  it("persiste RPE individual por atleta en rpeByAthlete", () => {
+    const athletes = [
+      { id:1, status:"P", rpe:7 },
+      { id:2, status:"P", rpe:9 },
+      { id:3, status:"P", rpe:null }, // sin RPE → no incluido
+      { id:4, status:"A", rpe:5 },    // ausente → no incluido
+    ];
+    const sesion = buildSesion(athletes, [], "Test", "Fisico");
+    expect(sesion.rpeByAthlete).toBeDefined();
+    expect(sesion.rpeByAthlete[1]).toBe(7);
+    expect(sesion.rpeByAthlete[2]).toBe(9);
+    expect(sesion.rpeByAthlete[3]).toBeUndefined(); // sin RPE
+    expect(sesion.rpeByAthlete[4]).toBeUndefined(); // ausente
+  });
+
   it("maneja historial vacio (primera sesion)", () => {
     const sesion = buildSesion([], [], "Primera", "Fisico");
     expect(sesion.num).toBe(1);

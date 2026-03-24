@@ -11,15 +11,20 @@
  */
 
 import { useState, useCallback, lazy, Suspense } from "react";
-import useLocalStorage from "./hooks/useLocalStorage";
+import useLocalStorage, { setHookErrorHandler } from "./hooks/useLocalStorage";
 import FieldBackground from "./components/FieldBackground";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastContainer, { showToast } from "./components/Toast";
 import { EMPTY_ATHLETES, EMPTY_HISTORIAL, EMPTY_MATCH_STATS, EMPTY_FINANZAS } from "./constants/initialStates";
-import { loadDemoState, loadProductionState, logout as logoutService, calcStats, buildSesion } from "./services/storageService";
-import { takeHealthSnapshot, clearSnapshots } from "./services/healthService";
+import {
+  loadDemoState, loadProductionState, logout as logoutService, calcStats, buildSesion,
+  setStorageErrorHandler, exportBackup,
+} from "./services/storageService";
+import { takeHealthSnapshot, clearSnapshots, setHealthErrorHandler } from "./services/healthService";
 import { runMigrations } from "./services/migrationService";
 import { PALETTE as C } from "./constants/palette";
+import { SESSION_KEY, createSession, validateSession, canAccessModule } from "./constants/roles";
+import { setValidationErrorHandler } from "./constants/schemas";
 
 // ── React.lazy: code-splitting por modulo ──
 const LandingPage = lazy(() => import("./components/LandingPage"));
@@ -28,6 +33,13 @@ const Entrenamiento = lazy(() => import("./components/Entrenamiento"));
 const GestionPlantilla = lazy(() => import("./components/GestionPlantilla"));
 const MiClub = lazy(() => import("./components/MiClub"));
 const Administracion = lazy(() => import("./components/Administracion"));
+
+// ── Conectar handlers de error de storage al boot (antes de que cualquier hook escriba) ──
+const _toastError = (msg) => showToast(msg, "error");
+setStorageErrorHandler(_toastError);
+setHookErrorHandler(_toastError);
+setHealthErrorHandler(_toastError);
+setValidationErrorHandler(_toastError);
 
 // ── Ejecutar migraciones al boot ──
 const migrationResult = runMigrations();
@@ -50,6 +62,7 @@ const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", tempo
 
 export default function App() {
   const [mode, setMode] = useLocalStorage("elevate_mode", null);
+  const [session, setSession] = useLocalStorage(SESSION_KEY, null);
   const [activeModule, setActiveModule] = useState("home");
   const [athletes, setAthletes] = useLocalStorage("elevate_athletes", EMPTY_ATHLETES);
   const [historial, setHistorial] = useLocalStorage("elevate_historial", EMPTY_HISTORIAL);
@@ -57,8 +70,22 @@ export default function App() {
   const [matchStats, setMatchStats] = useLocalStorage("elevate_matchStats", EMPTY_MATCH_STATS);
   const [finanzas, setFinanzas] = useLocalStorage("elevate_finanzas", EMPTY_FINANZAS);
 
+  // Validar sesión anti-tampering al boot
+  const userRole = (session && validateSession(session)) ? session.role : "admin";
+
+  // Navegación con control de acceso por rol
+  const navigateTo = useCallback((mod) => {
+    if (!canAccessModule(userRole, mod)) {
+      showToast(`Acceso denegado: tu rol (${userRole}) no tiene permisos para ${mod}`, "warning");
+      return;
+    }
+    setActiveModule(mod);
+  }, [userRole]);
+
   const handleDemo = useCallback(() => {
     loadDemoState();
+    const demoSession = createSession("admin", "Demo User");
+    setSession(demoSession);
     setAthletes(JSON.parse(localStorage.getItem("elevate_athletes")));
     setHistorial(JSON.parse(localStorage.getItem("elevate_historial")));
     setClubInfo(JSON.parse(localStorage.getItem("elevate_clubInfo")));
@@ -66,10 +93,12 @@ export default function App() {
     setFinanzas(JSON.parse(localStorage.getItem("elevate_finanzas")));
     setActiveModule("home");
     setMode("demo");
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
   const handleRegister = useCallback((form) => {
     loadProductionState(form);
+    const newSession = createSession(form.role || "admin", form.entrenador);
+    setSession(newSession);
     setAthletes(EMPTY_ATHLETES);
     setHistorial(EMPTY_HISTORIAL);
     setClubInfo(JSON.parse(localStorage.getItem("elevate_clubInfo")));
@@ -77,11 +106,12 @@ export default function App() {
     setFinanzas(EMPTY_FINANZAS);
     setActiveModule("home");
     setMode("production");
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
   const handleLogout = useCallback(() => {
     logoutService();
     clearSnapshots();
+    setSession(null);
     setAthletes(EMPTY_ATHLETES);
     setHistorial(EMPTY_HISTORIAL);
     setClubInfo(DEFAULT_CLUB);
@@ -89,7 +119,7 @@ export default function App() {
     setFinanzas(EMPTY_FINANZAS);
     setActiveModule("home");
     setMode(null);
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
   // ── Landing ──
   if (!mode) {
@@ -107,6 +137,10 @@ export default function App() {
   // ── Guardar sesion con Toast (no alert) ──
   const guardarSesion = (nota, tipo) => {
     const sesion = buildSesion(athletes, historial, nota, tipo);
+    if (!sesion) {
+      showToast("No se pudo guardar la sesion — datos invalidos", "error");
+      return;
+    }
     setHistorial(prev => [sesion, ...prev]);
     takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
     showToast(`Sesion #${sesion.num} guardada correctamente`, "success");
@@ -145,7 +179,7 @@ export default function App() {
 
           {activeModule === "home" && (
             <ErrorBoundary>
-              <Home club={clubProps} athletes={athletes} historial={historial} stats={stats} matchStats={matchStats} onNavigate={setActiveModule} mode={mode} onLogout={handleLogout} />
+              <Home club={clubProps} athletes={athletes} historial={historial} stats={stats} matchStats={matchStats} onNavigate={navigateTo} mode={mode} onLogout={handleLogout} userRole={userRole} onExportBackup={() => { exportBackupJSON(); showToast("Backup descargado correctamente", "success"); }} />
             </ErrorBoundary>
           )}
 

@@ -12,6 +12,7 @@ import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { PALETTE } from "../constants/palette";
 import { createMovimiento, validatePago } from "../constants/schemas";
+import { showToast } from "./Toast";
 import ConfirmModal from "./ConfirmModal";
 
 const ADMIN = PALETTE.purple; // #7F77DD
@@ -72,7 +73,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
           };
           const { valid, errors } = validatePago(updated);
           if (!valid) {
-            console.warn("[Administracion.togglePago] Invalid state:", errors);
+            showToast(`Error en pago: ${errors[0]}`, "error");
             return p;
           }
           return updated;

@@ -11,7 +11,10 @@
 import { calcSaludActual } from "../utils/rpeEngine";
 
 const STORAGE_KEY = "elevate_healthSnapshots";
-const MAX_SNAPSHOTS = 500; // limitar para no saturar localStorage
+const MAX_SNAPSHOTS = 500;
+
+let _onError = null;
+export function setHealthErrorHandler(handler) { _onError = handler; }
 
 /** Lee snapshots desde localStorage */
 export function getSnapshots() {
@@ -30,7 +33,8 @@ function saveSnapshots(snapshots) {
     const trimmed = snapshots.slice(-MAX_SNAPSHOTS);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch (e) {
-    console.warn("[healthService] Error saving snapshots:", e.name);
+    console.error("[healthService] Error saving snapshots:", e.name);
+    if (_onError) _onError(`Error guardando historial de salud (${e.name}). Libera espacio.`);
   }
 }
 

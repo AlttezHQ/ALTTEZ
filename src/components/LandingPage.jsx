@@ -10,6 +10,8 @@
 
 import { useState } from "react";
 import { PALETTE } from "../constants/palette";
+import { sanitizeText, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
+import { ROLES } from "../constants/roles";
 
 /* ── Keyframe para glow pulsante ── */
 if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
@@ -30,7 +32,7 @@ export default function LandingPage({ onDemo, onRegister }) {
   const [form, setForm] = useState({
     nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
     temporada: "2025-26", categorias: "", campo: "",
-    telefono: "", email: "",
+    telefono: "", email: "", role: "admin",
   });
   const [errors, setErrors] = useState({});
   const [hoverDemo, setHoverDemo] = useState(false);
@@ -46,11 +48,28 @@ export default function LandingPage({ onDemo, onRegister }) {
     REQUIRED_FIELDS.forEach(k => {
       if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
     });
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    // Email: sanitizar con DOMPurify + validar formato
+    const cleanEmail = sanitizeEmail(form.email);
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       errs.email = "Email invalido";
     }
+    if (!ROLES[form.role]) {
+      errs.role = "Rol invalido";
+    }
     setErrors(errs);
-    if (Object.keys(errs).length === 0) onRegister(form);
+    if (Object.keys(errs).length === 0) {
+      // Sanitizar todos los campos antes de enviar
+      onRegister({
+        ...form,
+        nombre:     sanitizeText(form.nombre),
+        ciudad:     sanitizeText(form.ciudad),
+        entrenador: sanitizeText(form.entrenador),
+        categorias: sanitizeText(form.categorias),
+        campo:      sanitizeText(form.campo),
+        telefono:   sanitizePhone(form.telefono),
+        email:      cleanEmail,
+      });
+    }
   };
 
   const css = {
@@ -196,7 +215,7 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(errors.nombre)}
               value={form.nombre}
-              onChange={e => updateField("nombre", e.target.value.replace(/[<>{}]/g, ""))}
+              onChange={e => updateField("nombre", sanitizeText(e.target.value))}
               placeholder="Ej: Aguilas FC"
               maxLength={60}
             />
@@ -223,7 +242,7 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(errors.ciudad)}
               value={form.ciudad}
-              onChange={e => updateField("ciudad", e.target.value.replace(/[<>{}]/g, ""))}
+              onChange={e => updateField("ciudad", sanitizeText(e.target.value))}
               placeholder="Ej: Medellin"
               maxLength={60}
             />
@@ -234,7 +253,7 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(errors.entrenador)}
               value={form.entrenador}
-              onChange={e => updateField("entrenador", e.target.value.replace(/[<>{}]/g, ""))}
+              onChange={e => updateField("entrenador", sanitizeText(e.target.value))}
               placeholder="Nombre completo"
               maxLength={60}
             />
@@ -249,7 +268,7 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(errors.categorias)}
               value={form.categorias}
-              onChange={e => updateField("categorias", e.target.value.replace(/[<>{}]/g, ""))}
+              onChange={e => updateField("categorias", sanitizeText(e.target.value))}
               placeholder="Ej: Sub-17"
               maxLength={30}
             />
@@ -274,7 +293,7 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(false)}
               value={form.campo}
-              onChange={e => updateField("campo", e.target.value.replace(/[<>{}]/g, ""))}
+              onChange={e => updateField("campo", sanitizeText(e.target.value))}
               placeholder="Ej: Cancha La Floresta"
               maxLength={60}
             />
@@ -284,25 +303,40 @@ export default function LandingPage({ onDemo, onRegister }) {
             <input
               style={css.input(false)}
               value={form.telefono}
-              onChange={e => updateField("telefono", e.target.value.replace(/[^0-9 +()-]/g, ""))}
+              onChange={e => updateField("telefono", sanitizePhone(e.target.value))}
               placeholder="300 123 4567"
               maxLength={20}
             />
           </div>
         </div>
 
-        {/* Email */}
-        <div style={css.fieldGroup}>
-          <label style={css.label}>Email de contacto</label>
-          <input
-            style={css.input(errors.email)}
-            value={form.email}
-            onChange={e => updateField("email", e.target.value)}
-            placeholder="club@email.com"
-            maxLength={80}
-            type="email"
-          />
-          {errors.email && <div style={css.errorText}>{errors.email}</div>}
+        {/* Email + Rol */}
+        <div style={css.row}>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Email de contacto</label>
+            <input
+              style={css.input(errors.email)}
+              value={form.email}
+              onChange={e => updateField("email", sanitizeEmail(e.target.value))}
+              placeholder="club@email.com"
+              maxLength={80}
+              type="email"
+            />
+            {errors.email && <div style={css.errorText}>{errors.email}</div>}
+          </div>
+          <div style={css.fieldGroup}>
+            <label style={css.label}>Tu rol en el club</label>
+            <select
+              style={{ ...css.input(errors.role), cursor: "pointer" }}
+              value={form.role}
+              onChange={e => updateField("role", e.target.value)}
+            >
+              {Object.entries(ROLES).map(([key, r]) => (
+                <option key={key} value={key}>{r.label}</option>
+              ))}
+            </select>
+            {errors.role && <div style={css.errorText}>{errors.role}</div>}
+          </div>
         </div>
 
         {/* Submit */}
