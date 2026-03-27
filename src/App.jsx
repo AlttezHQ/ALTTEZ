@@ -1,16 +1,17 @@
 /**
- * @component App v7 — Battle-Ready
+ * @component App v8 — Auth-Ready
  * @description Componente raiz resiliente:
+ * - Supabase Auth (email/password) para login/registro
  * - ErrorBoundary envuelve cada modulo
  * - React.lazy + Suspense para code-splitting
  * - Toast notifications (no alert)
  * - Schema migrations al boot
  *
- * @version 7.0
- * @author @Arquitecto (Julian)
+ * @version 8.0
+ * @author @Arquitecto (Julian) + @Data (Mateo) v2 Auth
  */
 
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import useLocalStorage, { setHookErrorHandler } from "./hooks/useLocalStorage";
 import FieldBackground from "./components/FieldBackground";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -18,15 +19,21 @@ import ToastContainer, { showToast } from "./components/Toast";
 import { EMPTY_ATHLETES, EMPTY_HISTORIAL, EMPTY_MATCH_STATS, EMPTY_FINANZAS } from "./constants/initialStates";
 import {
   loadDemoState, loadProductionState, logout as logoutService, calcStats, buildSesion,
-  setStorageErrorHandler, exportBackup,
+  setStorageErrorHandler,
 } from "./services/storageService";
 import { takeHealthSnapshot, clearSnapshots, setHealthErrorHandler } from "./services/healthService";
 import { runMigrations } from "./services/migrationService";
 import { PALETTE as C } from "./constants/palette";
 import { SESSION_KEY, createSession, validateSession, canAccessModule } from "./constants/roles";
 import { setValidationErrorHandler } from "./constants/schemas";
+import useSupabaseSync from "./hooks/useSupabaseSync";
+import { isSupabaseReady } from "./lib/supabase";
+import { createClub as sbCreateClub, setClubId, setSupabaseErrorHandler, migrateLocalToSupabase, loadClubIdFromProfile } from "./services/supabaseService";
+import { exportBackupJSON } from "./services/backupService";
+import { signUp, signIn, signOut as authSignOut, getProfile, onAuthStateChange, setAuthErrorHandler, linkProfileToClub } from "./services/authService";
 
 // ── React.lazy: code-splitting por modulo ──
+const CommercialLanding = lazy(() => import("./components/CommercialLanding"));
 const LandingPage = lazy(() => import("./components/LandingPage"));
 const Home = lazy(() => import("./components/Home"));
 const Entrenamiento = lazy(() => import("./components/Entrenamiento"));
@@ -40,6 +47,8 @@ setStorageErrorHandler(_toastError);
 setHookErrorHandler(_toastError);
 setHealthErrorHandler(_toastError);
 setValidationErrorHandler(_toastError);
+setSupabaseErrorHandler(_toastError);
+setAuthErrorHandler(_toastError);
 
 // ── Ejecutar migraciones al boot ──
 const migrationResult = runMigrations();
@@ -64,14 +73,50 @@ export default function App() {
   const [mode, setMode] = useLocalStorage("elevate_mode", null);
   const [session, setSession] = useLocalStorage(SESSION_KEY, null);
   const [activeModule, setActiveModule] = useState("home");
+  const [landingStep, setLandingStep] = useState("commercial"); // commercial | register
   const [athletes, setAthletes] = useLocalStorage("elevate_athletes", EMPTY_ATHLETES);
   const [historial, setHistorial] = useLocalStorage("elevate_historial", EMPTY_HISTORIAL);
   const [clubInfo, setClubInfo] = useLocalStorage("elevate_clubInfo", DEFAULT_CLUB);
   const [matchStats, setMatchStats] = useLocalStorage("elevate_matchStats", EMPTY_MATCH_STATS);
   const [finanzas, setFinanzas] = useLocalStorage("elevate_finanzas", EMPTY_FINANZAS);
 
-  // Validar sesión anti-tampering al boot
-  const userRole = (session && validateSession(session)) ? session.role : "admin";
+  // Supabase sync: carga datos de la nube al montar (offline-first)
+  const { syncSession, syncHealthSnapshots } = useSupabaseSync({
+    setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, mode,
+  });
+
+  // Auth state: perfil de Supabase (club_id + role)
+  const [authProfile, setAuthProfile] = useState(null);
+
+  // Listener de auth: detecta login/logout/token refresh
+  useEffect(() => {
+    if (!isSupabaseReady) return;
+    const sub = onAuthStateChange(async (event, authSession) => {
+      if (event === "SIGNED_IN" && authSession) {
+        const profile = await getProfile();
+        setAuthProfile(profile);
+        if (profile?.club_id) {
+          setClubId(profile.club_id);
+          await loadClubIdFromProfile();
+        }
+      } else if (event === "SIGNED_OUT") {
+        setAuthProfile(null);
+      }
+    });
+    // Cargar profile si ya hay sesion activa al boot
+    (async () => {
+      const profile = await getProfile();
+      if (profile) {
+        setAuthProfile(profile);
+        if (profile.club_id) setClubId(profile.club_id);
+      }
+    })();
+    return () => sub.unsubscribe();
+  }, []);
+
+  // Role: prioridad auth profile > localStorage session > fallback admin
+  const userRole = authProfile?.role
+    || ((session && validateSession(session)) ? session.role : "admin");
 
   // Navegación con control de acceso por rol
   const navigateTo = useCallback((mod) => {
@@ -86,31 +131,103 @@ export default function App() {
     loadDemoState();
     const demoSession = createSession("admin", "Demo User");
     setSession(demoSession);
-    setAthletes(JSON.parse(localStorage.getItem("elevate_athletes")));
-    setHistorial(JSON.parse(localStorage.getItem("elevate_historial")));
-    setClubInfo(JSON.parse(localStorage.getItem("elevate_clubInfo")));
-    setMatchStats(JSON.parse(localStorage.getItem("elevate_matchStats")));
-    setFinanzas(JSON.parse(localStorage.getItem("elevate_finanzas")));
+    const demoAthletes = JSON.parse(localStorage.getItem("elevate_athletes"));
+    const demoHistorial = JSON.parse(localStorage.getItem("elevate_historial"));
+    const demoClubInfo = JSON.parse(localStorage.getItem("elevate_clubInfo"));
+    const demoMatchStats = JSON.parse(localStorage.getItem("elevate_matchStats"));
+    const demoFinanzas = JSON.parse(localStorage.getItem("elevate_finanzas"));
+    setAthletes(demoAthletes);
+    setHistorial(demoHistorial);
+    setClubInfo(demoClubInfo);
+    setMatchStats(demoMatchStats);
+    setFinanzas(demoFinanzas);
     setActiveModule("home");
     setMode("demo");
+    // Sync demo data to Supabase in background
+    if (isSupabaseReady) {
+      migrateLocalToSupabase({
+        clubInfo: demoClubInfo, athletes: demoAthletes, historial: demoHistorial,
+        finanzas: demoFinanzas, matchStats: demoMatchStats, mode: "demo",
+      }).then(r => r.success && showToast("Datos demo sincronizados con la nube", "info"));
+    }
   }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
-  const handleRegister = useCallback((form) => {
+  const handleRegister = useCallback(async (form) => {
+    // 1. Registrar en Supabase Auth (si disponible)
+    if (isSupabaseReady && form.email && form.password) {
+      const { user, error } = await signUp({
+        email: form.email,
+        password: form.password,
+        fullName: form.entrenador,
+        role: form.role || "admin",
+      });
+      if (error) {
+        showToast(error, "error");
+        return;
+      }
+      if (user) {
+        showToast("Cuenta creada. Revisa tu email para confirmar.", "info");
+      }
+    }
+
+    // 2. Configurar estado local (offline-first)
     loadProductionState(form);
     const newSession = createSession(form.role || "admin", form.entrenador);
     setSession(newSession);
     setAthletes(EMPTY_ATHLETES);
     setHistorial(EMPTY_HISTORIAL);
-    setClubInfo(JSON.parse(localStorage.getItem("elevate_clubInfo")));
+    const newClubInfo = JSON.parse(localStorage.getItem("elevate_clubInfo"));
+    setClubInfo(newClubInfo);
     setMatchStats(EMPTY_MATCH_STATS);
     setFinanzas(EMPTY_FINANZAS);
     setActiveModule("home");
     setMode("production");
+
+    // 3. Crear club en Supabase y vincular al profile
+    if (isSupabaseReady) {
+      const clubId = await sbCreateClub(form, "production");
+      if (clubId) {
+        await linkProfileToClub(clubId);
+        showToast("Club creado en la nube", "info");
+      }
+    }
   }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
-  const handleLogout = useCallback(() => {
+  const handleLogin = useCallback(async ({ email, password }) => {
+    if (!isSupabaseReady) {
+      showToast("Supabase no disponible — usa modo demo", "warning");
+      return;
+    }
+    const { user, error } = await signIn(email, password);
+    if (error) {
+      showToast(error, "error");
+      return;
+    }
+
+    // Cargar profile y club_id
+    const profile = await getProfile();
+    if (!profile?.club_id) {
+      showToast("No se encontro un club asociado a tu cuenta", "warning");
+      return;
+    }
+    setAuthProfile(profile);
+    setClubId(profile.club_id);
+
+    // Configurar sesion local (compatibilidad)
+    const localSession = createSession(profile.role || "admin", profile.full_name || user.email);
+    setSession(localSession);
+    setMode("production");
+    setActiveModule("home");
+    showToast(`Bienvenido, ${profile.full_name || user.email}`, "success");
+  }, [setSession, setMode]);
+
+  const handleLogout = useCallback(async () => {
+    // Cerrar sesion Supabase Auth
+    if (isSupabaseReady) await authSignOut();
+    setAuthProfile(null);
     logoutService();
     clearSnapshots();
+    setClubId(null);
     setSession(null);
     setAthletes(EMPTY_ATHLETES);
     setHistorial(EMPTY_HISTORIAL);
@@ -121,20 +238,24 @@ export default function App() {
     setMode(null);
   }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
-  // ── Landing ──
+  // ── Landing: Commercial → Register flow ──
   if (!mode) {
     return (
       <div style={{ minHeight:"100vh", background:"#050a14", position:"relative" }}>
-        <FieldBackground />
+        {landingStep === "register" && <FieldBackground />}
         <ToastContainer />
         <Suspense fallback={<LoadingFallback />}>
-          <LandingPage onDemo={handleDemo} onRegister={handleRegister} />
+          {landingStep === "commercial" ? (
+            <CommercialLanding onDemo={handleDemo} onRegister={() => setLandingStep("register")} />
+          ) : (
+            <LandingPage onDemo={handleDemo} onRegister={handleRegister} onLogin={handleLogin} />
+          )}
         </Suspense>
       </div>
     );
   }
 
-  // ── Guardar sesion con Toast (no alert) ──
+  // ── Guardar sesion: localStorage inmediato + Supabase en background ──
   const guardarSesion = (nota, tipo) => {
     const sesion = buildSesion(athletes, historial, nota, tipo);
     if (!sesion) {
@@ -142,8 +263,11 @@ export default function App() {
       return;
     }
     setHistorial(prev => [sesion, ...prev]);
-    takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
+    const snapshots = takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
     showToast(`Sesion #${sesion.num} guardada correctamente`, "success");
+    // Sync to Supabase (fire-and-forget)
+    syncSession(sesion);
+    if (snapshots?.length) syncHealthSnapshots(snapshots);
   };
 
   const stats = calcStats(athletes, historial);

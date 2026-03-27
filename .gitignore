@@ -23,5 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables (secrets — NUNCA commitear)
+.env
+.env.local
+.env.production
+.env*.local
+
+# Supabase local (linked project metadata)
+supabase/.temp/
+supabase/config.toml
+
 # Tools (visualizer, etc.)
 tools/

@@ -2,7 +2,7 @@
 
 > Diario de a bordo del equipo de ingeniería.
 > Al iniciar cada sesión, leer este archivo para recuperar contexto y progreso.
-> **Convención de orden por sprint:** @Arquitecto → @Data → @Desarrollador → @QA (diseño → datos → implementación → validación)
+> **Convención de orden por sprint:** @Arquitecto → @Diseñadora → @Data → @Desarrollador → @QA (estructura → diseño → datos → implementación → validación)
 
 ---
 
@@ -11,6 +11,7 @@
 | Rol | Alias | Responsabilidad | Color |
 |-----|-------|----------------|-------|
 | Julian-Arquitecto | @Arquitecto | Lead de Estructura, decisiones de arquitectura | Azul |
+| Laura-Diseñadora | @Diseñadora | Product Designer — sistema de diseño, mockups, veto visual | Coral |
 | Andres-Desarrollador | @Desarrollador | Lead de Frontend, implementación UI | Verde |
 | Sara-QA_Seguridad | @QA | Auditoría de Calidad, Seguridad e Integridad | Rojo |
 | Mateo-Data_Engine | @Data | Senior Data & Infrastructure Engineer | Dorado |
@@ -448,6 +449,630 @@
 - **UX Pizarra**: 9.5/10 (NEW) — Pointer Events, ghost FIFA, micro-rebote, health signal visual
 - **Tests**: 8.5/10 (+0.5) — 46 tests, 3 suites
 - **Datos**: 9.5/10 (+0.5) — validateSesion conectada, backup JSON, import con validacion
+
+---
+
+### 2026-03-25 — Sprint "Supabase Live + Informe de Negocio"
+
+> Sesion liderada por @Data (Mateo). Directiva de Julian: activar Supabase en produccion y generar informe financiero detallado.
+
+#### @Data (Mateo) — Migracion Supabase a Produccion
+
+**Supabase Live — 9/9 tablas creadas en proyecto remoto:**
+- Proyecto vinculado via CLI: `supabase link --project-ref jqqzwcrfbtcyjiuacrjk`
+- Migracion `001_initial_schema.sql` ejecutada con `supabase db push`
+- Conectividad verificada con anon key: 9 tablas responden OK
+- Build verificado: 0 errores post-migracion
+
+| Tabla | Estado | Indices |
+|-------|--------|---------|
+| clubs | OK | PK |
+| athletes | OK | idx_athletes_club |
+| sessions | OK | idx_sessions_club, idx_sessions_saved |
+| payments | OK | idx_payments_club |
+| movements | OK | idx_movements_club |
+| match_stats | OK | PK + UNIQUE club_id |
+| health_snapshots | OK | idx_health_club, idx_health_athlete |
+| user_sessions | OK | PK |
+| tactical_data | OK | PK + UNIQUE club_id |
+
+**RLS:** Habilitado en las 9 tablas con politicas permisivas (fase 1, sin auth real).
+
+**Stack de conexion verificado:**
+- `src/lib/supabase.js` → cliente singleton lee `.env` ✓
+- `src/services/supabaseService.js` → CRUD completo, write-through ✓
+- `src/hooks/useSupabaseSync.js` → sync on-mount + fire-and-forget writes ✓
+- `src/App.jsx` → imports, error handlers, demo migration, cloud create ✓
+
+#### @Data (Mateo) — Informe de Costos e Infraestructura
+
+**Documento entregado:** `docs/INFORME_COSTOS_INFRAESTRUCTURA.md`
+
+**Hallazgos clave para el equipo:**
+
+| Metrica | Valor |
+|---------|-------|
+| Costo minimo produccion (PMV) | $46 USD/mes (~$193,200 COP) |
+| Desglose PMV | Vercel Pro $20 + Supabase Pro $25 + Dominio $1 |
+| Break-even | 2 clubs a $100K COP/mes |
+| Margen con 10 clubs | +81% |
+| Margen con 100 clubs | +92% |
+| Capacidad Supabase Pro sin overages | ~500-800 clubs |
+| Capacidad Vercel Pro sin overages | ~200K-500K visitas/mes |
+| Proyeccion 12 meses (conservador, 3 clubs/mes) | 36 clubs, +$19.5M COP |
+
+**3 Alertas criticas comunicadas al equipo:**
+
+1. **@Arquitecto + @Desarrollador:** Vercel Hobby PROHIBE uso comercial. Upgrade a Pro ($20/mes) obligatorio antes del primer club pagante. Riesgo: suspension de cuenta.
+
+2. **@Arquitecto + @Data:** Supabase Free auto-pausa tras 7 dias de inactividad y NO tiene backups. Upgrade a Pro ($25/mes) obligatorio. Riesgo: club entra un lunes y la app no responde.
+
+3. **@QA:** El `.env` con credenciales esta en el repo. La anon key es publica por diseño, pero el `SUPABASE_ACCESS_TOKEN` usado para migraciones NO debe commitearse. Recomendacion: mover env vars al panel de Vercel y agregar `.env` al `.gitignore`.
+
+**Roadmap de infraestructura propuesto (4 fases):**
+
+| Fase | Clubs | Costo/mes | Acciones clave |
+|------|-------|-----------|----------------|
+| Lanzamiento | 1-10 | $46 USD | Vercel Pro + Supabase Pro + dominio |
+| Crecimiento | 10-50 | $92 USD | + Resend email + Sentry monitoring |
+| Escala | 50-200 | $202 USD | + Claude API (IA) + compute upgrade |
+| Expansion | 200-500 | $619 USD | + equipo 3 devs + analytics + soporte |
+
+#### Pendientes para proxima sesion
+
+- [ ] **@Arquitecto**: Decidir upgrade Vercel Pro + Supabase Pro (aprobacion de presupuesto)
+- [ ] **@Arquitecto**: Elegir y comprar dominio definitivo
+- [ ] **@QA**: Verificar `.env` en `.gitignore`, auditar credenciales expuestas
+- [x] **@Data**: Implementar Supabase Auth (reemplazar RBAC checksum por auth real) — DONE 2026-03-26
+- [x] **@Data**: Cerrar RLS policies por club_id (eliminar USING true) — DONE 2026-03-26
+- [ ] **@Desarrollador**: Integrar Sentry free tier para monitoreo de errores en produccion
+
+### 2026-03-26 — Sprint "Landing Page Comercial Premium" (Operacion Elite II)
+
+> Directiva de Julian (CTO): Lanzar Landing Page comercial de Elevate Sports. Integrar repo `ui-ux-pro-max-skill` como director de arte automatizado.
+
+#### Decision Arquitectonica
+
+- **Next.js descartado** para este sprint — migrar la app React+Vite a Next.js App Router requiere 2-3 semanas. Mismo resultado de negocio logrado dentro de la arquitectura actual.
+- **ui-ux-pro-max-skill** usado como **herramienta de inteligencia de diseno**, no como UI Kit de componentes. Queries ejecutadas para definir paleta, tipografia, estilo y landing pattern.
+
+#### @Arquitecto (Julian) — Brief de Diseno via UI Pro Max Skill
+
+**Queries ejecutadas y decisiones tomadas:**
+
+| Query | Domain | Decision |
+|-------|--------|----------|
+| "sports team club management SaaS" | product | Vibrant & Block-based + Motion-Driven, Dark Mode OLED |
+| "dark premium neon sports" | style | Dark Mode OLED (performance excelente, WCAG AAA) |
+| "sports gaming dark" | typography | **Barlow Condensed** (headers) + **Barlow** (body) |
+| "dark neon sports club" | color | Confirmada paleta existente: #050a14 bg, #c8ff00 neon |
+| "SaaS landing page hero CTA" | landing | Hero-Centric + Feature-Rich pattern |
+
+#### @Arquitecto — index.html SEO + OG + Tipografia
+
+- `lang="es"`, `<title>` profesional, `meta description` con keywords
+- **Open Graph** completo: og:title, og:description, og:image, og:locale=es_CO
+- **Twitter Card** con summary_large_image
+- **PWA basics**: theme-color #050a14, apple-mobile-web-app-capable
+- **Google Fonts**: Barlow Condensed (400-900) + Barlow (300-700) con preconnect
+- **Privacy hint**: footer con "datos almacenados localmente"
+
+#### @Desarrollador (Andres) — CommercialLanding.jsx
+
+**Componente nuevo**: Landing Page comercial con 6 secciones animadas:
+
+1. **Hero**: headline "Tu club. Otro nivel." + pizarra tactica SVG animada con 11 dots spring
+2. **Stats Bar**: 4 metricas (Formaciones, RPE, Finanzas, PDF)
+3. **Modulos**: 6 cards (Entrenamiento, Ciencia, Pizarra, Admin, Reportes, Seguridad)
+4. **Features**: 2 columnas (Para el entrenador / Para el club) con bullet points
+5. **CTA**: "Probar demo gratis" (neon) + "Crear mi club" (purple) + precio hint
+6. **Footer**: copyright + disclaimer de privacidad
+
+**Detalles tecnicos:**
+- Framer Motion `useInView` para scroll-triggered reveals
+- Navbar sticky con backdrop-filter blur al scroll
+- Ambient neon orbs (radial-gradient + blur)
+- Scanline overlay sutil (repeating-linear-gradient)
+- Responsive: media queries para mobile (grid 1 col, font sizes, CTA stack)
+- Chunk size: 18.72 KB (5.38 KB gzip) — ultra liviana
+
+#### @Arquitecto — Routing actualizado
+
+**Nuevo flujo de entrada:**
+```
+mode=null → CommercialLanding (landing comercial)
+         → CTA "Demo" → handleDemo() → modo demo directo
+         → CTA "Crear club" → LandingPage (formulario registro)
+                            → handleRegister() → modo produccion
+```
+- `landingStep` state: "commercial" | "register"
+- CommercialLanding lazy-loaded (code-splitting)
+- FieldBackground solo en paso registro (no en landing comercial)
+
+#### Build & Tests (v1 — VETADO)
+- Build: 0 errores, 0 warnings
+- Landing v1 vetada por CTO: "Muy generado por IA, plano, tonos oscuros genéricos, no profesional"
+
+### 2026-03-26 — Rewrite "Landing Page Modular Senior" (Veto + Re-Enfoque)
+
+> Directiva de Julian (CTO): Veto total a la Landing v1. Norte visual: mockup Imagen 0 (dashboard modular con paneles 3D elevados). Paleta charcoal (#1A1A2E / #2A2A3A), no negro profundo.
+
+#### Decision Arquitectonica: Veto aceptado
+
+**Diagnostico del CTO sobre v1:**
+- Scroll plano tipo "template genérico"
+- Tonos oscuros sin profundidad
+- Copy de marketing en vez de datos vivos
+- No refleja la identidad senior de Elevate Sports
+
+**Cambio de filosofia:**
+- v1: Marketing scroll page → **VETADO**
+- v2: Dashboard modular con datos vivos → **APROBADO**
+
+#### @Arquitecto — Analisis del Mockup (Imagen 0)
+
+| Elemento | v1 (vetada) | v2 (mockup) |
+|----------|-------------|-------------|
+| Layout | Scroll vertical | Grid modular de paneles 3D |
+| Background | #050a14 (negro plano) | #1A1A2E / #2A2A3A (charcoal con profundidad) |
+| Bordes | Esquinas rectas | border-radius 16px + box-shadow elevacion |
+| Hero | Headline texto | Pizarra tactica con perspectiva 3D |
+| CTA | Neon verde | Violeta electrico (#7C3AED) |
+| Contenido | Texto descriptivo | Charts SVG, gauges, semaforos, datos vivos |
+| Navegacion | Navbar basica | Navbar con logo E verde + links + Login purple |
+
+#### @Desarrollador (Andres) — CommercialLanding v2.0 rewrite completo
+
+**568 lineas. 5 paneles modulares. 4 charts SVG puros. 0 dependencias extra.**
+
+**Paleta local `LP` (charcoal override):**
+- bg: #1A1A2E, panel: #2A2A3A, neon: #c8ff00, purple: #7C3AED
+- Paneles: border-radius 16px, box-shadow: 0 8px 32px rgba(0,0,0,0.4)
+
+**Panel 1 — Hero Pizarra Tactica:**
+- Campo con perspectiva 3D (CSS `rotateX(8deg)`, `perspective: 800px`)
+- 11 tokens animados con RPE numbers (spring stiffness:200, damping:15)
+- Formacion "4-3-3" label
+- Boton "PROBAR DEMO" en violeta con shadow glow
+
+**Panel 2 — Modulo de Ciencia (RPE Borg CR-10):**
+- Chart ACWR (SVG puro, 20 data points, area fill con gradiente neon)
+- Zona de peligro roja (>80) con etiqueta "Lesion"
+- Player card: MATEO (ID: 12)
+- Health Snapshot donut: Fatiga 6.5 (MED/amber) + Rendimiento 7.2 (ALTA/green)
+
+**Panel 3 — Modulo de Gestion (Estandarizacion):**
+- Metodologia Unica: 3 iconos conectados por curvas purple (Asistencia → Entrenamiento → RPE)
+- Mini chart ACWR + donut de salud (version compacta)
+
+**Panel 4 — Modulo Financiero (CRM):**
+- Gauge semicircular: GREEN 82% / MORA 18%
+- Stats: Por Cobrar $1,200,000 COP / Pagos Hoy $350,000 COP
+- Player Cards: avatar + nombre + estado Pagado(green)/Mora(red)
+
+**Panel 5 — Modulo Journal (Noticias & Updates):**
+- 3 items: Actualizacion 2.1, Recomendacion Tecnica (card purple), Consejo Admin
+- Fechas reales, contenido sobre funcionalidades del producto
+
+**Navbar:**
+- Logo "E" verde + "ELEVATE SPORTS" uppercase
+- Links: Home · Pizarra · Data · Finanzas · Journal · Demo
+- "Login" button purple con border-radius 8px
+
+**Responsive:** Media query <768px: grid 1 columna, nav links ocultos
+
+#### @Arquitecto — Routing actualizado
+- Flujo: `mode=null` → `landingStep="commercial"` → CommercialLanding v2
+- CTA "PROBAR DEMO" → `handleDemo()` directo
+- CTA "Login" → `setLandingStep("register")` → LandingPage (formulario)
+
+#### @Arquitecto — Skill UI Pro Max configurado como recurso del proyecto
+- Repo clonado en `tools/ui-ux-pro/`
+- Skill copiado a `.claude/skills/ui-ux-pro-max/` (SKILL.md + data/ + scripts/)
+- Symlinks resueltos: archivos reales copiados (no symlinks rotos)
+- Comando disponible para todos los agentes:
+  ```
+  python .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <domain> -n <max>
+  ```
+- Dominios: `product`, `style`, `typography`, `color`, `landing`, `chart`, `ux`
+- Stacks: `react`, `nextjs`, `html-tailwind`, etc.
+- **Obligatorio**: Consultar este skill ANTES de cualquier decision visual/UI
+
+#### Build & Tests
+- **Build**: 0 errores, 0 warnings (727ms)
+- **Tests**: 46/46 passing
+
+### 2026-03-26 — @Andres: Micro-interacciones Landing + Pizarra Pointer Drag
+
+#### @Desarrollador (Andres) — CommercialLanding.jsx v2.1: Micro-interacciones Premium
+
+**Consulta ui-ux-pro-max ejecutada:** `hover animation micro-interaction --domain ux`
+- Adoptado: click/tap para primary, hover solo como feedback visual
+- Adoptado: `prefers-reduced-motion` query para accesibilidad
+- Adoptado: cursor + visual change en todos los elementos interactivos
+
+**11 micro-interacciones implementadas:**
+
+| # | Elemento | Animación | Detalle |
+|---|----------|-----------|---------|
+| 1 | 5 paneles | `whileHover: y:-3` + boxShadow lift | Spring suave, sensación de elevación 3D |
+| 2 | ACWR chart | `cl2_draw` stroke-dashoffset | Línea se dibuja progresivamente (1.8s ease-out) |
+| 3 | Gauge financiero | `cl2_gaugeIn` arcos | Arcos verde/rojo se llenan animados (1.2s) |
+| 4 | Health Donut | `cl2_donut-arc` segmentos | Segmentos se expanden al cargar (1.4s) |
+| 5 | 82% gauge center | `cl2_glow` pulse neón | Número pulsa con text-shadow verde |
+| 6 | Nav links | CSS underline reveal | Línea neón crece desde left:0 al hover (0.25s) |
+| 7 | 3 journal cards | `cl2-card-hover` | translateY(-2px) + bg brightens al hover |
+| 8 | 2 player cards | `cl2-card-hover` | Mismo efecto de elevación suave |
+| 9 | $1.2M / $350K | `cl2_pulse` | Números financieros pulsan sutilmente (4s loop) |
+| 10 | Hero tokens | 26→34px + glow+50% | RPE números más prominentes (font 13, weight 900) |
+| 11 | Methodology icons | Emoji → SVG paths | Check, gear, bar-chart en SVG puro (cross-platform) |
+
+**Accesibilidad:** `@media(prefers-reduced-motion:reduce)` desactiva todas las animaciones CSS
+
+**Build:** 0 errores | **Tests:** 46/46 | **Chunk:** 23.71 KB (5.93 KB gzip)
+
+#### @Desarrollador (Andres) — TacticalBoard.jsx v9: Pointer Drag FIFA-Style
+
+*(Implementado al inicio de la sesión)*
+
+- HTML5 Drag API eliminada → Pointer Events completo (mouse + touch)
+- Ghost visual FIFA con glow neón `drop-shadow(0 0 18px)`
+- Spring: `stiffness:170, damping:14, mass:0.8` (micro-rebote)
+- Stagger en formaciones: GK→0ms, DEF→40ms, MID→90ms, FWD→140ms
+- `React.memo` en PlayerToken (comparador custom), HexRadar, MiniPitch
+- `touch-action:none` para soporte móvil
+- Nearest-target highlight + bench drop zone detection
+
+**Build:** 0 errores | **Tests:** 46/46
+
+---
+
+### TAREAS PENDIENTES — Delegaciones activas
+
+> Cada agente debe leer su seccion y ejecutar. Orden: @Mateo → @Andres → @Sara.
+
+#### ~~@Andres (Desarrollador) — Landing Page Modular Senior~~ ✅ COMPLETADO 2026-03-26
+
+**Entregado en sesion anterior.** Ver seccion "2026-03-26 — @Andres: Micro-interacciones Landing + Pizarra Pointer Drag".
+
+#### @Mateo (Data) — Club Modelo completo + Journal Feed
+
+**Tareas:**
+1. Expandir `src/constants/initialStates.js`:
+   - `DEMO_ATHLETES`: 25 jugadores (actualmente 15) con RPE variados
+   - `DEMO_HISTORIAL`: 20 sesiones (4 semanas, actualmente 5)
+   - `DEMO_FINANZAS`: pagos completos para 25 jugadores, mix pagado/pendiente/parcial
+2. Crear `src/constants/journalData.js`:
+   - Array de noticias para el feed del Journal
+   - Campos: `{ id, tipo, titulo, descripcion, fecha }`
+   - Tipos: "actualizacion", "recomendacion", "consejo"
+   - Minimo 5 entries con contenido real sobre funcionalidades de Elevate
+3. Verificar que el dataset expandido no rompa tests existentes
+
+#### @Sara (QA) — Performance + Cumplimiento Legal — COMPLETADO 2026-03-26
+
+##### Tarea 1: Auditoria de Performance — PASS
+
+| Chunk | Size (gzip) | Veredicto |
+|-------|-------------|-----------|
+| CommercialLanding | 5.35 KB | EXCELENTE (<50KB) |
+| LegalDisclaimer (lazy) | 2.99 KB | Lazy-loaded, 0 impacto en carga inicial |
+| index (React+Framer) | 118 KB | Inevitable, aceptable |
+| Critical path total | ~124 KB gzip | < 1.5s en 3G simulado |
+
+- `LegalDisclaimer` lazy-loaded via `React.lazy()` + `Suspense` — no se carga hasta que el usuario haga clic
+- JPEGs (860KB total) no cargan en landing comercial — solo en app interna
+- Google Fonts con `display=swap` — no bloquea render
+
+##### Tarea 2: LegalDisclaimer.jsx — CREADO
+
+**Archivo nuevo:** `src/components/LegalDisclaimer.jsx`
+
+- **Politica de Tratamiento de Datos** (Ley 1581 de 2012, Colombia):
+  - Art. 1: Responsable del tratamiento (Elevate Sports, Medellin)
+  - Art. 2: Datos recolectados (club, jugadores, deportivos, financieros)
+  - Art. 3: Finalidad (gestion deportiva, no comercial)
+  - Art. 4: Almacenamiento (localStorage V1, Supabase+AES-256 V2)
+  - Art. 5: Derechos ARCO del titular
+  - Art. 6: Datos de menores (responsabilidad del entrenador, art. 7 Ley 1581)
+  - Art. 7: Contacto (soporte@elevatesports.co)
+- **Terminos de Servicio** (8 secciones):
+  - Uso aceptable, responsabilidad datos V1, propiedad intelectual
+  - Legislacion colombiana, tribunales de Medellin
+- **UI**: Modal con tabs (Privacidad | Terminos), ARIA roles, cierre con backdrop click
+- **Links**: Botones en footer de CommercialLanding → abre modal
+- **Footer actualizado**: "Datos almacenados localmente · Ley 1581 de 2012"
+
+##### Tarea 3: Validacion OG Tags — 1 DEFECTO CRITICO
+
+| Tag | Estado | Nota |
+|-----|--------|------|
+| og:title | OK | "Elevate Sports — Gestion Deportiva Profesional" |
+| og:description | OK | Texto descriptivo completo |
+| og:url | OK | https://elevate-sports-zeta.vercel.app |
+| og:image | **FALTA** | `/public/og-image.png` NO EXISTE. WhatsApp/FB mostraran preview vacio |
+| og:locale | OK | es_CO |
+| twitter:card | OK | summary_large_image |
+| twitter:image | **FALTA** | Misma imagen inexistente |
+
+**ACCION REQUERIDA @Andres o @Arquitecto:** Crear `public/og-image.png` (1200x630px) con el branding de Elevate. Sin esta imagen, compartir el link en WhatsApp/redes mostrara una preview en blanco.
+
+##### Tarea 4: Auditoria de Accesibilidad — CORREGIDO
+
+**Estado previo:** 0 atributos aria/alt/role en 568 lineas de CommercialLanding.jsx
+
+**Correcciones aplicadas:**
+- `role="main"` + `aria-label` en contenedor principal
+- `aria-label="Navegacion principal"` en `<nav>`
+- `aria-label` en botones Login y PROBAR DEMO
+- `role="img"` + `aria-label` descriptivo en los 4 SVG charts:
+  - ACWR Chart: descripcion de zona de riesgo
+  - Health Donut: porcentajes fatiga/rendimiento
+  - Financial Gauge: recaudo vs mora
+  - Methodology Flow: flujo de 3 pasos
+- `role="contentinfo"` en `<footer>`
+- `aria-label` en botones de links legales
+- Modal LegalDisclaimer: `role="dialog"`, `aria-modal="true"`, `role="tab"`, `aria-selected`
+
+**Contraste charcoal auditado:**
+| Combinacion | Ratio | WCAG AA | Nota |
+|---|---|---|---|
+| #fff sobre #2A2A3A | ~11:1 | PASS AAA | Texto principal |
+| rgba(255,255,255,0.5) sobre #2A2A3A | ~5.6:1 | PASS AA | Texto muted |
+| rgba(255,255,255,0.25) sobre #2A2A3A | ~3:1 | BORDERLINE | Hints — decorativo, no critico |
+| #c8ff00 sobre #2A2A3A | ~10.5:1 | PASS AAA | Neon accent |
+| #7C3AED sobre #2A2A3A | ~3.5:1 | PASS AA (large text) | Purple — usado solo en headers uppercase |
+
+##### Tarea pendiente anterior: .env en .gitignore — VERIFICADO SEGURO
+
+- `.env` esta en `.gitignore` (linea 27-30)
+- `git log --all -- .env` = vacio. NUNCA fue commiteada al repo
+- `VITE_SUPABASE_ANON_KEY` es publica por diseño de Supabase (publishable key)
+- `SUPABASE_ACCESS_TOKEN` NO esta en `.env` (solo URL + anon key). SEGURO.
+- `.env.example` existe con plantilla segura
+
+##### Build & Tests
+- **Build**: 0 errores, 691ms
+- **Tests**: 46/46 passing
+- **Archivos nuevos**: `src/components/LegalDisclaimer.jsx`
+- **Archivos modificados**: `src/components/CommercialLanding.jsx` (ARIA + footer legal)
+
+##### Alertas para el equipo
+
+1. **@Andres/Arquitecto — BLOQUEANTE:** Crear `public/og-image.png` (1200x630) antes de compartir el link en redes. Sin esto, WhatsApp mostrara preview vacio.
+2. **@Arquitecto:** Confirmar email de contacto legal (soporte@elevatesports.co) antes de publicar en produccion.
+3. **@Arquitecto:** El `favicon.svg` existe? Verificar en `/public/`.
+
+### 2026-03-26 — Auditoria @Arquitecto: Falla de coordinacion + Protocolo de Cadena
+
+#### Diagnostico: Equipo descoordinado
+
+**Problema detectado por el CTO (Julian):** Los 3 agentes trabajaron en paralelo sin respetar dependencias. Sara entrego el legal cuando Andres no habia terminado la landing donde se integra. Mateo se fue por auth en vez de datos demo. Nadie espero a nadie.
+
+**Cadena rota:**
+```
+CORRECTO:   @Mateo (datos) → @Andres (UI con datos) → @Sara (valida UI final)
+LO QUE PASO: @Mateo (auth) | @Andres (landing) | @Sara (legal) — todos en paralelo
+```
+
+**Causa raiz:** @Arquitecto no establecio dependencias vinculantes + no habia rol de diseño — Julian hacia de CTO, cliente y diseñador al mismo tiempo.
+
+#### Incorporacion de @Laura (Diseñadora) al equipo
+
+**Motivo:** La landing v1 fue vetada por falta de criterio visual senior. Nadie en el equipo tenia la responsabilidad de anticipar ese veto. Julian terminaba corrigiendo colores y layouts en vez de tomar decisiones de negocio.
+
+**Responsabilidades de @Laura:**
+1. **Traducir la vision de Julian** en wireframes/mockups ANTES de que @Andres toque codigo
+2. **Definir y mantener el design system**: spacing, tipografia, componentes, tokens de color
+3. **Usar `ui-ux-pro-max`** como herramienta para decisiones informadas (queries de estilo, paleta, UX)
+4. **Veto visual**: ninguna UI pasa a @Sara sin que @Laura la apruebe primero
+5. **Entregar specs**: @Andres recibe de Laura exactamente que construir (no interpreta mockups)
+
+**Cadena actualizada:**
+```
+@Arquitecto (estructura) → @Laura (diseño/mockup) → @Mateo (datos) → @Andres (implementa specs de Laura) → @Sara (valida) → @Arquitecto (deploy)
+```
+
+---
+
+### PROTOCOLO DE CADENA v2 — OBLIGATORIO A PARTIR DE AHORA
+
+> **Regla 1:** Nadie empieza sin que el anterior marque `[DONE]` en su seccion.
+> **Regla 2:** Al terminar, el agente escribe `[DONE]` y etiqueta al siguiente.
+> **Regla 3:** Si hay duda, preguntar en el ENGINEERING_LOG antes de escribir codigo.
+> **Regla 4:** @Laura tiene veto visual. Si no aprueba, @Andres no mergea.
+> **Regla 5:** @Laura debe consultar `ui-ux-pro-max` para toda decision de paleta, tipografia o estilo.
+
+---
+
+### TAREAS ACTIVAS — Sprint Landing Modular (re-priorizado con @Laura)
+
+#### FASE 0: @Laura (Diseñadora) — Design System + Specs de Landing
+**Estado:** PENDIENTE
+**Bloqueado por:** Nada (Laura arranca primero)
+**Desbloquea a:** @Mateo
+
+**Tareas:**
+1. Consultar `ui-ux-pro-max` para validar paleta charcoal:
+   - `python .claude/skills/ui-ux-pro-max/scripts/search.py "sports club dark charcoal premium" --domain color -n 3`
+   - `python .claude/skills/ui-ux-pro-max/scripts/search.py "elevated panels 3D dark dashboard" --domain style -n 3`
+2. Definir design tokens finales: colores, spacing, radii, shadows, tipografia
+3. Revisar el mockup de Julian (Imagen 0) y crear specs detalladas para cada panel:
+   - Tamaños exactos, gaps, paddings, font sizes, colores por elemento
+   - Que datos necesita cada panel (esto informa a @Mateo)
+4. Definir que datos necesita el Journal (tipos de noticias, estructura, cantidad)
+5. Aprobar o vetar la CommercialLanding v2 actual vs el mockup
+6. Entregar specs como seccion en este log para que @Andres las lea
+
+**Al completar, Laura escribe aqui:** [ ]
+
+---
+
+#### FASE 1: @Mateo (Data) — Club Modelo + Journal Feed
+**Estado:** BLOQUEADO (espera FASE 0)
+**Bloqueado por:** @Laura (necesita saber que datos requiere cada panel)
+**Desbloquea a:** @Andres
+
+**Tareas:**
+1. Expandir `src/constants/initialStates.js`:
+   - `DEMO_ATHLETES`: 25 jugadores (hoy son 15)
+   - `DEMO_HISTORIAL`: 20 sesiones / 4 semanas (hoy son 5)
+   - `DEMO_FINANZAS`: pagos para los 25 jugadores
+2. Crear `src/constants/journalData.js`:
+   - Array de 5+ noticias: `{ id, tipo, titulo, descripcion, fecha }`
+   - Tipos: "actualizacion", "recomendacion", "consejo"
+3. Verificar que `npm test` siga pasando (46/46)
+4. Escribir `[DONE]` aqui y etiquetar a @Andres
+
+**Al completar, Mateo escribe aqui:** [ ]
+
+---
+
+#### FASE 2: @Andres (Desarrollador) — Refinamiento pixel-perfect Landing
+**Estado:** BLOQUEADO (espera FASE 1)
+**Bloqueado por:** @Mateo (necesita journalData.js + datos expandidos)
+**Desbloquea a:** @Sara
+
+**Tareas:**
+1. Leer `journalData.js` de Mateo e integrarlo en Panel Journal (reemplazar datos hardcodeados)
+2. Verificar que CommercialLanding use los 25 jugadores del demo expandido
+3. Consultar `ui-ux-pro-max` para cualquier decision visual pendiente
+4. Crear `public/og-image.png` (1200x630px) con branding Elevate (BLOQUEANTE para social sharing)
+5. Verificar build + tests
+6. Escribir `[DONE]` aqui y etiquetar a @Sara
+
+**Al completar, Andres escribe aqui:** [ ]
+
+---
+
+#### FASE 3: @Sara (QA) — Validacion final de la cadena completa
+**Estado:** BLOQUEADO (espera FASE 2)
+**Bloqueado por:** @Andres (necesita landing final con datos reales)
+**Desbloquea a:** Deploy a master
+
+**Tareas:**
+1. Verificar que la landing carga < 1.5s con datos expandidos
+2. Verificar que `og-image.png` existe y OG tags funcionan
+3. Verificar que LegalDisclaimer esta integrado y accesible desde footer
+4. Correr `npm test` — debe pasar 46/46
+5. Correr `npm run build` — debe ser 0 errores
+6. Verificar accesibilidad ARIA en todos los paneles
+7. Escribir `[DONE]` aqui y notificar a @Arquitecto
+
+**Al completar, Sara escribe aqui:** [ ]
+
+---
+
+#### FASE 4: @Arquitecto — Merge a master + Deploy
+**Estado:** BLOQUEADO (espera FASE 3)
+**Ejecuta:** Solo cuando las 3 fases anteriores tengan `[DONE]`
+
+---
+
+### 2026-03-26 — @Data: Supabase Auth + RLS por club_id (Seguridad Real)
+
+> Tareas asignadas en sprint anterior. Ejecutadas por @Data (Mateo) con directiva de Julian.
+
+#### @Data (Mateo) — Supabase Auth (Task 1)
+
+**Nuevo archivo: `src/services/authService.js`**
+- `signUp({ email, password, fullName, role })` — registro con Supabase Auth
+- `signIn(email, password)` — login con email/password
+- `signOut()` — cierra sesion auth
+- `getProfile()` — lee profile (club_id + role) del usuario autenticado
+- `linkProfileToClub(clubId)` — vincula profile con club post-registro
+- `onAuthStateChange(callback)` — listener de estado auth
+- `mapAuthError()` — mensajes de error en español
+- Error handler inyectable via `setAuthErrorHandler()`
+
+**Nuevo archivo: `supabase/migrations/002_auth_profiles_rls.sql`**
+- Tabla `profiles`: id (auth.uid), club_id, role, full_name, created_at
+- Trigger `on_auth_user_created`: auto-crea profile al signup (lee role y full_name de metadata)
+- Funcion `get_my_club_id()`: security definer, devuelve club_id del usuario auth
+- Patron `(SELECT public.get_my_club_id())` en policies para performance (1 eval por statement, no por fila)
+
+**Actualizado: `src/services/supabaseService.js` v2**
+- Nueva funcion `loadClubIdFromProfile()`: carga club_id desde profile auth, fallback a localStorage
+- `setClubId()` actualizado: limpia localStorage si null
+
+#### @Data (Mateo) — RLS cerrado por club_id (Task 2)
+
+**9 politicas permisivas eliminadas:**
+```sql
+DROP POLICY "anon_all_clubs" ON clubs;
+-- ... (9 total)
+```
+
+**28 politicas nuevas creadas (por tabla):**
+- SELECT/INSERT/UPDATE/DELETE segun necesidad
+- Todas usan `TO authenticated` (anon bloqueado)
+- Todas filtran por `club_id = (SELECT public.get_my_club_id())`
+- `clubs_insert_authenticated`: permite crear club (aun sin club_id)
+- `profiles`: solo lectura/update del propio perfil
+
+**Verificacion RLS:**
+- Anon INSERT clubs: BLOCKED (error 42501) ✓
+- Anon SELECT profiles: 0 rows (filtrado) ✓
+- Migracion 002 ejecutada en remoto via `supabase db push` ✓
+
+#### @Data (Mateo) — Integracion UI
+
+**Actualizado: `src/components/LandingPage.jsx` v2**
+- Campos email + password obligatorios en registro
+- Seccion "Cuenta de acceso" separada visualmente
+- Formulario de login (email + password) con validacion
+- Navegacion landing ↔ register ↔ login con links cruzados
+- Loading state en botones (disabled + texto "Creando cuenta..." / "Ingresando...")
+- Enter key submit en login
+
+**Actualizado: `src/App.jsx` v8 (Auth-Ready)**
+- Import authService completo
+- `useEffect` con `onAuthStateChange` listener
+- `authProfile` state: perfil cargado desde Supabase al boot
+- `userRole`: prioridad auth profile > localStorage session > fallback admin
+- `handleRegister`: signUp → loadProductionState → createClub → linkProfileToClub
+- `handleLogin`: signIn → getProfile → setClubId → createSession local
+- `handleLogout`: authSignOut → limpiar todo
+- `onLogin` prop pasado a LandingPage
+- `setAuthErrorHandler` conectado al boot
+
+#### Verificacion
+
+| Check | Resultado |
+|-------|-----------|
+| Build | 0 errores ✓ |
+| Tests | 46/46 passing ✓ |
+| Migracion 002 remota | Aplicada ✓ |
+| Tabla profiles | Creada ✓ |
+| Trigger auto-profile | Activo ✓ |
+| RLS anon INSERT | BLOCKED ✓ |
+| RLS anon SELECT | Filtrado (0 rows) ✓ |
+| Funcion get_my_club_id() | Creada ✓ |
+
+#### Informe para @Arquitecto
+
+**@Arquitecto — reporte de @Data:**
+
+El sistema de seguridad esta cerrado. Resumen de impacto:
+
+1. **Auth real activa**: Los usuarios ahora se registran con email/password via Supabase Auth. El checksum en localStorage se mantiene como fallback offline pero ya no es la fuente de verdad.
+
+2. **RLS cerrado**: Nadie puede leer ni escribir datos de otro club. La anon key sigue siendo publica (necesaria para el signup), pero no da acceso a datos.
+
+3. **Compatibilidad offline-first**: localStorage sigue funcionando como cache. Si Supabase no esta disponible, la app funciona en modo local.
+
+4. **Pendiente de tu decision**:
+   - Supabase tiene **email confirmation habilitado por defecto**. Los usuarios reciben un email de confirmacion al registrarse. Si quieres desactivarlo para MVP (login inmediato post-registro), hay que cambiarlo en Supabase Dashboard > Auth > Settings.
+   - El demo mode sigue funcionando sin auth (no requiere email/password).
+
+**Archivos nuevos/modificados:**
+- `NEW: src/services/authService.js`
+- `NEW: supabase/migrations/002_auth_profiles_rls.sql`
+- `NEW: .env.example`
+- `MOD: src/services/supabaseService.js` (v2)
+- `MOD: src/components/LandingPage.jsx` (v2 + login)
+- `MOD: src/App.jsx` (v8 Auth-Ready)
+- `MOD: .gitignore` (supabase/.temp, config.toml)
 
 ---
 

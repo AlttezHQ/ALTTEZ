@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
     "dompurify": "^3.3.3",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
