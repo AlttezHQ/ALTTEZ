@@ -23,5 +23,23 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables (secrets — NUNCA commitear)
+.env
+.env.local
+.env.production
+.env*.local
+
+# Supabase local (linked project metadata)
+supabase/.temp/
+supabase/config.toml
+
 # Tools (visualizer, etc.)
 tools/
+
+# Python virtual environments
+.venv/
+venv/
+
+# Artifacts de trabajo (no versionar)
+mockup-landing.html
+skills-lock.json

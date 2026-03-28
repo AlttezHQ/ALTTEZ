@@ -3,15 +3,16 @@
  * @description Pantalla de bienvenida / onboarding de Elevate Sports.
  * Estetica EA Sports/FIFA con dos caminos: Demo o Nuevo Club.
  *
- * @props { onDemo, onRegister }
- * @author @Desarrollador (Andres)
- * @version 1.0.0
+ * @props { onDemo, onRegister, onLogin }
+ * @author @Desarrollador (Andres) + @Data (Mateo) v2 Auth
+ * @version 2.0.0
  */
 
 import { useState } from "react";
 import { PALETTE } from "../constants/palette";
-import { sanitizeText, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
+import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 import { ROLES } from "../constants/roles";
+import { isSupabaseReady } from "../lib/supabase";
 
 /* ── Keyframe para glow pulsante ── */
 if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
@@ -27,48 +28,75 @@ if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
 
 const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
 
-export default function LandingPage({ onDemo, onRegister }) {
-  const [step, setStep] = useState("landing"); // landing | register
+export default function LandingPage({ onDemo, onRegister, onLogin }) {
+  const [step, setStep] = useState("landing"); // landing | register | login
   const [form, setForm] = useState({
     nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
     temporada: "2025-26", categorias: "", campo: "",
-    telefono: "", email: "", role: "admin",
+    telefono: "", email: "", role: "admin", password: "",
   });
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [hoverDemo, setHoverDemo] = useState(false);
   const [hoverReg, setHoverReg] = useState(false);
+  const [hoverLogin, setHoverLogin] = useState(false);
 
   const updateField = (key, val) => {
     setForm(prev => ({ ...prev, [key]: val }));
     if (errors[key]) setErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
   };
 
-  const validateAndSubmit = () => {
+  const validateAndSubmit = async () => {
     const errs = {};
     REQUIRED_FIELDS.forEach(k => {
       if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
     });
-    // Email: sanitizar con DOMPurify + validar formato
+    // Email obligatorio para auth
     const cleanEmail = sanitizeEmail(form.email);
-    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      errs.email = "Email invalido";
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      errs.email = "Email obligatorio y valido";
+    }
+    // Password obligatorio para auth
+    if (!form.password || form.password.length < 6) {
+      errs.password = "Minimo 6 caracteres";
     }
     if (!ROLES[form.role]) {
       errs.role = "Rol invalido";
     }
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
-      // Sanitizar todos los campos antes de enviar
-      onRegister({
+      setLoading(true);
+      // Sanitizar y hacer trim final solo en el momento de persistencia
+      await onRegister({
         ...form,
-        nombre:     sanitizeText(form.nombre),
-        ciudad:     sanitizeText(form.ciudad),
-        entrenador: sanitizeText(form.entrenador),
-        categorias: sanitizeText(form.categorias),
-        campo:      sanitizeText(form.campo),
+        nombre:     sanitizeTextFinal(form.nombre),
+        ciudad:     sanitizeTextFinal(form.ciudad),
+        entrenador: sanitizeTextFinal(form.entrenador),
+        categorias: sanitizeTextFinal(form.categorias),
+        campo:      sanitizeTextFinal(form.campo),
         telefono:   sanitizePhone(form.telefono),
         email:      cleanEmail,
+        password:   form.password,
       });
+      setLoading(false);
+    }
+  };
+
+  const validateAndLogin = async () => {
+    const errs = {};
+    const cleanEmail = sanitizeEmail(loginForm.email);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      errs.email = "Email obligatorio y valido";
+    }
+    if (!loginForm.password) {
+      errs.password = "Ingresa tu contraseña";
+    }
+    setErrors(errs);
+    if (Object.keys(errs).length === 0 && onLogin) {
+      setLoading(true);
+      await onLogin({ email: cleanEmail, password: loginForm.password });
+      setLoading(false);
     }
   };
 
@@ -92,12 +120,16 @@ export default function LandingPage({ onDemo, onRegister }) {
       maxWidth: 700, width: "100%", animation: "ldg_fade 1s ease-out",
     },
     card: (hover, accent) => ({
-      padding: "40px 32px", background: hover ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.6)",
+      padding: "40px 32px",
+      background: hover ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
       border: `1px solid ${hover ? accent : "rgba(255,255,255,0.08)"}`,
       borderTop: `4px solid ${accent}`,
+      borderRadius: 12,
       cursor: "pointer", transition: "all 0.25s ease",
       transform: hover ? "translateY(-4px)" : "translateY(0)",
-      boxShadow: hover ? `0 8px 40px ${accent}33` : "none",
+      boxShadow: hover ? `0 8px 40px ${accent}33, 0 8px 32px rgba(0,0,0,0.4)` : "0 8px 32px rgba(0,0,0,0.4)",
     }),
     cardTag: (color) => ({
       fontSize: 9, textTransform: "uppercase", letterSpacing: "3px",
@@ -118,6 +150,9 @@ export default function LandingPage({ onDemo, onRegister }) {
     // Register form styles
     formContainer: {
       maxWidth: 560, width: "100%", animation: "ldg_fade 0.5s ease-out",
+      background: "rgba(255,255,255,0.03)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 32,
+      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
     },
     formTitle: {
       fontSize: 28, fontWeight: 900, color: "white", textTransform: "uppercase",
@@ -136,6 +171,7 @@ export default function LandingPage({ onDemo, onRegister }) {
       width: "100%", fontSize: 14, padding: "10px 14px",
       background: "rgba(255,255,255,0.05)",
       border: `1px solid ${hasError ? PALETTE.danger : "rgba(255,255,255,0.1)"}`,
+      borderRadius: 6,
       color: "white", fontFamily: "inherit", outline: "none",
       transition: "border-color 0.2s",
     }),
@@ -186,15 +222,32 @@ export default function LandingPage({ onDemo, onRegister }) {
           </div>
         </div>
 
-        <div style={{ marginTop: 40, fontSize: 10, color: "rgba(255,255,255,0.15)", textTransform: "uppercase", letterSpacing: "2px" }}>
-          v1.0 · Elevate Sports
+        {/* LOGIN link */}
+        {isSupabaseReady && (
+          <div
+            onClick={() => setStep("login")}
+            onMouseEnter={() => setHoverLogin(true)}
+            onMouseLeave={() => setHoverLogin(false)}
+            style={{
+              marginTop: 32, fontSize: 12, cursor: "pointer",
+              color: hoverLogin ? "white" : "rgba(255,255,255,0.4)",
+              textTransform: "uppercase", letterSpacing: "1.5px",
+              transition: "color 0.2s", textAlign: "center",
+            }}
+          >
+            Ya tengo cuenta → <span style={{ color: PALETTE.neon, fontWeight: 700 }}>Iniciar sesion</span>
+          </div>
+        )}
+
+        <div style={{ marginTop: 24, fontSize: 10, color: "rgba(255,255,255,0.15)", textTransform: "uppercase", letterSpacing: "2px" }}>
+          v2.0 · Elevate Sports
         </div>
       </div>
     );
   }
 
   // ── REGISTER: formulario de nuevo club ──
-  return (
+  if (step === "register") return (
     <div style={css.page}>
       <div style={css.formContainer}>
         <div style={{ marginBottom: 32 }}>
@@ -310,47 +363,71 @@ export default function LandingPage({ onDemo, onRegister }) {
           </div>
         </div>
 
-        {/* Email + Rol */}
-        <div style={css.row}>
-          <div style={css.fieldGroup}>
-            <label style={css.label}>Email de contacto</label>
-            <input
-              style={css.input(errors.email)}
-              value={form.email}
-              onChange={e => updateField("email", sanitizeEmail(e.target.value))}
-              placeholder="club@email.com"
-              maxLength={80}
-              type="email"
-            />
-            {errors.email && <div style={css.errorText}>{errors.email}</div>}
+        {/* Email + Password (Auth) */}
+        <div style={{ borderTop: `1px solid rgba(255,255,255,0.08)`, paddingTop: 16, marginTop: 8 }}>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.neon, marginBottom: 12, fontWeight: 700 }}>
+            Cuenta de acceso
           </div>
-          <div style={css.fieldGroup}>
-            <label style={css.label}>Tu rol en el club</label>
-            <select
-              style={{ ...css.input(errors.role), cursor: "pointer" }}
-              value={form.role}
-              onChange={e => updateField("role", e.target.value)}
-            >
-              {Object.entries(ROLES).map(([key, r]) => (
-                <option key={key} value={key}>{r.label}</option>
-              ))}
-            </select>
-            {errors.role && <div style={css.errorText}>{errors.role}</div>}
+          <div style={css.row}>
+            <div style={css.fieldGroup}>
+              <label style={css.label}>Email *</label>
+              <input
+                style={css.input(errors.email)}
+                value={form.email}
+                onChange={e => updateField("email", sanitizeEmail(e.target.value))}
+                placeholder="tu@email.com"
+                maxLength={80}
+                type="email"
+                autoComplete="email"
+              />
+              {errors.email && <div style={css.errorText}>{errors.email}</div>}
+            </div>
+            <div style={css.fieldGroup}>
+              <label style={css.label}>Contraseña *</label>
+              <input
+                style={css.input(errors.password)}
+                value={form.password}
+                onChange={e => updateField("password", e.target.value)}
+                placeholder="Minimo 6 caracteres"
+                maxLength={72}
+                type="password"
+                autoComplete="new-password"
+              />
+              {errors.password && <div style={css.errorText}>{errors.password}</div>}
+            </div>
           </div>
+        </div>
+
+        {/* Rol */}
+        <div style={css.fieldGroup}>
+          <label style={css.label}>Tu rol en el club</label>
+          <select
+            style={{ ...css.input(errors.role), cursor: "pointer" }}
+            value={form.role}
+            onChange={e => updateField("role", e.target.value)}
+          >
+            {Object.entries(ROLES).map(([key, r]) => (
+              <option key={key} value={key}>{r.label}</option>
+            ))}
+          </select>
+          {errors.role && <div style={css.errorText}>{errors.role}</div>}
         </div>
 
         {/* Submit */}
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
           <button
             onClick={validateAndSubmit}
+            disabled={loading}
             style={{
               flex: 1, padding: "14px 24px", fontSize: 12, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "2px",
-              background: PALETTE.neon, color: "#0a0a0a", border: "none",
-              cursor: "pointer",
+              background: loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
+              color: "#0a0a0a", border: "none",
+              cursor: loading ? "wait" : "pointer",
+              opacity: loading ? 0.7 : 1,
             }}
           >
-            Crear club y comenzar →
+            {loading ? "Creando cuenta..." : "Crear club y comenzar →"}
           </button>
         </div>
 
@@ -359,7 +436,88 @@ export default function LandingPage({ onDemo, onRegister }) {
             Completa los campos obligatorios marcados con *
           </div>
         )}
+
+        {isSupabaseReady && (
+          <div
+            onClick={() => { setStep("login"); setErrors({}); }}
+            style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", textAlign: "center" }}
+          >
+            Ya tengo cuenta → <span style={{ color: PALETTE.neon }}>Iniciar sesion</span>
+          </div>
+        )}
       </div>
     </div>
   );
+
+  // ── LOGIN: email + password ──
+  if (step === "login") return (
+    <div style={css.page}>
+      <div style={{ ...css.formContainer, maxWidth: 400 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div
+            onClick={() => { setStep("landing"); setErrors({}); }}
+            style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", cursor: "pointer", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 20 }}
+          >
+            ← Volver
+          </div>
+          <div style={css.formTitle}>Iniciar sesion</div>
+          <div style={css.formSubtitle}>Accede a tu club</div>
+        </div>
+
+        <div style={css.fieldGroup}>
+          <label style={css.label}>Email</label>
+          <input
+            style={css.input(errors.email)}
+            value={loginForm.email}
+            onChange={e => { setLoginForm(p => ({ ...p, email: e.target.value })); if (errors.email) setErrors(p => { const n = { ...p }; delete n.email; return n; }); }}
+            placeholder="tu@email.com"
+            maxLength={80}
+            type="email"
+            autoComplete="email"
+          />
+          {errors.email && <div style={css.errorText}>{errors.email}</div>}
+        </div>
+
+        <div style={css.fieldGroup}>
+          <label style={css.label}>Contraseña</label>
+          <input
+            style={css.input(errors.password)}
+            value={loginForm.password}
+            onChange={e => { setLoginForm(p => ({ ...p, password: e.target.value })); if (errors.password) setErrors(p => { const n = { ...p }; delete n.password; return n; }); }}
+            placeholder="Tu contraseña"
+            type="password"
+            autoComplete="current-password"
+            onKeyDown={e => e.key === "Enter" && validateAndLogin()}
+          />
+          {errors.password && <div style={css.errorText}>{errors.password}</div>}
+        </div>
+
+        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          <button
+            onClick={validateAndLogin}
+            disabled={loading}
+            style={{
+              flex: 1, padding: "14px 24px", fontSize: 12, fontWeight: 700,
+              textTransform: "uppercase", letterSpacing: "2px",
+              background: loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
+              color: "#0a0a0a", border: "none",
+              cursor: loading ? "wait" : "pointer",
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            {loading ? "Ingresando..." : "Entrar →"}
+          </button>
+        </div>
+
+        <div
+          onClick={() => { setStep("register"); setErrors({}); }}
+          style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", textAlign: "center" }}
+        >
+          No tengo cuenta → <span style={{ color: PALETTE.purple }}>Registrar club</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  return null;
 }
