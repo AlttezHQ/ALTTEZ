@@ -22,7 +22,7 @@ import {
   loadDemoState, loadProductionState, logout as logoutService, calcStats, buildSesion,
   setStorageErrorHandler,
 } from "./services/storageService";
-import { takeHealthSnapshot, clearSnapshots, setHealthErrorHandler } from "./services/healthService";
+import { takeHealthSnapshot, clearSnapshots, setHealthErrorHandler, setHealthClubId } from "./services/healthService";
 import { runMigrations } from "./services/migrationService";
 import { PALETTE as C } from "./constants/palette";
 import { SESSION_KEY, createSession, validateSession, canAccessModule } from "./constants/roles";
@@ -32,6 +32,8 @@ import { isSupabaseReady } from "./lib/supabase";
 import { createClub as sbCreateClub, setClubId, setSupabaseErrorHandler, migrateLocalToSupabase, loadClubIdFromProfile } from "./services/supabaseService";
 import { exportBackupJSON } from "./services/backupService";
 import { signUp, signIn, signOut as authSignOut, getProfile, onAuthStateChange, setAuthErrorHandler, linkProfileToClub } from "./services/authService";
+import OfflineBanner from "./components/ui/OfflineBanner";
+import UpdateToast from "./components/ui/UpdateToast";
 
 // ── React.lazy: code-splitting por modulo ──
 const PortalLayout = lazy(() => import("./components/portal/PortalLayout"));
@@ -40,6 +42,7 @@ const SportsCRMPage = lazy(() => import("./components/portal/SportsCRMPage"));
 const JournalPage = lazy(() => import("./components/portal/JournalPage"));
 const QuienesSomos = lazy(() => import("./components/portal/QuienesSomos"));
 const Contacto = lazy(() => import("./components/portal/Contacto"));
+const PrivacyPolicy = lazy(() => import("./components/portal/PrivacyPolicy"));
 const CommercialLanding = lazy(() => import("./components/CommercialLanding"));
 const LandingPage = lazy(() => import("./components/LandingPage"));
 const Home = lazy(() => import("./components/Home"));
@@ -88,6 +91,15 @@ export default function App() {
           <Route path="servicios/sports-crm" element={<SportsCRMPage />} />
           <Route path="journal" element={<JournalPage />} />
         </Route>
+        {/* Politica de Privacidad — publica, sin navbar del portal */}
+        <Route
+          path="/privacidad"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PrivacyPolicy />
+            </Suspense>
+          }
+        />
         {/* CRM App — sistema de gestion deportiva */}
         <Route path="/crm/*" element={<CRMApp />} />
       </Routes>
@@ -124,6 +136,7 @@ function CRMApp() {
         setAuthProfile(profile);
         if (profile?.club_id) {
           setClubId(profile.club_id);
+          setHealthClubId(profile.club_id); // aislar snapshots por club en dispositivo compartido
           await loadClubIdFromProfile();
         }
       } else if (event === "SIGNED_OUT") {
@@ -135,7 +148,10 @@ function CRMApp() {
       const profile = await getProfile();
       if (profile) {
         setAuthProfile(profile);
-        if (profile.club_id) setClubId(profile.club_id);
+        if (profile.club_id) {
+          setClubId(profile.club_id);
+          setHealthClubId(profile.club_id); // aislar snapshots por club al recargar pagina
+        }
       }
     })();
     return () => sub.unsubscribe();
@@ -239,6 +255,7 @@ function CRMApp() {
     }
     setAuthProfile(profile);
     setClubId(profile.club_id);
+    setHealthClubId(profile.club_id); // aislar snapshots por club en dispositivo compartido
 
     // Configurar sesion local (compatibilidad)
     const localSession = createSession(profile.role || "admin", profile.full_name || user.email);
@@ -281,6 +298,8 @@ function CRMApp() {
       <div style={{ minHeight:"100vh", background:"#050a14", position:"relative" }}>
         <FieldBackground />
         <ToastContainer />
+        <OfflineBanner />
+        <UpdateToast />
         <Suspense fallback={<LoadingFallback />}>
           <LandingPage onDemo={handleDemo} onRegister={handleRegister} onLogin={handleLogin} />
         </Suspense>
@@ -308,8 +327,8 @@ function CRMApp() {
 
   const MiniTopbar = ({ title, accent = C.neon, accentBg = "rgba(200,255,0,0.05)" }) => (
     <div style={{ height:38, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${accent}33`, display:"flex", alignItems:"stretch" }}>
-      <div onClick={() => navigate("/")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${C.border}` }}>
-        ← Portal
+      <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${C.border}`, transition:"color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
+        ← Dashboard
       </div>
       <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:`2px solid ${accent}`, background:accentBg }}>
         {title}
@@ -331,6 +350,8 @@ function CRMApp() {
     <div style={{ minHeight:"100vh", background:C.bg, position:"relative" }}>
       <FieldBackground />
       <ToastContainer />
+      <OfflineBanner />
+      <UpdateToast />
       <div style={{ position:"relative", zIndex:2 }}>
         <Suspense fallback={<LoadingFallback />}>
 
@@ -350,7 +371,7 @@ function CRMApp() {
           {activeModule === "plantilla" && (
             <ErrorBoundary>
               <MiniTopbar title="Gestion de plantilla" />
-              <GestionPlantilla athletes={athletes} setAthletes={setAthletes} historial={historial} />
+              <GestionPlantilla athletes={athletes} setAthletes={setAthletes} historial={historial} clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 

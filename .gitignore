@@ -43,3 +43,11 @@ venv/
 # Artifacts de trabajo (no versionar)
 mockup-landing.html
 skills-lock.json
+
+# Claude Code / MCP (local config)
+.claude/
+.agents/
+.mcp.json
+
+# PWA dev build
+dev-dist/

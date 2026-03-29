@@ -6,7 +6,7 @@
  * @author @Desarrollador (Andres)
  */
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PALETTE as C } from "../../constants/palette";
 
@@ -30,6 +30,32 @@ const fadeUp = {
 export default function HeroSection() {
   const navigate = useNavigate();
   const ref = useRef(null);
+
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (max-width: 767px) {
+        .hero-cta-row {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          width: 100% !important;
+          max-width: 320px !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+        }
+        .hero-cta-row button {
+          text-align: center !important;
+          justify-content: center !important;
+        }
+        .hero-stats-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+          max-width: 100% !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
@@ -130,7 +156,7 @@ export default function HeroSection() {
         </motion.p>
 
         {/* CTAs */}
-        <motion.div variants={fadeUp} style={{
+        <motion.div variants={fadeUp} className="hero-cta-row" style={{
           display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
           marginBottom: 60,
         }}>
@@ -166,7 +192,7 @@ export default function HeroSection() {
         </motion.div>
 
         {/* Stats badges glassmorphism */}
-        <motion.div variants={fadeUp} style={{
+        <motion.div variants={fadeUp} className="hero-stats-grid" style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
           gap: 16, maxWidth: 700, margin: "0 auto",
@@ -196,23 +222,6 @@ export default function HeroSection() {
         </motion.div>
       </motion.div>
 
-      {/* Scroll indicator */}
-      <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-        style={{
-          position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-        }}
-      >
-        <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
-          Scroll
-        </div>
-        <div style={{
-          width: 1, height: 30,
-          background: `linear-gradient(to bottom, ${C.neon}, transparent)`,
-        }} />
-      </motion.div>
     </section>
   );
 }

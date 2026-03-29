@@ -6,7 +6,7 @@
  * @author @Desarrollador (Andres)
  */
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PALETTE as C } from "../../constants/palette";
 
@@ -75,6 +75,7 @@ function ModuleCard({ mod, index }) {
       initial={{ opacity: 0, y: 50 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
+      className="scrm-module-card"
       style={{
         display: "grid",
         gridTemplateColumns: index % 2 === 0 ? "1fr 1.2fr" : "1.2fr 1fr",
@@ -85,7 +86,7 @@ function ModuleCard({ mod, index }) {
       }}
     >
       {/* Info side */}
-      <div style={{ order: index % 2 === 0 ? 1 : 2 }}>
+      <div className="scrm-module-info" style={{ order: index % 2 === 0 ? 1 : 2 }}>
         <div style={{ color: mod.accent, marginBottom: 16 }}>{mod.icon}</div>
         <h3 style={{
           fontSize: 28, fontWeight: 800, color: "white",
@@ -117,6 +118,7 @@ function ModuleCard({ mod, index }) {
       <motion.div
         whileHover={{ rotateY: 2, rotateX: -2, y: -8 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        className="scrm-module-visual"
         style={{
           order: index % 2 === 0 ? 2 : 1,
           padding: "40px 32px",
@@ -158,10 +160,34 @@ export default function SportsCRMPage() {
   const headerRef = useRef(null);
   const headerInView = useInView(headerRef, { once: true });
 
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (max-width: 767px) {
+        .scrm-hero { padding: 48px 20px 40px !important; }
+        .scrm-hero h1 { font-size: clamp(28px, 8vw, 40px) !important; }
+        .scrm-cta-row { flex-direction: column !important; align-items: stretch !important; }
+        .scrm-cta-row button { text-align: center !important; }
+        .scrm-modules-section { padding: 16px 20px 48px !important; }
+        .scrm-module-card {
+          grid-template-columns: 1fr !important;
+          gap: 24px !important;
+          padding: 32px 0 !important;
+        }
+        .scrm-module-info { order: 1 !important; }
+        .scrm-module-visual { order: 2 !important; min-height: 140px !important; padding: 24px 20px !important; }
+        .scrm-bottom-cta { padding: 40px 20px 56px !important; }
+        .scrm-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   return (
     <div style={{ overflowX: "hidden" }}>
       {/* ── Product Hero ── */}
-      <section style={{
+      <section className="scrm-hero" style={{
         padding: "80px 32px 60px",
         textAlign: "center",
         position: "relative",
@@ -220,7 +246,7 @@ export default function SportsCRMPage() {
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <div className="scrm-cta-row" style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
             <motion.button
               whileHover={{ scale: 1.04, boxShadow: `0 0 30px ${C.neonGlow}` }}
               whileTap={{ scale: 0.97 }}
@@ -256,6 +282,7 @@ export default function SportsCRMPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, delay: 0.3 }}
+          className="scrm-stats-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
@@ -279,7 +306,7 @@ export default function SportsCRMPage() {
       </section>
 
       {/* ── Modules Detail ── */}
-      <section style={{ padding: "20px 32px 60px", maxWidth: 1000, margin: "0 auto" }}>
+      <section className="scrm-modules-section" style={{ padding: "20px 32px 60px", maxWidth: 1000, margin: "0 auto" }}>
         <div style={{
           textAlign: "center", marginBottom: 40,
           fontSize: 10, fontWeight: 600, letterSpacing: "3px",
@@ -294,7 +321,7 @@ export default function SportsCRMPage() {
       </section>
 
       {/* ── Bottom CTA ── */}
-      <section style={{
+      <section className="scrm-bottom-cta" style={{
         padding: "60px 32px 80px",
         textAlign: "center",
         borderTop: `1px solid ${C.border}`,

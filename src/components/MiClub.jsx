@@ -2,6 +2,20 @@ import { useState } from "react";
 import { sanitizeText } from "../utils/sanitize";
 import { PALETTE as C } from "../constants/palette";
 
+// ── Inject styles once ──────────────────────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("miclub-styles")) {
+  const s = document.createElement("style");
+  s.id = "miclub-styles";
+  s.textContent = `
+    .miclub-container input:focus, .miclub-container textarea:focus {
+      box-shadow: 0 0 0 2px rgba(124,58,237,0.3) !important;
+      border-color: rgba(124,58,237,0.5) !important;
+      outline: none;
+    }
+  `;
+  document.head.appendChild(s);
+}
+
 const CATEGORIAS_DEFAULT = [
   "Sub-7","Sub-8","Sub-9","Sub-10","Sub-11","Sub-12",
   "Sub-13","Sub-14","Sub-15","Sub-16","Sub-17","Sub-18",
@@ -45,13 +59,13 @@ export default function MiClub({ clubInfo, setClubInfo }) {
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000); };
 
-  const inp = { width:"100%", fontSize:13, border:`1px solid ${C.border}`, padding:"8px 10px", background:"rgba(255,255,255,0.05)", color:"white", fontFamily:"inherit", outline:"none", borderRadius:6 };
+  const inp = { width:"100%", fontSize:13, border:`1px solid rgba(255,255,255,0.1)`, padding:"8px 10px", background:"rgba(255,255,255,0.05)", color:"white", fontFamily:"inherit", outline:"none", borderRadius:6, transition:"border-color 200ms,box-shadow 200ms" };
   const label = { fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:C.textMuted, marginBottom:5, display:"block" };
-  const panel = { background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${C.border}`, borderRadius:12, padding:16, marginBottom:10, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" };
-  const panelTitle = { fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, marginBottom:14 };
+  const panel = { background:"linear-gradient(135deg,rgba(20,20,30,0.95),rgba(12,12,22,0.98))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderRadius:12, padding:16, marginBottom:10, boxShadow:"0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04)" };
+  const panelTitle = { fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, marginBottom:14, borderLeft:`2px solid ${C.purple}`, paddingLeft:8 };
 
   return (
-    <div style={{ padding:16, display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+    <div className="miclub-container" style={{ padding:16, display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
 
       {/* DATOS GENERALES */}
       <div>
@@ -83,7 +97,7 @@ export default function MiClub({ clubInfo, setClubInfo }) {
           <div style={panelTitle}>Campos de entrenamiento</div>
           <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:12 }}>
             {(clubInfo.campos||["Campo principal","Campo auxiliar"]).map((c,i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 12px" }}>
+              <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))", border:`1px solid rgba(255,255,255,0.08)`, borderRadius:8, padding:"9px 12px", boxShadow:"0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)" }}>
                 <span style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>{c}</span>
                 <span onClick={()=>removeCampo(i)} style={{ fontSize:10, color:C.danger, cursor:"pointer", padding:"2px 6px" }}>✕</span>
               </div>
@@ -105,7 +119,7 @@ export default function MiClub({ clubInfo, setClubInfo }) {
             {CATEGORIAS_DEFAULT.map(cat => {
               const active = (clubInfo.categorias||[]).includes(cat);
               return (
-                <div key={cat} onClick={()=>toggleCat(cat)} style={{ fontSize:11, padding:"5px 14px", cursor:"pointer", borderRadius:6, border:`1px solid ${active?C.green:C.border}`, background: active?"rgba(29,158,117,0.15)":"transparent", color: active?C.green:C.textMuted, transition:"all 0.15s" }}>
+                <div key={cat} onClick={()=>toggleCat(cat)} style={{ fontSize:11, padding:"6px 14px", cursor:"pointer", borderRadius:20, border:`1px solid ${active?C.green:"rgba(255,255,255,0.1)"}`, background: active?"linear-gradient(135deg,rgba(29,158,117,0.2),rgba(29,158,117,0.08))":"rgba(255,255,255,0.03)", color: active?C.green:C.textMuted, transition:"all 0.18s", boxShadow: active?`0 0 12px rgba(29,158,117,0.25),0 2px 8px rgba(0,0,0,0.3)`:"0 2px 6px rgba(0,0,0,0.2)" }}>
                   {cat}
                 </div>
               );
@@ -136,7 +150,7 @@ export default function MiClub({ clubInfo, setClubInfo }) {
         </div>
 
         <div style={{ display:"flex", justifyContent:"flex-end", gap:8 }}>
-          <div onClick={save} style={{ background: saved?"#059669":C.green, color:"white", padding:"10px 24px", fontSize:11, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", borderRadius:8 }}>
+          <div onClick={save} style={{ background: saved?"linear-gradient(135deg,#059669,#047857)":"linear-gradient(135deg,#00ff88,#00cc6a)", color: saved?"white":"#0a0a0a", padding:"10px 24px", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", borderRadius:8, boxShadow: saved?"0 4px 16px rgba(5,150,105,0.4)":"0 4px 16px rgba(0,255,136,0.35)", transition:"all 0.2s" }}>
             {saved ? "Guardado ✓" : "Guardar cambios →"}
           </div>
         </div>

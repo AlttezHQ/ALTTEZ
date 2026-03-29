@@ -5,7 +5,7 @@
  * @author @Desarrollador (Andres)
  */
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PALETTE as C } from "../../constants/palette";
 
@@ -126,7 +126,7 @@ function ElevatedCard({ project, index }) {
           transition: "opacity 0.3s",
         }} />
 
-        <div style={{
+        <div className={isActive ? "eco-active-card-inner" : undefined} style={{
           display: "flex",
           flexDirection: isActive ? "row" : "column",
           gap: isActive ? 32 : 16,
@@ -179,7 +179,7 @@ function ElevatedCard({ project, index }) {
 
           {/* Stats (solo CRM activo) */}
           {project.stats && (
-            <div style={{
+            <div className="eco-stats-row" style={{
               display: "flex", gap: 20, flex: "0 0 auto",
             }}>
               {project.stats.map((s, i) => (
@@ -210,8 +210,31 @@ export default function EcosystemSection() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (max-width: 767px) {
+        .eco-section { padding: 64px 20px !important; }
+        .eco-grid { grid-template-columns: 1fr !important; }
+        .eco-active-card-inner {
+          flex-direction: column !important;
+          gap: 20px !important;
+        }
+        .eco-active-card-inner > div:first-child {
+          flex: none !important;
+        }
+        .eco-stats-row {
+          gap: 24px !important;
+          justify-content: flex-start !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   return (
-    <section ref={ref} style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
+    <section ref={ref} className="eco-section" style={{ padding: "100px 24px", maxWidth: 1100, margin: "0 auto" }}>
       {/* Section header */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -242,7 +265,7 @@ export default function EcosystemSection() {
       </motion.div>
 
       {/* Projects grid */}
-      <div style={{
+      <div className="eco-grid" style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
         gap: 20,

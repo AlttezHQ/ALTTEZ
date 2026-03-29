@@ -41,6 +41,9 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
   const [hoverDemo, setHoverDemo] = useState(false);
   const [hoverReg, setHoverReg] = useState(false);
   const [hoverLogin, setHoverLogin] = useState(false);
+  // Consentimiento Ley 1581/2012 — no pre-marcados, ambos obligatorios
+  const [consentData, setConsentData] = useState(false);
+  const [consentGuardian, setConsentGuardian] = useState(false);
 
   const updateField = (key, val) => {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -64,20 +67,27 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
     if (!ROLES[form.role]) {
       errs.role = "Rol invalido";
     }
+    // Consentimiento Ley 1581/2012 — ambos obligatorios
+    if (!consentData) errs.consentData = "Debes aceptar la politica de tratamiento de datos";
+    if (!consentGuardian) errs.consentGuardian = "Debes certificar la autorizacion parental";
     setErrors(errs);
     if (Object.keys(errs).length === 0) {
       setLoading(true);
       // Sanitizar y hacer trim final solo en el momento de persistencia
       await onRegister({
         ...form,
-        nombre:     sanitizeTextFinal(form.nombre),
-        ciudad:     sanitizeTextFinal(form.ciudad),
-        entrenador: sanitizeTextFinal(form.entrenador),
-        categorias: sanitizeTextFinal(form.categorias),
-        campo:      sanitizeTextFinal(form.campo),
-        telefono:   sanitizePhone(form.telefono),
-        email:      cleanEmail,
-        password:   form.password,
+        nombre:          sanitizeTextFinal(form.nombre),
+        ciudad:          sanitizeTextFinal(form.ciudad),
+        entrenador:      sanitizeTextFinal(form.entrenador),
+        categorias:      sanitizeTextFinal(form.categorias),
+        campo:           sanitizeTextFinal(form.campo),
+        telefono:        sanitizePhone(form.telefono),
+        email:           cleanEmail,
+        password:        form.password,
+        // Datos de consentimiento para persistir en profiles
+        consent_at:      new Date().toISOString(),
+        consent_version: "1.0",
+        guardian_consent: consentGuardian,
       });
       setLoading(false);
     }
@@ -413,18 +423,87 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           {errors.role && <div style={css.errorText}>{errors.role}</div>}
         </div>
 
+        {/* Consentimiento Ley 1581/2012 */}
+        <div style={{ borderTop: `1px solid rgba(255,255,255,0.08)`, paddingTop: 16, marginTop: 8 }}>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.purple, marginBottom: 14, fontWeight: 700 }}>
+            Autorizacion Ley 1581 de 2012
+          </div>
+
+          {/* Checkbox 1: Politica de tratamiento de datos */}
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={consentData}
+                onChange={e => {
+                  setConsentData(e.target.checked);
+                  if (errors.consentData) setErrors(prev => { const n = { ...prev }; delete n.consentData; return n; });
+                }}
+                style={{
+                  marginTop: 2, width: 16, height: 16, flexShrink: 0,
+                  accentColor: PALETTE.purple, cursor: "pointer",
+                }}
+              />
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+                He leido y acepto la{" "}
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: PALETTE.purple, textDecoration: "underline", cursor: "pointer" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  Politica de Tratamiento de Datos Personales
+                </a>
+                {" "}conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013.
+              </span>
+            </label>
+            {errors.consentData && (
+              <div style={{ ...css.errorText, marginTop: 4, marginLeft: 26 }}>{errors.consentData}</div>
+            )}
+          </div>
+
+          {/* Checkbox 2: Autorizacion parental para menores */}
+          <div style={{ marginBottom: 4 }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={consentGuardian}
+                onChange={e => {
+                  setConsentGuardian(e.target.checked);
+                  if (errors.consentGuardian) setErrors(prev => { const n = { ...prev }; delete n.consentGuardian; return n; });
+                }}
+                style={{
+                  marginTop: 2, width: 16, height: 16, flexShrink: 0,
+                  accentColor: PALETTE.purple, cursor: "pointer",
+                }}
+              />
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", lineHeight: 1.5 }}>
+                Certifico que cuento con la autorizacion de padres o tutores legales para registrar y tratar datos personales de atletas menores de edad en esta plataforma.
+              </span>
+            </label>
+            {errors.consentGuardian && (
+              <div style={{ ...css.errorText, marginTop: 4, marginLeft: 26 }}>{errors.consentGuardian}</div>
+            )}
+          </div>
+        </div>
+
         {/* Submit */}
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
           <button
             onClick={validateAndSubmit}
-            disabled={loading}
+            disabled={loading || !consentData || !consentGuardian}
             style={{
               flex: 1, padding: "14px 24px", fontSize: 12, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "2px",
-              background: loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
-              color: "#0a0a0a", border: "none",
-              cursor: loading ? "wait" : "pointer",
+              background: (!consentData || !consentGuardian) ? "rgba(139,92,246,0.25)"
+                         : loading ? "rgba(200,255,0,0.5)"
+                         : PALETTE.neon,
+              color: (!consentData || !consentGuardian) ? "rgba(255,255,255,0.3)" : "#0a0a0a",
+              border: (!consentData || !consentGuardian) ? `1px solid rgba(139,92,246,0.3)` : "none",
+              cursor: loading ? "wait" : (!consentData || !consentGuardian) ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
+              transition: "all 0.2s ease",
             }}
           >
             {loading ? "Creando cuenta..." : "Crear club y comenzar →"}
