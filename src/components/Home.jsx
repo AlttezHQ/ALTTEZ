@@ -1,672 +1,1161 @@
 /**
- * @component Home
- * @description Pantalla principal de Elevate Sports con UX nivel consola.
+ * @component Home — Dashboard de Comando Operativo
+ * @description Reemplazo del launcher decorativo por un grid 2×2 de
+ *   Command Cards con datos en tiempo real, glassmorphism y animaciones
+ *   estilo consola FIFA/EA FC.
  *
- * @ux-features
- * - Hover/Focus con glow neón radial por tile
- * - Scale transform suave (1.02) en tile activo
- * - Imagen de fondo: oscura en reposo, saturada al hover
- * - Botón CTA: cambia a blanco al hover
- * - Audio sintetizado con Web Audio API (sin archivos externos):
- *     · hover  → "woosh" suave de baja frecuencia (tipo FIFA nav)
- *     · click  → "confirmación" metálica breve
- *
- * @audio-architecture
- * AudioContext se crea una sola vez (lazy) para evitar warnings del browser.
- * Dos funciones de síntesis: playHover() y playSelect()
- * que generan sonido programáticamente con OscillatorNode + GainNode.
- *
- * @palette  Ver objeto PALETTE (centralizado)
- * @version  5.0
- * @author   Elevate Sports
+ * @version 6.0 — Command Dashboard
+ * @author Andrés (Senior Frontend) · Elevate Sports
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import imgEntrenamiento from "../assets/entrenamiento.jpeg";
-import imgPlantilla     from "../assets/Gestion_de_plantilla.jpeg";
-import imgPartido       from "../assets/Partido.jpeg";
-import imgOficina       from "../assets/Oficina.jpeg";
-import imgProximo       from "../assets/Proximo_partido.jpeg";
-import { PALETTE }      from "../constants/palette";
-import EmptyState       from "./ui/EmptyState";
-import { useResponsive } from "../hooks/useResponsive";
+import { PALETTE as C } from "../constants/palette";
+import { calcSaludActual } from "../utils/rpeEngine";
+import { showToast } from "./Toast";
 
-// ── Inject responsive media queries once ────────────────────────────────────
-if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
+// ─────────────────────────────────────────────
+// RESPONSIVE — inyectar media queries una sola vez
+// ─────────────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("cmd-dashboard-responsive")) {
   const s = document.createElement("style");
-  s.id = "home-responsive";
+  s.id = "cmd-dashboard-responsive";
   s.textContent = `
-    /* Home topbar nav: horizontal scroll on mobile */
-    .home-topbar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    /* Home grid: single column on mobile, 2-col on tablet */
+    .cmd-topbar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+    }
+    @media (max-width: 899px) {
+      .cmd-grid { grid-template-columns: 1fr !important; }
+    }
     @media (max-width: 479px) {
-      .home-grid {
-        grid-template-columns: 1fr !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-        padding: 3px 8px 10px !important;
-      }
-      .home-grid > * {
-        grid-column: auto !important;
-        grid-row: auto !important;
-      }
-      .home-tile-big { font-size: clamp(28px, 8vw, 44px) !important; }
-      .home-tile-mid { font-size: clamp(18px, 5.5vw, 24px) !important; }
+      .cmd-grid { padding: 8px !important; gap: 8px !important; }
+      .cmd-topbar-brand { display: none !important; }
+      .cmd-club-meta { display: none !important; }
     }
-    @media (min-width: 480px) and (max-width: 767px) {
-      .home-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-      }
-      .home-stat-row {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
+    @keyframes cmd-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
     }
-    /* KPI metrics: 2-col on mobile */
-    @media (max-width: 767px) {
-      .home-metrics { grid-template-columns: repeat(2, 1fr) !important; }
-      .home-brand-full { display: none !important; }
+    @keyframes cmd-spin {
+      to { transform: rotate(360deg); }
     }
-    /* Club badge: hide name on xs */
-    @media (max-width: 479px) {
-      .home-club-name { display: none !important; }
+    @keyframes cmd-glow-pulse {
+      0%, 100% { box-shadow: 0 0 6px 1px rgba(226,75,74,0.5); }
+      50%       { box-shadow: 0 0 14px 3px rgba(226,75,74,0.9); }
     }
   `;
   document.head.appendChild(s);
 }
 
 // ─────────────────────────────────────────────
-// ANIMATION VARIANTS
-// ─────────────────────────────────────────────
-const fadeInUp = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { type: "spring", stiffness: 300, damping: 28 },
-};
-
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.06 } },
-};
-
-const metricItemVariant = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 350, damping: 28 } },
-};
-
-// ─────────────────────────────────────────────
-// NAVEGACIÓN
+// NAV ITEMS — conservado del original
 // ─────────────────────────────────────────────
 const NAV_ITEMS = [
-  { key:"home",          label:"Inicio",               navigable:false },
-  { key:"entrenamiento", label:"Entrenamiento",         navigable:true  },
-  { key:"plantilla",     label:"Gestión de plantilla",  navigable:true  },
-  { key:"calendario",    label:"Calendario",            navigable:true  },
-  { key:"admin",         label:"Administración",        navigable:true  },
-  { key:"reportes",      label:"Reportes",              navigable:true  },
-  { key:"miclub",        label:"Mi club",               navigable:true  },
+  { key: "home",          label: "Inicio",              navigable: false },
+  { key: "entrenamiento", label: "Entrenamiento",        navigable: true  },
+  { key: "plantilla",     label: "Gestión de plantilla", navigable: true  },
+  { key: "calendario",    label: "Calendario",           navigable: true  },
+  { key: "admin",         label: "Administración",       navigable: true  },
+  { key: "reportes",      label: "Reportes",             navigable: true  },
+  { key: "miclub",        label: "Mi club",              navigable: true  },
 ];
 
 // ─────────────────────────────────────────────
-// ICONOS SVG
+// ANIMACIONES
 // ─────────────────────────────────────────────
-const Icon = {
-  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={PALETTE.neon} strokeWidth="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/></svg>,
-  Ball:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={PALETTE.neon} strokeWidth="2"/><path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.neon} strokeWidth="1.5"/></svg>,
-  Train: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  Chart: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+const cardVariants = {
+  initial:  { opacity: 0, y: 24, scale: 0.97 },
+  animate:  { opacity: 1, y: 0,  scale: 1    },
+  transition: { type: "spring", stiffness: 280, damping: 28 },
+};
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.08 } },
+};
+
+const rowVariant = {
+  initial: { opacity: 0, x: -10 },
+  animate: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 320, damping: 28 } },
 };
 
 // ─────────────────────────────────────────────
-// WEB AUDIO API — SÍNTESIS DE SONIDO
-// No requiere archivos externos.
-// AudioContext se crea de forma lazy al primer uso.
+// WEB AUDIO (conservado del original)
 // ─────────────────────────────────────────────
-
-/**
- * Hook que expone dos funciones de audio sintetizado:
- * - playHover():  sonido de navegación suave (woosh FIFA)
- * - playSelect(): sonido de confirmación metálica
- */
 function useGameAudio() {
   const ctxRef = useRef(null);
-
-  /** Obtiene o crea el AudioContext (lazy, evita warnings del browser) */
   const getCtx = useCallback(() => {
-    if (!ctxRef.current) {
-      ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
+    if (!ctxRef.current) ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
     return ctxRef.current;
   }, []);
 
-  /**
-   * Sonido de hover/navegación
-   * Síntesis: oscilador sinusoidal de baja frecuencia (80→40 Hz)
-   * con envelope rápido — reproduce el "thud" suave de menús FIFA.
-   */
-  const playHover = useCallback(() => {
-    try {
-      const ctx  = getCtx();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(120, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.12);
-
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
-    } catch {
-      // AudioContext puede estar bloqueado hasta interacción del usuario — silencioso
-    }
-  }, [getCtx]);
-
-  /**
-   * Sonido de selección/click
-   * Síntesis: dos osciladores (fundamental + armónico) con
-   * envelope más largo y frecuencia ascendente — "ding" metálico FIFA.
-   */
   const playSelect = useCallback(() => {
     try {
-      const ctx   = getCtx();
-      const now   = ctx.currentTime;
-
-      // Oscilador 1: fundamental
-      const osc1  = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.type = "triangle";
-      osc1.frequency.setValueAtTime(320, now);
-      osc1.frequency.exponentialRampToValueAtTime(480, now + 0.08);
-      gain1.gain.setValueAtTime(0.22, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc1.start(now);
-      osc1.stop(now + 0.26);
-
-      // Oscilador 2: armónico (5ª justa)
-      const osc2  = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.type = "sine";
-      osc2.frequency.setValueAtTime(480, now);
-      osc2.frequency.exponentialRampToValueAtTime(720, now + 0.08);
-      gain2.gain.setValueAtTime(0.1, now);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-      osc2.start(now);
-      osc2.stop(now + 0.21);
-    } catch { /* audio context not supported */ }
+      const ctx = getCtx();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(480, now + 0.08);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.start(now); osc.stop(now + 0.23);
+    } catch { /* silencioso */ }
   }, [getCtx]);
 
-  return { playHover, playSelect };
+  return { playSelect };
 }
 
 // ─────────────────────────────────────────────
-// COMPONENTE TILE INTERACTIVO
-// Encapsula toda la lógica de hover/focus/audio
-// para no repetirla en cada mosaico.
+// DATOS DEMO DE FINANZAS (hardcoded para mockup)
 // ─────────────────────────────────────────────
+const DEMO_FINANZAS = {
+  meta:       1200000,
+  recaudado:  720000,
+  morosos: [
+    { nombre: "Carlos Méndez",    monto: 85000  },
+    { nombre: "Andrés Pedraza",   monto: 120000 },
+    { nombre: "Miguel Torrealba", monto: 65000  },
+  ],
+};
 
-/**
- * @component InteractiveTile
- * @param {string}   tileKey        - Identificador único del tile
- * @param {string}   gridColumn     - CSS grid-column
- * @param {string}   gridRow        - CSS grid-row
- * @param {string}   image          - URL de imagen de fondo
- * @param {string}   overlayType    - "left" | "bottom"
- * @param {string}   borderTopColor - Color del borde superior
- * @param {number}   borderTopWidth - Grosor del borde superior
- * @param {Function} onClick        - Callback al hacer click
- * @param {Function} playHover      - Función de audio hover
- * @param {Function} playSelect     - Función de audio selección
- * @param {ReactNode} children      - Contenido del tile
- */
-function InteractiveTile({
-  gridColumn, gridRow,
-  image, overlayType = "bottom",
-  borderTopColor = PALETTE.neon, borderTopWidth = 4,
-  onClick, playHover, playSelect,
-  children,
-}) {
-  const [hovered, setHovered] = useState(false);
+// ─────────────────────────────────────────────
+// FORMACIÓN 4-3-3 — posiciones normalizadas [0-100] sobre campo 100×65
+// ─────────────────────────────────────────────
+const FORMATION_433 = [
+  // Portero
+  { x: 8,  y: 32.5, num: 1  },
+  // Defensa
+  { x: 25, y: 8,    num: 2  },
+  { x: 25, y: 22,   num: 5  },
+  { x: 25, y: 43,   num: 6  },
+  { x: 25, y: 57,   num: 3  },
+  // Mediocampo
+  { x: 50, y: 15,   num: 8  },
+  { x: 50, y: 32.5, num: 4  },
+  { x: 50, y: 50,   num: 11 },
+  // Ataque
+  { x: 72, y: 10,   num: 7  },
+  { x: 75, y: 32.5, num: 9  },
+  { x: 72, y: 55,   num: 10 },
+];
 
-  const handleMouseEnter = () => {
-    setHovered(true);
-    playHover();
+// ─────────────────────────────────────────────
+// MINI PITCH SVG — campo simplificado inline
+// ─────────────────────────────────────────────
+function MiniPitch({ formation = FORMATION_433 }) {
+  const W = 220;
+  const H = 140;
+  const pad = 6;
+  // Campo real: W×H menos padding
+  const fw = W - pad * 2;
+  const fh = H - pad * 2;
+
+  // Convertir posiciones normalizadas [0-100] a px del campo
+  const toX = (pct) => pad + (pct / 100) * fw;
+  const toY = (pct) => pad + (pct / 100) * fh;
+
+  const lineProps = {
+    stroke: "rgba(255,255,255,0.18)",
+    strokeWidth: 0.8,
+    fill: "none",
   };
-
-  const handleMouseLeave = () => {
-    setHovered(false);
-  };
-
-  const handleClick = () => {
-    playSelect();
-    onClick && onClick();
-  };
-
-  // Overlay gradiente según tipo de tile
-  const overlayGradient = overlayType === "left"
-    ? "linear-gradient(to right, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.22) 65%, transparent 100%)"
-    : "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.05) 100%)";
 
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      width="100%"
+      height="100%"
+      style={{ display: "block", maxHeight: 140 }}
+    >
+      {/* Fondo césped */}
+      <defs>
+        <linearGradient id="grass-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stopColor="#0d4d2a" />
+          <stop offset="50%"  stopColor="#0f5a30" />
+          <stop offset="100%" stopColor="#0a4225" />
+        </linearGradient>
+        {/* Bandas de césped */}
+        {[0,1,2,3,4,5,6,7,8,9].map(i => (
+          <clipPath key={i} id={`band-${i}`}>
+            <rect x={pad + (fw/10)*i} y={pad} width={fw/10} height={fh} />
+          </clipPath>
+        ))}
+      </defs>
+
+      {/* Base campo */}
+      <rect x={pad} y={pad} width={fw} height={fh} fill="url(#grass-grad)" rx={2} />
+
+      {/* Bandas de césped alternadas */}
+      {[0,2,4,6,8].map(i => (
+        <rect
+          key={i}
+          x={pad + (fw/10)*i} y={pad}
+          width={fw/10} height={fh}
+          fill="rgba(0,0,0,0.08)"
+          rx={1}
+        />
+      ))}
+
+      {/* Borde del campo */}
+      <rect x={pad} y={pad} width={fw} height={fh} {...lineProps} rx={2} />
+
+      {/* Línea central */}
+      <line x1={toX(50)} y1={pad} x2={toX(50)} y2={pad + fh} {...lineProps} />
+
+      {/* Círculo central */}
+      <circle cx={toX(50)} cy={toY(50)} r={fh * 0.18} {...lineProps} />
+      <circle cx={toX(50)} cy={toY(50)} r={1.5} fill="rgba(255,255,255,0.35)" />
+
+      {/* Área grande izquierda */}
+      <rect
+        x={pad} y={toY(18)}
+        width={fw * 0.16} height={toY(82) - toY(18)}
+        {...lineProps}
+      />
+      {/* Área pequeña izquierda */}
+      <rect
+        x={pad} y={toY(32)}
+        width={fw * 0.07} height={toY(68) - toY(32)}
+        {...lineProps}
+      />
+
+      {/* Área grande derecha */}
+      <rect
+        x={pad + fw - fw * 0.16} y={toY(18)}
+        width={fw * 0.16} height={toY(82) - toY(18)}
+        {...lineProps}
+      />
+      {/* Área pequeña derecha */}
+      <rect
+        x={pad + fw - fw * 0.07} y={toY(32)}
+        width={fw * 0.07} height={toY(68) - toY(32)}
+        {...lineProps}
+      />
+
+      {/* Tokens de jugadores */}
+      {formation.map((p) => (
+        <g key={p.num}>
+          {/* Sombra del disco */}
+          <circle
+            cx={toX(p.x) + 1}
+            cy={toY(p.y) + 1.5}
+            r={7}
+            fill="rgba(0,0,0,0.45)"
+          />
+          {/* Disco del jugador */}
+          <circle
+            cx={toX(p.x)}
+            cy={toY(p.y)}
+            r={7}
+            fill="#7F77DD"
+            stroke="rgba(255,255,255,0.6)"
+            strokeWidth={1.2}
+          />
+          {/* Número */}
+          <text
+            x={toX(p.x)}
+            y={toY(p.y) + 3.5}
+            textAnchor="middle"
+            fontSize={6.5}
+            fontWeight="700"
+            fill="white"
+            fontFamily="Arial Narrow, Arial, sans-serif"
+          >
+            {p.num}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────
+// COMMAND CARD — contenedor glassmorphism base
+// ─────────────────────────────────────────────
+function CommandCard({ accentColor, children, onClick, style = {} }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <motion.div
+      variants={cardVariants}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
       style={{
-        position:    "relative",
-        overflow:    "hidden",
-        cursor:      "pointer",
-        gridColumn,
-        gridRow,
-        borderTop:   `${borderTopWidth}px solid ${borderTopColor}`,
-        // ── Glow effect ──
-        // boxShadow con spread interno + externo para efecto neón radial
+        position: "relative",
+        borderRadius: 14,
+        background: "rgba(255,255,255,0.03)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        border: `1px solid rgba(255,255,255,0.08)`,
+        borderTop: `4px solid ${accentColor}`,
         boxShadow: hovered
-          ? `0 0 0 1px ${PALETTE.neon}, 0 0 28px 4px ${PALETTE.neonGlow}, inset 0 0 20px rgba(200,255,0,0.06), 0 8px 32px rgba(0,0,0,0.6)`
-          : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
-        // ── Scale transform ──
-        transform:  hovered ? "scale(1.025)" : "scale(1)",
-        zIndex:     hovered ? 3 : 1,
-        transition: "transform 220ms ease-in-out, box-shadow 220ms ease-in-out",
+          ? `0 8px 40px rgba(0,0,0,0.6), 0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 20px ${accentColor}22`
+          : `0 4px 24px rgba(0,0,0,0.5), 0 1px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)`,
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        transition: "transform 220ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 220ms ease",
+        overflow: "hidden",
+        cursor: onClick ? "pointer" : "default",
+        padding: "20px 22px",
+        minHeight: 280,
+        display: "flex",
+        flexDirection: "column",
+        ...style,
       }}
     >
-      {/* Imagen de fondo con filtro dinámico */}
+      {/* Glow strip top */}
       <div style={{
-        position:        "absolute",
-        inset:           0,
-        backgroundImage: `url(${image})`,
-        backgroundSize:  "cover",
-        backgroundPosition: "center",
-        zIndex:          0,
-        // Cuando NO está en hover: desaturado y oscuro (reposo)
-        // Cuando SÍ está en hover: saturado y brillante
-        filter: hovered
-          ? "brightness(1.08) saturate(1.15)"
-          : "brightness(0.75) saturate(0.8)",
-        transition: "filter 250ms ease-in-out",
-      }}/>
+        position: "absolute",
+        top: 0, left: 0, right: 0,
+        height: 40,
+        background: `linear-gradient(to bottom, ${accentColor}12, transparent)`,
+        borderRadius: "14px 14px 0 0",
+        pointerEvents: "none",
+      }} />
+      {children}
+    </motion.div>
+  );
+}
 
-      {/* Overlay de gradiente */}
-      <div style={{
-        position:   "absolute",
-        inset:      0,
-        background: overlayGradient,
-        zIndex:     2,
-        // Overlay más claro en hover para resaltar imagen
-        opacity:    hovered ? 0.82 : 1,
-        transition: "opacity 250ms ease-in-out",
-      }}/>
-
-      {/* Contenido del tile con prop isHovered para CTA */}
-      <div style={{
-        position: "relative",
-        zIndex:   5,
-        height:   "100%",
-        display:  "flex",
-        flexDirection:  "column",
-        justifyContent: "flex-end",
-        padding:  "18px 20px",
-      }}>
-        {typeof children === "function" ? children(hovered) : children}
+// ─────────────────────────────────────────────
+// CARD HEADER — etiqueta + título
+// ─────────────────────────────────────────────
+function CardHeader({ tag, title, accentColor, rightSlot }) {
+  return (
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+      <div>
+        <div style={{
+          fontSize: 8,
+          textTransform: "uppercase",
+          letterSpacing: "2.5px",
+          color: accentColor,
+          marginBottom: 4,
+          fontWeight: 700,
+          opacity: 0.9,
+        }}>
+          {tag}
+        </div>
+        <div style={{
+          fontSize: 15,
+          fontWeight: 800,
+          color: "white",
+          textTransform: "uppercase",
+          letterSpacing: "-0.3px",
+          lineHeight: 1.1,
+        }}>
+          {title}
+        </div>
       </div>
+      {rightSlot}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────
-// HOME PRINCIPAL
+// ACCIÓN BUTTON
 // ─────────────────────────────────────────────
-export default function Home({ club, athletes, stats, matchStats, onNavigate, mode, onLogout }) {
-  const { playHover, playSelect } = useGameAudio();
-  const { isMobile, isXs }        = useResponsive();
+function ActionButton({ label, color = C.neon, onClick, size = "normal", style = {} }) {
+  const [hov, setHov] = useState(false);
+  const isSmall = size === "small";
+  const isBig   = size === "big";
+
+  return (
+    <button
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: isBig ? 12 : (isSmall ? 9 : 10),
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: isSmall ? "1px" : "1.5px",
+        padding: isBig ? "14px 20px" : (isSmall ? "5px 10px" : "9px 18px"),
+        height: isBig ? 60 : (isSmall ? "auto" : "auto"),
+        background: hov ? color : `${color}1a`,
+        color: hov ? "#0a0a0a" : color,
+        border: `1px solid ${color}66`,
+        borderRadius: 8,
+        cursor: "pointer",
+        transition: "background 180ms ease, color 180ms ease",
+        fontFamily: "'Arial Narrow', Arial, sans-serif",
+        minHeight: isSmall ? 36 : 44,
+        ...style,
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MÓDULO 1 — ESTADO DE ALERTA
+// ─────────────────────────────────────────────
+function AlertaCard({ athletes, historial, onNavigate }) {
+  const ACCENT = "#E24B4A";
+
+  // Calcular salud de cada atleta
+  const athletesWithHealth = useMemo(() => {
+    if (!athletes || athletes.length === 0) return [];
+    return athletes
+      .map(a => {
+        const { salud, color, riskLevel } = calcSaludActual(a.rpe, historial, a.id);
+        return { ...a, salud, healthColor: color, riskLevel };
+      })
+      .sort((a, b) => a.salud - b.salud)
+      .slice(0, 5);
+  }, [athletes, historial]);
+
+  const hasData = athletes && athletes.length > 0;
+  const highRisk = athletesWithHealth.filter(a => a.rpe > 8 || a.salud < 30);
+
+  return (
+    <CommandCard accentColor={ACCENT}>
+      <CardHeader
+        tag="Módulo 01"
+        title="Estado de Alerta"
+        accentColor={ACCENT}
+        rightSlot={
+          highRisk.length > 0 && (
+            <div style={{
+              padding: "3px 9px",
+              fontSize: 8,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              background: `${ACCENT}22`,
+              color: ACCENT,
+              border: `1px solid ${ACCENT}66`,
+              borderRadius: 4,
+              animation: "cmd-glow-pulse 1.8s ease-in-out infinite",
+              whiteSpace: "nowrap",
+            }}>
+              {highRisk.length} en riesgo
+            </div>
+          )
+        }
+      />
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 0 }}>
+        {!hasData ? (
+          <EmptyStateInline
+            icon="⚡"
+            message="Sin alertas. Registrar sesión"
+            actionLabel="Registrar sesión →"
+            onAction={() => onNavigate("entrenamiento")}
+            accentColor={ACCENT}
+          />
+        ) : (
+          <motion.div variants={staggerContainer} initial="initial" animate="animate" style={{ flex: 1 }}>
+            {athletesWithHealth.map((a, i) => (
+              <motion.div
+                key={a.id}
+                variants={rowVariant}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "9px 0",
+                  borderBottom: i < athletesWithHealth.length - 1
+                    ? "1px solid rgba(255,255,255,0.05)"
+                    : "none",
+                }}
+              >
+                {/* Dot de estado */}
+                <div style={{
+                  width: 8, height: 8,
+                  borderRadius: "50%",
+                  background: a.healthColor,
+                  flexShrink: 0,
+                  boxShadow: `0 0 6px ${a.healthColor}`,
+                }} />
+
+                {/* Avatar dicebear */}
+                <img
+                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(a.nombre || "?")}&backgroundColor=1a1a2e&textColor=ffffff&fontSize=40`}
+                  alt={a.nombre}
+                  width={28}
+                  height={28}
+                  style={{ borderRadius: "50%", border: `1px solid ${a.healthColor}55`, flexShrink: 0 }}
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+
+                {/* Nombre */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: "white",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {a.nombre || "—"}
+                  </div>
+                  {/* Barra de salud thin */}
+                  <div style={{
+                    marginTop: 3,
+                    height: 3,
+                    background: "rgba(255,255,255,0.08)",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                  }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${a.salud}%` }}
+                      transition={{ delay: i * 0.08 + 0.2, duration: 0.6, ease: "easeOut" }}
+                      style={{
+                        height: "100%",
+                        background: `linear-gradient(to right, ${a.healthColor}, ${a.healthColor}aa)`,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Salud % */}
+                <div style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: a.healthColor,
+                  flexShrink: 0,
+                  minWidth: 36,
+                  textAlign: "right",
+                }}>
+                  {a.salud}%
+                </div>
+
+                {/* Badge ALTO RIESGO */}
+                {(a.rpe > 8 || a.salud < 30) && (
+                  <div style={{
+                    fontSize: 7,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.8px",
+                    padding: "2px 5px",
+                    background: `${ACCENT}33`,
+                    color: ACCENT,
+                    border: `1px solid ${ACCENT}66`,
+                    borderRadius: 3,
+                    animation: "cmd-pulse 1.4s ease-in-out infinite",
+                    flexShrink: 0,
+                  }}>
+                    Alto riesgo
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+
+      {/* CTA */}
+      <div style={{ marginTop: 14 }}>
+        <ActionButton
+          label="Ajustar carga →"
+          color={ACCENT}
+          onClick={() => onNavigate("entrenamiento")}
+          style={{ width: "100%" }}
+        />
+      </div>
+    </CommandCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MÓDULO 2 — CIERRE DE CAJA
+// ─────────────────────────────────────────────
+function CajaCard({ userRole, matchStats, onNavigate }) {
+  const ACCENT = "#EF9F27";
+  const pct = Math.round((DEMO_FINANZAS.recaudado / DEMO_FINANZAS.meta) * 100);
+
+  if (userRole !== "admin") {
+    // Resumen deportivo para roles no-admin
+    return (
+      <CommandCard accentColor={C.green}>
+        <CardHeader tag="Módulo 02" title="Resumen Deportivo" accentColor={C.green} />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 }}>
+          {[
+            { label: "Ganados",   val: matchStats.won,    color: C.green  },
+            { label: "Perdidos",  val: matchStats.lost,   color: C.danger },
+            { label: "Empates",   val: matchStats.drawn,  color: C.amber  },
+            { label: "Goles",     val: `${matchStats.goalsFor}–${matchStats.goalsAgainst}`, color: "white" },
+          ].map((s, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "1px", color: C.textMuted }}>{s.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.val}</div>
+            </div>
+          ))}
+        </div>
+        <ActionButton label="Ver partidos →" color={C.green} onClick={() => onNavigate("partidos")} style={{ width: "100%", marginTop: 14 }} />
+      </CommandCard>
+    );
+  }
+
+  return (
+    <CommandCard accentColor={ACCENT}>
+      <CardHeader tag="Módulo 02" title="Cierre de Caja" accentColor={ACCENT} />
+
+      {/* Monto principal */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{
+          fontSize: 36,
+          fontWeight: 900,
+          color: ACCENT,
+          letterSpacing: "-1px",
+          lineHeight: 1,
+          textShadow: `0 0 20px ${ACCENT}55`,
+        }}>
+          ${DEMO_FINANZAS.recaudado.toLocaleString("es-CO")}
+        </div>
+        <div style={{ fontSize: 10, color: C.textMuted, marginTop: 4, textTransform: "uppercase", letterSpacing: "1px" }}>
+          de ${DEMO_FINANZAS.meta.toLocaleString("es-CO")} · {pct}% recaudado
+        </div>
+      </div>
+
+      {/* Barra de progreso animada */}
+      <div style={{
+        height: 6,
+        background: "rgba(255,255,255,0.08)",
+        borderRadius: 4,
+        overflow: "hidden",
+        marginBottom: 16,
+      }}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ delay: 0.3, duration: 0.9, ease: "easeOut" }}
+          style={{
+            height: "100%",
+            background: `linear-gradient(to right, ${ACCENT}, ${ACCENT}cc)`,
+            borderRadius: 4,
+            boxShadow: `0 0 8px ${ACCENT}88`,
+          }}
+        />
+      </div>
+
+      {/* Lista de morosos */}
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 8 }}>
+          Pendientes de cobro
+        </div>
+        <motion.div variants={staggerContainer} initial="initial" animate="animate">
+          {DEMO_FINANZAS.morosos.map((m, i) => (
+            <motion.div
+              key={i}
+              variants={rowVariant}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 0",
+                borderBottom: i < DEMO_FINANZAS.morosos.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+              }}
+            >
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>{m.nombre}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT }}>
+                  ${m.monto.toLocaleString("es-CO")}
+                </div>
+                <ActionButton
+                  label="Cobrar"
+                  color={ACCENT}
+                  size="small"
+                  onClick={() => showToast(`Recordatorio enviado a ${m.nombre}`, "success")}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+
+      <ActionButton
+        label="Ver finanzas completas →"
+        color={ACCENT}
+        onClick={() => onNavigate("admin")}
+        style={{ width: "100%", marginTop: 14 }}
+      />
+    </CommandCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MÓDULO 3 — INGESTA RÁPIDA
+// ─────────────────────────────────────────────
+function IngestaCard({ athletes, historial, onNavigate }) {
+  const ACCENT = C.neon; // #c8ff00
+
+  // Último evento del historial
+  const ultimaSesion = historial && historial.length > 0 ? historial[0] : null;
+
+  // Atletas sin RPE hoy
+  const sinRpeHoy = useMemo(() => {
+    if (!athletes || athletes.length === 0) return 0;
+    return athletes.filter(a => !a.rpe || a.rpe === null || a.rpe === 0).length;
+  }, [athletes]);
+
+  return (
+    <CommandCard accentColor={ACCENT}>
+      <CardHeader tag="Módulo 03" title="Ingesta Rápida" accentColor={ACCENT} />
+
+      {/* Último evento */}
+      {ultimaSesion ? (
+        <div style={{
+          padding: "12px 14px",
+          background: "rgba(200,255,0,0.05)",
+          border: "1px solid rgba(200,255,0,0.12)",
+          borderRadius: 8,
+          marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 4 }}>
+            Última sesión registrada
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "white" }}>
+            #{ultimaSesion.num} — {ultimaSesion.tipo || "Sesión"}
+          </div>
+          <div style={{ fontSize: 10, color: C.textMuted, marginTop: 2 }}>
+            {ultimaSesion.fecha} · {ultimaSesion.presentes}/{ultimaSesion.total} presentes
+            {ultimaSesion.rpeAvg && ` · RPE ${ultimaSesion.rpeAvg}`}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          padding: "12px 14px",
+          background: "rgba(200,255,0,0.04)",
+          border: "1px dashed rgba(200,255,0,0.15)",
+          borderRadius: 8,
+          marginBottom: 14,
+        }}>
+          <div style={{ fontSize: 11, color: C.textHint }}>Sin sesiones registradas aún</div>
+        </div>
+      )}
+
+      {/* Contador sin RPE */}
+      {sinRpeHoy > 0 && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 12px",
+          background: "rgba(226,75,74,0.08)",
+          border: "1px solid rgba(226,75,74,0.2)",
+          borderRadius: 6,
+          marginBottom: 14,
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.danger, animation: "cmd-pulse 1.4s ease-in-out infinite" }} />
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)" }}>
+            <span style={{ fontWeight: 800, color: C.danger }}>{sinRpeHoy}</span> atletas sin RPE hoy
+          </div>
+        </div>
+      )}
+
+      {/* Botones de acción grandes */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 10, marginTop: "auto" }}>
+        <button
+          onClick={() => onNavigate("entrenamiento")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            height: 60,
+            background: `${ACCENT}15`,
+            border: `1px solid ${ACCENT}55`,
+            borderRadius: 10,
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "1.5px",
+            color: ACCENT,
+            fontFamily: "'Arial Narrow', Arial, sans-serif",
+            transition: "background 180ms ease",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${ACCENT}30`; }}
+          onMouseLeave={e => { e.currentTarget.style.background = `${ACCENT}15`; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke={ACCENT} strokeWidth="2.5" strokeLinecap="round"/>
+          </svg>
+          Registrar RPE
+        </button>
+
+        <button
+          onClick={() => onNavigate("calendario")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            height: 60,
+            background: `${C.purple}15`,
+            border: `1px solid ${C.purple}55`,
+            borderRadius: 10,
+            cursor: "pointer",
+            fontSize: 12,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "1.5px",
+            color: C.purple,
+            fontFamily: "'Arial Narrow', Arial, sans-serif",
+            transition: "background 180ms ease",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = `${C.purple}30`; }}
+          onMouseLeave={e => { e.currentTarget.style.background = `${C.purple}15`; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke={C.purple} strokeWidth="2"/>
+            <path d="M16 2v4M8 2v4M3 10h18" stroke={C.purple} strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+          Asistencia hoy
+        </button>
+      </div>
+    </CommandCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MÓDULO 4 — PIZARRA DE ESTRATEGIA
+// ─────────────────────────────────────────────
+function PizarraCard({ onNavigate }) {
+  const ACCENT = "#7F77DD";
+
+  return (
+    <CommandCard accentColor={ACCENT}>
+      <CardHeader
+        tag="Módulo 04"
+        title="Pizarra de Estrategia"
+        accentColor={ACCENT}
+        rightSlot={
+          <div style={{
+            padding: "3px 9px",
+            fontSize: 9,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            background: `${ACCENT}22`,
+            color: ACCENT,
+            border: `1px solid ${ACCENT}44`,
+            borderRadius: 4,
+          }}>
+            4-3-3
+          </div>
+        }
+      />
+
+      {/* Mini campo SVG */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.25)",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.06)",
+        overflow: "hidden",
+        marginBottom: 14,
+        padding: 6,
+        minHeight: 130,
+      }}>
+        <MiniPitch formation={FORMATION_433} />
+      </div>
+
+      {/* Leyenda */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: ACCENT, border: "1.5px solid rgba(255,255,255,0.5)" }} />
+        <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
+          Formación activa — 11 jugadores posicionados
+        </div>
+      </div>
+
+      <ActionButton
+        label="Editar táctica →"
+        color={ACCENT}
+        onClick={() => onNavigate("plantilla")}
+        style={{ width: "100%" }}
+      />
+    </CommandCard>
+  );
+}
+
+// ─────────────────────────────────────────────
+// EMPTY STATE INLINE
+// ─────────────────────────────────────────────
+function EmptyStateInline({ icon, message, actionLabel, onAction, accentColor }) {
+  return (
+    <div style={{
+      flex: 1,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      padding: "24px 16px",
+      gap: 10,
+    }}>
+      <div style={{ fontSize: 28, opacity: 0.5 }}>{icon}</div>
+      <div style={{ fontSize: 11, color: C.textMuted }}>{message}</div>
+      {actionLabel && (
+        <ActionButton
+          label={actionLabel}
+          color={accentColor}
+          size="small"
+          onClick={onAction}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// TOPBAR KPI STRIP
+// ─────────────────────────────────────────────
+function KpiStrip({ athletes, stats, matchStats }) {
+  const kpis = [
+    { label: "Atletas",       val: athletes.length,       color: C.neon   },
+    { label: "Sesiones",      val: stats.sesiones,         color: C.neon   },
+    { label: "Asistencia",    val: `${stats.asistencia}%`, color: C.green  },
+    { label: "Partidos",      val: matchStats.played,      color: C.purple },
+    { label: "Victorias",     val: matchStats.won,         color: C.green  },
+    { label: "Puntos",        val: matchStats.points,      color: C.amber  },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.1, duration: 0.4 }}
+      style={{
+        display: "flex",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        flexShrink: 0,
+      }}
+    >
+      {kpis.map((k, i) => (
+        <div
+          key={k.label}
+          style={{
+            padding: "10px 20px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+            borderRight: i < kpis.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none",
+            background: i === 0 ? `${C.neon}08` : "transparent",
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ fontSize: 18, fontWeight: 800, color: k.color, lineHeight: 1 }}>{k.val}</div>
+          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>{k.label}</div>
+        </div>
+      ))}
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// HOME PRINCIPAL — Dashboard de Comando
+// ─────────────────────────────────────────────
+export default function Home({ club, athletes, historial, stats, matchStats, onNavigate, mode, onLogout, userRole }) {
+  const { playSelect } = useGameAudio();
 
   const clubInitials = (club.nombre || "ES")
     .split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-  // ── Estilos estáticos ────────────────────
-  const css = {
-    app: { minHeight:"100vh", background:PALETTE.bg, fontFamily:"'Arial Narrow', Arial, sans-serif", display:"flex", flexDirection:"column" },
-    topbar: { height:42, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${PALETTE.neonBorder}`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto" },
-    brandBlock: { padding:"0 22px", display:"flex", alignItems:"center", background:"rgba(0,0,0,0.6)", borderRight:`1px solid ${PALETTE.border}` },
-    navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.neon}` : "2px solid transparent", background: active ? "rgba(200,255,0,0.05)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
-    clubBadge: { marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px", borderLeft:`1px solid ${PALETTE.border}` },
-    clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(200,255,0,0.12)", border:`2px solid ${PALETTE.neon}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.neon, flexShrink:0 },
-    metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid rgba(255,255,255,0.06)` },
-    metricBlock: (i) => ({ padding:"12px 18px", display:"flex", alignItems:"center", gap:12, background: i===0 ? "linear-gradient(135deg,rgba(57,255,20,0.09),rgba(57,255,20,0.03))" : "linear-gradient(135deg,rgba(20,20,30,0.9),rgba(10,10,20,0.95))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${PALETTE.neon}`, borderRight:`1px solid rgba(255,255,255,0.06)`, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }),
-    grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))", gridAutoRows:"minmax(180px,1fr)", gap:4, padding:"4px 12px 12px", minHeight:0 },
-    tag: { fontSize:9, textTransform:"uppercase", letterSpacing:"3px", fontWeight:600, color:PALETTE.neon, marginBottom:8, opacity:0.9 },
-    titleBig: { fontSize:44, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-2px", lineHeight:0.9, textShadow:"0 2px 24px rgba(0,0,0,1)", marginBottom:18 },
-    titleMid: { fontSize:24, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.8px", lineHeight:1, textShadow:"0 2px 14px rgba(0,0,0,0.9)", marginBottom:14 },
-    // Botón CTA: recibe isHovered para cambiar color
-    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"10px 22px", background: hov ? "white" : PALETTE.neon, color:"#0a0a0a", border:"none", cursor:"pointer", width:"fit-content", transition:"background 200ms ease-in-out, color 200ms ease-in-out" }),
-    ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon, cursor:"pointer" },
-    statRow: { display:"grid", gridTemplateColumns:"repeat(4,1fr)", height:"100%", position:"relative", zIndex:2 },
-    statBlock: (last) => ({ display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 18px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
-    footer: { display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"4px 18px 8px", flexShrink:0 },
-  };
-
-  const METRICS = [
-    { label:"Deportistas",    value:athletes.length,        icon:Icon.Users },
-    { label:"Partidos",       value:matchStats.played,        icon:Icon.Ball  },
-    { label:"Entrenamientos", value:stats.sesiones,          icon:Icon.Train },
-    { label:"Asistencia",     value:stats.asistencia + "%",  icon:Icon.Chart },
-  ];
-
-  const STATS = [
-    { val:matchStats.won,         lbl:"Ganados",   color:PALETTE.green },
-    { val:matchStats.lost,        lbl:"Perdidos",  color:PALETTE.danger },
-    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.neon },
-    { val:`${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl:"Goles F/C", color:"white" },
-  ];
+  const today = new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" });
+  const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
   return (
-    <div style={css.app}>
+    <div style={{
+      minHeight: "100vh",
+      background: `linear-gradient(160deg, #070d1a 0%, #050a14 40%, #0a0714 100%)`,
+      fontFamily: "'Arial Narrow', Arial, sans-serif",
+      display: "flex",
+      flexDirection: "column",
+    }}>
 
-      {/* TOPBAR */}
-      <div className="home-topbar" style={css.topbar}>
-        <div style={css.brandBlock}>
-          <span className="home-brand-full" style={{ fontSize:17, fontWeight:700, color:PALETTE.text, letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>
-            Elevate<span style={{ color:PALETTE.neon }}>Sports</span>
+      {/* ── TOPBAR ── */}
+      <div
+        className="cmd-topbar"
+        style={{
+          height: 44,
+          background: "rgba(5,8,18,0.9)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderBottom: `1px solid rgba(200,255,0,0.15)`,
+          display: "flex",
+          alignItems: "stretch",
+          flexShrink: 0,
+        }}
+      >
+        {/* Brand */}
+        <div
+          className="cmd-topbar-brand"
+          style={{
+            padding: "0 22px",
+            display: "flex",
+            alignItems: "center",
+            background: "rgba(0,0,0,0.5)",
+            borderRight: `1px solid ${C.border}`,
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontSize: 16, fontWeight: 700, color: "white", letterSpacing: "-0.3px", whiteSpace: "nowrap" }}>
+            Elevate<span style={{ color: C.neon }}>Sports</span>
           </span>
         </div>
+
+        {/* Nav items */}
         {NAV_ITEMS.map(({ key, label, navigable }) => (
-          <div key={key} onClick={() => navigable && onNavigate(key)} style={css.navItem(key==="home")}>
+          <div
+            key={key}
+            onClick={() => {
+              if (navigable) { playSelect(); onNavigate(key); }
+            }}
+            style={{
+              padding: "0 14px",
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "1.8px",
+              color: key === "home" ? "white" : C.textMuted,
+              display: "flex",
+              alignItems: "center",
+              cursor: navigable ? "pointer" : "default",
+              borderRight: `1px solid ${C.border}`,
+              borderBottom: key === "home" ? `2px solid ${C.neon}` : "2px solid transparent",
+              background: key === "home" ? "rgba(200,255,0,0.05)" : "transparent",
+              whiteSpace: "nowrap",
+              transition: "color 0.15s",
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { if (navigable && key !== "home") e.currentTarget.style.color = "white"; }}
+            onMouseLeave={e => { if (key !== "home") e.currentTarget.style.color = C.textMuted; }}
+          >
             {label}
           </div>
         ))}
-        <div style={css.clubBadge}>
+
+        {/* Club badge */}
+        <div style={{
+          marginLeft: "auto",
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "0 16px",
+          borderLeft: `1px solid ${C.border}`,
+          flexShrink: 0,
+        }}>
           {mode === "demo" && (
-            <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:"rgba(239,159,39,0.2)", color:"#EF9F27", border:"1px solid rgba(239,159,39,0.4)", marginRight:6 }}>
+            <div style={{ padding: "2px 7px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", background: "rgba(239,159,39,0.2)", color: C.amber, border: `1px solid rgba(239,159,39,0.4)` }}>
               Demo
             </div>
           )}
-          <div style={css.clubLogo}>{clubInitials}</div>
-          <div className="home-club-name">
-            <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"1px", whiteSpace:"nowrap" }}>
+          <div style={{
+            width: 26, height: 26,
+            borderRadius: "50%",
+            background: "rgba(200,255,0,0.12)",
+            border: `2px solid ${C.neon}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 9, fontWeight: 700, color: C.neon,
+          }}>
+            {clubInitials}
+          </div>
+          <div className="cmd-club-meta">
+            <div style={{ fontSize: 11, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>
               {club.nombre || "Mi Club"}
             </div>
-            <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>
-              {(club.categorias||[])[0]||"General"} · {club.temporada||"2025-26"}
+            <div style={{ fontSize: 8, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.4px" }}>
+              {(club.categorias||[])[0]||"General"}
             </div>
           </div>
           {onLogout && (
             <div
               onClick={onLogout}
-              style={{ marginLeft:10, padding:"4px 10px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)", border:"1px solid rgba(255,255,255,0.12)", cursor:"pointer", whiteSpace:"nowrap" }}
+              style={{ marginLeft: 6, padding: "4px 10px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", whiteSpace: "nowrap", borderRadius: 4 }}
             >
-              Cerrar sesion
+              Salir
             </div>
           )}
         </div>
       </div>
 
-      {/* METRICS */}
+      {/* ── COMMAND HEADER ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={{
+          padding: "14px 24px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexShrink: 0,
+          borderBottom: "1px solid rgba(255,255,255,0.04)",
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "3px", color: C.neon, marginBottom: 3, opacity: 0.8 }}>
+            Dashboard de Comando
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "white", letterSpacing: "-0.5px", lineHeight: 1 }}>
+            {club.nombre || "Mi Club"}
+            <span style={{ fontSize: 11, fontWeight: 400, color: C.textMuted, marginLeft: 10, letterSpacing: "0.5px" }}>
+              {userRole === "admin" ? "Administrador" : userRole === "coach" ? "Entrenador" : "Asistente"}
+            </span>
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>
+            {todayCapitalized}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, justifyContent: "flex-end" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, boxShadow: `0 0 5px ${C.green}` }} />
+            <div style={{ fontSize: 9, color: C.green, textTransform: "uppercase", letterSpacing: "1px" }}>Sistema activo</div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── KPI STRIP ── */}
+      <KpiStrip athletes={athletes} stats={stats} matchStats={matchStats} />
+
+      {/* ── GRID 2×2 ── */}
       <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="home-metrics"
-        style={css.metrics}
+        className="cmd-grid"
+        style={{ flex: 1 }}
       >
-        {METRICS.map((m, i) => (
-          <motion.div key={m.label} variants={metricItemVariant} style={css.metricBlock(i)}>
-            {m.icon}
-            <div>
-              <div style={{ fontSize:22, fontWeight:700, color:PALETTE.neon, lineHeight:1 }}>{m.value}</div>
-              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.textMuted, marginTop:2 }}>{m.label}</div>
-            </div>
-          </motion.div>
-        ))}
+        <AlertaCard athletes={athletes} historial={historial} onNavigate={onNavigate} />
+        <CajaCard userRole={userRole} matchStats={matchStats} onNavigate={onNavigate} />
+        <IngestaCard athletes={athletes} historial={historial} onNavigate={onNavigate} />
+        <PizarraCard onNavigate={onNavigate} />
       </motion.div>
 
-      {/* EMPTY STATE — shown when no athletes registered yet */}
-      {athletes.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
-          style={{
-            margin: "0 12px",
-            background: "rgba(139,92,246,0.06)",
-            border: "1px solid rgba(139,92,246,0.2)",
-            borderRadius: 8,
-            overflow: "hidden",
-          }}
-        >
-          <EmptyState
-            icon={
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke="#8B5CF6" strokeWidth="1.8"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            }
-            title="Bienvenido a Elevate Sports"
-            subtitle="Comienza agregando deportistas a tu plantilla para desbloquear todas las metricas y funciones del dashboard"
-            actionLabel="Ir a Plantilla"
-            onAction={() => onNavigate("plantilla")}
-            compact
-          />
-        </motion.div>
-      )}
-
-      {/* GRID DE MOSAICOS */}
-      <motion.div
-        {...fadeInUp}
-        className="home-grid"
-        style={css.grid}
-      >
-
-        {/* TILE 1 — ENTRENAMIENTO */}
-        <InteractiveTile
-          tileKey="entrenamiento"
-          gridColumn="1" gridRow="1"
-          image={imgEntrenamiento}
-          overlayType="left"
-          onClick={() => onNavigate("entrenamiento")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.tag}>Módulo 01</div>
-              <div style={css.titleBig}>Entrenamiento</div>
-              <div style={css.btn(hov)}>Entrar →</div>
-            </>
-          )}
-        </InteractiveTile>
-
-        {/* TILE 2 — GESTIÓN DE PLANTILLA */}
-        <InteractiveTile
-          tileKey="plantilla"
-          gridColumn="2" gridRow="1"
-          image={imgPlantilla}
-          overlayType="bottom"
-          onClick={() => onNavigate("plantilla")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.tag}>Módulo 02</div>
-              <div style={css.titleMid}>Gestión de plantilla</div>
-              <div style={css.btn(hov)}>Ver plantilla →</div>
-            </>
-          )}
-        </InteractiveTile>
-
-        {/* TILE 3 — PRÓXIMO PARTIDO */}
-        <InteractiveTile
-          tileKey="partido"
-          gridColumn="3" gridRow="1"
-          image={imgPartido}
-          overlayType="bottom"
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.tag}>Próximo partido</div>
-              <div style={css.titleMid}>vs Atlético Sur</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", marginTop:4, letterSpacing:"0.5px" }}>
-                {matchStats.won}G · {matchStats.drawn}E · {matchStats.lost}P — {matchStats.points} pts
-              </div>
-              <div style={{ ...css.btn(hov), marginTop:10 }}>Ver partido →</div>
-            </>
-          )}
-        </InteractiveTile>
-
-        {/* TILE 4 — RESUMEN DEL CICLO (sin hover interactivo) */}
-        <div style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-          <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
-          <div className="home-stat-row" style={css.statRow}>
-            {STATS.map((m, i) => (
-              <div key={m.lbl} style={css.statBlock(i===3)}>
-                <div style={{ fontSize:20, fontWeight:700, color:m.color }}>{m.val}</div>
-                <div style={{ fontSize:9, color:PALETTE.textHint, textTransform:"uppercase", letterSpacing:"0.8px", marginTop:3 }}>{m.lbl}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* TILE 5 — OFICINA */}
-        <InteractiveTile
-          tileKey="oficina"
-          gridColumn="3" gridRow="2"
-          image={imgOficina}
-          overlayType="bottom"
-          borderTopWidth={2}
-          borderTopColor={PALETTE.neonBorder}
-          onClick={() => onNavigate("admin")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", height:"100%", paddingBottom:4 }}>
-              <div>
-                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Oficina</div>
-                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Administración y pagos</div>
-              </div>
-              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.purple : "rgba(127,119,221,0.4)", color: hov ? "white" : PALETTE.purple, transition:"color 200ms, border-color 200ms" }}>
-                Entrar →
-              </div>
-            </div>
-          )}
-        </InteractiveTile>
-
-        {/* TILE 6 — MATCH CENTER */}
-        <div
-          onClick={() => onNavigate("partidos")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"3",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(127,119,221,0.06),rgba(10,10,18,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(127,119,221,0.35)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(127,119,221,0.08)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke={PALETTE.purple} strokeWidth="1.5"/>
-                <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.purple} strokeWidth="1.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(127,119,221,0.7)", marginBottom:3 }}>Modulo 07</div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Match Center
-              </div>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Reportes · Player Cards · Analytics
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(127,119,221,0.4)`, color:PALETTE.purple }}>
-              Abrir →
-            </div>
-          </div>
-        </div>
-
-        {/* TILE 7 — CALENDARIO (fila 4, ancho completo) */}
-        <div
-          onClick={() => onNavigate("calendario")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"4",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(200,255,0,0.04),rgba(10,10,18,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          {/* Icono calendario */}
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(200,255,0,0.3)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(200,255,0,0.06)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="18" rx="1" stroke={PALETTE.neon} strokeWidth="1.5"/>
-                <path d="M3 10h18M8 2v4M16 2v4" stroke={PALETTE.neon} strokeWidth="1.5" strokeLinecap="round"/>
-                <rect x="7" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.7"/>
-                <rect x="10.5" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.4"/>
-                <rect x="14" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(200,255,0,0.6)", marginBottom:3 }}>Módulo 06</div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Calendario & RSVP
-              </div>
-            </div>
-          </div>
-
-          {/* Descripción + CTA */}
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Partidos · Entrenamientos · Asistencia
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon }}>
-              Abrir →
-            </div>
-          </div>
-        </div>
-
-      </motion.div>
-
-      {/* FOOTER */}
-      <div style={css.footer}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-          <div style={{ background:PALETTE.neon, color:"#0a0a0a", fontSize:10, fontWeight:700, padding:"2px 6px" }}>ES</div>
-          <div style={{ fontSize:13, color:PALETTE.text, letterSpacing:"1px", fontWeight:700, textTransform:"uppercase" }}>Elevate Sports</div>
+      {/* ── FOOTER ── */}
+      <div style={{
+        height: 32,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        padding: "0 18px",
+        borderTop: "1px solid rgba(255,255,255,0.04)",
+        flexShrink: 0,
+      }}>
+        <div style={{ fontSize: 8, color: C.textHint, textTransform: "uppercase", letterSpacing: "1.5px" }}>
+          Elevate Sports v6.0 · Dashboard de Comando Operativo
         </div>
       </div>
 
