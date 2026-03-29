@@ -10,28 +10,48 @@
 
 import { calcSaludActual } from "../utils/rpeEngine";
 
-const STORAGE_KEY = "elevate_healthSnapshots";
+const STORAGE_KEY_BASE = "elevate_healthSnapshots";
 const MAX_SNAPSHOTS = 500;
 
 let _onError = null;
+let _currentClubId = null;
+
 export function setHealthErrorHandler(handler) { _onError = handler; }
 
-/** Lee snapshots desde localStorage */
+/**
+ * Registra el clubId activo para aislar datos entre clubes en dispositivos compartidos.
+ * Llamar despues de login/setClubId.
+ * @param {string|null} clubId
+ */
+export function setHealthClubId(clubId) { _currentClubId = clubId; }
+
+/**
+ * Retorna la clave de localStorage para el club activo.
+ * Si no hay clubId (modo demo o offline puro) usa la clave base.
+ * @returns {string}
+ */
+function getStorageKey() {
+  return _currentClubId
+    ? `${STORAGE_KEY_BASE}_${_currentClubId}`
+    : STORAGE_KEY_BASE;
+}
+
+/** Lee snapshots desde localStorage (aislados por clubId) */
 export function getSnapshots() {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(getStorageKey());
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-/** Escribe snapshots a localStorage */
+/** Escribe snapshots a localStorage (aislados por clubId) */
 function saveSnapshots(snapshots) {
   try {
     // Mantener solo los ultimos MAX_SNAPSHOTS
     const trimmed = snapshots.slice(-MAX_SNAPSHOTS);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    window.localStorage.setItem(getStorageKey(), JSON.stringify(trimmed));
   } catch (e) {
     console.error("[healthService] Error saving snapshots:", e.name);
     if (_onError) _onError(`Error guardando historial de salud (${e.name}). Libera espacio.`);
@@ -52,7 +72,9 @@ export function takeHealthSnapshot(athletes, historial, sessionNum) {
   const presentes = athletes.filter(a => a.status === "P");
 
   const newSnapshots = presentes.map(a => {
-    const { salud, riskLevel, rpeAvg7d } = calcSaludActual(a.rpe, historial);
+    // Pasar a.id como tercer argumento para filtrar RPE individual del atleta
+    // en el historial (ACWR correcto por atleta, no promedio del plantel)
+    const { salud, riskLevel, rpeAvg7d } = calcSaludActual(a.rpe, historial, a.id);
     return {
       athleteId: a.id,
       athleteName: a.name,
@@ -106,7 +128,16 @@ export function getAtRiskAthletes() {
   return Array.from(latest.values()).filter(s => s.riskLevel === "riesgo");
 }
 
-/** Limpia todos los snapshots (para logout/reset) */
+/**
+ * Limpia todos los snapshots del club activo (para logout/reset).
+ * Si habia un clubId registrado, elimina su clave especifica.
+ * Tambien limpia la clave base por compatibilidad con sesiones previas.
+ */
 export function clearSnapshots() {
-  window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(getStorageKey());
+  // Limpiar clave base para no dejar datos huerfanos de sesiones pre-clubId
+  if (_currentClubId) {
+    window.localStorage.removeItem(STORAGE_KEY_BASE);
+  }
+  _currentClubId = null;
 }

@@ -11,6 +11,7 @@
 
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { PALETTE as C } from "../../constants/palette";
 
 // ── Animation variants ──────────────────────────────────────────────────────
@@ -101,6 +102,31 @@ function GlassCard({ children, style = {} }) {
 export default function QuienesSomos() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      .qs-hero { padding: 64px 20px 48px !important; }
+      .qs-stats-row { gap: 20px !important; }
+      .qs-origen-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+      .qs-valores-grid { grid-template-columns: 1fr !important; }
+      .qs-cta-section { padding: 64px 20px !important; }
+      .qs-cta-btns { flex-direction: column !important; align-items: stretch !important; }
+      .qs-cta-btns button { text-align: center !important; }
+      @media (max-width: 767px) {
+        .qs-hero { padding: 64px 20px 48px !important; }
+        .qs-stats-row { gap: 20px !important; justify-content: space-around !important; }
+        .qs-origen-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+        .qs-valores-grid { grid-template-columns: 1fr !important; }
+        .qs-cta-section { padding: 64px 20px !important; }
+        .qs-cta-btns { flex-direction: column !important; align-items: stretch !important; }
+        .qs-origen-section { padding: 48px 20px !important; }
+        .qs-valores-section { padding: 48px 20px !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -109,7 +135,7 @@ export default function QuienesSomos() {
     }}>
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="qs-hero" style={{
         position: "relative",
         padding: "100px 32px 80px",
         maxWidth: 900,
@@ -175,6 +201,7 @@ export default function QuienesSomos() {
           {/* Stats row */}
           <motion.div
             variants={stagger}
+            className="qs-stats-row"
             style={{
               display: "flex", justifyContent: "center", gap: 40, flexWrap: "wrap",
             }}
@@ -214,12 +241,12 @@ export default function QuienesSomos() {
       </section>
 
       {/* ── ORIGEN ────────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="qs-origen-section" style={{
         padding: "80px 32px",
         maxWidth: 1100,
         margin: "0 auto",
       }}>
-        <div style={{
+        <div className="qs-origen-grid" style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 48,
@@ -321,7 +348,7 @@ export default function QuienesSomos() {
       </section>
 
       {/* ── VALORES ───────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="qs-valores-section" style={{
         padding: "80px 32px",
         background: "rgba(255,255,255,0.015)",
         borderTop: "1px solid rgba(255,255,255,0.05)",
@@ -344,7 +371,7 @@ export default function QuienesSomos() {
             </h2>
           </motion.div>
 
-          <div style={{
+          <div className="qs-valores-grid" style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: 24,
@@ -393,7 +420,7 @@ export default function QuienesSomos() {
       </section>
 
       {/* ── CTA FINAL ─────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="qs-cta-section" style={{
         padding: "100px 32px",
         textAlign: "center",
         maxWidth: 700,
@@ -423,7 +450,7 @@ export default function QuienesSomos() {
             Empieza gratis hoy. Sin tarjeta de credito. Sin configuracion compleja.
             Solo tu plantel y los datos que necesitas.
           </p>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <div className="qs-cta-btns" style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
             <motion.button
               whileHover={{ scale: 1.04, boxShadow: `0 0 24px ${C.neonGlow}` }}
               whileTap={{ scale: 0.97 }}

@@ -1,21 +1,49 @@
-* {
+/* ─────────────────────────────────────────────────────────────────────────────
+   ELEVATE SPORTS — Global Stylesheet
+   Responsive-first: fluid typography, safe areas, touch targets
+   Breakpoints: xs(0-479) | sm(480-767) | md(768-1023) | lg(1024+)
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ── Base ────────────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  /* Prevent font size inflation on iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: #060d06;
   color: white;
+  /* Fluid base font: 13px at 320px → 15px at 1200px */
+  font-size: clamp(13px, 0.8125rem + 0.25vw, 15px);
   font-family: system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport on iOS Safari */
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
-input, select, textarea, button {
+/* ── Form elements ───────────────────────────────────────────────────────── */
+input,
+select,
+textarea,
+button {
   font-family: inherit;
 }
 
@@ -29,6 +57,97 @@ select option {
   color: white;
 }
 
+/* ── Touch targets ───────────────────────────────────────────────────────── */
+/* Minimum 44px touch target on interactive elements (WCAG 2.5.5 / Apple HIG) */
+button,
+a,
+[role="button"],
+[tabindex] {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Exception: elements that wrap other block content — override as needed */
+a:has(> div),
+a:has(> span) {
+  display: inline-flex;
+}
+
+/* ── Fluid headings ──────────────────────────────────────────────────────── */
+h1 { font-size: clamp(28px, 5vw + 12px, 56px); }
+h2 { font-size: clamp(22px, 3.5vw + 8px,  38px); }
+h3 { font-size: clamp(18px, 2vw + 8px,    28px); }
+h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
+
+/* ── Fluid spacing utilities ─────────────────────────────────────────────── */
+:root {
+  --space-xs:  clamp(4px,  0.5vw, 8px);
+  --space-sm:  clamp(8px,  1vw,   16px);
+  --space-md:  clamp(12px, 1.5vw, 24px);
+  --space-lg:  clamp(16px, 2.5vw, 40px);
+  --space-xl:  clamp(24px, 4vw,   64px);
+
+  /* Safe area insets for notch devices (iPhone X+, Android notch) */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+}
+
+/* ── Safe area helpers ───────────────────────────────────────────────────── */
+.safe-top    { padding-top:    var(--safe-top);    }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+
+/* ── Horizontal scroll containers (tables, nav on mobile) ───────────────── */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.scroll-x-snap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.scroll-x-snap::-webkit-scrollbar { display: none; }
+
+.scroll-x-snap > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ── Responsive breakpoints ──────────────────────────────────────────────── */
+
+/* Mobile portrait: hide extras, single-column */
+@media (max-width: 479px) {
+  .hide-xs { display: none !important; }
+  .stack-xs { flex-direction: column !important; }
+  .fullwidth-xs { width: 100% !important; max-width: 100% !important; }
+  .pad-xs { padding: 12px 14px !important; }
+}
+
+/* Mobile landscape / small tablet */
+@media (min-width: 480px) and (max-width: 767px) {
+  .hide-sm { display: none !important; }
+}
+
+/* Tablet and below */
+@media (max-width: 767px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: flex !important; }
+}
+
+/* Desktop only */
+@media (min-width: 768px) {
+  .hide-desktop { display: none !important; }
+  .show-desktop { display: flex !important; }
+}
+
+/* ── Scrollbars ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -40,8 +159,51 @@ select option {
 
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes elv-drawer-in {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes elv-drawer-out {
+  from { transform: translateX(0);     opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+
+/* ── Mobile nav drawer ───────────────────────────────────────────────────── */
+.elv-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  z-index: 500;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.elv-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 499;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Pinch/touch handling ────────────────────────────────────────────────── */
+.touch-pan-x   { touch-action: pan-x; }
+.touch-pan-y   { touch-action: pan-y; }
+.touch-manip   { touch-action: manipulation; }
+.touch-pinch   { touch-action: pinch-zoom; }

@@ -187,7 +187,7 @@ const HexRadar = memo(function HexRadar({ attrs, size=120 }) {
 });
 
 // ── Token de jugador grande estilo FIFA ──
-const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, onSelect, onPointerDown }) {
+const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
   if (!athlete) {
@@ -198,15 +198,25 @@ const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDr
     );
   }
 
-  const isGK = starter.posCode === "GK";
   const active = isSelected || hovered;
   const saludVal = salud?.salud ?? 100;
   const ovr = athlete.rating || Math.round(((athlete.speed||78)+(athlete.shooting||72)+(athlete.passing||80)+(athlete.dribble||75)+(athlete.defense||65)+(athlete.physical||77))/6);
 
+  // Visual priority: activating (long-press) > dragged > target > selected > hovered
+  const tokenScale = isActivating ? 1.1 : isTarget ? 1.08 : active && !isDragged ? 1.04 : 1;
+  const tokenBorder = isActivating ? `2px solid ${C.neon}` : isTarget ? `2px solid ${C.drag}` : isSelected ? `2px solid ${C.neon}` : `2px solid ${saludColor(saludVal)}`;
+  const tokenShadow = isActivating
+    ? `0 0 0 3px ${C.neon}, 0 0 28px rgba(200,255,0,0.7), 0 0 10px rgba(200,255,0,0.45)`
+    : isDragged ? `0 10px 36px rgba(0,0,0,0.95), 0 0 14px ${saludColor(saludVal)}55`
+    : isSelected ? `0 0 0 1px ${C.neon}, 0 0 18px rgba(200,255,0,0.5)`
+    : isTarget ? `0 0 14px rgba(0,229,255,0.5)`
+    : active ? `0 6px 20px rgba(0,0,0,0.8), 0 0 8px ${saludColor(saludVal)}44`
+    : `0 3px 10px rgba(0,0,0,0.6), 0 0 4px ${saludColor(saludVal)}33`;
+
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1, userSelect:"none" }}>
       {/* OVR badge */}
-      <div style={{ fontSize:16, fontWeight:900, color: isSelected ? C.neon : "white", textShadow:"0 2px 8px rgba(0,0,0,0.9)", lineHeight:1, zIndex:2 }}>
+      <div style={{ fontSize:16, fontWeight:900, color: isSelected || isActivating ? C.neon : "white", textShadow:"0 2px 8px rgba(0,0,0,0.9)", lineHeight:1, zIndex:2 }}>
         {ovr}
       </div>
       <div
@@ -214,18 +224,22 @@ const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDr
         onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}
         onPointerDown={onPointerDown}
         style={{
-          width:68, overflow:"hidden", cursor: isDragged?"grabbing":"grab",
+          width:68, overflow:"hidden",
+          cursor: isDragged ? "grabbing" : "grab",
           touchAction:"none",
-          opacity: isDragged?0.2:1,
-          border: `2px solid ${isTarget ? C.drag : isSelected ? C.neon : saludColor(saludVal)}`,
+          opacity: isDragged ? 0.2 : 1,
+          border: tokenBorder,
           background: isTarget ? "rgba(0,60,80,0.9)" : "rgba(5,12,5,0.92)",
-          transform: `scale(${isTarget?1.08:active&&!isDragged?1.04:1})`,
-          boxShadow: isSelected ? `0 0 0 1px ${C.neon}, 0 0 18px rgba(200,255,0,0.5)` : isTarget ? `0 0 14px rgba(0,229,255,0.5)` : active ? `0 6px 20px rgba(0,0,0,0.8), 0 0 8px ${saludColor(saludVal)}44` : `0 3px 10px rgba(0,0,0,0.6), 0 0 4px ${saludColor(saludVal)}33`,
-          transition:"transform 180ms, box-shadow 180ms, opacity 120ms", borderRadius:3,
+          transform: `scale(${tokenScale})`,
+          boxShadow: tokenShadow,
+          transition: isActivating
+            ? "transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease"
+            : "transform 180ms ease, box-shadow 180ms ease, opacity 120ms",
+          borderRadius:3,
         }}
       >
-        {/* Health Signal stripe — refleja Borg CR-10 individual */}
-        <div style={{ height:3, background: isSelected ? C.neon : saludColor(saludVal) }} />
+        {/* Health Signal stripe */}
+        <div style={{ height:3, background: isSelected || isActivating ? C.neon : saludColor(saludVal) }} />
         {/* Photo */}
         <div style={{ width:68, height:56, overflow:"hidden", position:"relative" }}>
           <img src={avatar(athlete.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", display:"block", pointerEvents:"none" }} />
@@ -259,7 +273,8 @@ const PlayerToken = memo(function PlayerToken({ starter, salud, isSelected, isDr
   prev.salud?.salud === next.salud?.salud &&
   prev.isSelected === next.isSelected &&
   prev.isDragged === next.isDragged &&
-  prev.isTarget === next.isTarget
+  prev.isTarget === next.isTarget &&
+  prev.isActivating === next.isActivating
 );
 
 // ── Panel detalle FIFA Card ──
@@ -377,6 +392,12 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [activeTab, setActiveTab] = useState("plantilla");
 
+  // ── Long-press drag state (touch vs scroll disambiguation) ──
+  // dragActivating: { type, index } — set during the 150ms window before drag commits
+  const [dragActivating, setDragActivating] = useState(null);
+  const longPressTimerRef = useRef(null);
+  const longPressOriginRef = useRef(null); // { x, y } at pointerdown
+
   const [rolesData, setRolesData] = useLocalStorage("elevate_roles_v2", {});
   const [instructionsText, setInstructionsText] = useLocalStorage("elevate_instructions", "");
   const [tacticasText, setTacticasText] = useLocalStorage("elevate_tacticas", "");
@@ -418,13 +439,62 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
   }, []);
 
   // ── Pointer Drag System (FIFA-style: ghost + spring + touch) ──
+  // Long-press 150ms pattern: prevents scroll/drag conflicts on touch.
+  // - If pointer moves >5px before timer fires: cancel (it's a scroll)
+  // - If 150ms elapses without movement: activate drag with neon glow feedback
   const handlePointerDown = useCallback((e, type, index) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    const info = { type, index, x: e.clientX, y: e.clientY };
-    setDragInfo(info);
-    dragInfoRef.current = info;
-    setSelectedIdx(null);
+    if (e.button !== 0 && e.button !== undefined) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    longPressOriginRef.current = { x: startX, y: startY };
+
+    // Show activating visual immediately so the user knows the press registered
+    setDragActivating({ type, index });
+
+    // Cancel any previous pending timer
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+    // Early cancel handler — attached until drag commits or is cancelled
+    const cancelOnMove = (moveEvt) => {
+      const dx = moveEvt.clientX - startX;
+      const dy = moveEvt.clientY - startY;
+      // >5px movement before 150ms: it's a scroll gesture, cancel drag
+      if (Math.sqrt(dx * dx + dy * dy) > 5) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+        longPressOriginRef.current = null;
+        setDragActivating(null);
+        document.removeEventListener("pointermove", cancelOnMove);
+        document.removeEventListener("pointerup", cancelOnUp);
+      }
+    };
+
+    const cancelOnUp = () => {
+      // Pointer released before 150ms: just a tap, no drag
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+      longPressOriginRef.current = null;
+      setDragActivating(null);
+      document.removeEventListener("pointermove", cancelOnMove);
+      document.removeEventListener("pointerup", cancelOnUp);
+    };
+
+    document.addEventListener("pointermove", cancelOnMove, { passive: true });
+    document.addEventListener("pointerup", cancelOnUp, { once: true });
+
+    longPressTimerRef.current = setTimeout(() => {
+      // 150ms elapsed without >5px movement — commit to drag
+      document.removeEventListener("pointermove", cancelOnMove);
+      document.removeEventListener("pointerup", cancelOnUp);
+      setDragActivating(null);
+
+      e.preventDefault?.();
+      const info = { type, index, x: e.clientX, y: e.clientY };
+      setDragInfo(info);
+      dragInfoRef.current = info;
+      setSelectedIdx(null);
+    }, 150);
   }, []);
 
   useEffect(() => {
@@ -515,6 +585,8 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
     const cleanup = () => {
       setDragInfo(null); dragInfoRef.current = null;
       setNearTarget(null);
+      setDragActivating(null);
+      if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
       if (ghostRef.current) ghostRef.current.style.display = "none";
     };
     document.addEventListener("pointermove", onMove, { passive: false });
@@ -569,7 +641,7 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
     { key:"tacticas",      label:"Tacticas" },
   ];
 
-  const ta = { width:"100%", minHeight:220, background:"rgba(255,255,255,0.04)", border:`1px solid ${C.border}`, color:"white", fontSize:12, fontFamily:"inherit", padding:12, outline:"none", resize:"vertical", lineHeight:1.7 };
+  const ta = { width:"100%", minHeight:220, background:"linear-gradient(135deg,rgba(16,16,26,0.95),rgba(10,10,18,0.98))", border:`1px solid rgba(255,255,255,0.08)`, color:"white", fontSize:12, fontFamily:"inherit", padding:14, outline:"none", resize:"vertical", lineHeight:1.7, borderRadius:8, boxShadow:"0 4px 20px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" };
 
   // ── Ghost data ──
   const ghostAthlete = dragInfo
@@ -580,13 +652,13 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
     : 0;
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"#0a1020", fontFamily:"'Arial Narrow',Arial,sans-serif", overflow:"hidden" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", background:"linear-gradient(180deg,#0a0f1a,#060a12)", fontFamily:"'Arial Narrow',Arial,sans-serif", overflow:"hidden" }}>
 
       {/* ── TABS SUPERIORES FIFA ── */}
-      <div style={{ display:"flex", alignItems:"stretch", height:36, background:"rgba(0,0,0,0.85)", borderBottom:`1px solid ${C.border}`, flexShrink:0 }}>
+      <div style={{ display:"flex", alignItems:"stretch", height:38, background:"rgba(6,6,12,0.96)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, flexShrink:0, boxShadow:"0 2px 12px rgba(0,0,0,0.5)" }}>
         {TABS.map(t => (
           <div key={t.key} onClick={()=>setActiveTab(t.key)}
-            style={{ padding:"0 18px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color: activeTab===t.key ? C.neon : C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderBottom: activeTab===t.key ? `2px solid ${C.neon}` : "2px solid transparent", transition:"color 0.15s" }}>
+            style={{ padding:"0 18px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color: activeTab===t.key ? C.neon : C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderBottom: activeTab===t.key ? `2px solid ${C.neon}` : "2px solid transparent", background: activeTab===t.key ? "rgba(57,255,20,0.05)" : "transparent", boxShadow: activeTab===t.key ? `inset 0 -2px 8px rgba(57,255,20,0.12)` : "none", transition:"color 0.15s,background 0.15s" }}>
             {t.label}
           </div>
         ))}
@@ -613,14 +685,14 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
               <PlayerDetail key="detail" starter={selStarter} allAthletes={athletes} historial={historial} onClose={()=>setSelectedIdx(null)} onSwapSimilar={swapSimilar} />
             ) : activeTab === "formaciones" ? (
               <motion.div key="formations" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-                style={{ width:240, background:"rgba(0,0,0,0.8)", borderRight:`1px solid ${C.border}`, padding:16, overflowY:"auto" }}>
-                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:14 }}>Selecciona formacion</div>
+                style={{ width:240, background:"linear-gradient(180deg,rgba(10,10,20,0.98),rgba(6,6,14,0.99))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderRight:`1px solid rgba(255,255,255,0.06)`, padding:16, overflowY:"auto", boxShadow:"4px 0 24px rgba(0,0,0,0.4)" }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:14, borderLeft:`2px solid ${C.purple}`, paddingLeft:8 }}>Selecciona formacion</div>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                   {Object.entries(VERT_FORMATIONS).map(([key, f]) => (
-                    <div key={key} style={{ textAlign:"center" }}>
+                    <div key={key} style={{ textAlign:"center", cursor:"pointer" }} onClick={()=>changeFormation(key)}>
                       <MiniPitch positions={f.positions} isActive={formationKey===key} onClick={()=>changeFormation(key)} />
-                      <div style={{ fontSize:11, fontWeight:700, color: formationKey===key ? C.neon : C.textMuted, marginTop:4 }}>{key}</div>
-                      <div style={{ fontSize:8, color:C.textHint }}>{f.label}</div>
+                      <div style={{ fontSize:11, fontWeight:700, color: formationKey===key ? C.neon : C.textMuted, marginTop:5, padding:"4px 8px", background: formationKey===key ? "linear-gradient(135deg,rgba(57,255,20,0.18),rgba(57,255,20,0.06))" : "transparent", border: formationKey===key ? `1px solid rgba(57,255,20,0.3)` : "1px solid transparent", borderRadius:20, display:"inline-block", boxShadow: formationKey===key ? `0 0 10px rgba(57,255,20,0.2)` : "none", transition:"all 0.18s" }}>{key}</div>
+                      <div style={{ fontSize:8, color:C.textHint, marginTop:2 }}>{f.label}</div>
                     </div>
                   ))}
                 </div>
@@ -635,26 +707,31 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
               style={{
                 flex:1, position:"relative", cursor:"crosshair", overflow:"hidden",
                 background:`
-                  repeating-linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 40px,rgba(0,0,0,0.08) 40px,rgba(0,0,0,0.08) 80px),
-                  linear-gradient(180deg,#1a4a0e 0%,#256015 50%,#1a4a0e 100%)`,
+                  repeating-linear-gradient(180deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 36px,rgba(0,0,0,0.14) 36px,rgba(0,0,0,0.14) 72px),
+                  repeating-linear-gradient(90deg,rgba(255,255,255,0) 0px,rgba(255,255,255,0) 72px,rgba(255,255,255,0.014) 72px,rgba(255,255,255,0.014) 73px),
+                  linear-gradient(180deg,#0e2006 0%,#1d4a0e 18%,#235c11 40%,#275f12 50%,#235c11 60%,#1d4a0e 82%,#0e2006 100%)`,
+                boxShadow:"inset 0 0 80px rgba(0,0,0,0.5)",
               }}
             >
               {/* SVG campo vertical */}
-              <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none" }} viewBox="0 0 90 130" preserveAspectRatio="none">
-                <rect x="3" y="3" width="84" height="124" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.4"/>
-                <line x1="3" y1="65" x2="87" y2="65" stroke="rgba(255,255,255,0.45)" strokeWidth="0.35"/>
-                <circle cx="45" cy="65" r="10" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="0.35"/>
-                <circle cx="45" cy="65" r="0.7" fill="rgba(255,255,255,0.5)"/>
+              <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", filter:"drop-shadow(0 0 3px rgba(255,255,255,0.12))" }} viewBox="0 0 90 130" preserveAspectRatio="none">
+                <rect x="3" y="3" width="84" height="124" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="0.5"/>
+                <line x1="3" y1="65" x2="87" y2="65" stroke="rgba(255,255,255,0.58)" strokeWidth="0.45"/>
+                <circle cx="45" cy="65" r="10" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45"/>
+                <circle cx="45" cy="65" r="0.8" fill="rgba(255,255,255,0.7)"/>
                 {/* Area superior (rival) */}
-                <rect x="22" y="3" width="46" height="18" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.35"/>
-                <rect x="33" y="3" width="24" height="7" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.3"/>
-                <circle cx="45" cy="15" r="0.5" fill="rgba(255,255,255,0.5)"/>
-                <rect x="37.5" y="0" width="15" height="3" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45"/>
+                <rect x="22" y="3" width="46" height="18" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="0.42"/>
+                <rect x="33" y="3" width="24" height="7" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.35"/>
+                <circle cx="45" cy="15" r="0.6" fill="rgba(255,255,255,0.65)"/>
+                <rect x="37.5" y="0" width="15" height="3" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5"/>
                 {/* Area inferior (propia) */}
-                <rect x="22" y="109" width="46" height="18" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.35"/>
-                <rect x="33" y="120" width="24" height="7" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="0.3"/>
-                <circle cx="45" cy="115" r="0.5" fill="rgba(255,255,255,0.5)"/>
-                <rect x="37.5" y="127" width="15" height="3" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="0.45"/>
+                <rect x="22" y="109" width="46" height="18" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="0.42"/>
+                <rect x="33" y="120" width="24" height="7" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.35"/>
+                <circle cx="45" cy="115" r="0.6" fill="rgba(255,255,255,0.65)"/>
+                <rect x="37.5" y="127" width="15" height="3" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5"/>
+                {/* Arcos de penalti */}
+                <path d="M 28 21 Q 45 28 62 21" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3"/>
+                <path d="M 28 109 Q 45 102 62 109" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="0.3"/>
               </svg>
 
               {/* Tokens animados — spring con micro-rebote FIFA */}
@@ -666,6 +743,7 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
                   <PlayerToken
                     starter={st} salud={st.athlete ? saludMap.get(st.athlete.id) : null}
                     isSelected={selectedIdx===i} isDragged={isDrag("starter",i)} isTarget={nearTarget===i}
+                    isActivating={dragActivating?.type==="starter" && dragActivating?.index===i}
                     onSelect={e=>{e.stopPropagation();setSelectedIdx(p=>p===i?null:i);}}
                     onPointerDown={e=>handlePointerDown(e,"starter",i)}
                   />
@@ -674,7 +752,7 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
             </div>
 
             {/* ── SUPLENTES — barra horizontal inferior ── */}
-            <div ref={benchAreaRef} style={{ flexShrink:0, background:"rgba(0,0,0,0.85)", borderTop:`2px solid ${C.border}`, padding:"10px 16px" }}>
+            <div ref={benchAreaRef} style={{ flexShrink:0, background:"linear-gradient(135deg,rgba(10,10,18,0.96),rgba(6,6,12,0.98))", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", borderTop:`2px solid rgba(255,255,255,0.06)`, padding:"10px 16px", boxShadow:"0 -4px 20px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04)" }}>
               <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
                 <div style={{ fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"2px", color:"white" }}>Suplentes</div>
                 <div style={{ fontSize:9, color:C.textMuted }}>({bench.length})</div>
@@ -687,7 +765,19 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
                   return (
                     <div key={b.id}
                       onPointerDown={e=>handlePointerDown(e,"bench",i)}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 12px", background:"rgba(255,255,255,0.04)", border:`1px solid ${saludColor(bSaludVal)}55`, cursor:"grab", opacity:isDrag("bench",i)?0.3:1, touchAction:"none", flexShrink:0, borderRadius:3, minWidth:140, userSelect:"none" }}
+                      style={{
+                        display:"flex", alignItems:"center", gap:10, padding:"7px 12px",
+                        background:`linear-gradient(135deg,rgba(20,20,30,0.9),rgba(12,12,22,0.95))`,
+                        border:`1px solid ${dragActivating?.type==="bench"&&dragActivating?.index===i ? C.neon : saludColor(bSaludVal)+"44"}`,
+                        cursor: isDrag("bench",i) ? "grabbing" : "grab",
+                        opacity: isDrag("bench",i) ? 0.3 : 1,
+                        touchAction:"none", flexShrink:0, borderRadius:6, minWidth:140, userSelect:"none",
+                        boxShadow: dragActivating?.type==="bench"&&dragActivating?.index===i
+                          ? `0 0 0 2px ${C.neon}, 0 0 20px rgba(200,255,0,0.5), 0 4px 16px rgba(0,0,0,0.5)`
+                          : `0 4px 16px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03),inset 0 1px 0 rgba(255,255,255,0.04)`,
+                        transform: dragActivating?.type==="bench"&&dragActivating?.index===i ? "scale(1.05)" : "scale(1)",
+                        transition:"box-shadow 120ms ease, transform 120ms cubic-bezier(0.34,1.56,0.64,1), border-color 120ms ease",
+                      }}
                     >
                       <div style={{ display:"flex", alignItems:"center", gap:3 }}>
                         <div style={{ width:5, height:5, borderRadius:"50%", background: saludColor(bSaludVal) }} />
@@ -716,14 +806,14 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
       {/* ── TAB: ROLES ── */}
       {activeTab === "roles" && (
         <div style={{ flex:1, padding:20, overflowY:"auto" }}>
-          <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:16 }}>Asignacion de roles por posicion</div>
+          <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, marginBottom:16, borderLeft:`2px solid ${C.purple}`, paddingLeft:8 }}>Asignacion de roles por posicion</div>
           <div style={{ maxWidth:600 }}>
             {starters.filter(s=>s.athlete).map((s,i) => {
               const group = getGroup(s.posCode);
               const options = ROLE_OPTIONS[group] || ROLE_OPTIONS.MID;
               const currentRole = rolesData[s.athlete.id] || options[0];
               return (
-                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 12px", borderBottom:`1px solid ${C.border}`, background: i%2===0 ? "rgba(255,255,255,0.02)" : "transparent" }}>
+                <div key={s.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"9px 12px", borderBottom:`1px solid rgba(255,255,255,0.06)`, background: i%2===0 ? "linear-gradient(135deg,rgba(18,18,28,0.7),rgba(12,12,20,0.8))" : "transparent", transition:"background 150ms" }}>
                   <div style={{ width:28, height:28, borderRadius:"50%", overflow:"hidden", border:`1px solid rgba(255,255,255,0.12)`, flexShrink:0 }}>
                     <img src={avatar(s.athlete.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
                   </div>
@@ -733,7 +823,7 @@ export default function TacticalBoard({ athletes = [], historial = [] }) {
                   <select
                     value={currentRole}
                     onChange={e => setRolesData(prev => ({...prev, [s.athlete.id]: e.target.value}))}
-                    style={{ fontSize:12, padding:"5px 10px", background:"rgba(255,255,255,0.06)", border:`1px solid ${C.border}`, color:"white", fontFamily:"inherit", outline:"none", minWidth:150, cursor:"pointer" }}
+                    style={{ fontSize:12, padding:"6px 10px", background:"linear-gradient(135deg,rgba(20,20,32,0.98),rgba(14,14,24,0.99))", border:`1px solid rgba(255,255,255,0.1)`, color:"white", fontFamily:"inherit", outline:"none", minWidth:150, cursor:"pointer", borderRadius:6, boxShadow:"0 2px 8px rgba(0,0,0,0.3)" }}
                   >
                     {options.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>

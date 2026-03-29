@@ -21,7 +21,7 @@
  * @author   Elevate Sports
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import imgEntrenamiento from "../assets/entrenamiento.jpeg";
 import imgPlantilla     from "../assets/Gestion_de_plantilla.jpeg";
@@ -29,6 +29,52 @@ import imgPartido       from "../assets/Partido.jpeg";
 import imgOficina       from "../assets/Oficina.jpeg";
 import imgProximo       from "../assets/Proximo_partido.jpeg";
 import { PALETTE }      from "../constants/palette";
+import EmptyState       from "./ui/EmptyState";
+import { useResponsive } from "../hooks/useResponsive";
+
+// ── Inject responsive media queries once ────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
+  const s = document.createElement("style");
+  s.id = "home-responsive";
+  s.textContent = `
+    /* Home topbar nav: horizontal scroll on mobile */
+    .home-topbar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Home grid: single column on mobile, 2-col on tablet */
+    @media (max-width: 479px) {
+      .home-grid {
+        grid-template-columns: 1fr !important;
+        grid-auto-rows: minmax(160px, auto) !important;
+        padding: 3px 8px 10px !important;
+      }
+      .home-grid > * {
+        grid-column: auto !important;
+        grid-row: auto !important;
+      }
+      .home-tile-big { font-size: clamp(28px, 8vw, 44px) !important; }
+      .home-tile-mid { font-size: clamp(18px, 5.5vw, 24px) !important; }
+    }
+    @media (min-width: 480px) and (max-width: 767px) {
+      .home-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        grid-auto-rows: minmax(160px, auto) !important;
+      }
+      .home-stat-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+    /* KPI metrics: 2-col on mobile */
+    @media (max-width: 767px) {
+      .home-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+      .home-brand-full { display: none !important; }
+    }
+    /* Club badge: hide name on xs */
+    @media (max-width: 479px) {
+      .home-club-name { display: none !important; }
+    }
+  `;
+  document.head.appendChild(s);
+}
 
 // ─────────────────────────────────────────────
 // ANIMATION VARIANTS
@@ -224,8 +270,8 @@ function InteractiveTile({
         // ── Glow effect ──
         // boxShadow con spread interno + externo para efecto neón radial
         boxShadow: hovered
-          ? `0 0 0 1px ${PALETTE.neon}, 0 0 18px 2px ${PALETTE.neonGlow}, inset 0 0 20px rgba(200,255,0,0.06)`
-          : "none",
+          ? `0 0 0 1px ${PALETTE.neon}, 0 0 28px 4px ${PALETTE.neonGlow}, inset 0 0 20px rgba(200,255,0,0.06), 0 8px 32px rgba(0,0,0,0.6)`
+          : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
         // ── Scale transform ──
         transform:  hovered ? "scale(1.025)" : "scale(1)",
         zIndex:     hovered ? 3 : 1,
@@ -280,6 +326,7 @@ function InteractiveTile({
 // ─────────────────────────────────────────────
 export default function Home({ club, athletes, stats, matchStats, onNavigate, mode, onLogout }) {
   const { playHover, playSelect } = useGameAudio();
+  const { isMobile, isXs }        = useResponsive();
 
   const clubInitials = (club.nombre || "ES")
     .split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -292,9 +339,9 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
     navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.neon}` : "2px solid transparent", background: active ? "rgba(200,255,0,0.05)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
     clubBadge: { marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px", borderLeft:`1px solid ${PALETTE.border}` },
     clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(200,255,0,0.12)", border:`2px solid ${PALETTE.neon}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.neon, flexShrink:0 },
-    metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid ${PALETTE.border}` },
-    metricBlock: (i) => ({ padding:"10px 18px", display:"flex", alignItems:"center", gap:12, background: i===0 ? "rgba(200,255,0,0.07)" : "rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", borderBottom:`3px solid ${PALETTE.neon}`, borderRight:`1px solid ${PALETTE.border}` }),
-    grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gridAutoRows:"minmax(180px,1fr)", gap:3, padding:"3px 12px 10px", minHeight:0 },
+    metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid rgba(255,255,255,0.06)` },
+    metricBlock: (i) => ({ padding:"12px 18px", display:"flex", alignItems:"center", gap:12, background: i===0 ? "linear-gradient(135deg,rgba(57,255,20,0.09),rgba(57,255,20,0.03))" : "linear-gradient(135deg,rgba(20,20,30,0.9),rgba(10,10,20,0.95))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${PALETTE.neon}`, borderRight:`1px solid rgba(255,255,255,0.06)`, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }),
+    grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))", gridAutoRows:"minmax(180px,1fr)", gap:4, padding:"4px 12px 12px", minHeight:0 },
     tag: { fontSize:9, textTransform:"uppercase", letterSpacing:"3px", fontWeight:600, color:PALETTE.neon, marginBottom:8, opacity:0.9 },
     titleBig: { fontSize:44, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-2px", lineHeight:0.9, textShadow:"0 2px 24px rgba(0,0,0,1)", marginBottom:18 },
     titleMid: { fontSize:24, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.8px", lineHeight:1, textShadow:"0 2px 14px rgba(0,0,0,0.9)", marginBottom:14 },
@@ -324,9 +371,9 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
     <div style={css.app}>
 
       {/* TOPBAR */}
-      <div style={css.topbar}>
+      <div className="home-topbar" style={css.topbar}>
         <div style={css.brandBlock}>
-          <span style={{ fontSize:17, fontWeight:700, color:PALETTE.text, letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>
+          <span className="home-brand-full" style={{ fontSize:17, fontWeight:700, color:PALETTE.text, letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>
             Elevate<span style={{ color:PALETTE.neon }}>Sports</span>
           </span>
         </div>
@@ -342,7 +389,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
             </div>
           )}
           <div style={css.clubLogo}>{clubInitials}</div>
-          <div>
+          <div className="home-club-name">
             <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"1px", whiteSpace:"nowrap" }}>
               {club.nombre || "Mi Club"}
             </div>
@@ -366,6 +413,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         variants={staggerContainer}
         initial="initial"
         animate="animate"
+        className="home-metrics"
         style={css.metrics}
       >
         {METRICS.map((m, i) => (
@@ -379,9 +427,41 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         ))}
       </motion.div>
 
+      {/* EMPTY STATE — shown when no athletes registered yet */}
+      {athletes.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
+          style={{
+            margin: "0 12px",
+            background: "rgba(139,92,246,0.06)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            borderRadius: 8,
+            overflow: "hidden",
+          }}
+        >
+          <EmptyState
+            icon={
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke="#8B5CF6" strokeWidth="1.8"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            }
+            title="Bienvenido a Elevate Sports"
+            subtitle="Comienza agregando deportistas a tu plantilla para desbloquear todas las metricas y funciones del dashboard"
+            actionLabel="Ir a Plantilla"
+            onAction={() => onNavigate("plantilla")}
+            compact
+          />
+        </motion.div>
+      )}
+
       {/* GRID DE MOSAICOS */}
       <motion.div
         {...fadeInUp}
+        className="home-grid"
         style={css.grid}
       >
 
@@ -445,10 +525,10 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         </InteractiveTile>
 
         {/* TILE 4 — RESUMEN DEL CICLO (sin hover interactivo) */}
-        <div style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}` }}>
-          <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.14)", zIndex:0 }}/>
-          <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.76)", zIndex:1 }}/>
-          <div style={css.statRow}>
+        <div style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+          <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
+          <div className="home-stat-row" style={css.statRow}>
             {STATS.map((m, i) => (
               <div key={m.lbl} style={css.statBlock(i===3)}>
                 <div style={{ fontSize:20, fontWeight:700, color:m.color }}>{m.val}</div>

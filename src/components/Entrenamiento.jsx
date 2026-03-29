@@ -3,6 +3,25 @@ import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../utils/helpers";
 import { PALETTE } from "../constants/palette";
 import { sanitizeNote } from "../utils/sanitize";
+import EmptyState from "./ui/EmptyState";
+
+// ── Inject responsive media queries once ────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
+  const s = document.createElement("style");
+  s.id = "entrenamiento-responsive";
+  s.textContent = `
+    @media (max-width: 767px) {
+      .entrenamiento-grid { grid-template-columns: 1fr !important; }
+      .entrenamiento-controls { flex-direction: column !important; align-items: stretch !important; }
+      .entrenamiento-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+      .entrenamiento-tabs > * { flex-shrink: 0; }
+    }
+    @media (max-width: 479px) {
+      .entrenamiento-rpe-bar { height: 3px !important; }
+    }
+  `;
+  document.head.appendChild(s);
+}
 const RPE_COLOR = (v) => v <= 3 ? PALETTE.green : v <= 8 ? PALETTE.amber : PALETTE.danger;
 
 /* ── Helper: agrupa sesiones del historial por semana ISO ── */
@@ -169,17 +188,17 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
           { label:"RPE promedio", value:stats.rpeAvg, color:PALETTE.amber, border:PALETTE.amber },
           { label:"Sesión", value:`#${(historial[0]?.num || 0) + 1}`, color:PALETTE.purple, border:PALETTE.purple },
         ].map((m,i) => (
-          <div key={i} style={{ padding:"10px 16px", background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", borderBottom:`3px solid ${m.border}`, border:`1px solid ${PALETTE.border}`, display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ fontSize:22, fontWeight:500, color:m.color }}>{m.value}</div>
-            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>{m.label}</div>
+          <div key={i} style={{ padding:"12px 16px", background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${m.border}`, border:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+            <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1 }}>{m.value}</div>
+            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)" }}>{m.label}</div>
           </div>
         ))}
       </div>
 
       {/* SUBTABS */}
-      <div style={{ display:"flex", alignItems:"stretch", height:34, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${PALETTE.border}`, padding:"0 16px" }}>
+      <div className="entrenamiento-tabs" style={{ display:"flex", alignItems:"stretch", height:36, background:"rgba(8,8,14,0.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, padding:"0 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
         {[["sesion","Sesión de hoy"],["planificacion","Planificación"],["historial","Historial"],["analisis","Análisis"]].map(([k,l]) => (
-          <div key={k} onClick={() => setTab(k)} style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", color: tab===k ? PALETTE.green : PALETTE.textMuted, display:"flex", alignItems:"center", padding:"0 14px", cursor:"pointer", borderBottom: tab===k ? `2px solid ${PALETTE.green}` : "2px solid transparent" }}>
+          <div key={k} onClick={() => setTab(k)} style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", color: tab===k ? PALETTE.green : PALETTE.textMuted, display:"flex", alignItems:"center", padding:"0 14px", cursor:"pointer", borderBottom: tab===k ? `2px solid ${PALETTE.green}` : "2px solid transparent", background: tab===k ? "rgba(29,158,117,0.06)" : "transparent", boxShadow: tab===k ? `inset 0 -2px 8px rgba(29,158,117,0.15)` : "none", transition:"color 0.15s,background 0.15s" }}>
             {l}
           </div>
         ))}
@@ -201,21 +220,35 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
       {/* SESIÓN DE HOY — CARTAS */}
       {tab === "sesion" && (
         <div style={{ padding:16 }}>
+          {athletes.length === 0 ? (
+            <EmptyState
+              icon={
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              }
+              title="Sin sesiones registradas"
+              subtitle="Registra tu primera sesión de entrenamiento para comenzar el seguimiento"
+              compact
+            />
+          ) : (
+          <>
           <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.25)", marginBottom:12 }}>
             Toca P / A / L y registra el RPE de cada jugador
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
+          <div className="entrenamiento-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
             {athletes.map((a, i) => {
               const presente = a.status === "P";
               const ausente = a.status === "A";
               const lesionado = a.status === "L";
               const borderColor = presente ? PALETTE.green : ausente ? PALETTE.danger : lesionado ? PALETTE.amber : PALETTE.border;
-              const bgColor = presente ? "rgba(4,30,18,0.95)" : ausente ? "rgba(30,4,4,0.95)" : lesionado ? "rgba(30,18,4,0.95)" : "rgba(8,18,8,0.95)";
+              const bgColor = presente ? "linear-gradient(135deg,rgba(4,32,20,0.97),rgba(2,18,12,0.98))" : ausente ? "linear-gradient(135deg,rgba(32,4,4,0.97),rgba(18,2,2,0.98))" : lesionado ? "linear-gradient(135deg,rgba(32,18,4,0.97),rgba(18,10,2,0.98))" : "linear-gradient(135deg,rgba(14,20,14,0.97),rgba(8,12,8,0.98))";
               const opacity = ausente || lesionado ? 0.72 : 1;
               const photoBg = ausente || lesionado ? "555" : "059669";
               return (
                 <div key={a.id} style={{ cursor:"pointer", opacity }}>
-                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden" }}>
+                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden", boxShadow:`0 4px 16px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03),inset 0 1px 0 rgba(255,255,255,0.04)`, borderRadius:6 }}>
                     <div style={{ height:4, background:borderColor }}/>
                     <div style={{ position:"relative" }}>
                       <img src={PHOTO(a.photo, photoBg)} alt="" style={{ width:"100%", height:80, objectFit:"cover", objectPosition:"top", display:"block" }}/>
@@ -245,11 +278,14 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                           <span style={{ color: a.rpe ? RPE_COLOR(a.rpe) : "rgba(255,255,255,0.25)" }}>{a.rpe || "—"}</span>
                         </div>
                         <div style={{ display:"flex", gap:2 }}>
-                          {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                            <div key={n} onClick={() => setRpe(i,n)} style={{ flex:1, height:14, display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, cursor:"pointer", background: a.rpe===n ? RPE_COLOR(n) : "rgba(255,255,255,0.06)", color: a.rpe===n ? "white" : "rgba(255,255,255,0.3)", border:`1px solid ${a.rpe===n ? RPE_COLOR(n) : "rgba(255,255,255,0.08)"}` }}>
-                              {n}
-                            </div>
-                          ))}
+                          {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                            const rpeGrad = n <= 3 ? "linear-gradient(135deg,#1d9e75,#059669)" : n <= 7 ? "linear-gradient(135deg,#ef9f27,#d97706)" : "linear-gradient(135deg,#e24b4a,#dc2626)";
+                            return (
+                              <div key={n} onClick={() => setRpe(i,n)} style={{ flex:1, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, cursor:"pointer", background: a.rpe===n ? rpeGrad : "rgba(255,255,255,0.06)", color: a.rpe===n ? "white" : "rgba(255,255,255,0.3)", border:`1px solid ${a.rpe===n ? RPE_COLOR(n) : "rgba(255,255,255,0.08)"}`, boxShadow: a.rpe===n ? `0 0 6px ${RPE_COLOR(n)}66` : "none", fontWeight: a.rpe===n ? 700 : 400, transition:"background 120ms,box-shadow 120ms" }}>
+                                {n}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -258,9 +294,11 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
               );
             })}
           </div>
-          <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px" }}>
+          <div style={{ background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px", boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
             <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Nota general de la sesion..." rows={2} style={{ ...inp, background:"transparent", border:"none", resize:"none", lineHeight:1.6 }} maxLength={500}/>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -272,9 +310,19 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
       {tab === "historial" && (
         <div style={{ padding:16 }}>
           {weekGroups.length === 0 && (
-            <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1px", textAlign:"center", padding:32 }}>
-              Sin sesiones registradas
-            </div>
+            <EmptyState
+              icon={
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#8B5CF6" strokeWidth="1.8"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              }
+              title="Sin sesiones registradas"
+              subtitle="Registra tu primera sesión de entrenamiento para comenzar el seguimiento"
+              compact
+            />
           )}
           {weekGroups.map(week => {
             const isCollapsed = !!collapsedWeeks[week.key];
@@ -286,7 +334,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                 {/* Week header */}
                 <div
                   onClick={() => toggleWeek(week.key)}
-                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:"rgba(127,119,221,0.08)", borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2 }}
+                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:"linear-gradient(135deg,rgba(124,58,237,0.12),rgba(124,58,237,0.04))", borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2, boxShadow:"0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)", borderRadius:"0 6px 6px 0" }}
                 >
                   <div>
                     <div style={{ fontSize:11, fontWeight:600, color:PALETTE.purple, textTransform:"uppercase", letterSpacing:"1.5px" }}>

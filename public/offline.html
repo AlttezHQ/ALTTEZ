@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sin conexión — Elevate Sports</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #060d06;
+        font-family: 'Barlow', system-ui, sans-serif;
+        color: #e5e7eb;
+      }
+
+      .container {
+        text-align: center;
+        padding: 2rem;
+        max-width: 480px;
+      }
+
+      .icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 2rem;
+        background: rgba(124, 58, 237, 0.12);
+        border: 1px solid rgba(124, 58, 237, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #f9fafb;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.02em;
+      }
+
+      p {
+        color: #9ca3af;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(124, 58, 237, 0.15);
+        border: 1px solid rgba(124, 58, 237, 0.4);
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        color: #a78bfa;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 2rem;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(124, 58, 237, 0.8);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.2s;
+      }
+
+      .btn:hover { background: rgba(124, 58, 237, 1); }
+
+      .logo {
+        font-size: 0.8rem;
+        color: rgba(156, 163, 175, 0.4);
+        margin-top: 3rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">
+        <svg width="36" height="36" fill="none" viewBox="0 0 24 24">
+          <path stroke="#7c3aed" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+            d="M3 3l18 18M8.11 8.11A7 7 0 0 0 12 19a7 7 0 0 0 7-7 7 7 0 0 0-.97-3.55M5.34 5.34A7 7 0 0 0 12 5a7 7 0 0 0 5.55 11.35"/>
+        </svg>
+      </div>
+      <div class="badge">Sin conexion</div>
+      <h1>Elevate Sports no esta disponible</h1>
+      <p>
+        Parece que no tienes conexion a internet en este momento.<br />
+        Tus datos estan seguros y se sincronizaran automaticamente cuando vuelvas a conectarte.
+      </p>
+      <a href="/" class="btn">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0M12 8v4l3 3"/>
+        </svg>
+        Reintentar
+      </a>
+      <p class="logo">Elevate Sports &mdash; CRM Deportivo</p>
+    </div>
+    <script>
+      document.querySelector('.btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.reload();
+      });
+
+      window.addEventListener('online', () => {
+        window.location.href = '/';
+      });
+    </script>
+  </body>
+</html>

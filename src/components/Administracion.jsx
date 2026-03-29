@@ -15,6 +15,32 @@ import { createMovimiento, validatePago } from "../constants/schemas";
 import { showToast } from "./Toast";
 import ConfirmModal from "./ConfirmModal";
 
+// ── Inject responsive media queries once ────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("admin-responsive")) {
+  const s = document.createElement("style");
+  s.id = "admin-responsive";
+  s.textContent = `
+    @media (max-width: 767px) {
+      .admin-kpi-bar { grid-template-columns: repeat(2, 1fr) !important; }
+      .admin-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+      .admin-tabs > * { flex-shrink: 0; white-space: nowrap; }
+      .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
+    @media (max-width: 479px) {
+      .admin-kpi-bar { grid-template-columns: 1fr !important; }
+    }
+    /* Input focus rings for Admin */
+    .admin-container input:focus, .admin-container select:focus {
+      box-shadow: 0 0 0 2px rgba(124,58,237,0.3) !important;
+      border-color: rgba(124,58,237,0.5) !important;
+      outline: none;
+    }
+    /* Table row hover */
+    .admin-table-wrap tr:hover td { background: rgba(124,58,237,0.06) !important; transition: background 150ms; }
+  `;
+  document.head.appendChild(s);
+}
+
 // ── Animation variants ──────────────────────────────────────────────────────
 const kpiStagger = {
   animate: { transition: { staggerChildren: 0.07 } },
@@ -158,31 +184,32 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
   // ── Styles ──
   const css = {
     container: { padding: 16, fontFamily: "'Arial Narrow', Arial, sans-serif" },
-    tabs: { display: "flex", gap: 0, marginBottom: 16, borderBottom: `1px solid ${PALETTE.border}` },
+    tabs: { display: "flex", gap: 0, marginBottom: 16, borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(8,8,14,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 2px 12px rgba(0,0,0,0.4)" },
     tab: (active) => ({
-      padding: "10px 24px",
+      padding: "12px 24px",
       fontSize: 10,
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "2px",
       color: active ? PALETTE.text : PALETTE.textMuted,
-      background: active ? ADMIN_DIM : "transparent",
+      background: active ? "linear-gradient(135deg,rgba(124,58,237,0.14),rgba(124,58,237,0.05))" : "transparent",
       borderBottom: active ? `2px solid ${ADMIN}` : "2px solid transparent",
+      boxShadow: active ? `inset 0 -2px 8px rgba(124,58,237,0.2)` : "none",
       cursor: "pointer",
       transition: "color 0.15s, background 0.15s",
     }),
     kpiBar: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8, marginBottom: 16 },
     kpi: (color, i) => ({
-      padding: "12px 18px",
-      background: "rgba(255,255,255,0.03)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
+      padding: "14px 18px",
+      background: "linear-gradient(135deg,rgba(20,20,30,0.95),rgba(12,12,22,0.98))",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
       borderTop: `3px solid ${color}`,
-      border: `1px solid ${PALETTE.border}`,
+      border: `1px solid rgba(255,255,255,0.06)`,
       borderRadius: 12,
-      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+      boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.04)`,
     }),
-    kpiVal: (color) => ({ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }),
+    kpiVal: (color) => ({ fontSize: 24, fontWeight: 700, color, lineHeight: 1, textShadow: `0 0 20px ${color}66` }),
     kpiLabel: { fontSize: 9, textTransform: "uppercase", letterSpacing: "1px", color: PALETTE.textMuted, marginTop: 4 },
     table: { width: "100%", borderCollapse: "collapse" },
     th: { fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", color: PALETTE.textMuted, padding: "8px 12px", textAlign: "left", borderBottom: `1px solid ${PALETTE.border}`, background: "rgba(0,0,0,0.6)" },
@@ -199,49 +226,53 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
       border: `1px solid ${estado === "pagado" ? PALETTE.green : estado === "parcial" ? PALETTE.amber : PALETTE.danger}`,
     }),
     toggleBtn: {
-      padding: "4px 12px",
+      padding: "5px 12px",
       fontSize: 9,
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "1px",
-      background: ADMIN_DIM,
+      background: "linear-gradient(135deg,rgba(124,58,237,0.18),rgba(124,58,237,0.08))",
       color: ADMIN,
       border: `1px solid ${ADMIN_BORDER}`,
       cursor: "pointer",
+      borderRadius: 4,
+      boxShadow: "0 2px 8px rgba(124,58,237,0.2)",
     },
-    panel: { background: "rgba(255,255,255,0.03)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: 16, marginBottom: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" },
+    panel: { background: "linear-gradient(135deg,rgba(20,20,30,0.95),rgba(12,12,22,0.98))", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid rgba(255,255,255,0.06)`, borderRadius: 12, padding: 16, marginBottom: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04)" },
     panelTitle: { fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.textMuted, marginBottom: 14 },
-    input: { width: "100%", fontSize: 13, border: `1px solid ${PALETTE.border}`, padding: "8px 10px", background: "rgba(255,255,255,0.05)", color: "white", fontFamily: "inherit", outline: "none" },
-    select: { fontSize: 13, border: `1px solid ${PALETTE.border}`, padding: "8px 10px", background: "rgba(255,255,255,0.05)", color: "white", fontFamily: "inherit", outline: "none" },
+    input: { width: "100%", fontSize: 13, border: `1px solid rgba(255,255,255,0.1)`, padding: "8px 10px", background: "rgba(255,255,255,0.05)", color: "white", fontFamily: "inherit", outline: "none", borderRadius: 6, transition: "border-color 200ms, box-shadow 200ms" },
+    select: { fontSize: 13, border: `1px solid rgba(255,255,255,0.1)`, padding: "8px 10px", background: "rgba(14,14,24,0.95)", color: "white", fontFamily: "inherit", outline: "none", borderRadius: 6 },
     submitBtn: {
-      padding: "8px 20px",
+      padding: "9px 22px",
       fontSize: 10,
       fontWeight: 700,
       textTransform: "uppercase",
       letterSpacing: "1.5px",
-      background: ADMIN,
+      background: `linear-gradient(135deg,${ADMIN},#9d6fe8)`,
       color: "white",
       border: "none",
       cursor: "pointer",
+      borderRadius: 6,
+      boxShadow: `0 4px 16px rgba(124,58,237,0.4)`,
     },
     card: (color) => ({
-      padding: "20px 24px",
-      background: "rgba(255,255,255,0.03)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
+      padding: "22px 24px",
+      background: "linear-gradient(135deg,rgba(20,20,30,0.95),rgba(12,12,22,0.98))",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
       borderTop: `3px solid ${color}`,
-      border: `1px solid ${PALETTE.border}`,
+      border: `1px solid rgba(255,255,255,0.06)`,
       borderRadius: 12,
-      boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+      boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.04)`,
     }),
     mesSelect: { fontSize: 11, border: `1px solid ${ADMIN_BORDER}`, padding: "4px 8px", background: "rgba(0,0,0,0.5)", color: ADMIN, fontFamily: "inherit", outline: "none", marginLeft: 12 },
   };
 
   return (
-    <div style={css.container}>
+    <div className="admin-container" style={css.container}>
 
       {/* TABS */}
-      <div style={css.tabs}>
+      <div className="admin-tabs" style={css.tabs}>
         {TABS.map(t => (
           <div key={t} style={css.tab(activeTab === t)} onClick={() => setActiveTab(t)}>
             {t}
@@ -269,7 +300,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
       {activeTab === "Pagos" && (
         <motion.div key="tab-pagos" variants={tabPanel} initial="initial" animate="animate" exit="exit">
           {/* KPI BAR — staggered entry */}
-          <motion.div variants={kpiStagger} initial="initial" animate="animate" style={css.kpiBar}>
+          <motion.div variants={kpiStagger} initial="initial" animate="animate" className="admin-kpi-bar" style={css.kpiBar}>
             <motion.div variants={kpiItem} style={css.kpi(PALETTE.green, 0)}>
               <div style={css.kpiVal(PALETTE.green)}>{fmtCOP(totalRecaudado)}</div>
               <div style={css.kpiLabel}>TOTAL RECAUDADO</div>
@@ -289,7 +320,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
           </motion.div>
 
           {/* TABLE with animated rows */}
-          <div style={{ overflowX: "auto" }}>
+          <div className="admin-table-wrap" style={{ overflowX: "auto" }}>
             <table style={css.table}>
               <thead>
                 <tr>
@@ -314,7 +345,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
                       variants={rowVariant}
                       initial="initial"
                       animate="animate"
-                      style={{ background: i % 2 === 0 ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.2)" }}
+                      style={{ background: i % 2 === 0 ? "linear-gradient(135deg,rgba(18,18,28,0.8),rgba(12,12,20,0.85))" : "rgba(10,10,18,0.6)", transition: "background 150ms" }}
                     >
                       <td style={css.td}>{a.id}</td>
                       <td style={{ ...css.td, fontWeight: 700 }}>{a.name}</td>

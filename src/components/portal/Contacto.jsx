@@ -9,7 +9,7 @@
  * @version 1.0.0
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../../constants/palette";
 import { sanitizeText, sanitizeTextFinal } from "../../utils/sanitize";
@@ -128,6 +128,25 @@ const buildInputStyle = (hasError) => ({
 
 // ── Componente principal ───────────────────────────────────────────────────
 export default function Contacto() {
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (max-width: 767px) {
+        .ct-hero { padding: 48px 20px 36px !important; }
+        .ct-main-grid {
+          grid-template-columns: 1fr !important;
+          padding: 0 20px 64px !important;
+          gap: 32px !important;
+        }
+        .ct-form-inner { padding: 24px 20px !important; }
+        .ct-form-name-email { grid-template-columns: 1fr !important; }
+        .ct-success-panel { padding: 40px 24px !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   const [form, setForm] = useState({
     nombre: "", email: "", club: "", motivo: "", mensaje: "",
   });
@@ -182,7 +201,7 @@ export default function Contacto() {
     }}>
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section style={{
+      <section className="ct-hero" style={{
         padding: "80px 32px 60px",
         textAlign: "center",
         maxWidth: 700,
@@ -242,7 +261,7 @@ export default function Contacto() {
       </section>
 
       {/* ── CONTENIDO PRINCIPAL ───────────────────────────────────────── */}
-      <section style={{
+      <section className="ct-main-grid" style={{
         padding: "0 32px 100px",
         maxWidth: 1100,
         margin: "0 auto",
@@ -259,6 +278,7 @@ export default function Contacto() {
               key="success"
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
+              className="ct-success-panel"
               style={{
                 background: "rgba(57,255,20,0.06)",
                 border: `1px solid ${C.neon}40`,
@@ -317,6 +337,7 @@ export default function Contacto() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               onSubmit={handleSubmit}
+              className="ct-form-inner"
               style={{
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.07)",
@@ -332,7 +353,7 @@ export default function Contacto() {
                 Formulario de contacto
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <div className="ct-form-name-email" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
                 <FormField label="Nombre completo *" error={errors.nombre}>
                   <input
                     type="text"
