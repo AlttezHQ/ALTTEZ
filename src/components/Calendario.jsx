@@ -7,13 +7,14 @@
  *  - Diferenciación visual por tipo de evento: entrenamiento / partido / club
  *  - Panel lateral de evento seleccionado con lista de deportistas + estados RSVP
  *  - Widget de disponibilidad en tiempo real ("18 confirmados de 22 convocados")
- *  - Botón "Enviar recordatorio" (simulado con toast)
+ *  - Botón "Recordar por WhatsApp" — abre wa.me con mensaje pre-armado
+ *  - Modal de creación de eventos con persistencia en localStorage
  *  - Navegación prev/next mes
  *  - Bloqueo de RPE para inasistencia confirmada (expuesto via localStorage)
  *  - Responsive mobile: panel cae debajo del grid en viewport < 768px
  *
- * @persistencia localStorage namespace `elevate_rsvp_{clubId}`
- * @version 1.0
+ * @persistencia localStorage namespace `elevate_rsvp_{clubId}` / `elevate_events_{clubId}`
+ * @version 2.0
  * @author @Arquitecto Carlos / @Andres UI
  */
 
@@ -209,6 +210,42 @@ function isSameDay(d1, d2) {
 /** Compara si una fecha es hoy */
 function isToday(d) {
   return isSameDay(d, new Date());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HOOK — EVENTOS PERSONALIZADOS PERSISTIDOS EN LOCALSTORAGE
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Gestiona eventos creados por el entrenador.
+ * @param {string} clubId
+ */
+function useCustomEvents(clubId) {
+  const storageKey = `elevate_events_${clubId || "demo"}`;
+
+  const [customEvents, setCustomEvents] = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addEvent = useCallback((eventData) => {
+    const newEvent = {
+      ...eventData,
+      id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    };
+    setCustomEvents(prev => {
+      const next = [...prev, newEvent];
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* quota */ }
+      return next;
+    });
+    return newEvent;
+  }, [storageKey]);
+
+  return { customEvents, addEvent };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -467,12 +504,53 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
   const convocadoAvail = getAvailability(event.id, convocadoIds);
 
   const handleReminder = () => {
-    const pendientes = convocadoAvail.pendientes;
-    if (pendientes === 0) {
-      showToast("Plantilla completa. Todos los deportistas han confirmado su estado.", "info");
+    const fecha     = fmtDateLong(event.datetime);
+    const hora      = fmtTime(event.datetime);
+    const titulo    = event.title;
+    const ubicacion = event.location || "Por confirmar";
+
+    let mensajeTexto;
+
+    if (event.type === "partido") {
+      mensajeTexto =
+        `⚽ *CONVOCATORIA OFICIAL*\n` +
+        `*${titulo}*\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `📅 ${fecha}\n` +
+        `🕐 ${hora} hrs\n` +
+        `📍 ${ubicacion}\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `Confirma tu disponibilidad a la brevedad. Tu respuesta es parte de la preparación del equipo.\n\n` +
+        `_Cuerpo Técnico — ${titulo}_`;
+    } else if (event.type === "entrenamiento") {
+      mensajeTexto =
+        `🏋️ *SESIÓN DE ENTRENAMIENTO*\n` +
+        `*${titulo}*\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `📅 ${fecha}\n` +
+        `🕐 ${hora} hrs\n` +
+        `📍 ${ubicacion}\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `Confirma tu asistencia. La puntualidad y presencia son parte del rendimiento.\n\n` +
+        `_Cuerpo Técnico — ${titulo}_`;
     } else {
-      showToast(`Recordatorio de convocatoria enviado a ${pendientes} deportista${pendientes !== 1 ? "s" : ""} sin confirmar.`, "success");
+      // club — institucional
+      mensajeTexto =
+        `🏛️ *EVENTO INSTITUCIONAL*\n` +
+        `*${titulo}*\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `📅 ${fecha}\n` +
+        `🕐 ${hora} hrs\n` +
+        `📍 ${ubicacion}\n` +
+        `━━━━━━━━━━━━━━━\n` +
+        `Se espera tu participación. Confirma tu asistencia a la brevedad.\n\n` +
+        `_${titulo} — Elevate Sports_`;
     }
+
+    const mensaje = encodeURIComponent(mensajeTexto);
+    const url = `https://wa.me/?text=${mensaje}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    showToast("Link de WhatsApp abierto", "success");
   };
 
   return (
@@ -555,25 +633,30 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
         <AvailabilityWidget availability={convocadoAvail} />
       </div>
 
-      {/* Botón recordatorio */}
+      {/* Botón WhatsApp */}
       <div style={{ padding: "0 16px 12px", flexShrink: 0 }}>
         <button
           onClick={handleReminder}
           className="cal-reminder-btn"
           style={{
             background: "transparent",
-            border: `1px solid ${def.color}66`,
-            color: def.color,
+            border: "1px solid rgba(37,211,102,0.5)",
+            color: "#25D366",
             fontSize: 9,
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "1.5px",
             borderRadius: 4,
+            gap: 8,
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = `${def.colorDim}`; e.currentTarget.style.borderColor = def.color; e.currentTarget.style.boxShadow = `0 0 12px ${def.color}33`; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = `${def.color}66`; e.currentTarget.style.boxShadow = "none"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(37,211,102,0.1)"; e.currentTarget.style.borderColor = "#25D366"; e.currentTarget.style.boxShadow = "0 0 12px rgba(37,211,102,0.25)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(37,211,102,0.5)"; e.currentTarget.style.boxShadow = "none"; }}
         >
-          Enviar recordatorio
+          {/* WhatsApp SVG */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366" style={{ flexShrink: 0 }}>
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zm-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884zm8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+          Recordar por WhatsApp
         </button>
       </div>
 
@@ -648,6 +731,414 @@ function PanelEmpty() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SUB-COMPONENTE: MODAL DE CREACIÓN DE EVENTOS
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TYPE_ACCENTS = {
+  match:    { color: "#c8ff00", border: "rgba(200,255,0,0.35)",    dim: "rgba(200,255,0,0.08)"   },
+  training: { color: "#7F77DD", border: "rgba(127,119,221,0.35)",  dim: "rgba(127,119,221,0.08)" },
+  club:     { color: "#EF9F27", border: "rgba(239,159,39,0.35)",   dim: "rgba(239,159,39,0.08)"  },
+};
+
+const EMPTY_FORM = {
+  type: "training",
+  title: "",
+  date: "",
+  time: "18:00",
+  location: "",
+  rival: "",
+  esLocal: true,
+  convocados: 22,
+};
+
+function CreateEventModal({ onClose, onSave }) {
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+
+  const accent = TYPE_ACCENTS[form.type];
+
+  const set = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  const validate = () => {
+    const e = {};
+    if (!form.title.trim())  e.title = "El título es obligatorio";
+    if (!form.date)          e.date  = "La fecha es obligatoria";
+    if (!form.time)          e.time  = "La hora es obligatoria";
+    return e;
+  };
+
+  const handleSave = () => {
+    const e = validate();
+    if (Object.keys(e).length > 0) { setErrors(e); return; }
+
+    const [year, month, day] = form.date.split("-").map(Number);
+    const [hour, minute]     = form.time.split(":").map(Number);
+    const datetime = new Date(year, month - 1, day, hour, minute).toISOString();
+
+    const eventData = {
+      type:      form.type,
+      title:     form.title.trim(),
+      datetime,
+      location:  form.location.trim() || null,
+      convocados: form.type === "match" ? Number(form.convocados) : null,
+      ...(form.type === "match" ? { rival: form.rival.trim() || null, esLocal: form.esLocal } : {}),
+    };
+
+    onSave(eventData);
+    onClose();
+  };
+
+  // Shared input style
+  const inputStyle = {
+    width: "100%",
+    background: "rgba(255,255,255,0.04)",
+    border: `1px solid rgba(255,255,255,0.1)`,
+    borderRadius: 4,
+    color: "white",
+    fontSize: 12,
+    padding: "8px 10px",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border-color 150ms",
+    fontFamily: "inherit",
+  };
+
+  const labelStyle = {
+    fontSize: 9,
+    textTransform: "uppercase",
+    letterSpacing: "1.2px",
+    color: "rgba(255,255,255,0.4)",
+    marginBottom: 4,
+    display: "block",
+  };
+
+  const fieldStyle = { display: "flex", flexDirection: "column", gap: 4 };
+
+  return (
+    <AnimatePresence>
+      {/* Overlay */}
+      <motion.div
+        key="create-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9000,
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+        }}
+      />
+      {/* Modal */}
+      <motion.div
+        key="create-modal"
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ type: "spring", stiffness: 340, damping: 28 }}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9001,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "16px",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            pointerEvents: "all",
+            width: "100%",
+            maxWidth: 440,
+            maxHeight: "90vh",
+            overflowY: "auto",
+            background: "rgba(10,10,20,0.97)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: `1px solid ${accent.border}`,
+            borderTop: `3px solid ${accent.color}`,
+            borderRadius: 10,
+            boxShadow: `0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px ${accent.color}11`,
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: "16px 20px 14px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div>
+              <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "2px", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>
+                Nuevo evento
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.3px" }}>
+                Crear evento
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: 20, lineHeight: 1, padding: "2px 6px" }}
+              aria-label="Cerrar modal"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
+
+            {/* Tipo de evento */}
+            <div style={fieldStyle}>
+              <label style={labelStyle}>Tipo de evento</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {[
+                  { value: "match",    label: "Partido" },
+                  { value: "training", label: "Entreno" },
+                  { value: "club",     label: "Club" },
+                ].map(opt => {
+                  const a = TYPE_ACCENTS[opt.value];
+                  const active = form.type === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => set("type", opt.value)}
+                      style={{
+                        padding: "9px 8px",
+                        background: active ? a.dim : "rgba(255,255,255,0.03)",
+                        border: `1px solid ${active ? a.border : "rgba(255,255,255,0.08)"}`,
+                        borderRadius: 5,
+                        color: active ? a.color : "rgba(255,255,255,0.4)",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.8px",
+                        cursor: "pointer",
+                        transition: "all 150ms",
+                        boxShadow: active ? `0 0 12px ${a.color}22` : "none",
+                        minHeight: 44,
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Título */}
+            <div style={fieldStyle}>
+              <label style={labelStyle}>Título</label>
+              <input
+                type="text"
+                placeholder={form.type === "match" ? "vs Deportivo Norte" : "Entrenamiento físico"}
+                value={form.title}
+                onChange={e => set("title", e.target.value)}
+                style={{
+                  ...inputStyle,
+                  borderColor: errors.title ? "#E24B4A" : "rgba(255,255,255,0.1)",
+                }}
+                onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
+                onBlur={e => { e.target.style.borderColor = errors.title ? "#E24B4A" : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+              />
+              {errors.title && <span style={{ fontSize: 9, color: "#E24B4A" }}>{errors.title}</span>}
+            </div>
+
+            {/* Fecha + Hora */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Fecha</label>
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={e => set("date", e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    colorScheme: "dark",
+                    borderColor: errors.date ? "#E24B4A" : "rgba(255,255,255,0.1)",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
+                  onBlur={e => { e.target.style.borderColor = errors.date ? "#E24B4A" : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+                />
+                {errors.date && <span style={{ fontSize: 9, color: "#E24B4A" }}>{errors.date}</span>}
+              </div>
+              <div style={fieldStyle}>
+                <label style={labelStyle}>Hora</label>
+                <input
+                  type="time"
+                  value={form.time}
+                  onChange={e => set("time", e.target.value)}
+                  style={{
+                    ...inputStyle,
+                    colorScheme: "dark",
+                    borderColor: errors.time ? "#E24B4A" : "rgba(255,255,255,0.1)",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
+                  onBlur={e => { e.target.style.borderColor = errors.time ? "#E24B4A" : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+                />
+                {errors.time && <span style={{ fontSize: 9, color: "#E24B4A" }}>{errors.time}</span>}
+              </div>
+            </div>
+
+            {/* Ubicación */}
+            <div style={fieldStyle}>
+              <label style={labelStyle}>Ubicación</label>
+              <input
+                type="text"
+                placeholder="Campo A, Estadio Local..."
+                value={form.location}
+                onChange={e => set("location", e.target.value)}
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
+                onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+              />
+            </div>
+
+            {/* Campos extra para Partido */}
+            <AnimatePresence>
+              {form.type === "match" && (
+                <motion.div
+                  key="match-fields"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: 16 }}
+                >
+                  {/* Rival */}
+                  <div style={fieldStyle}>
+                    <label style={labelStyle}>Rival</label>
+                    <input
+                      type="text"
+                      placeholder="Atlético Sur"
+                      value={form.rival}
+                      onChange={e => set("rival", e.target.value)}
+                      style={inputStyle}
+                      onFocus={e => { e.target.style.borderColor = "#c8ff00"; e.target.style.boxShadow = "0 0 0 2px rgba(200,255,0,0.12)"; }}
+                      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+                    />
+                  </div>
+
+                  {/* Localía + Convocados */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {/* Localía */}
+                    <div style={fieldStyle}>
+                      <label style={labelStyle}>Localía</label>
+                      <button
+                        onClick={() => set("esLocal", !form.esLocal)}
+                        style={{
+                          ...inputStyle,
+                          textAlign: "left",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          minHeight: 44,
+                          borderColor: form.esLocal ? "rgba(200,255,0,0.35)" : "rgba(255,255,255,0.1)",
+                          background: form.esLocal ? "rgba(200,255,0,0.06)" : "rgba(255,255,255,0.04)",
+                        }}
+                      >
+                        <span style={{
+                          width: 14, height: 14, borderRadius: 3,
+                          border: `1.5px solid ${form.esLocal ? "#c8ff00" : "rgba(255,255,255,0.25)"}`,
+                          background: form.esLocal ? "#c8ff00" : "transparent",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 150ms",
+                        }}>
+                          {form.esLocal && <span style={{ color: "#000", fontSize: 9, fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                        </span>
+                        <span style={{ color: form.esLocal ? "#c8ff00" : "rgba(255,255,255,0.4)", fontSize: 11 }}>
+                          {form.esLocal ? "Somos local" : "Visitante"}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Convocados */}
+                    <div style={fieldStyle}>
+                      <label style={labelStyle}>Convocados</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={form.convocados}
+                        onChange={e => set("convocados", e.target.value)}
+                        style={{ ...inputStyle, minHeight: 44 }}
+                        onFocus={e => { e.target.style.borderColor = "#c8ff00"; e.target.style.boxShadow = "0 0 0 2px rgba(200,255,0,0.12)"; }}
+                        onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            padding: "14px 20px 18px",
+            borderTop: "1px solid rgba(255,255,255,0.07)",
+            display: "flex",
+            gap: 10,
+          }}>
+            <button
+              onClick={onClose}
+              style={{
+                flex: 1,
+                padding: "11px 16px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                borderRadius: 5,
+                cursor: "pointer",
+                minHeight: 44,
+                fontFamily: "inherit",
+                transition: "background 150ms",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              style={{
+                flex: 2,
+                padding: "11px 16px",
+                background: accent.dim,
+                border: `1px solid ${accent.border}`,
+                color: accent.color,
+                fontSize: 10,
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                borderRadius: 5,
+                cursor: "pointer",
+                minHeight: 44,
+                fontFamily: "inherit",
+                transition: "all 150ms",
+                boxShadow: `0 0 12px ${accent.color}22`,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${accent.color}18`; e.currentTarget.style.boxShadow = `0 0 20px ${accent.color}44`; }}
+              onMouseLeave={e => { e.currentTarget.style.background = accent.dim; e.currentTarget.style.boxShadow = `0 0 12px ${accent.color}22`; }}
+            >
+              Guardar evento
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE PRINCIPAL: CALENDARIO
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -658,14 +1149,25 @@ function PanelEmpty() {
  */
 export default function Calendario({ athletes = [], clubId = "" }) {
   const today = new Date();
-  const [year, setYear]     = useState(today.getFullYear());
-  const [month, setMonth]   = useState(today.getMonth());
+  const [year, setYear]         = useState(today.getFullYear());
+  const [month, setMonth]       = useState(today.getMonth());
   const [selected, setSelected] = useState(null); // EventDef | null
+  const [showCreate, setShowCreate] = useState(false);
 
   const { getRsvp, setRsvp, getAvailability } = useRsvp(clubId);
+  const { customEvents, addEvent } = useCustomEvents(clubId);
 
-  // Generar eventos demo para el mes visible
-  const events = useMemo(() => generateDemoEvents(year, month), [year, month]);
+  // Events shown: custom events if any exist, otherwise demo events for the month
+  const demoEvents   = useMemo(() => generateDemoEvents(year, month), [year, month]);
+  const hasCustom    = customEvents.length > 0;
+
+  // Filter custom events to the visible month
+  const filteredCustom = useMemo(() => customEvents.filter(ev => {
+    const d = new Date(ev.datetime);
+    return d.getFullYear() === year && d.getMonth() === month;
+  }), [customEvents, year, month]);
+
+  const events = hasCustom ? filteredCustom : demoEvents;
 
   // Grid de 42 celdas
   const grid = useMemo(() => buildCalendarGrid(year, month), [year, month]);
@@ -709,11 +1211,30 @@ export default function Calendario({ athletes = [], clubId = "" }) {
     setSelected(prev => prev?.id === event.id ? null : event);
   }, []);
 
+  const handleSaveEvent = useCallback((eventData) => {
+    const saved = addEvent(eventData);
+    showToast("Evento creado correctamente", "success");
+    // Auto-select the newly created event
+    setSelected(saved);
+    // Navigate to the event's month if different
+    const evDate = new Date(saved.datetime);
+    setYear(evDate.getFullYear());
+    setMonth(evDate.getMonth());
+  }, [addEvent]);
+
   // Leyenda de tipos de evento
   const LEGEND = Object.entries(EVENT_TYPES).map(([, v]) => ({ label: v.label, color: v.color }));
 
   return (
     <div style={{ minHeight: "calc(100vh - 38px)", background: C.bg }}>
+
+      {/* Modal de creación */}
+      {showCreate && (
+        <CreateEventModal
+          onClose={() => setShowCreate(false)}
+          onSave={handleSaveEvent}
+        />
+      )}
 
       {/* ── TOPBAR DEL MÓDULO ── */}
       <div style={{
@@ -783,9 +1304,49 @@ export default function Calendario({ athletes = [], clubId = "" }) {
           ))}
         </div>
 
-        {/* Contador de eventos del mes */}
-        <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
-          <span style={{ color: "white", fontWeight: 700 }}>{events.length}</span> eventos este mes
+        {/* Contador + botón crear */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
+            <span style={{ color: "white", fontWeight: 700 }}>{events.length}</span> eventos este mes
+            {hasCustom && (
+              <span style={{ marginLeft: 6, fontSize: 8, color: C.purple }}>(propios)</span>
+            )}
+          </div>
+
+          {/* Botón Crear evento */}
+          <motion.button
+            whileHover={{ scale: 1.04, y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            onClick={() => setShowCreate(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "7px 13px",
+              background: "rgba(127,119,221,0.15)",
+              border: "1px solid rgba(127,119,221,0.45)",
+              borderRadius: 5,
+              color: C.purple,
+              fontSize: 10,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              cursor: "pointer",
+              minHeight: 34,
+              boxShadow: "0 0 12px rgba(127,119,221,0.18)",
+              fontFamily: "inherit",
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(127,119,221,0.25)"; e.currentTarget.style.boxShadow = "0 0 18px rgba(127,119,221,0.35)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(127,119,221,0.15)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(127,119,221,0.18)"; }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <line x1="6" y1="1" x2="6" y2="11" stroke={C.purple} strokeWidth="1.8" strokeLinecap="round"/>
+              <line x1="1" y1="6" x2="11" y2="6" stroke={C.purple} strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            Crear evento
+          </motion.button>
         </div>
       </div>
 
