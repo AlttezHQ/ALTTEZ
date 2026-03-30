@@ -378,7 +378,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
 
   // ── Estilos estáticos ────────────────────
   const css = {
-    app: { minHeight:"100vh", background:PALETTE.bg, fontFamily:"'Arial Narrow', Arial, sans-serif", display:"flex", flexDirection:"column" },
+    app: { minHeight:"100vh", background:PALETTE.bg, display:"flex", flexDirection:"column" },
     topbar: { height:44, background:"rgba(6,8,14,0.88)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", borderBottom:`1px solid rgba(200,255,0,0.12)`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto", boxShadow:"0 1px 0 rgba(255,255,255,0.02), 0 4px 16px rgba(0,0,0,0.4)" },
     brandBlock: { padding:"0 22px", display:"flex", alignItems:"center", background:"rgba(0,0,0,0.6)", borderRight:`1px solid ${PALETTE.border}` },
     navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.neon}` : "2px solid transparent", background: active ? "rgba(200,255,0,0.05)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),

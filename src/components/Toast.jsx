@@ -41,7 +41,7 @@ export default function ToastContainer() {
           padding:"10px 20px", background:"rgba(10,16,32,0.95)",
           borderLeft:`3px solid ${colors[t.type] || C.neon}`,
           border:`1px solid ${colors[t.type] || C.neon}33`,
-          color:"white", fontSize:12, fontFamily:"'Arial Narrow',Arial,sans-serif",
+          color:"white", fontSize:12,
           pointerEvents:"auto", minWidth:220, maxWidth:360,
           animation:"toast_in 0.3s ease-out",
         }}>

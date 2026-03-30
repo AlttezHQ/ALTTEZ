@@ -132,7 +132,6 @@ export default function PrivacyPolicy() {
     <div style={{
       minHeight: "100vh",
       background: `radial-gradient(ellipse at 50% 10%, rgba(139,92,246,0.06) 0%, ${PALETTE.bg} 60%)`,
-      fontFamily: "'Arial Narrow', Arial, sans-serif",
       color: "white",
     }}>
       {/* Header */}

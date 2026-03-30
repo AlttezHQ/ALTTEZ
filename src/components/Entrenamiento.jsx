@@ -20,6 +20,11 @@ if (typeof document !== "undefined" && !document.getElementById("entrenamiento-r
     @media (max-width: 479px) {
       .entrenamiento-rpe-bar { height: 3px !important; }
     }
+    .ent-kpi-card { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important; }
+    .ent-kpi-card:hover { transform: translateY(-3px) scale(1.02) !important; box-shadow: 0 12px 36px rgba(0,0,0,0.6) !important; border-color: rgba(255,255,255,0.18) !important; }
+    .ent-session-header:hover { background: rgba(255,255,255,0.06) !important; }
+    .ent-athlete-rpe-row { transition: background 0.12s ease; }
+    .ent-athlete-rpe-row:hover { background: rgba(255,255,255,0.04) !important; }
   `;
   document.head.appendChild(s);
 }
@@ -72,6 +77,28 @@ const TIPO_COLORS = {
   "Partido": PALETTE.danger,
   "Partido interno": PALETTE.danger,
 };
+
+/* ── Mini sparkline de barras — SVG inline, sin librería ── */
+function MiniSparkBars({ values, color, height = 24, width = 52 }) {
+  if (!values || values.length === 0) return null;
+  const max = Math.max(...values, 1);
+  const n = values.length;
+  const barW = Math.floor((width - (n - 1) * 2) / n);
+  return (
+    <svg width={width} height={height} style={{ display:"block", flexShrink:0 }}>
+      {values.map((v, i) => {
+        const barH = Math.max(Math.round((v / max) * height), 2);
+        const x = i * (barW + 2);
+        const y = height - barH;
+        return (
+          <rect key={i} x={x} y={y} width={barW} height={barH} rx={1}
+            fill={color} opacity={i === n - 1 ? 1 : 0.35 + (i / n) * 0.35}
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 export default function Entrenamiento({ athletes, setAthletes, historial, onGuardar, stats, clubInfo, clubId = "" }) {
   const [tab, setTab] = useState("sesion");
@@ -371,19 +398,113 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                 {/* Sessions inside week */}
                 {!isCollapsed && week.sessions.map((s, i) => {
                   const globalIdx = `${week.key}-${i}`;
+                  const isExpanded = expandedHist === globalIdx;
+                  const asistPct = s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0;
+                  const rpeNum = Number(s.rpeAvg);
+                  const rpeColor = isNaN(rpeNum) ? "rgba(255,255,255,0.3)" : rpeNum <= 3 ? PALETTE.green : rpeNum <= 7 ? PALETTE.amber : PALETTE.danger;
+                  const tipoColor = TIPO_COLORS[s.tipo] || "rgba(255,255,255,0.4)";
+
+                  // Atletas con RPE individual guardado en la sesion
+                  const rpeEntries = s.rpeByAthlete ? Object.entries(s.rpeByAthlete) : [];
+
                   return (
                     <div key={globalIdx} style={{ marginLeft:12 }}>
-                      <div onClick={() => setExpandedHist(expandedHist === globalIdx ? null : globalIdx)} style={{ background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, cursor:"pointer" }}>
-                        <div>
-                          <div style={{ fontSize:13, fontWeight:500, color:"white" }}>Sesión #{s.num} — {s.fecha}</div>
-                          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2 }}>{s.presentes} presentes · RPE: {s.rpeAvg ?? "—"} · {s.tipo}</div>
+                      {/* Session row header */}
+                      <div
+                        className="ent-session-header"
+                        onClick={() => setExpandedHist(isExpanded ? null : globalIdx)}
+                        style={{
+                          background:"rgba(0,0,0,0.6)",
+                          border:"1px solid rgba(255,255,255,0.07)",
+                          borderLeft:`3px solid ${tipoColor}`,
+                          padding:"12px 16px",
+                          display:"flex",
+                          justifyContent:"space-between",
+                          alignItems:"center",
+                          marginBottom:2,
+                          cursor:"pointer",
+                          transition:"background 0.15s ease",
+                        }}
+                      >
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                            <div style={{ fontSize:13, fontWeight:600, color:"white" }}>Sesion #{s.num} — {s.fecha}</div>
+                            <div style={{ fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:tipoColor, padding:"2px 6px", border:`1px solid ${tipoColor}33`, borderRadius:4 }}>{s.tipo || "Sin tipo"}</div>
+                          </div>
+                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:3, display:"flex", gap:12 }}>
+                            <span>{s.presentes}/{s.total} presentes ({asistPct}%)</span>
+                            <span>RPE: <span style={{ color:rpeColor, fontWeight:600 }}>{s.rpeAvg ?? "—"}</span></span>
+                          </div>
                         </div>
-                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{expandedHist === globalIdx ? "▲" : "▼"}</div>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginLeft:12 }}>{isExpanded ? "▲" : "▼"}</div>
                       </div>
-                      {expandedHist === globalIdx && (
-                        <div style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", padding:14, marginBottom:4, marginLeft:0 }}>
-                          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginBottom:4 }}>Nota:</div>
-                          <div style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>{s.nota || "Sin nota."}</div>
+
+                      {/* Expanded: reporte de sesion completo */}
+                      {isExpanded && (
+                        <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderLeft:`3px solid ${tipoColor}33`, padding:16, marginBottom:4, marginLeft:0 }}>
+
+                          {/* Fila de stats de sesion */}
+                          <div style={{ display:"flex", gap:20, marginBottom:16, flexWrap:"wrap" }}>
+                            {[
+                              { lbl:"Tipo", val: s.tipo || "Sin tipo", color: tipoColor },
+                              { lbl:"Asistencia", val: `${asistPct}%`, color: asistPct >= 75 ? PALETTE.green : PALETTE.amber },
+                              { lbl:"RPE promedio", val: s.rpeAvg ?? "—", color: rpeColor },
+                              { lbl:"Presentes", val: `${s.presentes}/${s.total}`, color: "white" },
+                            ].map((stat, si) => (
+                              <div key={si}>
+                                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:3 }}>{stat.lbl}</div>
+                                <div style={{ fontSize:15, fontWeight:700, color:stat.color }}>{stat.val}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Observaciones / nota */}
+                          <div style={{ marginBottom: rpeEntries.length > 0 ? 16 : 0 }}>
+                            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:6 }}>Observaciones</div>
+                            <div style={{ fontSize:12, color: s.nota ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)", fontStyle: s.nota ? "normal" : "italic", lineHeight:1.5 }}>
+                              {s.nota || "Sin observaciones registradas."}
+                            </div>
+                          </div>
+
+                          {/* RPE individual por atleta */}
+                          {rpeEntries.length > 0 && (
+                            <div>
+                              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:8 }}>RPE individual</div>
+                              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:6 }}>
+                                {rpeEntries
+                                  .sort((a, b) => Number(b[1]) - Number(a[1]))
+                                  .map(([athleteId, rpe]) => {
+                                    const athlete = athletes.find(a => String(a.id) === String(athleteId));
+                                    const rpeVal = Number(rpe);
+                                    const barColor = rpeVal <= 3 ? PALETTE.green : rpeVal <= 7 ? PALETTE.amber : PALETTE.danger;
+                                    return (
+                                      <div
+                                        key={athleteId}
+                                        className="ent-athlete-rpe-row"
+                                        style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", borderRadius:6, background:"rgba(0,0,0,0.3)" }}
+                                      >
+                                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                          {athlete ? athlete.name : `#${athleteId}`}
+                                        </div>
+                                        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                          <div style={{ width:40, height:3, background:"rgba(255,255,255,0.08)", borderRadius:2, overflow:"hidden" }}>
+                                            <div style={{ height:"100%", width:`${(rpeVal / 10) * 100}%`, background:barColor }} />
+                                          </div>
+                                          <div style={{ fontSize:11, fontWeight:700, color:barColor, width:14, textAlign:"right" }}>{rpeVal}</div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Guardado en */}
+                          {s.savedAt && (
+                            <div style={{ marginTop:12, fontSize:9, color:"rgba(255,255,255,0.15)" }}>
+                              Guardado: {new Date(s.savedAt).toLocaleString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -428,19 +549,78 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
         });
         const maxCount = Math.max(...Object.values(categorias).map(c => c.count), 1);
 
+        // Sparkline data: ultimas 8 sesiones para tendencia visual
+        const last8 = historial.slice(0, 8).reverse();
+        const sparkAsist = last8.map(s => s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0);
+        const sparkRpeArr = last8.map(s => Number(s.rpeAvg) || 0);
+        const sparkSesiones = last8.map((_, i) => i + 1);
+
+        const kpiItems = [
+          {
+            label: "Asistencia promedio",
+            value: asistenciaGlobal + "%",
+            color: PALETTE.green,
+            spark: sparkAsist,
+            hint: asistenciaGlobal >= 80 ? "Excelente nivel" : asistenciaGlobal >= 60 ? "Nivel aceptable" : "Mejorar asistencia",
+          },
+          {
+            label: "RPE promedio",
+            value: rpeGlobal,
+            color: rpeGlobal !== "—" ? (Number(rpeGlobal) <= 4 ? PALETTE.green : Number(rpeGlobal) <= 7 ? PALETTE.amber : PALETTE.danger) : "rgba(255,255,255,0.4)",
+            spark: sparkRpeArr,
+            hint: "Carga promedio del ciclo",
+          },
+          {
+            label: "Pico RPE",
+            value: picoRpe,
+            color: picoRpe !== "—" ? (Number(picoRpe) <= 6 ? PALETTE.amber : PALETTE.danger) : "rgba(255,255,255,0.4)",
+            spark: sparkRpeArr.map(v => v > 0 ? v : 0),
+            hint: "Sesion de mayor carga",
+          },
+          {
+            label: "Sesiones totales",
+            value: totalSesiones,
+            color: "white",
+            spark: sparkSesiones,
+            hint: `${totalSesiones} sesion${totalSesiones !== 1 ? "es" : ""} registrada${totalSesiones !== 1 ? "s" : ""}`,
+          },
+        ];
+
         return (
           <div style={{ padding:16 }}>
-            {/* KPIs reales */}
+            {/* KPIs interactivas con sparklines */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, marginBottom:16 }}>
-              {[
-                { label:"Asistencia promedio", value: asistenciaGlobal + "%", color:PALETTE.green },
-                { label:"RPE promedio", value: rpeGlobal, color:"white" },
-                { label:"Pico RPE", value: picoRpe, color:PALETTE.amber },
-                { label:"Sesiones totales", value: totalSesiones, color:"white" },
-              ].map((m,i) => (
-                <div key={i} onClick={() => setTab("historial")} style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:14, boxShadow:"0 8px 32px rgba(0,0,0,0.4)", cursor:"pointer" }}>
-                  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
-                  <div style={{ fontSize:24, fontWeight:500, color:m.color }}>{m.value}</div>
+              {kpiItems.map((m, i) => (
+                <div
+                  key={i}
+                  className="ent-kpi-card"
+                  onClick={() => setTab("historial")}
+                  style={{
+                    background:"rgba(255,255,255,0.03)",
+                    backdropFilter:"blur(16px)",
+                    WebkitBackdropFilter:"blur(16px)",
+                    border:`1px solid ${PALETTE.border}`,
+                    borderRadius:12,
+                    padding:14,
+                    boxShadow:"0 8px 32px rgba(0,0,0,0.4)",
+                    cursor:"pointer",
+                    position:"relative",
+                    overflow:"hidden",
+                  }}
+                >
+                  {/* Ambient glow */}
+                  <div style={{ position:"absolute", top:-16, right:-16, width:60, height:60, borderRadius:"50%", background: m.color === "white" ? "rgba(255,255,255,0.6)" : m.color, opacity:0.05, filter:"blur(16px)", pointerEvents:"none" }} />
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
+                  <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1, marginBottom:8 }}>{m.value}</div>
+                  <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:4 }}>
+                    <div style={{ fontSize:8, color:"rgba(255,255,255,0.22)", lineHeight:1.3, flex:1 }}>{m.hint}</div>
+                    {m.spark.length > 1 && (
+                      <MiniSparkBars values={m.spark} color={m.color === "white" ? "rgba(255,255,255,0.7)" : m.color} />
+                    )}
+                  </div>
+                  <div style={{ marginTop:10, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.05)", fontSize:8, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px" }}>
+                    Ver historial →
+                  </div>
                 </div>
               ))}
             </div>

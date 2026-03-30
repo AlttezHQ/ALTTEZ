@@ -1,6 +1,57 @@
 # ENGINEERING LOG — Elevate Sports
 
 > Diario de a bordo del equipo de ingeniería.
+
+---
+
+## 2026-03-28 — Estandarización Tipográfica Global
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Unificar la fuente tipográfica de toda la app. Audit completo revela que el `body` usaba `system-ui` mientras los módulos core inyectaban `'Arial Narrow', Arial, sans-serif` de forma redundante e inconsistente. Estrategia: fijar la fuente canon en el único punto de verdad (`index.css`) y eliminar todos los overrides del app shell.
+
+### Hallazgos del audit
+| Archivo | Tipo | Acción |
+|---|---|---|
+| `src/index.css` body | Usaba `system-ui` — fuente incorrecta | Cambiado a `'Arial Narrow', Arial, sans-serif` |
+| `Home.jsx:381` | Override redundante en wrapper | Eliminado |
+| `Administracion.jsx:189` | Override redundante en container | Eliminado |
+| `MatchCenter.jsx:770` | Override redundante en wrapper | Eliminado |
+| `MatchCenter.jsx:301,311` | SVG `fontFamily` hardcoded | Cambiado a `inherit` |
+| `TacticalBoardV9.jsx:715` | Override redundante en wrapper | Eliminado |
+| `LandingPage.jsx:118` | Override redundante | Eliminado |
+| `ErrorBoundary.jsx:31` | Override redundante | Eliminado |
+| `Toast.jsx:44` | Override redundante | Eliminado |
+| `PrivacyPolicy.jsx:135` | Override redundante (portal) | Eliminado |
+| `Entrenamiento.jsx:182` | `monospace` en timer | **MANTENIDO** — semantico para reloj |
+| `BulkAthleteUploader.jsx:400` | `Courier New` en CSV raw | **MANTENIDO** — semantico para codigo/datos |
+| `portal/*` (Barlow Condensed/Barlow) | Fuente web cargada via Google Fonts | **MANTENIDA** — identidad visual diferenciada del portal publico |
+
+### Estándar tipográfico codificado en `index.css` `:root`
+Variables CSS para toda la escala — no requieren imports adicionales:
+
+**Tamaños:** `--fs-badge` (7px) → `--fs-tag` (8px) → `--fs-label` (9px) → `--fs-caption` (10px) → `--fs-body` (11px) → `--fs-body-lg` (12px) → `--fs-subhead` (13px) → `--fs-title-sm` (14px) → `--fs-title` (18px) → `--fs-title-lg` (22px) → `--fs-hero` (32px) → `--fs-kpi` (42px)
+
+**Pesos:** `--fw-normal` (400), `--fw-medium` (500), `--fw-semibold` (600), `--fw-bold` (700), `--fw-black` (800), `--fw-ultra` (900)
+
+**Letter-spacing:** `--ls-tight` (-1.5px), `--ls-caps-sm` (1px), `--ls-caps-md` (1.5px), `--ls-caps-lg` (2px), `--ls-caps-xl` (3.5px)
+
+### Task Assignment
+- @Andres (UI): Futuras implementaciones deben usar variables `--fs-*`, `--fw-*`, `--ls-*` en lugar de valores hardcoded.
+- @Mateo (Data): Sin impacto en backend.
+- @Sara (QA): Verificar visualmente que ningún módulo muestre regresión tipográfica post-deploy.
+
+### Architecture Decisions
+- `fontFamily` se declara UNA VEZ en `body` de `index.css`. Ningun componente del app shell debe sobreescribirlo.
+- Las excepciones semanticas permitidas son solo: `monospace` (timers, clocks), `Courier New` (CSV/code blocks), y Barlow Condensed/Barlow en `/portal/*`.
+- Variables CSS tipograficas documentadas en `:root` sirven como contrato para @Andres en nuevos componentes.
+
+### Validation Criteria
+- `npx vite build` sin errores: PASS (725 modulos, 557ms)
+- Zero override de `fontFamily: Arial Narrow` en app shell: PASS
+- Excepciones semanticas preservadas: PASS
+- Escala de variables definida y documentada: PASS
 > Al iniciar cada sesión, leer este archivo para recuperar contexto y progreso.
 > **Convención de orden por sprint:** @Arquitecto → @Diseñadora → @Data → @Desarrollador → @QA (estructura → diseño → datos → implementación → validación)
 

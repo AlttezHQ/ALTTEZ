@@ -298,7 +298,7 @@ function SpiderChart({ data, size = 180, uid = "0" }) {
               x={p.x} y={p.y - 1}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="8.5" fill="rgba(255,255,255,0.65)"
-              fontFamily="Arial Narrow, Arial, sans-serif"
+              fontFamily="inherit"
               fontWeight="700"
               style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}
             >
@@ -308,7 +308,7 @@ function SpiderChart({ data, size = 180, uid = "0" }) {
               x={p.x} y={p.y + 9}
               textAnchor="middle" dominantBaseline="middle"
               fontSize="7" fill={C.neon}
-              fontFamily="Arial Narrow, Arial, sans-serif"
+              fontFamily="inherit"
               fontWeight="900"
             >
               {val}%
@@ -767,7 +767,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "calc(100vh - 38px)", background: C.bg, fontFamily: "'Arial Narrow', Arial, sans-serif" }}>
+    <div style={{ minHeight: "calc(100vh - 38px)", background: C.bg }}>
 
       {/* ── HEADER ── */}
       <div style={{
