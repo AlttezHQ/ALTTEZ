@@ -1,0 +1,339 @@
+@startuml Elevate Sports — Arquitectura Completa (2026-03-29)
+
+!theme plain
+skinparam backgroundColor #050a14
+skinparam defaultFontColor #ffffff
+skinparam defaultFontSize 11
+skinparam ArrowColor #c8ff00
+skinparam ArrowThickness 1.5
+
+skinparam component {
+  BackgroundColor #0d1520
+  BorderColor #c8ff00
+  FontColor #ffffff
+}
+skinparam package {
+  BackgroundColor #0a1018
+  BorderColor #7F77DD
+  FontColor #c8ff00
+}
+skinparam database {
+  BackgroundColor #0d1520
+  BorderColor #7F77DD
+  FontColor #ffffff
+}
+skinparam note {
+  BackgroundColor #0d1520
+  BorderColor #c8ff00
+  FontColor #ffffff
+}
+
+title Elevate Sports — Diagrama de Componentes (2026-03-29)
+
+'═══════════════════════════════════════════════════════
+' ENTRY POINT
+'═══════════════════════════════════════════════════════
+package "Entry Point" as entry {
+  component [main.jsx\n<<entry>>] as Main
+  component [registerSW.js\n<<PWA>>] as RegSW
+}
+
+'═══════════════════════════════════════════════════════
+' INFRASTRUCTURE — Vite + PWA
+'═══════════════════════════════════════════════════════
+package "Build & PWA (vite.config.js)" as infra_build {
+  component [@vitejs/plugin-react] as ViteReact
+  component [vite-plugin-pwa\n(Workbox)] as VitePWA
+  component [Service Worker\n(sw.js)] as SW
+  note right of VitePWA
+    CacheFirst: static assets, fonts
+    NetworkFirst: Supabase API
+    BackgroundSync: supabase-sync-queue
+    navigateFallback: offline.html
+  end note
+}
+
+'═══════════════════════════════════════════════════════
+' ROOT COMPONENT
+'═══════════════════════════════════════════════════════
+package "App.jsx — Router Root" as app_root {
+  component [App()\n<<BrowserRouter>>] as AppRoot
+  component [CRMApp()\n<<state machine>>] as CRMApp
+  component [Reportes()\n<<inline>>] as Reportes
+  component [LoadingFallback\n<<Suspense>>] as LoadingFallback
+  component [MiniTopbar\n<<inline>>] as MiniTopbar
+
+  note right of CRMApp
+    State: activeModule, athletes,
+    historial, clubInfo, matchStats,
+    finanzas, mode, session, authProfile
+    RBAC: userRole → canAccessModule()
+  end note
+}
+
+'═══════════════════════════════════════════════════════
+' PORTAL SUBSYSTEM (rutas públicas)
+'═══════════════════════════════════════════════════════
+package "Portal Corporativo (/)  — lazy loaded" as portal {
+  component [PortalLayout\n<<Outlet>>] as PortalLayout
+  component [PortalHome\n(index)] as PortalHome
+  component [HeroSection] as HeroSection
+  component [EcosystemSection] as EcosystemSection
+  component [ServicesSection] as ServicesSection
+  component [JournalSection] as JournalSection
+  component [QuienesSomos\n/quienes-somos] as QuienesSomos
+  component [Contacto\n/contacto] as Contacto
+  component [SportsCRMPage\n/servicios/sports-crm] as SportsCRMPage
+  component [JournalPage\n/journal] as JournalPage
+  component [PrivacyPolicy\n/privacidad] as PrivacyPolicy
+  component [CommercialLanding\n<<standalone>>] as CommercialLanding
+}
+
+'═══════════════════════════════════════════════════════
+' CRM SUBSYSTEM (/crm/*) — módulos lazy loaded
+'═══════════════════════════════════════════════════════
+package "CRM App (/crm/*) — lazy loaded" as crm {
+  component [LandingPage\n<<login/register>>] as LandingPage
+
+  package "Módulos Principales" as crm_modules {
+    component [Home\n<<dashboard>>] as Home
+    component [Entrenamiento\n<<RPE engine>>] as Entrenamiento
+    component [GestionPlantilla\n<<plantel>>] as GestionPlantilla
+    component [Administracion\n<<finanzas>>] as Administracion
+    component [MiClub\n<<config club>>] as MiClub
+    component [Calendario\n<<RSVP>>] as Calendario
+    component [MatchCenter\n<<post-match>>] as MatchCenter
+  }
+
+  package "TacticalBoard V9 Subsystem" as tbv9 {
+    component [TacticalBoardV9\n<<v9.1 landscape>>] as TacticalBoardV9
+    package "Layers" as layers {
+      component [FieldLayer\n<<SVG pitch>>] as FieldLayer
+      component [DrawingLayer\n<<SVG vectors>>] as DrawingLayer
+    }
+    package "Tokens" as tokens {
+      component [GhostToken\n<<drag trail>>] as GhostToken
+    }
+    package "Tools" as tools {
+      component [DrawingToolbar\n<<bottom bar>>] as DrawingToolbar
+    }
+  }
+
+  component [Planificacion\n<<sub-component>>] as Planificacion
+  component [BulkAthleteUploader\n<<onboarding>>] as BulkAthleteUploader
+}
+
+'═══════════════════════════════════════════════════════
+' UI PRIMITIVES (shared)
+'═══════════════════════════════════════════════════════
+package "UI Primitives (src/components/ui/)" as ui_primitives {
+  component [EmptyState] as EmptyState
+  component [OfflineBanner] as OfflineBanner
+  component [UpdateToast] as UpdateToast
+  component [InstallAppBanner] as InstallAppBanner
+  component [ImportIcons] as ImportIcons
+}
+
+package "Shared Components (src/components/)" as shared_comps {
+  component [ErrorBoundary] as ErrorBoundary
+  component [Toast / ToastContainer] as Toast
+  component [FieldBackground\n<<animated bg>>] as FieldBackground
+  component [ConfirmModal] as ConfirmModal
+  component [LegalDisclaimer] as LegalDisclaimer
+}
+
+'═══════════════════════════════════════════════════════
+' HOOKS (transversales)
+'═══════════════════════════════════════════════════════
+package "Hooks (src/hooks/)" as hooks {
+  component [useLocalStorage\n<<sync state>>] as useLocalStorage
+  component [useSupabaseSync\n<<write-through>>] as useSupabaseSync
+  component [useDragEngine\n<<long-press 150ms>>] as useDragEngine
+  component [useDrawingEngine\n<<SVG drawings>>] as useDrawingEngine
+  component [useResponsive\n<<breakpoints>>] as useResponsive
+  component [useInstallPWA\n<<PWA install>>] as useInstallPWA
+}
+
+'═══════════════════════════════════════════════════════
+' SERVICES (src/services/)
+'═══════════════════════════════════════════════════════
+package "Services (src/services/)" as services {
+  component [supabaseService\n<<write-through>>] as SupabaseService
+  component [authService\n<<Supabase Auth>>] as AuthService
+  component [healthService\n<<snapshots>>] as HealthService
+  component [storageService\n<<localStorage>>] as StorageService
+  component [migrationService\n<<schema migrations>>] as MigrationService
+  component [backupService\n<<JSON export>>] as BackupService
+  component [bulkUploadService\n<<CSV/XLSX>>] as BulkUploadService
+}
+
+'═══════════════════════════════════════════════════════
+' LIB (src/lib/)
+'═══════════════════════════════════════════════════════
+package "Lib (src/lib/)" as lib {
+  component [supabase.js\n<<client>>] as SupabaseClient
+  component [registerSW.js\n<<SW bridge>>] as RegisterSWLib
+}
+
+'═══════════════════════════════════════════════════════
+' UTILS (src/utils/)
+'═══════════════════════════════════════════════════════
+package "Utils (src/utils/)" as utils {
+  component [rpeEngine\ncalcSaludActual\ncalcCargaSemanal\nsaludColor\ntendenciaSalud] as RPEEngine
+  component [elevateScore\ncalcElevateScore\ncalcOVR\ngetPerformanceAlert\ngenerateRecommendations\ngetAthleteScoreHistory] as ElevateScore
+  component [helpers\ngetAvatarUrl\ncalculateAge\ngetStatusStyle] as Helpers
+  component [sanitize\nsanitizeText\nsanitizeNote\nsanitizeTextFinal] as Sanitize
+}
+
+'═══════════════════════════════════════════════════════
+' CONSTANTS (src/constants/)
+'═══════════════════════════════════════════════════════
+package "Constants (src/constants/)" as constants {
+  component [palette.js\nPALETTE] as Palette
+  component [roles.js\nROLES · hasPermission\ncanAccessModule · SESSION_KEY] as Roles
+  component [schemas.js\nZod schemas] as Schemas
+  component [initialStates.js] as InitialStates
+}
+
+'═══════════════════════════════════════════════════════
+' EXTERNAL / BACKEND
+'═══════════════════════════════════════════════════════
+package "Supabase (BaaS)" as supabase_ext {
+  database "PostgreSQL\n(Auth + DB + RLS)" as SupabaseDB
+  component [Auth Service\nemail/password] as SupabaseAuth
+  note right of SupabaseDB
+    Tables: clubs, profiles,
+    athletes, sessions,
+    health_snapshots, pagos,
+    movimientos, match_reports,
+    calendar_events, rsvp
+    RLS policies per club_id
+  end note
+}
+
+'═══════════════════════════════════════════════════════
+' RELATIONSHIPS — Entry
+'═══════════════════════════════════════════════════════
+Main --> AppRoot : renders
+Main --> RegSW : calls
+RegSW --> SW : registers
+
+'═══════════════════════════════════════════════════════
+' RELATIONSHIPS — App Root → Portal/CRM
+'═══════════════════════════════════════════════════════
+AppRoot --> PortalLayout : Route /
+AppRoot --> CRMApp : Route /crm/*
+AppRoot --> PrivacyPolicy : Route /privacidad
+
+PortalLayout --> PortalHome
+PortalLayout --> QuienesSomos
+PortalLayout --> Contacto
+PortalLayout --> SportsCRMPage
+PortalLayout --> JournalPage
+PortalLayout ..> OfflineBanner : renders
+PortalLayout ..> UpdateToast : renders
+PortalLayout ..> InstallAppBanner : renders
+PortalLayout ..> useResponsive : uses
+
+PortalHome --> HeroSection
+PortalHome --> EcosystemSection
+PortalHome --> ServicesSection
+PortalHome --> JournalSection
+
+'═══════════════════════════════════════════════════════
+' RELATIONSHIPS — CRMApp → modules
+'═══════════════════════════════════════════════════════
+CRMApp --> LandingPage : !mode → login/register
+CRMApp --> Home : activeModule=home
+CRMApp --> Entrenamiento : activeModule=entrenamiento
+CRMApp --> GestionPlantilla : activeModule=plantilla
+CRMApp --> Administracion : activeModule=admin
+CRMApp --> MiClub : activeModule=miclub
+CRMApp --> Calendario : activeModule=calendario
+CRMApp --> MatchCenter : activeModule=partidos
+CRMApp --> Reportes : activeModule=reportes
+CRMApp ..> ErrorBoundary : wraps each module
+CRMApp ..> MiniTopbar : renders per module
+CRMApp ..> FieldBackground : bg layer
+CRMApp ..> OfflineBanner : renders
+CRMApp ..> UpdateToast : renders
+
+'─ CRMApp hooks ─
+CRMApp ..> useLocalStorage : athletes, historial, clubInfo\nmatchStats, finanzas, mode, session
+CRMApp ..> useSupabaseSync : cloud sync
+CRMApp ..> AuthService : signIn, signUp, signOut, onAuthStateChange
+CRMApp ..> StorageService : loadDemoState, calcStats, buildSesion
+CRMApp ..> HealthService : takeHealthSnapshot
+CRMApp ..> BackupService : exportBackupJSON
+CRMApp ..> SupabaseService : createClub, migrateLocalToSupabase
+
+'─ GestionPlantilla → TacticalBoardV9 ─
+GestionPlantilla --> TacticalBoardV9 : [pizarra táctica tab]
+GestionPlantilla --> BulkAthleteUploader : onboarding masivo
+
+'─ TacticalBoardV9 subsystem ─
+TacticalBoardV9 --> FieldLayer : layer 1 — pitch
+TacticalBoardV9 --> DrawingLayer : layer 3 — vectors
+TacticalBoardV9 --> GhostToken : drag ghost + trail
+TacticalBoardV9 --> DrawingToolbar : bottom bar
+TacticalBoardV9 ..> useDragEngine : drag & drop engine
+TacticalBoardV9 ..> useDrawingEngine : drawing state
+TacticalBoardV9 ..> useLocalStorage : formation, positions, drawings
+TacticalBoardV9 ..> RPEEngine : calcSaludActual
+TacticalBoardV9 ..> Helpers : getAvatarUrl, getStatusStyle
+
+'─ Entrenamiento ─
+Entrenamiento --> Planificacion : sub-component
+Entrenamiento ..> RPEEngine : calcSaludActual
+Entrenamiento ..> Sanitize : sanitizeNote
+Entrenamiento ..> Helpers : getAvatarUrl
+
+'─ MatchCenter ─
+MatchCenter ..> ElevateScore : calcElevateScore, calcOVR\ngetPerformanceAlert, generateRecommendations
+
+'─ Administracion ─
+Administracion ..> Schemas : createMovimiento, validatePago
+
+'─ MiClub ─
+MiClub ..> Sanitize : sanitizeText
+
+'─ Home ─
+Home ..> useResponsive : breakpoints
+Home ..> EmptyState : empty states
+
+'─ PortalLayout ─
+PortalLayout ..> useResponsive : mobile/desktop
+
+'═══════════════════════════════════════════════════════
+' HOOKS → SERVICES / LIB
+'═══════════════════════════════════════════════════════
+useSupabaseSync --> SupabaseService : reads/writes
+useSupabaseSync --> SupabaseClient : isSupabaseReady
+useDrawingEngine ..> useLocalStorage : persist drawings
+useDragEngine ..> useLocalStorage : indirect (via TBV9)
+
+'═══════════════════════════════════════════════════════
+' SERVICES → LIB / EXTERNAL
+'═══════════════════════════════════════════════════════
+SupabaseService --> SupabaseClient : supabase.from()
+AuthService --> SupabaseClient : supabase.auth
+HealthService ..> RPEEngine : calcSaludActual
+SupabaseClient --> SupabaseDB : REST + Realtime
+SupabaseClient --> SupabaseAuth : auth.signIn/Up/Out
+
+'═══════════════════════════════════════════════════════
+' UTILS cross-dependencies
+'═══════════════════════════════════════════════════════
+HealthService ..> RPEEngine : calcSaludActual
+Administracion ..> Palette : PALETTE colors
+Entrenamiento ..> Palette : PALETTE colors
+
+'═══════════════════════════════════════════════════════
+' CONSTANTS consumed by all
+'═══════════════════════════════════════════════════════
+CRMApp ..> Roles : SESSION_KEY, createSession\nvalidateSession, canAccessModule
+CRMApp ..> InitialStates : EMPTY_ATHLETES etc.
+CRMApp ..> Schemas : setValidationErrorHandler
+CRMApp ..> Palette : C (colors)
+
+@enduml
