@@ -107,7 +107,22 @@ export function validateSession(session) {
   return session.checksum === expected;
 }
 
-/** Checksum basico: hash simple para deteccion de manipulacion casual */
+/**
+ * @deprecated INSEGURO — NO usar para decisiones de autorización.
+ *
+ * Este checksum usa un salt hardcodeado ("elevate_salt_2026") que es visible
+ * en el bundle de produccion. Cualquier persona con DevTools puede:
+ *   1. Leer el salt desde el JS bundle (no ofuscado).
+ *   2. Recalcular un checksum válido para role="admin" con cualquier userName.
+ *   3. Escribir la sesion forjada en localStorage y obtener privilegios de admin.
+ *
+ * El rol DEBE ser siempre resuelto desde Supabase Auth (authProfile.role).
+ * Este checksum solo sirve como detección casual de corrupción accidental de datos,
+ * nunca como control de seguridad. Pendiente de reemplazar por un token
+ * firmado con una clave server-side (HMAC-SHA256 en Edge Function).
+ *
+ * Ref: Hallazgo 1 — Boletin de Vulnerabilidades 2026-03-29
+ */
 function computeChecksum({ role, userName, createdAt, version }) {
   const raw = `${role}:${userName}:${createdAt}:${version}:elevate_salt_2026`;
   let hash = 0;

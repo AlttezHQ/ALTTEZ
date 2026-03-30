@@ -12,7 +12,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../../constants/palette";
-import { sanitizeText, sanitizeTextFinal } from "../../utils/sanitize";
+import { sanitizeText, sanitizeTextFinal, sanitizeNote } from "../../utils/sanitize";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 const fadeUp = {
@@ -156,9 +156,14 @@ export default function Contacto() {
 
   const handleChange = (field) => (e) => {
     const raw = e.target.value;
-    const value = (field === "mensaje" || field === "email")
-      ? raw
-      : sanitizeText(raw);
+    let value;
+    if (field === "email") {
+      value = raw;
+    } else if (field === "mensaje") {
+      value = sanitizeNote(raw);
+    } else {
+      value = sanitizeText(raw);
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
