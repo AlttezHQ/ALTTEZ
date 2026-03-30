@@ -789,7 +789,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
           </motion.div>
 
           <motion.div
-            onClick={() => showToast("Modulo 'Usar en partido' disponible en V10", "info")}
+            onClick={() => showToast("Guarda la formación y accede desde Match Center", "info")}
             whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
             style={{ padding:"4px 12px", fontSize:9, textTransform:"uppercase", letterSpacing:"1px", background:C.amber, color:"#1a0f00", cursor:"pointer", fontWeight:700, borderRadius:4 }}
           >

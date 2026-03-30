@@ -81,7 +81,10 @@ const TABS = ["Pagos", "Movimientos", "Resumen"];
 
 export default function Administracion({ athletes, finanzas, setFinanzas }) {
   const [activeTab, setActiveTab] = useState("Pagos");
-  const [selectedMes, setSelectedMes] = useState("2026-03");
+  const [selectedMes, setSelectedMes] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // ── Movimientos form state ──
   const [movTipo, setMovTipo] = useState("ingreso");
@@ -89,7 +92,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
   const [movMonto, setMovMonto] = useState("");
   const [formError, setFormError] = useState("");
   const [confirmAction, setConfirmAction] = useState(null);
-  const [movFecha, setMovFecha] = useState("2026-03-23");
+  const [movFecha, setMovFecha] = useState(() => new Date().toISOString().split("T")[0]);
 
   // ── Derived data ──
   const pagosDelMes = (finanzas.pagos || []).filter(p => p.mes === selectedMes);
@@ -281,12 +284,19 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
           <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "1px", color: PALETTE.textMuted }}>MES</span>
           <select style={css.mesSelect} value={selectedMes} onChange={e => setSelectedMes(e.target.value)}>
-            <option value="2026-01">Enero 2026</option>
-            <option value="2026-02">Febrero 2026</option>
-            <option value="2026-03">Marzo 2026</option>
-            <option value="2026-04">Abril 2026</option>
-            <option value="2026-05">Mayo 2026</option>
-            <option value="2026-06">Junio 2026</option>
+            {(() => {
+              const now = new Date();
+              const currentYear = now.getFullYear();
+              const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+              const opts = [];
+              for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+                for (let m = 0; m < 12; m++) {
+                  const val = `${y}-${String(m + 1).padStart(2, "0")}`;
+                  opts.push(<option key={val} value={val}>{MONTHS[m]} {y}</option>);
+                }
+              }
+              return opts;
+            })()}
           </select>
         </div>
       </div>

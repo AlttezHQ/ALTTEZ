@@ -600,8 +600,12 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           }}
         </InteractiveTile>
 
-        {/* TILE 4 — RESUMEN DEL CICLO (sin hover interactivo) */}
-        <div style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+        {/* TILE 4 — RESUMEN DEL CICLO */}
+        <div
+          onClick={() => { playSelect(); onNavigate("partidos"); }}
+          onMouseEnter={() => playHover()}
+          style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"pointer" }}
+        >
           <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
           <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
           <div className="home-stat-row" style={css.statRow}>

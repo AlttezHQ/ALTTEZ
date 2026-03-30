@@ -1073,7 +1073,7 @@ function TacticalBoardView({ athletes }) {
               {savingTactics ? "Guardando..." : "Guardar"}
             </motion.div>
             <motion.div
-              onClick={() => showToast("Modulo 'Usar en partido' — Proximo en V9", "info")}
+              onClick={() => showToast("Selecciona el partido en Match Center para usar esta formación", "info")}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               style={{

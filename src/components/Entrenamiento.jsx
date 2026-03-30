@@ -210,7 +210,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
           { label:"RPE promedio", value:stats.rpeAvg, color:PALETTE.amber, border:PALETTE.amber },
           { label:"Sesión", value:`#${(historial[0]?.num || 0) + 1}`, color:PALETTE.purple, border:PALETTE.purple },
         ].map((m,i) => (
-          <div key={i} style={{ padding:"12px 16px", background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${m.border}`, border:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+          <div key={i} style={{ padding:"12px 16px", background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${m.border}`, border:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"default" }}>
             <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1 }}>{m.value}</div>
             <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)" }}>{m.label}</div>
           </div>
@@ -438,7 +438,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                 { label:"Pico RPE", value: picoRpe, color:PALETTE.amber },
                 { label:"Sesiones totales", value: totalSesiones, color:"white" },
               ].map((m,i) => (
-                <div key={i} style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:14, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
+                <div key={i} onClick={() => setTab("historial")} style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:14, boxShadow:"0 8px 32px rgba(0,0,0,0.4)", cursor:"pointer" }}>
                   <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
                   <div style={{ fontSize:24, fontWeight:500, color:m.color }}>{m.value}</div>
                 </div>
