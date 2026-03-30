@@ -2,9 +2,8 @@
  * @module formations
  * @description Formaciones tacticas para Elevate Sports.
  *
- * Se exportan DOS formatos porque se usan en contextos distintos:
- * - FORMATIONS_VERTICAL: posiciones como strings con "%" (para GestionPlantilla, campo vertical)
- * - FORMATIONS_HORIZONTAL: posiciones como numeros + label (para TacticalBoard, campo horizontal con drag&drop)
+ * Formaciones verticales con posiciones como strings con "%" para GestionPlantilla.
+ * TacticalBoardV9 define sus propias formaciones landscape inline (HORIZ_FORMATIONS).
  *
  * @version 1.0
  * @author Elevate Sports
@@ -80,93 +79,4 @@ export const FORMATIONS_VERTICAL = {
     { posCode:"ST", left:"36%", top:"18%" },
     { posCode:"ST", left:"64%", top:"18%" },
   ],
-};
-
-// ─────────────────────────────────────────────
-// FORMACIONES HORIZONTALES (campo horizontal, posiciones numericas)
-// Usadas en TacticalBoard (drag & drop)
-// left: 5% (porteria propia) -> 95% (porteria rival)
-// top:  5% (arriba) -> 95% (abajo)
-// ─────────────────────────────────────────────
-export const FORMATIONS_HORIZONTAL = {
-  "4-3-3": {
-    label: "Ataque",
-    positions: [
-      { posCode:"GK",  left:6,  top:50 },
-      { posCode:"LB",  left:22, top:15 },
-      { posCode:"CB",  left:24, top:38 },
-      { posCode:"CB",  left:24, top:62 },
-      { posCode:"RB",  left:22, top:85 },
-      { posCode:"CM",  left:45, top:25 },
-      { posCode:"CM",  left:47, top:50 },
-      { posCode:"CM",  left:45, top:75 },
-      { posCode:"LW",  left:72, top:12 },
-      { posCode:"ST",  left:78, top:50 },
-      { posCode:"RW",  left:72, top:88 },
-    ],
-  },
-  "4-4-2": {
-    label: "Holding",
-    positions: [
-      { posCode:"GK",  left:6,  top:50 },
-      { posCode:"LB",  left:22, top:15 },
-      { posCode:"LCB", left:24, top:38 },
-      { posCode:"RCB", left:24, top:62 },
-      { posCode:"RB",  left:22, top:85 },
-      { posCode:"LM",  left:45, top:15 },
-      { posCode:"LDM", left:47, top:38 },
-      { posCode:"RDM", left:47, top:62 },
-      { posCode:"RM",  left:45, top:85 },
-      { posCode:"LS",  left:76, top:33 },
-      { posCode:"RS",  left:76, top:67 },
-    ],
-  },
-  "3-5-2": {
-    label: "Compacto",
-    positions: [
-      { posCode:"GK",  left:6,  top:50 },
-      { posCode:"CB",  left:22, top:25 },
-      { posCode:"CB",  left:24, top:50 },
-      { posCode:"CB",  left:22, top:75 },
-      { posCode:"LWB", left:42, top:10 },
-      { posCode:"CM",  left:44, top:32 },
-      { posCode:"CM",  left:47, top:50 },
-      { posCode:"CM",  left:44, top:68 },
-      { posCode:"RWB", left:42, top:90 },
-      { posCode:"ST",  left:76, top:33 },
-      { posCode:"ST",  left:76, top:67 },
-    ],
-  },
-  "4-2-3-1": {
-    label: "Control",
-    positions: [
-      { posCode:"GK",  left:6,  top:50 },
-      { posCode:"LB",  left:22, top:15 },
-      { posCode:"CB",  left:24, top:38 },
-      { posCode:"CB",  left:24, top:62 },
-      { posCode:"RB",  left:22, top:85 },
-      { posCode:"DM",  left:40, top:38 },
-      { posCode:"DM",  left:40, top:62 },
-      { posCode:"LW",  left:58, top:18 },
-      { posCode:"CAM", left:62, top:50 },
-      { posCode:"RW",  left:58, top:82 },
-      { posCode:"ST",  left:80, top:50 },
-    ],
-  },
-  "5-3-2": {
-    label: "Defensivo",
-    positions: [
-      { posCode:"GK",  left:6,  top:50 },
-      { posCode:"LWB", left:20, top:8  },
-      { posCode:"CB",  left:23, top:28 },
-      { posCode:"CB",  left:25, top:50 },
-      { posCode:"CB",  left:23, top:72 },
-      { posCode:"RWB", left:20, top:92 },
-      { posCode:"CM",  left:46, top:28 },
-      { posCode:"CM",  left:48, top:50 },
-      { posCode:"CM",  left:46, top:72 },
-      { posCode:"ST",  left:76, top:33 },
-      { posCode:"ST",  left:76, top:67 },
-    ],
-  },
 };
