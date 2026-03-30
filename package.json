@@ -1,7 +1,10 @@
 {
   "name": "elevate-sports",
+  "description": "CRM Deportivo Inteligente — Gestiona tu club con rendimiento profesional",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "author": "Elevate Sports Holding",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",
