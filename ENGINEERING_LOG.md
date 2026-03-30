@@ -6,6 +6,136 @@
 
 ---
 
+## 2026-03-28 — Auditoría de Dependencias, Seguridad y Archivos Basura
+**Por**: @QA (Sara)
+**Status**: REPORTE FINAL
+
+---
+
+### 1. DEPENDENCIAS NPM — VEREDICTO
+
+Todas las dependencias de `package.json` tienen uso confirmado:
+
+| Paquete | Tipo | Archivos que lo usan | Status |
+|---------|------|----------------------|--------|
+| `@supabase/supabase-js` | dep | `src/lib/supabase.js`, `src/services/supabaseService.js`, 5 más | USADO |
+| `dompurify` | dep | `src/utils/sanitize.js`, `src/components/Planificacion.jsx` | USADO |
+| `framer-motion` | dep | 26 archivos (Administracion, GestionPlantilla, TacticalBoard...) | USADO |
+| `jspdf` | dep | `src/components/Planificacion.jsx` | USADO |
+| `jspdf-autotable` | dep | `src/components/Planificacion.jsx` (3 llamadas a autoTable()) | USADO |
+| `react` + `react-dom` | dep | Proyecto completo | USADO |
+| `react-router-dom` | dep | App.jsx + 5 componentes portal | USADO |
+| `@eslint/js` | devDep | eslint.config.js | USADO |
+| `@types/react` + `@types/react-dom` | devDep | TypeScript checking | USADO |
+| `@vitejs/plugin-react` | devDep | vite.config.js | USADO |
+| `eslint` + plugins | devDep | eslint.config.js | USADO |
+| `globals` | devDep | eslint.config.js (globals.browser) | USADO |
+| `jsdom` | devDep | vite.config.js test.environment: 'jsdom' | USADO |
+| `vite` | devDep | build tool | USADO |
+| `vite-plugin-pwa` | devDep | vite.config.js VitePWA(...) | USADO |
+| `vitest` | devDep | 3 test suites activas | USADO |
+
+**Resultado: CERO dependencias fantasma. Limpio.**
+
+---
+
+### 2. ARCHIVOS SENSIBLES — HALLAZGOS
+
+#### 🔴 BLOCKER — .env con credenciales reales presente en disco
+
+- **Archivo**: `.env` (raiz del proyecto)
+- **Contenido**: URL de Supabase real + ANON_KEY con prefijo `sb_publishable_`
+  - `VITE_SUPABASE_URL=https://jqqzwcrfbtcyjiuacrjk.supabase.co`
+  - `VITE_SUPABASE_ANON_KEY=sb_publishable_TndccNmV8QMwrWYpB3opbg_Tzk-9gdi`
+- **Status en git**: NO trackeado (`.env` está en `.gitignore`) — CORRECTO
+- **Riesgo real**: El archivo existe en disco de trabajo del desarrollador. La clave `sb_publishable_` es una clave anon pública (no secreta de servicio), pero aún así identifica el proyecto de Supabase. Si este equipo trabaja con múltiples personas, la key nunca debería transmitirse por canales inseguros.
+- **Acción requerida**: Confirmar que `.env` NUNCA se comparte por Slack/email/drive. Usar Vercel Environment Variables para producción. La key actual NO está en git — correcto.
+
+#### VERDE — .env.example trackeado correctamente
+- Solo contiene valores placeholder: `https://tu-proyecto.supabase.co` y `tu-anon-key-aqui`
+- Correcto. Sin credenciales reales.
+
+#### VERDE — Sin hardcoding de keys en código fuente
+- `src/lib/supabase.js` lee exclusivamente de `import.meta.env.VITE_SUPABASE_*`
+- Grep de `sk_`, `pk_live`, `pk_test`, `anon.*=.*['"][a-zA-Z]` — sin resultados positivos en src/
+
+---
+
+### 3. BUILD ARTIFACTS — HALLAZGOS
+
+#### 🟡 MAJOR — dist/ presente en disco pero NO en .gitignore del directorio raíz
+
+- **Hallazgo**: `dist/` existe en disco con assets compilados (JS bundles, HTML, iconos, SW).
+- **Estado en git**: `git ls-files dist/` devuelve vacío — NO trackeado.
+- **Riesgo**: El `.gitignore` actual incluye la regla `dist` — cubierto.
+- **Pero**: Si alguien ejecuta `git add .` accidentalmente, `dist/` podría filtrarse. Regla existe pero merece revisión periódica.
+
+#### VERDE — dev-dist/ correctamente ignorado
+- `dev-dist/` existe en disco (generado por vite-plugin-pwa en modo dev).
+- Presente en `.gitignore` como `dev-dist/` — NO trackeado.
+- Sin archivos de dev-dist en `git ls-files`.
+
+#### VERDE — node_modules/ no trackeado
+- `git ls-files | grep node_modules` — vacío. Correcto.
+
+---
+
+### 4. ARCHIVOS TEMPORALES — HALLAZGOS
+
+#### VERDE — Sin archivos .tmp, .bak, .old, .backup
+- Búsqueda en todo el proyecto (excluyendo node_modules y .git): cero resultados.
+
+#### VERDE — Sin archivos "test" o "temp" fuera de directorios de prueba
+- Los únicos archivos con "test" en el nombre están en `src/__tests__/` (healthService.test.js, rpeEngine.test.js, storageService.test.js).
+- Son tests reales, no temporales.
+
+---
+
+### 5. CONSOLE STATEMENTS — CLASIFICACIÓN
+
+#### VERDES — Logs intencionales y bien formateados (conservar)
+
+Todos los console statements encontrados siguen el patrón `[moduleName] mensaje` y corresponden a casos de error real o degradación controlada:
+
+| Archivo | Statement | Clasificación |
+|---------|-----------|---------------|
+| `src/components/ErrorBoundary.jsx:14` | `console.error("[ErrorBoundary]", error, errorInfo)` | INTENCIONAL — captura de crash |
+| `src/constants/schemas.js:168` | `console.warn("[${context}] ${message}")` | INTENCIONAL — validación de schema |
+| `src/hooks/useLocalStorage.js:21,33` | `console.error("[useLocalStorage] Error reading/writing")` | INTENCIONAL — I/O error |
+| `src/hooks/useSupabaseSync.js:75` | `console.error("[useSupabaseSync] Error loading from Supabase:")` | INTENCIONAL — sync error |
+| `src/lib/supabase.js:16` | `console.warn("[supabase] Missing VITE_SUPABASE_*")` | INTENCIONAL — config degradada |
+| `src/services/authService.js:18` | `console.error("[authService]")` | INTENCIONAL — auth error |
+| `src/services/backupService.js:55` | `console.error("[backupService] Export failed:")` | INTENCIONAL — export error |
+| `src/services/healthService.js:56` | `console.error("[healthService] Error saving snapshots:")` | INTENCIONAL — persistence error |
+| `src/services/migrationService.js:106,145` | `console.error("[migrationService]")` | INTENCIONAL — migration error |
+| `src/services/storageService.js:40,148` | `console.error("[storageService]")` | INTENCIONAL — storage error |
+| `src/services/supabaseService.js:21,213` | `console.error/warn("[supabaseService]")` | INTENCIONAL — DB error |
+
+**Resultado: CERO console.log de debug temporal. CERO console sin namespace. Todos los statements son operacionales y están correctamente prefijados con [moduleName].**
+
+#### Recomendacion para produccion
+Para produccion hardened, los console.error/warn operacionales deberían enviarse a un servicio de monitoring (Sentry, LogRocket) en lugar de solo a la consola del browser. Esto es mejora, no blocker.
+
+---
+
+### RESUMEN EJECUTIVO
+
+| Categoria | Estado | Severidad | Accion |
+|-----------|--------|-----------|--------|
+| Dependencias no usadas | LIMPIO | — | Ninguna |
+| Keys hardcodeadas en codigo | LIMPIO | — | Ninguna |
+| .env en git | NO trackeado | — | Verificar protocolo de equipo |
+| .env en disco con key real | PRESENTE (correcto para dev) | VIGILAR | No compartir por canales inseguros |
+| dist/ trackeado | NO | VIGILAR | .gitignore cubre, revisar periodicamente |
+| dev-dist/ trackeado | NO | — | Ninguna |
+| Archivos temporales | LIMPIO | — | Ninguna |
+| console.log debug | CERO | — | Ninguna |
+| console statements operacionales | 15 total, todos con namespace | MEJORA FUTURA | Migrar a Sentry en produccion hardened |
+
+**Veredicto: NINGÚN BLOCKER de seguridad en el repositorio. El riesgo mas alto es operacional (manejo de .env fuera del repo), no técnico.**
+
+---
+
 ## 2026-03-29 — Documentación de Arquitectura UML
 **Directiva de**: Julián
 **Status**: 🟢 Completo
