@@ -59,6 +59,32 @@ select option {
   color: white;
 }
 
+/* ── Focus management ────────────────────────────────────────────────────── */
+/* Remove browser outline on mouse/touch click — keep it for keyboard nav.
+   :focus-visible is the modern standard: browsers only apply it when the
+   element was focused via keyboard (Tab / arrow keys), never on mouse click. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Keyboard-only focus ring — neon green at low opacity, accessible contrast */
+:focus-visible {
+  outline: 2px solid rgba(57, 255, 20, 0.5);
+  outline-offset: 2px;
+}
+
+/* Prevent text-selection cursor (I-beam) on non-text interactive elements.
+   Buttons, nav items, cards with onClick — none of them should show I-beam. */
+button,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"] {
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+
 /* ── Touch targets ───────────────────────────────────────────────────────── */
 /* Minimum 44px touch target on interactive elements (WCAG 2.5.5 / Apple HIG) */
 button,

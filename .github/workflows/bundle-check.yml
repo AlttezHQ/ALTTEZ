@@ -1,0 +1,37 @@
+name: Bundle Check
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: Check bundle sizes (warn >500KB)
+        run: |
+          OVERSIZED=0
+          while IFS= read -r f; do
+            SIZE=$(du -k "$f" | cut -f1)
+            echo "WARNING: $f exceeds 500KB (${SIZE}KB)"
+            OVERSIZED=1
+          done < <(find dist/assets -name "*.js" -size +500k)
+
+          if [ "$OVERSIZED" -eq 0 ]; then
+            echo "All chunks within 500KB limit"
+          fi
