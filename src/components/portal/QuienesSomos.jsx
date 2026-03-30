@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { PALETTE as C } from "../../constants/palette";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 const fadeUp = {
@@ -101,6 +102,7 @@ function GlassCard({ children, style = {} }) {
 
 export default function QuienesSomos() {
   const navigate = useNavigate();
+  usePageTitle("Quiénes Somos");
 
   useEffect(() => {
     const style = document.createElement("style");

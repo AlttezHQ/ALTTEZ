@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../../constants/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeNote } from "../../utils/sanitize";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 const fadeUp = {
@@ -128,6 +129,8 @@ const buildInputStyle = (hasError) => ({
 
 // ── Componente principal ───────────────────────────────────────────────────
 export default function Contacto() {
+  usePageTitle("Contacto");
+
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `

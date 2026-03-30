@@ -52,6 +52,7 @@ const MiClub = lazy(() => import("./components/MiClub"));
 const Administracion = lazy(() => import("./components/Administracion"));
 const Calendario     = lazy(() => import("./components/Calendario"));
 const MatchCenter    = lazy(() => import("./components/MatchCenter"));
+const DemoGate       = lazy(() => import("./components/DemoGate"));
 
 // ── Conectar handlers de error de storage al boot (antes de que cualquier hook escriba) ──
 const _toastError = (msg) => showToast(msg, "error");
@@ -373,7 +374,14 @@ function CRMApp() {
       <ToastContainer />
       <OfflineBanner />
       <UpdateToast />
-      <div style={{ position:"relative", zIndex:2 }}>
+      {/* Gate de conversión para modo demo: banner persistente + modal a los 15 min */}
+      {mode === "demo" && (
+        <Suspense fallback={null}>
+          <DemoGate onNavigateToRegister={handleLogout} />
+        </Suspense>
+      )}
+      {/* Padding bottom compensa el banner del DemoGate (52px) en modo demo */}
+      <div style={{ position:"relative", zIndex:2, paddingBottom: mode === "demo" ? 60 : 0 }}>
         <Suspense fallback={<LoadingFallback />}>
 
           {activeModule === "home" && (

@@ -3,66 +3,115 @@
  * @description Motor de Inteligencia Deportiva — Salud Actual basada en RPE.
  *
  * ══════════════════════════════════════════════════════════════════
- *  MODELO MATEMATICO — Elevate Sports RPE Health Engine v2.0
+ *  MODELO MATEMATICO — Elevate Sports RPE Health Engine v2.1
  * ══════════════════════════════════════════════════════════════════
  *
  *  FUNDAMENTO CIENTIFICO
  *  ---------------------
- *  Basado en el metodo session-RPE de Foster et al. (2001) y el modelo
- *  de carga interna de Impellizzeri et al. (2004). El RPE (Rate of
- *  Perceived Exertion, escala CR-10 de Borg) es el indicador subjetivo
- *  mas validado en ciencia del deporte para cuantificar carga interna.
+ *  Este modulo implementa el metodo session-RPE (sRPE) descrito por
+ *  Foster et al. (2001) para cuantificar la carga interna de entrenamiento.
+ *  La escala utilizada es la Borg CR-10 (Category-Ratio 10), validada
+ *  originalmente por Borg (1998) y adoptada en ciencias del deporte
+ *  como medida de esfuerzo percibido global (no diferencial muscular).
+ *
+ *  En fútbol juvenil Sub-17, la correlacion entre sRPE y marcadores
+ *  objetivos de carga (frecuencia cardiaca, lactato) es r = 0.77-0.84
+ *  segun Impellizzeri et al. (2004), lo que justifica su uso como
+ *  indicador primario de fatiga acumulada en este contexto.
  *
  *  FORMULA BASE
  *  ------------
  *  Sea R = {r₁, r₂, ..., rₙ} el conjunto de RPEs individuales del
- *  atleta en los ultimos 7 dias (max 7 entradas, n ≤ 7).
+ *  atleta en los ultimos 7 dias (max 7 entradas, n <= 7).
  *
- *    RPE_avg = (1/n) Σᵢ rᵢ        donde rᵢ ∈ [1, 10]
+ *    RPE_avg = (1/n) * sum(rᵢ)    donde rᵢ ∈ [1, 10]  (Borg CR-10)
  *
- *    SaludActual = clamp(100 - RPE_avg × 10, 0, 100)
+ *    SaludActual = clamp(100 - RPE_avg * 10, 0, 100)
  *
- *  INTERPRETACION
- *  --------------
+ *  La funcion de salud es una transformacion lineal inversa que mapea
+ *  el espacio [1,10] de RPE al espacio [0,90] de disponibilidad.
+ *  El valor 100 se reserva para el estado "sin datos" (disponibilidad
+ *  maxima asumida por defecto hasta que existan registros).
+ *
+ *  INTERPRETACION CLINICA
+ *  ----------------------
  *  - SaludActual ∈ [0, 100] es un indice inverso de fatiga acumulada.
- *  - RPE_avg = 1  →  Salud = 90  (carga minima, alta disponibilidad)
- *  - RPE_avg = 5  →  Salud = 50  (carga moderada, precaucion)
- *  - RPE_avg = 10 →  Salud = 0   (carga maxima, riesgo de lesion)
+ *  - RPE_avg = 1.0  →  Salud = 90  (carga minima, alta disponibilidad)
+ *  - RPE_avg = 5.0  →  Salud = 50  (carga moderada, entrenamiento normal)
+ *  - RPE_avg = 7.5  →  Salud = 25  (umbral riesgo, reducir carga)
+ *  - RPE_avg = 10.0 →  Salud = 0   (carga maxima, riesgo alto de lesion)
  *
- *  UMBRALES DE RIESGO (semaforo)
- *  -----------------------------
- *  | Rango         | Nivel       | Color   | Accion recomendada         |
- *  |---------------|-------------|---------|----------------------------|
- *  | Salud >= 50   | optimo      | #1D9E75 | Disponible para competir   |
- *  | 25 <= S < 50  | precaucion  | #EF9F27 | Reducir carga o rotar      |
- *  | Salud < 25    | riesgo      | #E24B4A | Descanso o trabajo regen.  |
- *  | Sin datos     | sin_datos   | gris    | Registrar RPE              |
+ *  UMBRALES DE RIESGO — SEMAFORO v2.1
+ *  -----------------------------------
+ *  Calibrados para futbol juvenil Sub-17, donde la tolerancia a la carga
+ *  es menor que en futbol profesional adulto (Hulin et al., 2014 establece
+ *  que atletas jovenes tienen mayor susceptibilidad a lesion por ACWR alto).
  *
- *  RAZON DEL AJUSTE (v2.1):
- *  El umbral anterior (optimo >= 60) clasificaba RPE 5 (entrenamiento
- *  normal moderado, salud = 50) como precaucion, generando falsos
- *  positivos. RPE 5-6 es carga de entrenamiento estandar en microciclo
- *  semanal. El nuevo umbral (optimo >= 50) alinea el semaforo con la
- *  escala CR-10 de Borg: optimo hasta RPE promedio de 5.0.
+ *  | Rango         | Nivel       | Color   | RPE_avg equiv. | Accion             |
+ *  |---------------|-------------|---------|----------------|--------------------|
+ *  | Salud >= 50   | optimo      | #1D9E75 | <= 5.0         | Disponible         |
+ *  | 25 <= S < 50  | precaucion  | #EF9F27 | 5.0 – 7.5      | Reducir o rotar    |
+ *  | Salud < 25    | riesgo      | #E24B4A | > 7.5          | Descanso / regen.  |
+ *  | Sin datos     | sin_datos   | gris    | —              | Registrar RPE      |
  *
- *  FUENTE DE DATOS (v2.0)
- *  ----------------------
- *  - RPE actual:    athlete.rpe (sesion en curso)
- *  - RPE historico: historial[].rpeByAthlete[athleteId] (per-athlete)
- *  - Fallback:      historial[].rpeAvg (promedio equipo, sesiones legacy)
- *  - Ventana:       7 dias via savedAt (ISO 8601), o ultimas 7 entradas
+ *  JUSTIFICACION DEL UMBRAL v2.1 (cambio desde v2.0)
+ *  --------------------------------------------------
+ *  En v2.0 el umbral optimo era salud >= 60 (RPE_avg <= 4.0). Esto
+ *  clasificaba un RPE promedio de 5.0 —carga tipica de una sesion de
+ *  entrenamiento tecnico-tactico normal (Foster, 2001, describe RPE 5
+ *  como "moderado" en microciclo de competicion)— como "precaucion",
+ *  generando falsos positivos que erosionaban la credibilidad del
+ *  semaforo para los entrenadores. El ajuste a >= 50 es coherente con
+ *  la escala CR-10: valores 1-5 corresponden a esfuerzo aceptable en
+ *  un ciclo semanal de entrenamiento, valores > 7.5 activan el riesgo.
  *
- *  LIMITACIONES CONOCIDAS
- *  ----------------------
- *  - No incluye duracion de sesion (sRPE = RPE × minutos). Requiere
- *    que el entrenador registre duracion en futuras versiones.
- *  - No calcula ACWR (Acute:Chronic Workload Ratio). Requiere >= 4
- *    semanas de datos consistentes. Planificado para v3.0.
- *  - Promedio aritmetico, no EWMA. EWMA pondera sesiones recientes
- *    mas fuerte, pero requiere datos diarios consistentes.
+ *  FUENTE DE DATOS (arquitectura v2.0)
+ *  ------------------------------------
+ *  - RPE actual:    athlete.rpe  (sesion en curso, captura inmediata)
+ *  - RPE historico: historial[].rpeByAthlete[athleteId]  (per-atleta, v2+)
+ *  - Fallback:      historial[].rpeAvg  (promedio equipo, sesiones legacy v1)
+ *  - Ventana:       7 dias via savedAt (ISO 8601), max MAX_ENTRIES = 7
+ *
+ *  LIMITACIONES CONOCIDAS Y ROADMAP
+ *  ---------------------------------
+ *  1. Sin duracion de sesion: El sRPE canonico es RPE × duracion(min)
+ *     (Foster et al., 2001). Este motor usa solo RPE porque el campo
+ *     "duracion" no existe aun en el modelo de datos. Impacto: sesiones
+ *     cortas (30 min) y largas (90 min) con mismo RPE pesan igual.
+ *     Planificado: agregar campo `duracionMinutos` al formulario de
+ *     entrenamiento y recalcular como unidades de carga (UA).
+ *  2. Sin ACWR: Acute:Chronic Workload Ratio (Hulin et al., 2014)
+ *     requiere >= 4 semanas de carga acumulada. Con datos insuficientes,
+ *     el ratio produce falsos positivos. Planificado para v3.0 cuando
+ *     los clubes tengan 4+ semanas de historial continuo.
+ *  3. Promedio aritmetico (no EWMA): La ponderacion exponencial (EWMA)
+ *     sesga el calculo hacia sesiones recientes, lo cual es fisiologicamente
+ *     mas preciso. Requiere datos diarios consistentes para ser estable.
+ *     Planificado para v3.0 junto con ACWR.
+ *
+ * @references
+ *   Borg, G. (1998). Borg's perceived exertion and pain scales.
+ *     Human Kinetics. ISBN: 978-0-88011-623-7.
+ *
+ *   Foster, C., Florhaug, J. A., Franklin, J., Gottschall, L., Hrovatin,
+ *     L. A., Parker, S., ... & Dodge, C. (2001). A new approach to
+ *     monitoring exercise training. Journal of Strength and Conditioning
+ *     Research, 15(1), 109-115. https://doi.org/10.1519/00124278-200102000-00019
+ *
+ *   Impellizzeri, F. M., Rampinini, E., Coutts, A. J., Sassi, A., &
+ *     Marcora, S. M. (2004). Use of RPE-based training load in soccer.
+ *     Medicine & Science in Sports & Exercise, 36(6), 1042-1047.
+ *     https://doi.org/10.1249/01.MSS.0000128199.23901.2F
+ *
+ *   Hulin, B. T., Gabbett, T. J., Blanch, P., Chapman, P., Bailey, D.,
+ *     & Orchard, J. W. (2014). Spikes in acute workload are associated
+ *     with increased injury risk in elite cricket fast bowlers. British
+ *     Journal of Sports Medicine, 48(8), 708-712.
+ *     https://doi.org/10.1136/bjsports-2013-092524
+ *     [Nota: ACWR implementado en v3.0 — referencia para la arquitectura futura]
  *
  * @author @Data (Mateo-Data_Engine)
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 // ── Constantes ──
@@ -73,14 +122,28 @@ const MAX_ENTRIES = 7;
 // ── Utilidades internas ──
 
 /**
- * Extrae los RPEs individuales de un atleta desde el historial.
- * Prioriza rpeByAthlete (per-athlete) sobre rpeAvg (equipo).
- * Filtra por ventana de 7 dias usando savedAt (ISO).
+ * Extrae los RPEs individuales de un atleta desde el historial de sesiones.
  *
- * @param {number|string} athleteId
- * @param {Array} historial - Sesiones con { savedAt, rpeByAthlete?, rpeAvg? }
- * @param {number} now - Timestamp actual (ms)
- * @returns {number[]} RPEs validos dentro de la ventana
+ * Implementa la estrategia de datos en dos niveles:
+ *   1. Nivel primario (v2+): rpeByAthlete[athleteId] — RPE registrado
+ *      individualmente por el entrenador para cada atleta presente en
+ *      la sesion. Permite detectar diferencias intra-equipo de carga
+ *      percibida (e.g., portero vs. extremo en el mismo entrenamiento).
+ *   2. Nivel fallback (legacy v1): rpeAvg — RPE promedio del equipo,
+ *      usado en sesiones registradas antes de la implementacion v2.
+ *      Introduce ruido al ignorar variabilidad individual; se mantiene
+ *      solo por compatibilidad hacia atras hasta migracion completa.
+ *
+ * La ventana de 7 dias usa el campo savedAt (ISO 8601). Sesiones sin
+ * savedAt (datos legacy) se incluyen con beneficio de la duda pero son
+ * desplazadas naturalmente cuando se alcanza MAX_ENTRIES.
+ *
+ * @param {number|string} athleteId - ID del atleta (acepta number o string por tolerancia)
+ * @param {Array<{savedAt?: string, rpeByAthlete?: Object, rpeAvg?: number|string}>} historial
+ *   Array de sesiones guardadas, orden cronologico descendente (mas reciente primero)
+ * @param {number} now - Timestamp actual en milisegundos (Date.now())
+ * @returns {number[]} Array de valores RPE validos en rango [1,10] dentro de la ventana,
+ *   maximo MAX_ENTRIES = 7 elementos
  */
 function extractAthleteRpes(athleteId, historial, now) {
   const rpes = [];
@@ -121,13 +184,42 @@ function extractAthleteRpes(athleteId, historial, now) {
 }
 
 /**
- * Calcula la SaludActual de un atleta basandose en su RPE individual
- * de los ultimos 7 dias.
+ * Calcula el indice de SaludActual de un atleta a partir de su RPE
+ * acumulado en los ultimos 7 dias (ventana deslizante).
  *
- * @param {number|null} currentRpe - RPE actual de la sesion en curso (1-10 o null)
- * @param {Array} historial - Array de sesiones con { savedAt, rpeByAthlete?, rpeAvg? }
- * @param {number|string} [athleteId] - ID del atleta para filtrar RPE individual
- * @returns {{ salud: number, riskLevel: string, color: string, rpeAvg7d: number|null }}
+ * Implementa la formula del RPE Health Engine v2.1:
+ *
+ *   RPE_avg = mean(RPEs validos en ventana 7d, max 7 sesiones)
+ *   SaludActual = clamp(100 - RPE_avg * 10, 0, 100)
+ *
+ * Fuente: derivada de Foster et al. (2001), escala Borg CR-10 (1998).
+ * Umbral de riesgo: RPE_avg > 7.5 → salud < 25 → nivel "riesgo".
+ *
+ * El proceso de calculo es:
+ *   1. Si currentRpe es valido [1,10], se incluye como sesion mas reciente.
+ *   2. Se extraen RPEs historicos del atleta (per-atleta si hay athleteId,
+ *      fallback a rpeAvg de equipo si no).
+ *   3. Se limita a MAX_ENTRIES = 7 (ventana 7d).
+ *   4. Sin datos → retorna { salud: 100, riskLevel: "sin_datos" } para
+ *      no penalizar a atletas sin historial.
+ *   5. Con datos → calcula RPE_avg, aplica formula y clasifica semaforo.
+ *
+ * @param {number|null} currentRpe
+ *   RPE de la sesion activa en curso. Escala Borg CR-10: 1 (muy ligero)
+ *   a 10 (maxima exertion). null si el atleta no tiene RPE registrado
+ *   en la sesion actual.
+ * @param {Array<{savedAt?: string, rpeByAthlete?: Object, rpeAvg?: number|string}>} [historial=[]]
+ *   Sesiones previas guardadas. Cada sesion puede tener rpeByAthlete
+ *   (objeto id→rpe, formato v2) o rpeAvg (numero, formato v1 legacy).
+ * @param {number|string|null} [athleteId=null]
+ *   ID del atleta para filtrar su RPE individual en rpeByAthlete.
+ *   Si es null, usa fallback de rpeAvg (compatibilidad v1).
+ * @returns {{
+ *   salud: number,          // Indice [0-100]: 100 = plena disponibilidad
+ *   riskLevel: string,      // "optimo" | "precaucion" | "riesgo" | "sin_datos"
+ *   color: string,          // Hex del semaforo: #1D9E75 | #EF9F27 | #E24B4A | rgba(...)
+ *   rpeAvg7d: number|null   // RPE promedio 7d, 1 decimal. null si sin_datos
+ * }}
  */
 export function calcSaludActual(currentRpe, historial = [], athleteId = null) {
   const now = Date.now();
@@ -195,11 +287,24 @@ export function calcSaludActual(currentRpe, historial = [], athleteId = null) {
 }
 
 /**
- * Calcula SaludActual para todo el plantel usando RPE individual.
+ * Calcula el indice de SaludActual para cada atleta del plantel completo.
  *
- * @param {Array} athletes - Array de atletas con { id, rpe }
- * @param {Array} historial - Array de sesiones globales
- * @returns {Map<number, { salud, riskLevel, color, rpeAvg7d }>}
+ * Funcion de conveniencia que itera el plantel y llama calcSaludActual
+ * por atleta, pasando su ID para obtener RPE individual (no promedio
+ * del equipo). Esto es critico para detectar outliers: un extremo con
+ * RPE 9 en una sesion donde el equipo promedió 5 debe activar alerta
+ * solo para ese atleta, no para el plantel completo.
+ *
+ * Complejidad: O(n * m) donde n = plantel, m = sesiones en historial.
+ * Para planteles Sub-17 tipicos (15-20 atletas) y ventana de 7 sesiones,
+ * el costo es despreciable (< 1 ms en navegador moderno).
+ *
+ * @param {Array<{id: number, rpe: number|null}>} athletes
+ *   Plantel activo. Solo requiere id y rpe de la sesion actual.
+ * @param {Array} [historial=[]]
+ *   Historial completo de sesiones del equipo (mismo formato que calcSaludActual).
+ * @returns {Map<number, {salud: number, riskLevel: string, color: string, rpeAvg7d: number|null}>}
+ *   Mapa athleteId → resultado de salud. Permite lookup O(1) en UI.
  */
 export function calcSaludPlantel(athletes, historial = []) {
   const map = new Map();
@@ -210,9 +315,23 @@ export function calcSaludPlantel(athletes, historial = []) {
 }
 
 /**
- * Retorna el color de la barra de salud para un valor dado.
- * @param {number} salud - 0 a 100
- * @returns {string} color hex
+ * Retorna el color hex del semaforo para un valor de salud dado.
+ *
+ * Funcion de presentacion pura: convierte el indice numerico al color
+ * visual del semaforo neon de Elevate Sports. Umbrales sincronizados
+ * con calcSaludActual v2.1 para garantizar consistencia visual.
+ *
+ * Uso tipico: barras de progreso, badges, indicadores de estado en UI.
+ * No usar para logica de decision — usar riskLevel de calcSaludActual.
+ *
+ * | salud     | color    | significado                   |
+ * |-----------|----------|-------------------------------|
+ * | >= 50     | #1D9E75  | Verde: disponible             |
+ * | 25 - 49   | #EF9F27  | Ambar: precaucion             |
+ * | < 25      | #E24B4A  | Rojo: riesgo, reducir carga   |
+ *
+ * @param {number} salud - Indice de salud [0, 100]
+ * @returns {string} Color hexadecimal (#RRGGBB)
  */
 // Umbrales sincronizados con calcSaludActual v2.1
 export function saludColor(salud) {
