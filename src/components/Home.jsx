@@ -100,13 +100,17 @@ const metricItemVariant = {
 const EVENT_COLORS = { match: "#c8ff00", training: "#7F77DD", club: "#EF9F27" };
 const EVENT_LABELS = { match: "Partido", training: "Entrenamiento", club: "Evento" };
 
-function getNextEvent() {
+/**
+ * Genera los eventos demo del mes actual como fallback.
+ * @returns {Array} Eventos demo con datetime ISO
+ */
+function getDemoEvents() {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = (day, hour = 18, min = 0) => new Date(y, m, day, hour, min).toISOString();
-  const events = [
-    { type:"training", title:"Entrenamiento físico",       datetime:d(2,18,0),  location:"Campo A" },
+  return [
+    { type:"training", title:"Entrenamiento físico",        datetime:d(2,18,0),  location:"Campo A" },
     { type:"training", title:"Trabajo táctico",             datetime:d(4,18,0),  location:"Campo A" },
     { type:"match",    title:"vs Atlético Sur",             datetime:d(7,16,0),  location:"Estadio Local" },
     { type:"training", title:"Rondos y pressing",           datetime:d(9,18,0),  location:"Campo A" },
@@ -120,7 +124,37 @@ function getNextEvent() {
     { type:"training", title:"Entrenamiento técnico",       datetime:d(25,18,0), location:"Campo B" },
     { type:"match",    title:"vs Racing Club",              datetime:d(28,17,0), location:"Estadio Racing" },
   ];
-  const future = events.filter(e => new Date(e.datetime) > now).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+}
+
+/**
+ * Obtiene el proximo evento del club.
+ * Prioridad: eventos reales del calendario (elevate_events_{clubId})
+ * Fallback: eventos demo del mes en curso.
+ * @returns {{ type: string, title: string, datetime: string, location: string } | null}
+ */
+function getNextEvent() {
+  const now = new Date();
+
+  // 1. Intentar leer eventos reales del calendario del club
+  try {
+    const clubId = localStorage.getItem("elevate_club_id") || "demo";
+    const rawEvents = localStorage.getItem(`elevate_events_${clubId}`);
+    if (rawEvents) {
+      const customEvents = JSON.parse(rawEvents);
+      if (Array.isArray(customEvents) && customEvents.length > 0) {
+        const future = customEvents
+          .filter(e => e.datetime && new Date(e.datetime) > now)
+          .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
+        if (future.length > 0) return future[0];
+      }
+    }
+  } catch (_) {
+    // localStorage no disponible o datos corruptos — continuar con fallback
+  }
+
+  // 2. Fallback: eventos demo del mes actual
+  const demoEvents = getDemoEvents();
+  const future = demoEvents.filter(e => new Date(e.datetime) > now).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
   return future[0] || null;
 }
 

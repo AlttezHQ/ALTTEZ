@@ -157,6 +157,7 @@ export const DEMO_MATCH_REPORTS = [
       { athleteId: 9,  goles: 0, asistencias: 0, recuperaciones: 1,  duelosGanados: 2,  minutosJugados: 55, tarjeta: "ninguna" },
       { athleteId: 10, goles: 0, asistencias: 0, recuperaciones: 5,  duelosGanados: 7,  minutosJugados: 90, tarjeta: "ninguna" },
       { athleteId: 11, goles: 0, asistencias: 0, recuperaciones: 6,  duelosGanados: 5,  minutosJugados: 75, tarjeta: "ninguna" },
+      { athleteId: 12, goles: 0, asistencias: 1, recuperaciones: 7,  duelosGanados: 6,  minutosJugados: 68, tarjeta: "ninguna" },
     ],
   },
   {
@@ -176,6 +177,7 @@ export const DEMO_MATCH_REPORTS = [
       { athleteId: 8,  goles: 0, asistencias: 0, recuperaciones: 1,  duelosGanados: 2,  minutosJugados: 45, tarjeta: "ninguna" },
       { athleteId: 9,  goles: 0, asistencias: 0, recuperaciones: 2,  duelosGanados: 3,  minutosJugados: 70, tarjeta: "ninguna" },
       { athleteId: 10, goles: 0, asistencias: 0, recuperaciones: 6,  duelosGanados: 7,  minutosJugados: 90, tarjeta: "amarilla" },
+      { athleteId: 12, goles: 0, asistencias: 0, recuperaciones: 5,  duelosGanados: 4,  minutosJugados: 82, tarjeta: "ninguna" },
     ],
   },
   {

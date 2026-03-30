@@ -33,10 +33,17 @@
  *  -----------------------------
  *  | Rango         | Nivel       | Color   | Accion recomendada         |
  *  |---------------|-------------|---------|----------------------------|
- *  | Salud >= 60   | optimo      | #1D9E75 | Disponible para competir   |
- *  | 30 <= S < 60  | precaucion  | #EF9F27 | Reducir carga o rotar      |
- *  | Salud < 30    | riesgo      | #E24B4A | Descanso o trabajo regen.  |
+ *  | Salud >= 50   | optimo      | #1D9E75 | Disponible para competir   |
+ *  | 25 <= S < 50  | precaucion  | #EF9F27 | Reducir carga o rotar      |
+ *  | Salud < 25    | riesgo      | #E24B4A | Descanso o trabajo regen.  |
  *  | Sin datos     | sin_datos   | gris    | Registrar RPE              |
+ *
+ *  RAZON DEL AJUSTE (v2.1):
+ *  El umbral anterior (optimo >= 60) clasificaba RPE 5 (entrenamiento
+ *  normal moderado, salud = 50) como precaucion, generando falsos
+ *  positivos. RPE 5-6 es carga de entrenamiento estandar en microciclo
+ *  semanal. El nuevo umbral (optimo >= 50) alinea el semaforo con la
+ *  escala CR-10 de Borg: optimo hasta RPE promedio de 5.0.
  *
  *  FUENTE DE DATOS (v2.0)
  *  ----------------------
@@ -168,12 +175,15 @@ export function calcSaludActual(currentRpe, historial = [], athleteId = null) {
   const avgRpe = recent.reduce((s, v) => s + v, 0) / recent.length;
   const salud = Math.max(0, Math.min(100, Math.round(100 - (avgRpe * 10))));
 
-  // 5. Clasificacion por umbrales
+  // 5. Clasificacion por umbrales (v2.1)
+  // Umbral optimo: salud >= 50 (RPE avg <= 5.0, entrenamiento normal)
+  // Umbral precaucion: 25 <= salud < 50 (RPE avg 5.0–7.5)
+  // Umbral riesgo: salud < 25 (RPE avg > 7.5)
   let riskLevel, color;
-  if (salud >= 60) {
+  if (salud >= 50) {
     riskLevel = "optimo";
     color = "#1D9E75";
-  } else if (salud >= 30) {
+  } else if (salud >= 25) {
     riskLevel = "precaucion";
     color = "#EF9F27";
   } else {
@@ -204,8 +214,9 @@ export function calcSaludPlantel(athletes, historial = []) {
  * @param {number} salud - 0 a 100
  * @returns {string} color hex
  */
+// Umbrales sincronizados con calcSaludActual v2.1
 export function saludColor(salud) {
-  if (salud >= 60) return "#1D9E75";
-  if (salud >= 30) return "#EF9F27";
+  if (salud >= 50) return "#1D9E75";
+  if (salud >= 25) return "#EF9F27";
   return "#E24B4A";
 }

@@ -30,16 +30,18 @@ export const DEMO_ATHLETES = [
 ];
 
 export const DEMO_HISTORIAL = [
-  { num:14, fecha:"Mar 18 Mar", presentes:14, total:18, rpeAvg:7.2, tipo:"Tactica",      nota:"Buena respuesta al pressing alto."              },
-  { num:13, fecha:"Sab 15 Mar", presentes:16, total:18, rpeAvg:8.1, tipo:"Fisico",       nota:"Buena respuesta al trabajo de fuerza."           },
-  { num:12, fecha:"Jue 13 Mar", presentes:15, total:18, rpeAvg:6.4, tipo:"Recuperacion", nota:"Sesion suave post competencia."                  },
-  { num:11, fecha:"Mar 11 Mar", presentes:13, total:18, rpeAvg:9.2, tipo:"Partido",      nota:"Alta intensidad. Revisar carga semana proxima."  },
-  { num:10, fecha:"Sab 08 Mar", presentes:17, total:18, rpeAvg:7.8, tipo:"Fisico",       nota:"Excelente disposicion del grupo."                },
+  { num:14, fecha:"Mar 18 Mar", presentes:14, total:15, rpeAvg:7.2, tipo:"Tactica",      nota:"Buena respuesta al pressing alto."              },
+  { num:13, fecha:"Sab 15 Mar", presentes:13, total:15, rpeAvg:8.1, tipo:"Fisico",       nota:"Buena respuesta al trabajo de fuerza."           },
+  { num:12, fecha:"Jue 13 Mar", presentes:12, total:15, rpeAvg:6.4, tipo:"Recuperacion", nota:"Sesion suave post competencia."                  },
+  { num:11, fecha:"Mar 11 Mar", presentes:11, total:15, rpeAvg:9.2, tipo:"Partido",      nota:"Alta intensidad. Revisar carga semana proxima."  },
+  { num:10, fecha:"Sab 08 Mar", presentes:14, total:15, rpeAvg:7.8, tipo:"Fisico",       nota:"Excelente disposicion del grupo."                },
 ];
 
+// played = won + drawn + lost (constraint: 2 + 1 + 1 = 4)
+// 4 partidos coincide con DEMO_MATCH_REPORTS en elevateScore.js
 export const DEMO_MATCH_STATS = {
-  played: 5, won: 3, drawn: 1, lost: 1,
-  goalsFor: 12, goalsAgainst: 6, points: 10,
+  played: 4, won: 2, drawn: 1, lost: 1,
+  goalsFor: 8, goalsAgainst: 4, points: 7,
 };
 
 export const DEMO_CLUB_INFO = {
@@ -131,11 +133,12 @@ export const STORAGE_KEYS = [
   "elevate_matchStats",
   "elevate_finanzas",
   "elevate_mode",
-  "elevate_roles",
+  // "elevate_roles" — DEPRECATED: usar elevate_roles_v2. Mantenida solo para limpieza en logout.
   "elevate_roles_v2",
   "elevate_instructions",
   "elevate_tacticas",
   "elevate_healthSnapshots",
   "elevate_schema_version",
   "elevate_session",
+  "elevate_club_id",
 ];
