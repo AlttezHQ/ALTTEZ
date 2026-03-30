@@ -115,6 +115,7 @@ const FOOTER_LINKS = [
   { to: "/servicios/sports-crm", label: "Sports CRM",      exact: false },
   { to: "/journal",              label: "Journal",          exact: false },
   { to: "/contacto",             label: "Contacto",         exact: false },
+  { to: "/privacidad",           label: "Privacidad",        exact: false },
 ];
 
 function NavItem({ to, label, exact, onClick }) {

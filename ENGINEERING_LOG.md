@@ -6,6 +6,221 @@
 
 ---
 
+## 2026-03-28 — Prueba "Cero Callejones Sin Salida" — Auditoría de Navegación Completa
+**Por**: @QA (Sara)
+**Status**: REPORTE FINAL
+**Archivos auditados**: App.jsx, Home.jsx, PortalLayout.jsx, SportsCRMPage.jsx, GestionPlantilla.jsx, TacticalBoardV9.jsx, Planificacion.jsx, roles.js
+
+---
+
+### RESUMEN EJECUTIVO
+
+Se auditaron todas las rutas, módulos, tiles, KPIs, CTAs y botones de la aplicación.
+Se encontraron **4 dead-ends confirmados** y **2 advertencias de diseño** que degradan la experiencia del entrenador.
+
+Veredicto global: **CONDITIONAL GO-LIVE** — los dead-ends no crashean la app pero sí destruyen la confianza del usuario.
+
+---
+
+### 1. ROUTING — App.jsx
+
+**Estado**: APROBADO con observaciones.
+
+#### Rutas del portal (BrowserRouter)
+| Ruta | Componente | Estado |
+|------|-----------|--------|
+| `/` (index) | `PortalHome` | OK |
+| `/quienes-somos` | `QuienesSomos` | OK |
+| `/contacto` | `Contacto` | OK |
+| `/servicios/sports-crm` | `SportsCRMPage` | OK |
+| `/journal` | `JournalPage` | OK |
+| `/privacidad` | `PrivacyPolicy` | OK |
+| `/crm/*` | `CRMApp` | OK |
+
+**Todas las rutas declaradas tienen componente. No hay rutas muertas en el router.**
+
+#### Módulos del CRM (activeModule)
+| activeModule | Bloque renderizado | Estado |
+|-------------|-------------------|--------|
+| `home` | `<Home>` | OK |
+| `entrenamiento` | `<Entrenamiento>` | OK |
+| `plantilla` | `<GestionPlantilla>` | OK |
+| `miclub` | `<MiClub>` | OK |
+| `admin` | `<Administracion>` | OK |
+| `calendario` | `<Calendario>` | OK |
+| `partidos` | `<MatchCenter>` | OK |
+| `reportes` | `<Reportes>` (inline en App.jsx) | OK |
+
+**Todos los módulos tienen su bloque de renderizado. Sin módulos huérfanos.**
+
+#### MiniTopbar — botón "← Dashboard"
+`onClick={() => setActiveModule("home")}` presente en todos los módulos que usan MiniTopbar (línea 341, App.jsx). Funciona en: Entrenamiento, Plantilla, MiClub, Administración, Calendario, Match Center.
+
+**PROBLEMA**: el módulo `reportes` usa `<Reportes>` inline pero NO tiene `<MiniTopbar>`. El usuario que navega a Reportes desde el topbar de Home no tiene forma visible de regresar al Dashboard sin usar el topbar de Home. Ver dead-end #1.
+
+---
+
+### 2. PORTAL LAYOUT — PortalLayout.jsx
+
+**Estado**: APROBADO con 1 advertencia.
+
+#### Navbar desktop
+- "Quiénes Somos" → `/quienes-somos` — OK
+- "Servicios" dropdown → "Elevate Sports CRM" → `/servicios/sports-crm` — OK
+- "Servicios" dropdown → "Journal" → `/journal` — OK
+- "Servicios" dropdown → botón "Acceder al CRM" → `/crm` — OK
+- "Comunícate con nosotros" → `/contacto` — OK
+- Logo "ELEVATE" → `/` — OK
+- Botón "Acceder" (CTA navbar) → `/crm` — OK
+
+#### Mobile Drawer
+- "Quiénes Somos" — OK
+- "Servicios" (expansión inline) → Sports CRM y Journal — OK
+- "Comunícate" → `/contacto` — OK
+- Botón "Acceder al CRM" (pinned bottom) → `/crm` — OK
+
+#### Footer (FOOTER_LINKS)
+| Link | Ruta | Estado |
+|------|------|--------|
+| Home | `/` | OK |
+| Quiénes Somos | `/quienes-somos` | OK |
+| Sports CRM | `/servicios/sports-crm` | OK |
+| Journal | `/journal` | OK |
+| Contacto | `/contacto` | OK |
+
+**DEAD-END #1 — BLOCKER**: La ruta `/privacidad` existe y está registrada en `App.jsx` (línea 97), y la `LandingPage.jsx` enlaza a ella correctamente (línea 450). **Sin embargo, el footer del portal (`FOOTER_LINKS`, línea 112-118 de PortalLayout.jsx) no incluye el link a `/privacidad`**. Un usuario del portal no puede encontrar la política de privacidad sin pasar primero por el registro del CRM. Esto es un incumplimiento de Ley 1581 — la política debe ser accesible desde cualquier punto de entrada público.
+
+---
+
+### 3. SPORTS CRM PAGE — SportsCRMPage.jsx
+
+**Estado**: APROBADO.
+
+- Botón "Acceder al CRM" (línea 253) → `navigate("/crm")` — OK
+- Botón "Iniciar Demo Gratis" (línea 267) → `navigate("/crm?demo=true")` — OK, activa `handleDemo()` via el `useEffect` de auto-demo en App.jsx (línea 299).
+- Botón "Probar Demo Gratis" (bottom CTA, línea 345) → `navigate("/crm?demo=true")` — OK
+
+**Sin dead-ends en esta página.**
+
+---
+
+### 4. HOME DASHBOARD — Home.jsx
+
+**Estado**: APROBADO con 1 advertencia.
+
+#### NAV_ITEMS del topbar
+| key | navigable | Destino | Estado |
+|-----|-----------|---------|--------|
+| home | false | (sin acción, es la vista actual) | OK — intencional |
+| entrenamiento | true | `onNavigate("entrenamiento")` | OK |
+| plantilla | true | `onNavigate("plantilla")` | OK |
+| calendario | true | `onNavigate("calendario")` | OK |
+| admin | true | `onNavigate("admin")` | OK |
+| reportes | true | `onNavigate("reportes")` | OK — pero ver dead-end #1 |
+| miclub | true | `onNavigate("miclub")` | OK |
+
+**AUSENTE**: `partidos` (Match Center) no está en `NAV_ITEMS`. La única forma de acceder al módulo Match Center desde Home es el tile de la fila 3 (líneas 643-685). El topbar nunca muestra "Partidos". Esto es una asimetría con los otros módulos. Ver advertencia A1.
+
+#### KPIs (METRICS)
+| Métrica | Ruta | Estado |
+|---------|------|--------|
+| Deportistas | `onNavigate("plantilla")` | OK |
+| Partidos | `onNavigate("partidos")` | OK |
+| Entrenamientos | `onNavigate("entrenamiento")` | OK |
+| Asistencia | `onNavigate("calendario")` | OK |
+
+**Todos los KPIs son clickeables y navegan correctamente.**
+
+#### Tiles del grid
+| Tile | Destino | Estado |
+|------|---------|--------|
+| Entrenamiento | `onNavigate("entrenamiento")` | OK |
+| Gestión de Plantilla | `onNavigate("plantilla")` | OK |
+| Próximo Evento | `onNavigate("calendario")` | OK |
+| Resumen del Ciclo (stats) | Sin onClick | INTENCIONAL — es solo display, no interactivo |
+| Oficina (Admin) | `onNavigate("admin")` | OK |
+| Match Center | `onNavigate("partidos")` | OK |
+| Calendario & RSVP | `onNavigate("calendario")` | OK |
+
+**Empty state** cuando no hay jugadores: botón "Ir a Plantilla" → `onNavigate("plantilla")` — OK.
+
+---
+
+### 5. BACK NAVIGATION — Consistencia por módulo
+
+| Módulo | MiniTopbar presente | Botón "← Dashboard" | Estado |
+|--------|--------------------|--------------------|--------|
+| Entrenamiento | SI | `setActiveModule("home")` | OK |
+| Gestión de Plantilla | SI | `setActiveModule("home")` | OK |
+| Mi Club | SI | `setActiveModule("home")` | OK |
+| Administración | SI | `setActiveModule("home")` | OK |
+| Calendario | SI | `setActiveModule("home")` | OK |
+| Match Center | SI | `setActiveModule("home")` | OK |
+| **Reportes** | **NO** | **AUSENTE** | **DEAD-END** |
+
+---
+
+### 6. BOTONES PLACEHOLDER / FUNCIONALIDAD FUTURA
+
+#### DEAD-END #2 — MAJOR
+**Archivo**: `src/components/GestionPlantilla.jsx`, línea 1076
+**Botón**: "Usar en partido →"
+**Comportamiento actual**: `showToast("Modulo 'Usar en partido' — Proximo en V9", "info")`
+**Problema**: El texto dice "V9" y ya estamos en código que hace referencia a V9/V10. El mensaje de versión está desfasado y el botón no hace nada útil. El entrenador que quiere "usar la formación en partido" llega a un callejón sin salida con un toast que no le da ninguna acción alternativa.
+
+#### DEAD-END #3 — MAJOR
+**Archivo**: `src/components/TacticalBoardV9/TacticalBoardV9.jsx`, línea 792
+**Botón**: "Partido" (en la toolbar del TacticalBoard V9)
+**Comportamiento actual**: `showToast("Modulo 'Usar en partido' disponible en V10", "info")`
+**Problema**: Mismo callejón. El toast dice "V10" pero no hay navegación al MatchCenter ni ninguna acción alternativa. El entrenador no puede hacer nada desde ahí.
+
+#### DEAD-END #4 — CRITICAL
+**Archivo**: `src/components/Planificacion.jsx`, línea 458 y línea 464
+**Botones**: "Guardar planificación →" y "Usar como plantilla"
+
+"Guardar planificación": `onClick={() => alert("Planificación " + sessionId + " guardada")}` — Usa `alert()` nativo bloqueante. Esto viola la convención establecida en el proyecto (ver `src/components/Toast.jsx` que dice explícitamente "Reemplaza alert() bloqueante"). Adicionalmente, no guarda nada en ningún store (localStorage, historial, Supabase). Es un botón completamente falso que engaña al usuario con un alert vacío.
+
+"Usar como plantilla": sin `onClick`. Es un `<div>` clickeable sin ningún handler. El cursor cambia pero no ocurre nada. Dead-end puro.
+
+---
+
+### 7. ADVERTENCIAS
+
+#### Advertencia A1 — MINOR
+**Archivo**: `src/components/Home.jsx`, línea 144-152
+**Problema**: `NAV_ITEMS` no incluye `"partidos"` (Match Center). El módulo es accesible vía tile y vía KPI, pero no aparece en el topbar horizontal de navegación. Inconsistencia con todos los demás módulos.
+
+#### Advertencia A2 — MAJOR (Compliance)
+**Archivo**: `src/components/portal/PortalLayout.jsx`, líneas 112-118
+**Problema**: `FOOTER_LINKS` no incluye `/privacidad`. La Política de Privacidad es requerida por Ley 1581 y debe estar accesible desde todas las páginas públicas. Actualmente solo aparece en el flujo de registro del CRM.
+
+---
+
+### TABLA CONSOLIDADA DE DEAD-ENDS
+
+| # | Severidad | Archivo | Línea | Elemento | Comportamiento actual | Fix requerido |
+|---|-----------|---------|-------|----------|----------------------|---------------|
+| 1 | BLOCKER | PortalLayout.jsx | 112 | Footer — link Privacidad | Ausente | Agregar `{ to: "/privacidad", label: "Privacidad" }` a FOOTER_LINKS |
+| 2 | CRITICAL | Planificacion.jsx | 458 | Botón "Guardar planificación" | alert() falso, no persiste datos | Reemplazar con persistencia real o remover |
+| 3 | MAJOR | GestionPlantilla.jsx | 1076 | Botón "Usar en partido" | Toast "Próximo en V9" sin alternativa | Navegar a MatchCenter o deshabilitar con UI clara |
+| 4 | MAJOR | TacticalBoardV9.jsx | 792 | Botón "Partido" | Toast "V10" sin alternativa | Navegar a MatchCenter o deshabilitar con UI clara |
+| 5 | MAJOR | Planificacion.jsx | 464 | Botón "Usar como plantilla" | onClick ausente — no hace nada | Implementar o remover |
+| 6 | MAJOR | App.jsx / Home.jsx | 417-422 | Módulo Reportes sin MiniTopbar | Sin botón "← Dashboard" | Agregar MiniTopbar al bloque de Reportes |
+
+---
+
+### VEREDICTO
+
+**CONDITIONAL GO-LIVE** — con los siguientes remedios obligatorios antes de producción:
+
+1. **URGENTE**: Agregar `/privacidad` al footer del portal (1 línea de código).
+2. **URGENTE**: Reemplazar `alert()` en Planificacion.jsx con `showToast()` o eliminar el botón falso.
+3. **ANTES DE PRODUCCIÓN**: Agregar `<MiniTopbar>` al bloque de Reportes en App.jsx.
+4. **ANTES DE PRODUCCIÓN**: Los botones "Usar en partido" y "Partido" deben o redirigir al MatchCenter o mostrar un estado `disabled` con tooltip — no un toast que menciona versiones internas.
+5. **ANTES DE PRODUCCIÓN**: El botón "Usar como plantilla" debe tener handler o desaparecer.
+
+---
+
 ## 2026-03-28 — Auditoría de Dependencias, Seguridad y Archivos Basura
 **Por**: @QA (Sara)
 **Status**: REPORTE FINAL

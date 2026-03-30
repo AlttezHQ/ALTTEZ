@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import DOMPurify from "dompurify";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { showToast } from "./Toast";
 
 const SESSION_ID = () => `SES-${Date.now().toString(36).toUpperCase()}`;
 
@@ -455,13 +456,13 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
           <textarea value={charla} onChange={e=>setCharla(e.target.value)} rows={3} placeholder="Puntos clave para motivar al grupo..." style={{ ...inp, resize:"none" }}/>
         </div>
 
-        <div onClick={()=>alert(`Planificación ${sessionId} guardada`)} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
+        <div onClick={()=>showToast(`Planificación ${sessionId} guardada`, "success")} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
           Guardar planificación →
         </div>
         <div onClick={generarPDF} style={{ background:"#EF9F27", color:"#1a0f00", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
           Exportar PDF
         </div>
-        <div style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
+        <div onClick={()=>showToast("Plantilla guardada", "info")} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
           Usar como plantilla
         </div>
 
