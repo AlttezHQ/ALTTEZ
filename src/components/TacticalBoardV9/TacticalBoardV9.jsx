@@ -712,7 +712,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     <div style={{
       display:"flex", flexDirection:"column", height:"100%",
       background:"linear-gradient(180deg,#0a0f1a,#060a12)",
-      fontFamily:"'Arial Narrow',Arial,sans-serif", overflow:"hidden",
+      overflow:"hidden",
     }}>
 
       {/* ── TOPBAR: tabs + controles de campo ── */}

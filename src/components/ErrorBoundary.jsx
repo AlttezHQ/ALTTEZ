@@ -28,7 +28,6 @@ export default class ErrorBoundary extends Component {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontFamily: "'Arial Narrow', Arial, sans-serif",
           }}
         >
           <div

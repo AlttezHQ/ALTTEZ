@@ -115,7 +115,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
       minHeight: "100vh", display: "flex", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       background: "radial-gradient(ellipse at 50% 30%, rgba(200,255,0,0.04) 0%, #050a14 70%)",
-      fontFamily: "'Arial Narrow', Arial, sans-serif", padding: 24, position: "relative", zIndex: 2,
+      padding: 24, position: "relative", zIndex: 2,
     },
     logo: {
       fontSize: 48, fontWeight: 900, letterSpacing: "-2px", color: "white",

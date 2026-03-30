@@ -21,6 +21,80 @@ const TIEMPOS_TEORIA = (total) => ({
   tarea4: Math.round(total * 0.15),
 });
 
+// ── Export PDF Button ───────────────────────────────────────────────────────
+function ExportPDFButton({ onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed,  setPressed]  = useState(false);
+
+  const base = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "11px 14px",
+    fontSize: 10,
+    fontFamily: "inherit",
+    textTransform: "uppercase",
+    letterSpacing: "1.5px",
+    fontWeight: 600,
+    cursor: "pointer",
+    userSelect: "none",
+    border: "1px solid",
+    transition: "background 0.15s, box-shadow 0.15s, transform 0.1s",
+    marginTop: 6,
+    minHeight: 44,
+  };
+
+  const style = hovered
+    ? {
+        ...base,
+        background: "rgba(200,255,0,0.10)",
+        borderColor: "#c8ff00",
+        color: "#c8ff00",
+        boxShadow: "0 0 12px rgba(200,255,0,0.35), inset 0 0 8px rgba(200,255,0,0.05)",
+        transform: pressed ? "scale(0.97)" : "scale(1.01)",
+      }
+    : {
+        ...base,
+        background: "transparent",
+        borderColor: "rgba(200,255,0,0.35)",
+        color: "rgba(200,255,0,0.7)",
+        boxShadow: "none",
+        transform: pressed ? "scale(0.97)" : "scale(1)",
+      };
+
+  return (
+    <div
+      style={style}
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      role="button"
+      aria-label="Exportar planificación como PDF"
+    >
+      {/* Printer / document SVG icon */}
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="6 9 6 2 18 2 18 9" />
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+        <rect x="6" y="14" width="12" height="8" />
+      </svg>
+      Exportar PDF
+    </div>
+  );
+}
+
 export default function Planificacion({ athletes, clubInfo, sessionCount }) {
   const [sessionId] = useState(SESSION_ID());
   const [duracionTotal, setDuracionTotal] = useState(90);
@@ -95,99 +169,349 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
   };
 
   const generarPDF = () => {
-    const doc = new jsPDF();
-    const verde = [29, 158, 117];
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const PAGE_W = 210;
+    const PAGE_H = 297;
+    const MARGIN = 14;
+    const CONTENT_W = PAGE_W - MARGIN * 2;
 
-    doc.setFillColor(...verde);
-    doc.rect(0, 0, 210, 20, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    // ── Palette (RGB arrays for jsPDF) ────────────────────────────────────
+    const NEON     = [200, 255, 0];      // #c8ff00
+    const NEON_DIM = [200, 255, 0];      // used at low alpha via setDrawColor
+    const DARK     = [5,   10,  20];     // #050a14
+    const WHITE    = [255, 255, 255];
+    const GRAY_LT  = [240, 242, 236];    // alternating row
+    const GRAY_MID = [120, 120, 120];
+    const GREEN    = [29,  158, 117];    // semantic green for status
+    const AMBER    = [239, 159,  39];    // semantic amber for warnings
+    const DANGER   = [226,  75,  74];    // semantic red
+
+    const clubName = clubInfo?.nombre || clubInfo?.name || "Mi Club";
+    const today    = new Date().toLocaleDateString("es-ES", { day:"2-digit", month:"long", year:"numeric" });
+    const tiemposMins = [tiempos.tarea1, tiempos.tarea2, tiempos.tarea3, tiempos.tarea4];
+
+    // ── HEADER BAND ────────────────────────────────────────────────────────
+    doc.setFillColor(...DARK);
+    doc.rect(0, 0, PAGE_W, 30, "F");
+
+    // ES badge (neon box)
+    doc.setFillColor(0, 0, 0);
+    doc.setDrawColor(...NEON_DIM);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(MARGIN, 6, 14, 14, 2, 2, "FD");
+    doc.setTextColor(...NEON);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.text("Elevate Sports — Planificación de Sesión", 14, 13);
+    doc.text("ES", MARGIN + 7, 15.5, { align: "center" });
 
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(10);
+    // Club name + document title
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.text(clubName.toUpperCase(), 32, 13);
+
+    doc.setTextColor(...NEON);
+    doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
-    doc.text(`ID: ${sessionId}  |  Sesión #${sessionCount + 1}  |  Fecha: ${fecha}  |  Hora: ${hora}`, 14, 28);
-    doc.text(`Campo: ${campo}  |  Categoría: ${categoria}  |  Duración: ${duracionTotal} min`, 14, 35);
+    doc.text("PLANIFICACIÓN DE SESIÓN", 32, 19);
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Objetivos", 14, 46);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Técnico-tácticos: ${objTec || "—"}`, 14, 53);
-    doc.text(`Físicos: ${objFis || "—"}  |  Período: ${periodo}`, 14, 60);
+    // Session ID pill (top-right)
+    doc.setTextColor(180, 180, 180);
+    doc.setFontSize(7);
+    doc.text(`ID ${sessionId}  ·  Sesión #${sessionCount + 1}`, PAGE_W - MARGIN, 11, { align: "right" });
+    doc.text(`${fecha}  ·  ${hora}  ·  ${duracionTotal} min`, PAGE_W - MARGIN, 17, { align: "right" });
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Calentamiento", 14, 72);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`${warmupDesc || "Sin descripción"}  (${tiempos.warmup} min)`, 14, 79);
+    // Neon bottom line of header
+    doc.setDrawColor(...NEON);
+    doc.setLineWidth(0.4);
+    doc.line(0, 30, PAGE_W, 30);
 
-    autoTable(doc, {
-      startY: 88,
-      head: [["Tarea","Objetivo","Descripción","Series","Tiempo","Rep.","Min"]],
-      body: tareas.map((t, i) => [
-        `Tarea ${i + 1}`,
-        t.objetivo || "—",
-        t.descripcion || "—",
-        t.series || "—",
-        t.tiempo || "—",
-        t.repeticiones || "—",
-        [tiempos.tarea1, tiempos.tarea2, tiempos.tarea3, tiempos.tarea4][i],
-      ]),
-      headStyles: { fillColor: verde, textColor: 255, fontSize: 9, fontStyle:"bold" },
-      bodyStyles: { fontSize: 9 },
-      alternateRowStyles: { fillColor: [245, 250, 245] },
-      margin: { left: 14, right: 14 },
-    });
-
-    const y = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Material necesario", 14, y);
-    autoTable(doc, {
-      startY: y + 4,
-      head: [["Material","Cantidad"]],
-      body: materiales.map(m => [m.nombre, m.cantidad]),
-      headStyles: { fillColor: verde, textColor: 255, fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      margin: { left: 14, right: 14 },
-      tableWidth: 80,
-    });
-
-    const y2 = doc.lastAutoTable.finalY + 10;
-    const jugSeleccionados = athletes.filter(a => selectedPlayers.includes(a.id));
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("Jugadores convocados", 14, y2);
-    autoTable(doc, {
-      startY: y2 + 4,
-      head: [["Nombre","Posición","Estado"]],
-      body: jugSeleccionados.map(a => [a.name, a.pos, a.status==="P"?"Disponible":a.status==="L"?"Lesionado":"Ausente"]),
-      headStyles: { fillColor: verde, textColor: 255, fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      margin: { left: 14, right: 14 },
-    });
-
-    const y3 = doc.lastAutoTable.finalY + 10;
-    if (notas) {
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Notas del entrenador:", 14, y3);
+    // ── META ROW ─────────────────────────────────────────────────────────
+    let curY = 38;
+    const metaPairs = [
+      ["Campo",     campo],
+      ["Categoría", categoria],
+      ["Período",   periodo],
+    ];
+    doc.setFontSize(8);
+    const colW = CONTENT_W / metaPairs.length;
+    metaPairs.forEach(([label, value], idx) => {
+      const x = MARGIN + idx * colW;
+      doc.setTextColor(...GRAY_MID);
       doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(notas, 180);
-      doc.text(lines, 14, y3 + 6);
+      doc.text(label.toUpperCase(), x, curY - 3);
+      doc.setTextColor(30, 30, 30);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(value || "—", x, curY + 3);
+      doc.setFontSize(8);
+    });
+
+    // separator
+    curY += 10;
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, curY, PAGE_W - MARGIN, curY);
+
+    // ── OBJETIVOS ─────────────────────────────────────────────────────────
+    curY += 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...DARK);
+    doc.text("OBJETIVOS", MARGIN, curY);
+    doc.setDrawColor(...NEON);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, curY + 1.5, MARGIN + 22, curY + 1.5);
+
+    curY += 7;
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "bold");
+    doc.text("Técnico-táctico:", MARGIN, curY);
+    doc.setFont("helvetica", "normal");
+    const objTecLines = doc.splitTextToSize(objTec || "—", CONTENT_W - 35);
+    doc.text(objTecLines, MARGIN + 34, curY);
+
+    curY += 6;
+    doc.setFont("helvetica", "bold");
+    doc.text("Físico:", MARGIN, curY);
+    doc.setFont("helvetica", "normal");
+    const objFisLines = doc.splitTextToSize(objFis || "—", CONTENT_W - 35);
+    doc.text(objFisLines, MARGIN + 34, curY);
+
+    curY += 10;
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    doc.line(MARGIN, curY, PAGE_W - MARGIN, curY);
+
+    // ── CALENTAMIENTO ─────────────────────────────────────────────────────
+    curY += 8;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...DARK);
+    doc.text("CALENTAMIENTO", MARGIN, curY);
+    doc.setDrawColor(...NEON);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, curY + 1.5, MARGIN + 36, curY + 1.5);
+
+    curY += 7;
+    doc.setFillColor(...GRAY_LT);
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    // left accent bar in neon
+    doc.setFillColor(...NEON);
+    doc.rect(MARGIN, curY - 3, 1.5, 8, "F");
+    doc.setFillColor(245, 248, 240);
+    doc.rect(MARGIN + 1.5, curY - 3, CONTENT_W - 1.5, 8, "F");
+
+    doc.setFontSize(8.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(40, 40, 40);
+    const warmLines = doc.splitTextToSize(warmupDesc || "Sin descripción de calentamiento.", CONTENT_W - 20);
+    doc.text(warmLines, MARGIN + 5, curY + 1.5);
+    doc.setTextColor(...GRAY_MID);
+    doc.text(`${tiempos.warmup} min`, PAGE_W - MARGIN, curY + 1.5, { align: "right" });
+
+    curY += 14;
+
+    // ── TAREAS TABLE ──────────────────────────────────────────────────────
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...DARK);
+    doc.text("TAREAS DE LA SESIÓN", MARGIN, curY);
+    doc.setDrawColor(...NEON);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, curY + 1.5, MARGIN + 46, curY + 1.5);
+    curY += 5;
+
+    const TASK_COLORS_RGB = [
+      [29,  158, 117],  // tarea 1 — green
+      [239, 159,  39],  // tarea 2 — amber
+      [127, 119, 221],  // tarea 3 — purple
+      [226,  75,  74],  // tarea 4 — danger
+    ];
+
+    autoTable(doc, {
+      startY: curY,
+      head: [["#", "Objetivo", "Descripción / Notas", "Series", "Tiempo", "Rep.", "Min"]],
+      body: tareas.map((t, i) => [
+        `T${i + 1}`,
+        t.objetivo     || "—",
+        t.descripcion  || "—",
+        t.series       || "—",
+        t.tiempo       || "—",
+        t.repeticiones || "—",
+        `${tiemposMins[i]} min`,
+      ]),
+      headStyles: {
+        fillColor: DARK,
+        textColor: NEON,
+        fontSize: 8,
+        fontStyle: "bold",
+        lineWidth: 0,
+      },
+      bodyStyles: { fontSize: 8.5, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GRAY_LT },
+      columnStyles: {
+        0: { cellWidth: 8,  halign: "center", fontStyle: "bold" },
+        1: { cellWidth: 35 },
+        2: { cellWidth: "auto" },
+        3: { cellWidth: 14, halign: "center" },
+        4: { cellWidth: 14, halign: "center" },
+        5: { cellWidth: 10, halign: "center" },
+        6: { cellWidth: 14, halign: "center" },
+      },
+      margin: { left: MARGIN, right: MARGIN },
+      // Color the first column per task row
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 0) {
+          const rgb = TASK_COLORS_RGB[data.row.index];
+          if (rgb) {
+            data.cell.styles.fillColor = rgb;
+            data.cell.styles.textColor = [255, 255, 255];
+          }
+        }
+      },
+    });
+
+    curY = doc.lastAutoTable.finalY + 10;
+
+    // ── MATERIAL + JUGADORES (two columns) ────────────────────────────────
+    const COL_LEFT_W  = 72;
+    const COL_RIGHT_W = CONTENT_W - COL_LEFT_W - 6;
+    const COL_RIGHT_X = MARGIN + COL_LEFT_W + 6;
+
+    // — Material
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...DARK);
+    doc.text("MATERIAL", MARGIN, curY);
+    doc.setDrawColor(...NEON);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, curY + 1.5, MARGIN + 18, curY + 1.5);
+
+    autoTable(doc, {
+      startY: curY + 4,
+      head: [["Material", "Cant."]],
+      body: materiales.map(m => [m.nombre, m.cantidad]),
+      headStyles: { fillColor: DARK, textColor: NEON, fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8.5, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GRAY_LT },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 18, halign: "center" },
+      },
+      margin: { left: MARGIN, right: COL_RIGHT_X },
+      tableWidth: COL_LEFT_W,
+    });
+
+    // — Jugadores
+    const jugSeleccionados = athletes.filter(a => selectedPlayers.includes(a.id));
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...DARK);
+    doc.text(`JUGADORES CONVOCADOS (${jugSeleccionados.length})`, COL_RIGHT_X, curY);
+    doc.setDrawColor(...NEON);
+    doc.line(COL_RIGHT_X, curY + 1.5, COL_RIGHT_X + 52, curY + 1.5);
+
+    autoTable(doc, {
+      startY: curY + 4,
+      head: [["Nombre", "Pos.", "Estado"]],
+      body: jugSeleccionados.map(a => [
+        a.name,
+        a.pos,
+        a.status === "P" ? "Disponible" : a.status === "L" ? "Lesionado" : "Ausente",
+      ]),
+      headStyles: { fillColor: DARK, textColor: NEON, fontSize: 8, fontStyle: "bold" },
+      bodyStyles: { fontSize: 8.5, textColor: [30, 30, 30] },
+      alternateRowStyles: { fillColor: GRAY_LT },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 16, halign: "center" },
+        2: { cellWidth: 22, halign: "center" },
+      },
+      margin: { left: COL_RIGHT_X, right: MARGIN },
+      tableWidth: COL_RIGHT_W,
+      // Status color coding
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 2) {
+          const val = data.cell.raw;
+          if (val === "Lesionado") data.cell.styles.textColor = AMBER;
+          else if (val === "Ausente") data.cell.styles.textColor = DANGER;
+          else data.cell.styles.textColor = GREEN;
+        }
+      },
+    });
+
+    const yAfterTables = Math.max(doc.lastAutoTable.finalY, doc.previousAutoTable?.finalY || 0) + 10;
+    curY = yAfterTables;
+
+    // ── NOTAS + CHARLA ─────────────────────────────────────────────────────
+    if (notas || charla) {
+      const notasText  = notas  ? doc.splitTextToSize(notas,  CONTENT_W - 4) : null;
+      const charlaText = charla ? doc.splitTextToSize(charla, CONTENT_W - 4) : null;
+      const blockH =
+        (notasText  ? notasText.length  * 4.5 + 14 : 0) +
+        (charlaText ? charlaText.length * 4.5 + 14 : 0);
+
+      // page break guard
+      if (curY + blockH > PAGE_H - 20) {
+        doc.addPage();
+        curY = 20;
+      }
+
+      if (notasText) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...DARK);
+        doc.text("OBSERVACIONES DEL ENTRENADOR", MARGIN, curY);
+        doc.setDrawColor(...NEON);
+        doc.setLineWidth(0.5);
+        doc.line(MARGIN, curY + 1.5, MARGIN + 60, curY + 1.5);
+        curY += 7;
+        doc.setFontSize(8.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(40, 40, 40);
+        doc.text(notasText, MARGIN + 2, curY);
+        curY += notasText.length * 4.5 + 8;
+      }
+
+      if (charlaText) {
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...DARK);
+        doc.text("CHARLA PREVIA AL EQUIPO", MARGIN, curY);
+        doc.setDrawColor(...NEON);
+        doc.setLineWidth(0.5);
+        doc.line(MARGIN, curY + 1.5, MARGIN + 52, curY + 1.5);
+        curY += 7;
+        doc.setFontSize(8.5);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(40, 40, 40);
+        doc.text(charlaText, MARGIN + 2, curY);
+        curY += charlaText.length * 4.5 + 8;
+      }
     }
 
-    doc.setFontSize(8);
-    doc.setTextColor(150,150,150);
-    doc.text(`Elevate Sports — ${sessionId}`, 14, 290);
-    doc.text(`Página 1`, 196, 290, { align:"right" });
+    // ── FOOTER ─────────────────────────────────────────────────────────────
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      // neon separator line
+      doc.setDrawColor(...NEON);
+      doc.setLineWidth(0.4);
+      doc.line(MARGIN, PAGE_H - 12, PAGE_W - MARGIN, PAGE_H - 12);
+      // footer text
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...GRAY_MID);
+      doc.text(`Generado por Elevate Sports — ${today}`, MARGIN, PAGE_H - 7);
+      doc.text(`${sessionId}  ·  Página ${p} de ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 7, { align: "right" });
+    }
 
     doc.save(`planificacion-${sessionId}.pdf`);
+    showToast("PDF generado correctamente", "success");
   };
 
   const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"7px 10px", fontSize:11, color:"white", fontFamily:"inherit", outline:"none", width:"100%" };
@@ -459,9 +783,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         <div onClick={()=>showToast(`Planificación ${sessionId} guardada`, "success")} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
           Guardar planificación →
         </div>
-        <div onClick={generarPDF} style={{ background:"#EF9F27", color:"#1a0f00", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
-          Exportar PDF
-        </div>
+        <ExportPDFButton onClick={generarPDF} />
         <div onClick={()=>showToast("Plantilla guardada", "info")} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
           Usar como plantilla
         </div>

@@ -186,7 +186,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
 
   // ── Styles ──
   const css = {
-    container: { padding: 16, fontFamily: "'Arial Narrow', Arial, sans-serif" },
+    container: { padding: 16 },
     tabs: { display: "flex", gap: 0, marginBottom: 16, borderBottom: `1px solid rgba(255,255,255,0.06)`, background: "rgba(8,8,14,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", boxShadow: "0 2px 12px rgba(0,0,0,0.4)" },
     tab: (active) => ({
       padding: "12px 24px",
