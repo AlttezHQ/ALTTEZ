@@ -513,38 +513,38 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
 
     if (event.type === "partido") {
       mensajeTexto =
-        `⚽ *CONVOCATORIA OFICIAL*\n` +
+        `*CONVOCATORIA OFICIAL*\n` +
         `*${titulo}*\n` +
-        `━━━━━━━━━━━━━━━\n` +
-        `📅 ${fecha}\n` +
-        `🕐 ${hora} hrs\n` +
-        `📍 ${ubicacion}\n` +
-        `━━━━━━━━━━━━━━━\n` +
-        `Confirma tu disponibilidad a la brevedad. Tu respuesta es parte de la preparación del equipo.\n\n` +
-        `_Cuerpo Técnico — ${titulo}_`;
+        `---\n` +
+        `Fecha: ${fecha}\n` +
+        `Hora: ${hora} hrs\n` +
+        `Lugar: ${ubicacion}\n` +
+        `---\n` +
+        `Confirma tu disponibilidad a la brevedad. Tu respuesta es parte de la preparacion del equipo.\n\n` +
+        `_Cuerpo Tecnico - ${titulo}_`;
     } else if (event.type === "entrenamiento") {
       mensajeTexto =
-        `🏋️ *SESIÓN DE ENTRENAMIENTO*\n` +
+        `*SESION DE ENTRENAMIENTO*\n` +
         `*${titulo}*\n` +
-        `━━━━━━━━━━━━━━━\n` +
-        `📅 ${fecha}\n` +
-        `🕐 ${hora} hrs\n` +
-        `📍 ${ubicacion}\n` +
-        `━━━━━━━━━━━━━━━\n` +
+        `---\n` +
+        `Fecha: ${fecha}\n` +
+        `Hora: ${hora} hrs\n` +
+        `Lugar: ${ubicacion}\n` +
+        `---\n` +
         `Confirma tu asistencia. La puntualidad y presencia son parte del rendimiento.\n\n` +
-        `_Cuerpo Técnico — ${titulo}_`;
+        `_Cuerpo Tecnico - ${titulo}_`;
     } else {
       // club — institucional
       mensajeTexto =
-        `🏛️ *EVENTO INSTITUCIONAL*\n` +
+        `*EVENTO INSTITUCIONAL*\n` +
         `*${titulo}*\n` +
-        `━━━━━━━━━━━━━━━\n` +
-        `📅 ${fecha}\n` +
-        `🕐 ${hora} hrs\n` +
-        `📍 ${ubicacion}\n` +
-        `━━━━━━━━━━━━━━━\n` +
-        `Se espera tu participación. Confirma tu asistencia a la brevedad.\n\n` +
-        `_${titulo} — Elevate Sports_`;
+        `---\n` +
+        `Fecha: ${fecha}\n` +
+        `Hora: ${hora} hrs\n` +
+        `Lugar: ${ubicacion}\n` +
+        `---\n` +
+        `Se espera tu participacion. Confirma tu asistencia a la brevedad.\n\n` +
+        `_${titulo} - Elevate Sports_`;
     }
 
     const mensaje = encodeURIComponent(mensajeTexto);
