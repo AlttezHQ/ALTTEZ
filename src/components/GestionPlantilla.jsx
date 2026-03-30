@@ -244,11 +244,23 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
 function PlayerEditPanel({ athlete, onUpdate, onClose }) {
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft]       = useState({ ...athlete });
+  const photoInputRef            = useRef(null);
+
+  /** Convierte la imagen seleccionada a base64 y la guarda en draft */
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setDraft(prev => ({ ...prev, photo: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   if (!athlete) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", color: PALETTE.textHint, gap:12 }}>
       <div style={{ fontSize:28, opacity:0.3 }}>👤</div>
-      <div style={{ fontSize:11, textTransform:"uppercase", letterSpacing:"1.5px" }}>Selecciona un jugador</div>
+      <div style={{ fontSize:11, textTransform:"uppercase", letterSpacing:"1.5px" }}>Selecciona un deportista</div>
     </div>
   );
 
@@ -289,15 +301,38 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
   };
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100%", overflowY:"auto" }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"100%", overflowY:"auto", minHeight:0 }}>
 
       {/* Header del panel */}
       <div style={{ padding:"14px 16px", background:"linear-gradient(135deg,rgba(14,14,24,0.97),rgba(8,8,16,0.99))", borderBottom:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"flex-start", gap:12 }}>
-        <img
-          src={getAvatarUrl(draft.photo)}
-          alt={draft.name}
-          style={{ width:64, height:64, borderRadius:"50%", border:`2px solid ${PALETTE.neon}`, objectFit:"cover", flexShrink:0, boxShadow:`0 0 16px rgba(57,255,20,0.35),0 4px 12px rgba(0,0,0,0.6)` }}
-        />
+        {/* Avatar con overlay de cambio de foto en editMode */}
+        <div
+          style={{ position:"relative", flexShrink:0, cursor: editMode ? "pointer" : "default" }}
+          onClick={() => editMode && photoInputRef.current?.click()}
+        >
+          <img
+            src={getAvatarUrl(draft.photo)}
+            alt={draft.name}
+            style={{ width:64, height:64, borderRadius:"50%", border:`2px solid ${editMode ? PALETTE.purple : PALETTE.neon}`, objectFit:"cover", display:"block", boxShadow: editMode ? `0 0 16px rgba(139,92,246,0.45),0 4px 12px rgba(0,0,0,0.6)` : `0 0 16px rgba(57,255,20,0.35),0 4px 12px rgba(0,0,0,0.6)`, transition:"border-color 200ms, box-shadow 200ms" }}
+          />
+          {editMode && (
+            <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:"rgba(0,0,0,0.55)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke={PALETTE.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="13" r="4" stroke={PALETTE.purple} strokeWidth="2"/>
+              </svg>
+              <span style={{ fontSize:7, color: PALETTE.purple, textTransform:"uppercase", letterSpacing:"0.5px", fontWeight:700, lineHeight:1 }}>Cambiar</span>
+            </div>
+          )}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            style={{ display:"none" }}
+            tabIndex={-1}
+          />
+        </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:15, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px", lineHeight:1.1 }}>{draft.name}</div>
           <div style={{ fontSize:10, color: PALETTE.neon, textTransform:"uppercase", letterSpacing:"1px", marginTop:3 }}>{draft.pos}</div>
@@ -339,7 +374,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
       {/* Ficha editable */}
       <div style={{ padding:"12px 16px", flex:1 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <div style={sectionTitle}>Información del jugador</div>
+          <div style={sectionTitle}>Ficha del deportista</div>
           {!editMode && (
             <div
               onClick={() => setEditMode(true)}
@@ -442,6 +477,7 @@ const POS_OPTIONS = [
 const EMPTY_DRAFT = {
   nombre: "", apellido: "", posCode: "ST",
   dorsal: "", dob: "", contacto: "", documento: "",
+  photo: null,
 };
 
 /**
@@ -454,6 +490,18 @@ function AddAthleteModal({ onClose, onSave }) {
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const photoInputRef        = useRef(null);
+
+  /** Convierte imagen a base64 y guarda en draft.photo */
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setDraft(prev => ({ ...prev, photo: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const set = (field) => (e) => {
     const value = (field === "dob")
@@ -489,6 +537,7 @@ function AddAthleteModal({ onClose, onSave }) {
       dob:                draft.dob || null,
       contact:            sanitizeTextFinal(draft.contacto) || "",
       documento_identidad: sanitizeTextFinal(draft.documento) || "",
+      photo:              draft.photo || null,
       status:             "P",
       available:          true,
       goals:              0,
@@ -550,6 +599,8 @@ function AddAthleteModal({ onClose, onSave }) {
           borderTop: `2px solid ${PALETTE.neon}`,
           borderRadius: 10,
           width: "100%", maxWidth: 520,
+          maxHeight: "calc(100vh - 48px)",
+          overflowY: "auto",
           boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
         }}
       >
@@ -561,10 +612,10 @@ function AddAthleteModal({ onClose, onSave }) {
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: PALETTE.text }}>
-              Agregar deportista
+              Incorporar deportista
             </div>
             <div style={{ fontSize: 9, color: PALETTE.textHint, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 3 }}>
-              Nuevo registro en el plantel
+              Nuevo registro en la plantilla
             </div>
           </div>
           <div
@@ -577,6 +628,44 @@ function AddAthleteModal({ onClose, onSave }) {
 
         {/* Body */}
         <div className="modal-fullscreen-body" style={{ padding: "22px 24px", display: "flex", flexDirection: "column", gap: 18 }}>
+
+          {/* Foto del deportista */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
+            <div
+              style={{ position:"relative", cursor:"pointer" }}
+              onClick={() => photoInputRef.current?.click()}
+            >
+              <img
+                src={getAvatarUrl(draft.photo)}
+                alt="foto del deportista"
+                style={{ width:72, height:72, borderRadius:"50%", objectFit:"cover", border:`2px solid ${draft.photo ? PALETTE.purple : "rgba(255,255,255,0.15)"}`, display:"block", boxShadow: draft.photo ? `0 0 18px rgba(139,92,246,0.4),0 4px 12px rgba(0,0,0,0.6)` : "0 4px 12px rgba(0,0,0,0.5)", transition:"border-color 250ms, box-shadow 250ms" }}
+              />
+              <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:"rgba(0,0,0,0.45)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke={PALETTE.purple} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="13" r="4" stroke={PALETTE.purple} strokeWidth="2"/>
+                </svg>
+                <span style={{ fontSize:7, color: PALETTE.purple, textTransform:"uppercase", letterSpacing:"0.5px", fontWeight:700, lineHeight:1 }}>Foto</span>
+              </div>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={{ display:"none" }}
+                tabIndex={-1}
+              />
+            </div>
+            <motion.div
+              onClick={() => photoInputRef.current?.click()}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              style={{ fontSize:9, padding:"4px 14px", cursor:"pointer", textTransform:"uppercase", letterSpacing:"1px", border:`1px solid ${PALETTE.purple}`, color: PALETTE.purple, borderRadius:20, background:"rgba(139,92,246,0.06)", fontWeight:600, minHeight:28, display:"flex", alignItems:"center" }}
+            >
+              {draft.photo ? "Cambiar foto" : "Subir foto"}
+            </motion.div>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={labelStyle(!!errors.nombre)}>Nombre *</label>
@@ -657,9 +746,9 @@ function AddAthleteModal({ onClose, onSave }) {
                   animation: "spin 0.8s linear infinite",
                 }} />
                 <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-                Guardando...
+                Registrando...
               </>
-            ) : "Guardar deportista"}
+            ) : "Confirmar registro"}
           </motion.div>
           <div
             onClick={onClose}
@@ -745,7 +834,7 @@ function BulkUploaderModal({ onClose, onSaveAll }) {
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: PALETTE.text }}>
-            Importar deportistas desde CSV
+            Carga masiva de plantilla — CSV
           </div>
           <div onClick={onClose} style={{ fontSize: 16, color: PALETTE.textMuted, cursor: "pointer", padding: "2px 8px" }}>✕</div>
         </div>
@@ -802,7 +891,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
         {/* Controles de filtro, orden y acciones */}
         <div style={{ padding:"9px 12px", background:"rgba(6,6,12,0.96)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
           <div style={{ fontSize:9, color: PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"1px" }}>
-            {displayedAthletes.length} jugadores
+            {displayedAthletes.length} deportistas
           </div>
           <div style={{ display:"flex", gap:6 }}>
             {[["all","Todos"],["P","Disponibles"],["L","Lesionados"],["A","Ausentes"]].map(([v,l]) => (
@@ -851,7 +940,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="#0a0a0a" strokeWidth="2.5" strokeLinecap="round"/>
               </svg>
-              Agregar deportista
+              Incorporar deportista
             </motion.div>
           </div>
         </div>
@@ -943,7 +1032,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
           initial="initial"
           animate="animate"
           exit="exit"
-          style={{ background:"linear-gradient(180deg,rgba(12,12,22,0.99),rgba(8,8,16,0.99))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderLeft:`1px solid rgba(255,255,255,0.06)`, boxShadow:"-4px 0 24px rgba(0,0,0,0.4)" }}
+          style={{ background:"linear-gradient(180deg,rgba(12,12,22,0.99),rgba(8,8,16,0.99))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderLeft:`1px solid rgba(255,255,255,0.06)`, boxShadow:"-4px 0 24px rgba(0,0,0,0.4)", overflow:"hidden", display:"flex", flexDirection:"column", minHeight:0 }}
         >
           <PlayerEditPanel
             athlete={selectedAthlete}

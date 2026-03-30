@@ -399,9 +399,9 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
   };
 
   const METRICS = [
-    { label:"Deportistas",    value:athletes.length,        icon:Icon.Users, route:"plantilla" },
+    { label:"Plantilla",      value:athletes.length,        icon:Icon.Users, route:"plantilla" },
     { label:"Partidos",       value:matchStats.played,      icon:Icon.Ball,  route:"partidos" },
-    { label:"Entrenamientos", value:stats.sesiones,         icon:Icon.Train, route:"entrenamiento" },
+    { label:"Sesiones",       value:stats.sesiones,         icon:Icon.Train, route:"entrenamiento" },
     { label:"Asistencia",     value:stats.asistencia + "%", icon:Icon.Chart, route:"calendario" },
   ];
 
@@ -499,9 +499,9 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             }
-            title="Bienvenido a Elevate Sports"
-            subtitle="Comienza agregando deportistas a tu plantilla para desbloquear todas las metricas y funciones del dashboard"
-            actionLabel="Ir a Plantilla"
+            title="Tu plantilla esta vacia"
+            subtitle="Incorpora deportistas a la plantilla para activar el seguimiento de carga, el control de asistencia y los analytics de rendimiento"
+            actionLabel="Registrar primer deportista"
             onAction={() => onNavigate("plantilla")}
             compact
           />
@@ -529,8 +529,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         >
           {(hov) => (
             <>
-              <div style={css.tag}>Módulo 01</div>
-              <div style={css.titleBig}>Entrenamiento</div>
+              <div style={css.titleMid}>Entrenamiento</div>
               <div style={css.btn(hov)}>Entrar →</div>
             </>
           )}
@@ -548,7 +547,6 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         >
           {(hov) => (
             <>
-              <div style={css.tag}>Módulo 02</div>
               <div style={css.titleMid}>Gestión de plantilla</div>
               <div style={css.btn(hov)}>Ver plantilla →</div>
             </>
@@ -633,8 +631,8 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           {(hov) => (
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", height:"100%", paddingBottom:4 }}>
               <div>
-                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Oficina</div>
-                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Administración y pagos</div>
+                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Finanzas</div>
+                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Salud financiera del club</div>
               </div>
               <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.purple : "rgba(127,119,221,0.4)", color: hov ? "white" : PALETTE.purple, transition:"color 200ms, border-color 200ms" }}>
                 Entrar →
@@ -670,7 +668,6 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
               </svg>
             </div>
             <div>
-              <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(127,119,221,0.7)", marginBottom:3 }}>Modulo 07</div>
               <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
                 Match Center
               </div>
@@ -679,7 +676,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           <div style={{ display:"flex", alignItems:"center", gap:24 }}>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Reportes · Player Cards · Analytics
+                Rendimiento · Player Cards · Analítica post-partido
               </div>
             </div>
             <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(127,119,221,0.4)`, color:PALETTE.purple }}>
@@ -719,7 +716,6 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
               </svg>
             </div>
             <div>
-              <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(200,255,0,0.6)", marginBottom:3 }}>Módulo 06</div>
               <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
                 Calendario & RSVP
               </div>
@@ -730,7 +726,7 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           <div style={{ display:"flex", alignItems:"center", gap:24 }}>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Partidos · Entrenamientos · Asistencia
+                Partidos · Entrenamiento · RSVP en tiempo real
               </div>
             </div>
             <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon }}>
