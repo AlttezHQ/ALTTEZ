@@ -1,0 +1,23 @@
+name: Schema Drift Check
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/**'
+      - 'src/constants/schemas.js'
+      - 'docs/SCHEMA_MODEL.json'
+
+jobs:
+  check-drift:
+    name: Schema Drift Detection
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run schema drift check
+        run: node scripts/check-schema-drift.js

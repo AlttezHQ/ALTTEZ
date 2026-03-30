@@ -1,0 +1,21 @@
+name: Algorithm Integrity
+
+on:
+  push:
+    paths:
+      - 'src/utils/**'
+
+jobs:
+  test-algorithms:
+    name: Algorithm Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run algorithm tests
+        run: node scripts/test-algorithms.js

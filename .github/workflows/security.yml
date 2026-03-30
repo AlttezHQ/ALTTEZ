@@ -1,0 +1,41 @@
+name: Security
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Lunes 8am UTC
+  push:
+    branches: [master]
+
+jobs:
+  audit:
+    name: NPM Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Audit (high severity)
+        run: npm audit --audit-level=high || true
+
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for hardcoded secrets
+        run: |
+          # Buscar patrones de API keys / secrets en src/
+          if grep -rn "sk_live\|sk_test\|AKIA\|password\s*=\s*['\"]" src/ --include="*.js" --include="*.jsx"; then
+            echo "SECRETS FOUND IN CODE"
+            exit 1
+          fi
+          echo "No secrets found"
