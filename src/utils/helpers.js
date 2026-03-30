@@ -8,13 +8,47 @@
  */
 
 /**
- * Genera URL de avatar DiceBear (Avataaars) para un jugador.
- * @param {string} seed - Semilla para generar el avatar (normalmente athlete.photo)
- * @param {string} [bg="059669"] - Color de fondo hex sin #
- * @returns {string} URL del avatar SVG
+ * Devuelve la URL de foto de un jugador usando randomuser.me como fuente de
+ * retratos realistas. La asignación es completamente determinista: el mismo
+ * valor de `photo` siempre produce la misma URL.
+ *
+ * Lógica de resolución (en orden de prioridad):
+ *  1. Si `photo` comienza con "data:" → imagen base64 subida por el usuario,
+ *     se devuelve tal cual.
+ *  2. Si `photo` comienza con "http"  → URL externa ya resuelta, se devuelve
+ *     tal cual.
+ *  3. Cualquier otro string (slug, nombre, etc.) → se convierte a un índice
+ *     determinista via hash djb2 y se mapea a un retrato de randomuser.me.
+ *  4. Valor falsy (null, undefined, "")  → retrato de fallback fijo (id 1).
+ *
+ * @param {string|null|undefined} photo - Slug, URL o base64 del jugador
+ * @param {string} [_bg] - Ignorado (legado dicebear, mantenido para
+ *   compatibilidad de llamadas existentes)
+ * @returns {string} URL de retrato JPEG
  */
-export const getAvatarUrl = (seed, bg = "059669") =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=${bg}`;
+export const getAvatarUrl = (photo, _bg) => {
+  // Caso 1 — base64 subida por el usuario
+  if (typeof photo === "string" && photo.startsWith("data:")) return photo;
+
+  // Caso 2 — URL externa ya resuelta
+  if (typeof photo === "string" && photo.startsWith("http")) return photo;
+
+  // Caso 3 — slug o nombre → hash djb2 determinista
+  if (photo) {
+    let hash = 5381;
+    for (let i = 0; i < photo.length; i++) {
+      hash = ((hash << 5) + hash) ^ photo.charCodeAt(i);
+      hash = hash >>> 0; // mantener sin signo
+    }
+    // Mapear al rango 1-50 de retratos masculinos de randomuser.me
+    // (rango probado, fotos de buena calidad y sin artefactos)
+    const id = (hash % 50) + 1;
+    return `https://randomuser.me/api/portraits/men/${id}.jpg`;
+  }
+
+  // Caso 4 — sin foto → retrato de fallback fijo
+  return "https://randomuser.me/api/portraits/men/1.jpg";
+};
 
 /**
  * Calcula la edad en anios a partir de una fecha de nacimiento.
