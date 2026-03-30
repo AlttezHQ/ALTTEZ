@@ -79,7 +79,7 @@ const SERVICES = [
   {
     to: "/journal",
     label: "Journal",
-    description: "Bitácora de evolución: seguimiento de lesiones, notas de partido y análisis técnico.",
+    description: "Bitácora del ecosistema: decisiones de producto, lanzamientos y análisis técnico del deporte LATAM.",
     tag: "Nuevo",
     tagColor: C.purple,
     icon: (
@@ -102,7 +102,7 @@ const LoadingFallback = () => (
         margin: "0 auto 12px",
       }} />
       <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
-        Cargando
+        Inicializando
       </div>
     </div>
   </div>
@@ -781,7 +781,7 @@ export default function PortalLayout() {
       }}>
         <div>
           <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>
-            Elevate &mdash; Transformando el deporte colombiano
+            Elevate &mdash; Inteligencia operativa para el deporte de alto rendimiento
           </div>
           <div style={{ fontSize: 10, color: C.textHint }}>
             &copy; 2026 Elevate Sports. Todos los derechos reservados.

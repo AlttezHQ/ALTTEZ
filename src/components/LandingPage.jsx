@@ -196,7 +196,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
         <div style={css.logo}>
           Elevate<span style={{ color: PALETTE.neon }}>Sports</span>
         </div>
-        <div style={css.subtitle}>Plataforma de gestion deportiva</div>
+        <div style={css.subtitle}>Sistema de inteligencia deportiva</div>
 
         <div style={css.cards}>
           {/* DEMO */}
@@ -206,13 +206,13 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
             onMouseLeave={() => setHoverDemo(false)}
             onClick={onDemo}
           >
-            <div style={css.cardTag(PALETTE.neon)}>Modo exploracion</div>
-            <div style={css.cardTitle}>Probar Demo</div>
+            <div style={css.cardTag(PALETTE.neon)}>Entorno demo</div>
+            <div style={css.cardTitle}>Explorar Demo</div>
             <div style={css.cardDesc}>
-              Explora la plataforma con datos simulados de un club de ejemplo.
-              Perfecto para conocer todas las funcionalidades sin configurar nada.
+              Accede al ecosistema con datos simulados de un club de alto rendimiento.
+              Sin configuración. Sin compromiso. Con toda la funcionalidad activa.
             </div>
-            <div style={css.btn(hoverDemo, PALETTE.neon)}>Iniciar demo →</div>
+            <div style={css.btn(hoverDemo, PALETTE.neon)}>Acceder al demo →</div>
           </div>
 
           {/* REGISTRO */}
@@ -223,12 +223,12 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
             onClick={() => setStep("register")}
           >
             <div style={css.cardTag(PALETTE.purple)}>Club real</div>
-            <div style={css.cardTitle}>Registrar Nuevo Club</div>
+            <div style={css.cardTitle}>Registrar Club</div>
             <div style={css.cardDesc}>
-              Configura tu club desde cero con datos reales.
-              Nombre, categorias, entrenador y todo lo necesario para arrancar.
+              Incorpora tu organización al ecosistema. Nombre, categorías, cuerpo técnico
+              y estructura operativa completa desde el primer día.
             </div>
-            <div style={css.btn(hoverReg, PALETTE.purple)}>Crear club →</div>
+            <div style={css.btn(hoverReg, PALETTE.purple)}>Incorporar club →</div>
           </div>
         </div>
 
@@ -267,8 +267,8 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           >
             ← Volver
           </div>
-          <div style={css.formTitle}>Registrar tu club</div>
-          <div style={css.formSubtitle}>Completa los datos para comenzar</div>
+          <div style={css.formTitle}>Incorporar tu club</div>
+          <div style={css.formSubtitle}>Datos operativos del club</div>
         </div>
 
         {/* Nombre + Disciplina */}
@@ -506,7 +506,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               transition: "all 0.2s ease",
             }}
           >
-            {loading ? "Creando cuenta..." : "Crear club y comenzar →"}
+            {loading ? "Registrando club..." : "Confirmar registro →"}
           </button>
         </div>
 
@@ -539,8 +539,8 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           >
             ← Volver
           </div>
-          <div style={css.formTitle}>Iniciar sesion</div>
-          <div style={css.formSubtitle}>Accede a tu club</div>
+          <div style={css.formTitle}>Acceder al ecosistema</div>
+          <div style={css.formSubtitle}>Credenciales del club</div>
         </div>
 
         <div style={css.fieldGroup}>
@@ -584,7 +584,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Ingresando..." : "Entrar →"}
+            {loading ? "Verificando..." : "Ingresar al CRM →"}
           </button>
         </div>
 
@@ -592,7 +592,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           onClick={() => { setStep("register"); setErrors({}); }}
           style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.4)", cursor: "pointer", textAlign: "center" }}
         >
-          No tengo cuenta → <span style={{ color: PALETTE.purple }}>Registrar club</span>
+          No tengo cuenta → <span style={{ color: PALETTE.purple }}>Incorporar club</span>
         </div>
       </div>
     </div>

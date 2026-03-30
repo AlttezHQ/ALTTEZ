@@ -158,7 +158,7 @@ function ArticleCard({ entry, index }) {
         color: accent, letterSpacing: "0.5px",
         display: "flex", alignItems: "center", gap: 6,
       }}>
-        Leer mas
+        Leer análisis completo
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
@@ -206,14 +206,14 @@ export default function JournalPage() {
             fontWeight: 800, color: "white", margin: "0 0 16px",
             fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
           }}>
-            Noticias y actualizaciones
+            Bitácora del ecosistema
           </h1>
           <p style={{
             fontSize: 15, color: C.textMuted, maxWidth: 550,
             margin: "0 auto", lineHeight: 1.7,
           }}>
-            Lo ultimo del ecosistema Elevate. Lanzamientos, alianzas
-            y el futuro del deporte colombiano.
+            Lo último del ecosistema Elevate. Lanzamientos, decisiones de producto
+            y el futuro de la gestión deportiva en LATAM.
           </p>
         </motion.div>
       </section>

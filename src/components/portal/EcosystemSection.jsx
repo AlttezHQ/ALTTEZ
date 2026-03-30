@@ -14,7 +14,7 @@ const PROJECTS = [
     name: "Elevate Sports CRM",
     slug: "sports-crm",
     status: "active",
-    description: "Gestion integral de clubes deportivos. Plantilla, entrenamiento, ciencia RPE, finanzas y pizarra tactica en una sola plataforma.",
+    description: "Sistema de gestion operativa para clubes de alto rendimiento. Plantilla, periodizacion del entrenamiento, ciencia RPE, salud financiera y pizarra tactica integradas en un solo ecosistema.",
     accent: C.neon,
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -34,7 +34,7 @@ const PROJECTS = [
     name: "Elevate Analytics",
     slug: "analytics",
     status: "coming_soon",
-    description: "Inteligencia deportiva avanzada. Prediccion de lesiones con machine learning y analisis de rendimiento en tiempo real.",
+    description: "Inteligencia deportiva de alto nivel. Prediccion de lesiones basada en machine learning, modelado de carga aguda/cronica y analisis de rendimiento individual en tiempo real.",
     accent: "#7C3AED",
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -48,7 +48,7 @@ const PROJECTS = [
     name: "Elevate Academy",
     slug: "academy",
     status: "coming_soon",
-    description: "Plataforma de formacion para entrenadores. Cursos, certificaciones y comunidad de conocimiento deportivo.",
+    description: "Plataforma de desarrollo profesional para cuerpos tecnicos. Cursos especializados, certificaciones y una comunidad de conocimiento tecnico-deportivo de alto rendimiento.",
     accent: "#EF9F27",
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -62,7 +62,7 @@ const PROJECTS = [
     name: "Elevate Connect",
     slug: "connect",
     status: "coming_soon",
-    description: "Red de conexion entre clubes, scouts y academias. Visibilidad para el talento emergente colombiano.",
+    description: "Red de inteligencia de mercado entre clubes, scouts y academias de LATAM. Visibilidad estrategica para el talento emergente colombiano.",
     accent: "#00e5ff",
     icon: (
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -154,7 +154,7 @@ function ElevatedCard({ project, index }) {
                     background: `${project.accent}15`, padding: "2px 8px",
                     borderRadius: 4, marginTop: 4, display: "inline-block",
                   }}>
-                    Proximamente
+                    En desarrollo
                   </span>
                 )}
                 {isActive && (

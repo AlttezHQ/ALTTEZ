@@ -469,9 +469,9 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
   const handleReminder = () => {
     const pendientes = convocadoAvail.pendientes;
     if (pendientes === 0) {
-      showToast("Todos los deportistas han respondido.", "info");
+      showToast("Plantilla completa. Todos los deportistas han confirmado su estado.", "info");
     } else {
-      showToast(`Recordatorio enviado a ${pendientes} deportista${pendientes !== 1 ? "s" : ""} con respuesta pendiente.`, "success");
+      showToast(`Recordatorio de convocatoria enviado a ${pendientes} deportista${pendientes !== 1 ? "s" : ""} sin confirmar.`, "success");
     }
   };
 
@@ -584,7 +584,7 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
         </div>
         {convocadoIds.length === 0 ? (
           <div style={{ fontSize: 11, color: C.textHint, textAlign: "center", padding: "20px 0" }}>
-            Sin deportistas en la plantilla. Agrega atletas para ver el RSVP.
+            La plantilla esta vacia. Incorpora deportistas al sistema para activar el RSVP.
           </div>
         ) : (
           athletes
@@ -641,7 +641,7 @@ function PanelEmpty() {
         Selecciona un evento
       </div>
       <div style={{ fontSize: 10, color: C.textHint, lineHeight: 1.5 }}>
-        Haz click sobre cualquier evento del calendario para ver los detalles y gestionar la asistencia del equipo.
+        Selecciona cualquier evento para gestionar la convocatoria, registrar disponibilidad y enviar recordatorios al plantel.
       </div>
     </motion.div>
   );

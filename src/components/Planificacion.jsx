@@ -319,7 +319,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...DARK);
-    doc.text("TAREAS DE LA SESIÓN", MARGIN, curY);
+    doc.text("ESTRUCTURA DE LA SESIÓN", MARGIN, curY);
     doc.setDrawColor(...NEON);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, curY + 1.5, MARGIN + 46, curY + 1.5);
@@ -411,7 +411,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...DARK);
-    doc.text(`JUGADORES CONVOCADOS (${jugSeleccionados.length})`, COL_RIGHT_X, curY);
+    doc.text(`DEPORTISTAS CONVOCADOS (${jugSeleccionados.length})`, COL_RIGHT_X, curY);
     doc.setDrawColor(...NEON);
     doc.line(COL_RIGHT_X, curY + 1.5, COL_RIGHT_X + 52, curY + 1.5);
 
@@ -465,7 +465,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...DARK);
-        doc.text("OBSERVACIONES DEL ENTRENADOR", MARGIN, curY);
+        doc.text("OBSERVACIONES DEL CUERPO TÉCNICO", MARGIN, curY);
         doc.setDrawColor(...NEON);
         doc.setLineWidth(0.5);
         doc.line(MARGIN, curY + 1.5, MARGIN + 60, curY + 1.5);
@@ -481,7 +481,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
         doc.setTextColor(...DARK);
-        doc.text("CHARLA PREVIA AL EQUIPO", MARGIN, curY);
+        doc.text("COMUNICACIÓN PREVIA A LA PLANTILLA", MARGIN, curY);
         doc.setDrawColor(...NEON);
         doc.setLineWidth(0.5);
         doc.line(MARGIN, curY + 1.5, MARGIN + 52, curY + 1.5);
@@ -526,7 +526,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
 
         {/* INFO SESIÓN */}
         <div style={panel}>
-          <div style={panelTitle}>Información de la sesión</div>
+          <div style={panelTitle}>Datos del microciclo</div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:10 }}>
             <div>
               <label style={lbl}>ID de sesión</label>
@@ -635,7 +635,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
 
         {/* TAREAS */}
         <div style={panel}>
-          <div style={panelTitle}>Tareas de la sesión</div>
+          <div style={panelTitle}>Estructura de la sesión</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             {tareas.map((t, i) => (
               <div key={i} style={{ border:"1px solid rgba(255,255,255,0.07)", overflow:"hidden" }}>
@@ -712,8 +712,8 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
 
         {/* JUGADORES */}
         <div style={panel}>
-          <div style={panelTitle}>Jugadores — {categoria}</div>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginBottom:10 }}>Selecciona quiénes participan</div>
+          <div style={panelTitle}>Plantilla — {categoria}</div>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginBottom:10 }}>Deportistas convocados para esta sesión</div>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
             <span style={{ fontSize:9, color:"#1D9E75" }}>{selectedPlayers.length} seleccionados</span>
             <div style={{ display:"flex", gap:10 }}>
@@ -744,7 +744,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
 
         {/* MATERIALES */}
         <div style={panel}>
-          <div style={panelTitle}>Material necesario</div>
+          <div style={panelTitle}>Material de sesión</div>
           {materiales.map((m,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
               <div style={{ flex:1, fontSize:11, color:"rgba(255,255,255,0.7)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", padding:"5px 10px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{m.nombre}</div>
@@ -753,7 +753,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
             </div>
           ))}
           <div style={{ marginTop:10, borderTop:"1px solid rgba(255,255,255,0.07)", paddingTop:10 }}>
-            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:6 }}>Agregar material</div>
+            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:6 }}>Registrar material</div>
             <div style={{ position:"relative", marginBottom:6 }}>
               <input value={newMat} onChange={e=>{setNewMat(e.target.value);setShowMatRec(true);}} onBlur={()=>setTimeout(()=>setShowMatRec(false),150)} placeholder="Nombre del material..." style={inp}/>
               {showMatRec && newMat && (
@@ -766,26 +766,26 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
             </div>
             <div style={{ display:"flex", gap:6 }}>
               <input type="number" value={newMatQty} onChange={e=>setNewMatQty(+e.target.value)} min={1} placeholder="Cant." style={{ ...inp, width:70 }}/>
-              <div onClick={addMaterial} style={{ flex:1, background:"#1D9E75", color:"white", padding:"7px 12px", fontSize:10, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", textAlign:"center" }}>+ Agregar</div>
+              <div onClick={addMaterial} style={{ flex:1, background:"#1D9E75", color:"white", padding:"7px 12px", fontSize:10, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", textAlign:"center" }}>+ Registrar</div>
             </div>
           </div>
         </div>
 
         {/* NOTAS */}
         <div style={panel}>
-          <div style={panelTitle}>Notas adicionales</div>
-          <label style={lbl}>Observaciones del entrenador</label>
-          <textarea value={notas} onChange={e=>setNotas(e.target.value)} rows={3} placeholder="Aspectos a reforzar..." style={{ ...inp, resize:"none", marginBottom:10 }}/>
-          <label style={lbl}>Charla previa al equipo</label>
-          <textarea value={charla} onChange={e=>setCharla(e.target.value)} rows={3} placeholder="Puntos clave para motivar al grupo..." style={{ ...inp, resize:"none" }}/>
+          <div style={panelTitle}>Observaciones técnicas</div>
+          <label style={lbl}>Notas del cuerpo técnico</label>
+          <textarea value={notas} onChange={e=>setNotas(e.target.value)} rows={3} placeholder="Variables a reforzar, patrones a corregir, carga prevista..." style={{ ...inp, resize:"none", marginBottom:10 }}/>
+          <label style={lbl}>Comunicación previa a la plantilla</label>
+          <textarea value={charla} onChange={e=>setCharla(e.target.value)} rows={3} placeholder="Mensaje motivacional, énfasis táctico, consignas del microciclo..." style={{ ...inp, resize:"none" }}/>
         </div>
 
-        <div onClick={()=>showToast(`Planificación ${sessionId} guardada`, "success")} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
-          Guardar planificación →
+        <div onClick={()=>showToast(`Sesión ${sessionId} registrada`, "success")} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
+          Confirmar planificación →
         </div>
         <ExportPDFButton onClick={generarPDF} />
         <div onClick={()=>showToast("Plantilla guardada", "info")} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
-          Usar como plantilla
+          Guardar como plantilla base
         </div>
 
       </div>

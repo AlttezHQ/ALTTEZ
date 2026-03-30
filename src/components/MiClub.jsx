@@ -70,7 +70,7 @@ export default function MiClub({ clubInfo, setClubInfo }) {
       {/* DATOS GENERALES */}
       <div>
         <div style={panel}>
-          <div style={panelTitle}>Datos del club</div>
+          <div style={panelTitle}>Datos operativos del club</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             {[
               ["Nombre del club","nombre","Club Deportivo"],
@@ -87,14 +87,14 @@ export default function MiClub({ clubInfo, setClubInfo }) {
             ))}
           </div>
           <div style={{ marginTop:10 }}>
-            <label style={label}>Descripción del club</label>
-            <textarea value={clubInfo.descripcion||""} onChange={e=>setClubInfo({...clubInfo,descripcion:sanitizeText(e.target.value)})} rows={3} placeholder="Mision, objetivos de la temporada..." style={{ ...inp, resize:"none", lineHeight:1.6 }} maxLength={500}/>
+            <label style={label}>Identidad del club</label>
+            <textarea value={clubInfo.descripcion||""} onChange={e=>setClubInfo({...clubInfo,descripcion:sanitizeText(e.target.value)})} rows={3} placeholder="Misión institucional, modelo de juego, objetivos de la temporada..." style={{ ...inp, resize:"none", lineHeight:1.6 }} maxLength={500}/>
           </div>
         </div>
 
         {/* CAMPOS DE ENTRENAMIENTO */}
         <div style={panel}>
-          <div style={panelTitle}>Campos de entrenamiento</div>
+          <div style={panelTitle}>Instalaciones de entrenamiento</div>
           <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:12 }}>
             {(clubInfo.campos||["Campo principal","Campo auxiliar"]).map((c,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))", border:`1px solid rgba(255,255,255,0.08)`, borderRadius:8, padding:"9px 12px", boxShadow:"0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.04)" }}>
@@ -104,8 +104,8 @@ export default function MiClub({ clubInfo, setClubInfo }) {
             ))}
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            <input value={newCampo} onChange={e=>setNewCampo(sanitizeText(e.target.value))} onKeyDown={e=>e.key==="Enter"&&addCampo()} placeholder="Nombre del campo..." style={{ ...inp, flex:1 }} maxLength={60}/>
-            <div onClick={addCampo} style={{ background:C.green, color:"white", padding:"8px 16px", fontSize:11, cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>+ Agregar</div>
+            <input value={newCampo} onChange={e=>setNewCampo(sanitizeText(e.target.value))} onKeyDown={e=>e.key==="Enter"&&addCampo()} placeholder="Nombre de la instalación..." style={{ ...inp, flex:1 }} maxLength={60}/>
+            <div onClick={addCampo} style={{ background:C.green, color:"white", padding:"8px 16px", fontSize:11, cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>+ Registrar</div>
           </div>
         </div>
       </div>
@@ -113,8 +113,8 @@ export default function MiClub({ clubInfo, setClubInfo }) {
       {/* CATEGORÍAS */}
       <div>
         <div style={panel}>
-          <div style={panelTitle}>Categorías asignadas al entrenador</div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginBottom:12 }}>Selecciona las categorías que tienes a tu cargo</div>
+          <div style={panelTitle}>Categorías bajo gestión</div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", marginBottom:12 }}>Selecciona las categorías activas en tu estructura deportiva</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14 }}>
             {CATEGORIAS_DEFAULT.map(cat => {
               const active = (clubInfo.categorias||[]).includes(cat);
@@ -127,10 +127,10 @@ export default function MiClub({ clubInfo, setClubInfo }) {
           </div>
 
           <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", paddingTop:12, marginTop:4 }}>
-            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:8 }}>Agregar categoría personalizada</div>
+            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:8 }}>Categoría personalizada</div>
             <div style={{ display:"flex", gap:8 }}>
               <input value={newCat} onChange={e=>setNewCat(sanitizeText(e.target.value))} onKeyDown={e=>e.key==="Enter"&&addCat()} placeholder="Ej: Femenino Sub-17..." style={{ ...inp, flex:1 }} maxLength={30}/>
-              <div onClick={addCat} style={{ background:C.green, color:"white", padding:"8px 16px", fontSize:11, cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>+ Agregar</div>
+              <div onClick={addCat} style={{ background:C.green, color:"white", padding:"8px 16px", fontSize:11, cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>+ Incorporar</div>
             </div>
           </div>
 
@@ -151,7 +151,7 @@ export default function MiClub({ clubInfo, setClubInfo }) {
 
         <div style={{ display:"flex", justifyContent:"flex-end", gap:8 }}>
           <div onClick={save} style={{ background: saved?"linear-gradient(135deg,#059669,#047857)":"linear-gradient(135deg,#00ff88,#00cc6a)", color: saved?"white":"#0a0a0a", padding:"10px 24px", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", borderRadius:8, boxShadow: saved?"0 4px 16px rgba(5,150,105,0.4)":"0 4px 16px rgba(0,255,136,0.35)", transition:"all 0.2s" }}>
-            {saved ? "Guardado ✓" : "Guardar cambios →"}
+            {saved ? "Configuración confirmada ✓" : "Confirmar cambios →"}
           </div>
         </div>
       </div>
