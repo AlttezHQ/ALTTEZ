@@ -159,9 +159,19 @@ function CRMApp() {
     return () => sub.unsubscribe();
   }, []);
 
-  // Role: prioridad auth profile > localStorage session > fallback admin
+  // Role: prioridad auth profile > localStorage session > null (sin fallback privilegiado)
+  // SECURITY: nunca se asume un rol por defecto. Si no hay autenticacion valida, userRole = null.
   const userRole = authProfile?.role
-    || ((session && validateSession(session)) ? session.role : "admin");
+    || ((session && validateSession(session)) ? session.role : null);
+
+  // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado, forzar logout.
+  // Esto cierra el vector donde un atacante borra authProfile y manipula localStorage
+  // para obtener el antiguo fallback "admin".
+  useEffect(() => {
+    if (mode && !userRole) {
+      handleLogout();
+    }
+  }, [mode, userRole]);
 
   // Navegación con control de acceso por rol
   const navigateTo = useCallback((mod) => {

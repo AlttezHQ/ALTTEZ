@@ -6,6 +6,31 @@
 
 ---
 
+## 2026-03-29 — Documentación de Arquitectura UML
+**Directiva de**: Julián
+**Status**: 🟢 Completo
+
+### Plan
+Mapeo completo del codebase real (src/App.jsx, todos los módulos, hooks, services, utils, constants)
+y generación de diagramas UML formales para onboarding, auditorías y decisiones de arquitectura futuras.
+
+### Entregables
+- `docs/architecture.puml` — Diagrama de Componentes PlantUML completo
+- `docs/architecture.md` — Versión Mermaid (GitHub-renderable) con 4 diagramas:
+  1. Componentes (árbol completo Portal + CRM + TacticalBoard V9 + hooks + services)
+  2. Entidades de datos (Club, Profile, Athlete, Session, HealthSnapshot, MatchReport, Pago, Movimiento, CalendarEvent, RSVP)
+  3. Máquina de estados — navegación CRMApp (activeModule state machine + RBAC)
+  4. Flujo de datos — offline-first + Supabase sync (secuencia boot/write/snapshot)
+
+### Validation Criteria
+- Solo mapea componentes existentes en el código fuente
+- TacticalBoard V9 modelado como subsistema independiente con sus 4 capas
+- Portal vs CRM como dos subsistemas separados bajo BrowserRouter
+- RBAC correctamente reflejado (admin/coach/staff con permisos granulares)
+- Tabla de deuda técnica (DT-001 a DT-007) preservada en el log
+
+---
+
 ## Estado del Proyecto — 2026-03-29
 
 ### Módulos en Producción
