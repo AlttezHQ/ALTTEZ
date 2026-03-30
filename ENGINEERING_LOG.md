@@ -4,6 +4,166 @@
 
 ---
 
+## 2026-03-28 — Sprint Optimización Integral: Portal Data-First + Demo Gate + WhatsApp CTA
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Sprint de optimización con 4 tareas obligatorias + 2 tareas adicionales del Arquitecto.
+Objetivo: el portal debe mostrar el producto, el demo debe tener urgencia de conversión,
+y la empresa debe comunicar que es de data.
+
+### Task Assignment
+- @Andres (UI): Sección "Así se ve Elevate Sports" en SportsCRMPage con 5 mini-previews CSS/SVG interactivos
+- @Andres (UI): WhatsApp CTA flotante en PortalLayout (solo portal, no CRM)
+- @Carlos (Arquitecto): DemoGate — componente de conversión (banner + modal 15min timer)
+- @Carlos (Arquitecto): Hook usePageTitle — títulos dinámicos por ruta del portal
+- @Mateo (Data): elevateScore.js v1.1 — referencias científicas Lago-Peñas 2011, Hughes 2002
+
+### Architecture Decisions
+- **DemoGate estrategia D+A**: Banner persistente desde minuto 0 + modal de conversión a los 15 minutos.
+  Rationale: Opción D mantiene al usuario dentro del producto (exposición a features), Opción A
+  crea urgencia sin bloquear. El modal aparece cuando el usuario ya vio suficiente valor.
+  `sessionStorage` para el timer — se reinicia por sesión, no acumulativo.
+- **WhatsApp CTA**: Componente interno en PortalLayout — visible en todas las rutas del portal
+  (/, /quienes-somos, /contacto, /servicios/sports-crm). Ausente en /crm/* por diseño (rutas
+  separadas, PortalLayout no monta en /crm).
+- **Product Previews**: 5 componentes CSS/SVG inline — Dashboard, TacticalBoard, Entrenamiento,
+  MatchCenter, Finanzas. Sin imágenes externas, sin dependencias. Navegación con tabs + prev/next.
+  Animación key-based en Framer Motion para transición suave entre previews.
+- **usePageTitle hook**: Cleanup en return del useEffect para restaurar título anterior.
+  Patrón: "[Página] — Elevate Sports".
+
+### Files Modified / Created
+- `src/components/portal/SportsCRMPage.jsx` — sección ProductPreviewSection (5 mini-previews SVG/CSS), usePageTitle
+- `src/components/portal/PortalLayout.jsx` — WhatsAppCTA component, useState import
+- `src/components/portal/QuienesSomos.jsx` — usePageTitle("Quiénes Somos")
+- `src/components/portal/Contacto.jsx` — usePageTitle("Contacto")
+- `src/components/DemoGate.jsx` — NUEVO: banner countdown + modal conversión 15min
+- `src/hooks/usePageTitle.js` — NUEVO: hook título dinámico por ruta
+- `src/utils/elevateScore.js` — referencias científicas Lago-Peñas 2011, Hughes 2002, v1.1.0
+- `src/App.jsx` — lazy DemoGate import, mount en modo demo, paddingBottom compensación banner
+
+### Validation Criteria
+- Build: `npx vite build` — 0 errores. Chunks: DemoGate-*.js (7.62 kB), SportsCRMPage-*.js (29.94 kB), usePageTitle-*.js (0.30 kB).
+- SportsCRMPage: sección "Así se ve Elevate Sports" visible con 5 tabs navegables y previews animados.
+- DemoGate: banner aparece 1.5s después de entrar en modo demo; modal aparece a los 15 min.
+- WhatsApp CTA: visible en /, /quienes-somos, /contacto, /servicios/sports-crm. No visible en /crm/*.
+- Títulos de página: cada ruta del portal muestra su título correcto en la tab del navegador.
+- elevateScore.js: referencias Lago-Peñas 2011, Hughes 2002, Gabbett 2016 en JSDoc.
+
+---
+
+## 2026-03-28 — Documentacion cientifica del motor de datos
+**Directive from**: Julian
+**Status**: Complete
+**Owner**: @Mateo (Data)
+
+### Resumen
+Documentacion cientifica completa de los tres nucleos del motor de datos:
+RPE Health Engine, Elevate Score y Health Snapshots. Creacion de
+DATA_METHODOLOGY.md como documento interno de referencia epistemica.
+Build verificado: 0 errores, tiempo 838ms.
+
+### Archivos modificados
+
+#### `src/utils/rpeEngine.js` — RPE Health Engine v2.1
+- Encabezado de modulo reescrito con referencias completas a:
+  - Borg (1998) — escala CR-10, definicion de intervalos verbales
+  - Foster et al. (2001) — session-RPE, formula sRPE canonico
+  - Impellizzeri et al. (2004) — validacion sRPE en futbol (r = 0.77-0.84)
+  - Hulin et al. (2014) — ACWR, referenciado como arquitectura futura v3.0
+- Justificacion del ajuste de umbral v2.1 (optimo >= 50, antes >= 60)
+- Limitaciones conocidas documentadas: sin duracion (L1), sin ACWR (L2),
+  promedio aritmetico vs EWMA (L3)
+- JSDoc completo para: `extractAthleteRpes`, `calcSaludActual`,
+  `calcSaludPlantel`, `saludColor`
+- Version de modulo actualizada: 2.0.0 → 2.1.0
+
+#### `src/utils/elevateScore.js` — Performance Engine v1.0
+- Encabezado expandido con:
+  - Filosofia de diseno (seis estadisticas registrables a lapiz y papel)
+  - Justificacion detallada de CADA peso con razonamiento cuantitativo
+  - Referencias a Lago-Penas et al. (2011), Hughes & Bartlett (2002),
+    Gonzalez-Artetxe et al. (2020), Nielsen et al. (2021), Gabbett (2016)
+  - Documentacion del modelo OVR (escala 50-99, razon cultural)
+  - Tabla de umbrales de alerta cruzada RPE x ElevateScore con fundamento
+- JSDoc completo con ejemplos de rangos tipicos para: `ELEVATE_WEIGHTS`,
+  `calcElevateScore`, `calcOVR`, `getPerformanceAlert`,
+  `generateRecommendations` (7 reglas justificadas), `getAthleteScoreHistory`
+- Version de modulo actualizada: 1.0.0 → 1.1.0
+
+#### `src/services/healthService.js` — Health Snapshot Service v1.0
+- Encabezado expandido con definicion formal de Health Snapshot:
+  - Estructura del objeto snapshot (8 campos documentados)
+  - Ciclo de vida: cuando se genera, quien lo activa
+  - Patron de uso del semaforo (tiempo real vs. historico vs. alertas)
+  - Modelo de persistencia localStorage con limite MAX_SNAPSHOTS = 500
+  - Arquitectura multi-tenancy: aislamiento por clubId en clave de storage
+- JSDoc completo para: `setHealthErrorHandler`, `getSnapshots`,
+  `takeHealthSnapshot`, `getAthleteHealthHistory`, `getLatestPlantelHealth`,
+  `getAtRiskAthletes`, `clearSnapshots`
+- Correccion documental: comentario interno decia "salud < 30" pero el
+  umbral real es salud < 25 (RPE_avg > 7.5). El filtro usa `riskLevel`
+  (string) para sincronizarse automaticamente con cambios en rpeEngine.
+
+#### `src/utils/DATA_METHODOLOGY.md` — NUEVO
+Documento interno de metodologia de datos. Contiene:
+1. Filosofia de datos (4 principios no negociables)
+2. Modelos en produccion: RPE Health Engine v2.1 y Elevate Score v1.0
+   con tablas de referencia, justificacion de parametros y supuestos
+3. Limitaciones conocidas: L1 (sin duracion), L2 (sin ACWR), L3 (EWMA),
+   L4 (localStorage), L5 (pesos no calibrados estadisticamente)
+4. Roadmap v3.0: ACWR completo, Supabase sync, Elevate Score v2.0
+   calibrado, prediccion de lesion
+5. Referencias bibliograficas completas (7 publicaciones cientificas)
+
+### Validation Criteria
+- Build: `npx vite build` — 0 errores, 0 warnings. 838ms.
+- Ninguna logica modificada — solo comentarios y JSDoc.
+- Todos los archivos retienen su funcionalidad identica.
+- DATA_METHODOLOGY.md creado en `src/utils/` (accesible al equipo,
+  no expuesto en bundle de produccion por ser .md).
+
+---
+
+## 2026-03-28 — RSVP Publico via Link de WhatsApp
+**Directive from**: Julian
+**Status**: Complete
+
+### Plan
+Implementar confirmacion de asistencia sin login: el entrenador envia un link por WhatsApp, el deportista abre una pagina publica, escribe su nombre y elige su estado RSVP. El resultado se persiste en Supabase y se refleja en el panel del Calendario del CRM.
+
+### Task Assignment
+- @Mateo (Data): Migracion `007_event_rsvp.sql` — tabla con RLS publica para INSERT/UPDATE y SELECT restringido al club owner.
+- @Andres (UI): `ConfirmarAsistencia.jsx` — pagina publica mobile-first, glassmorphism, 3 botones touch-friendly, feedback animado.
+- @Mateo (Data): Hook Supabase en `EventPanel` — fetch de `event_rsvp` por club_id+event_id al seleccionar evento.
+- @Carlos (Arquitecto): Ruta `/confirmar/:clubId/:eventId` en `App.jsx`, update link WhatsApp en `handleReminder`, propagacion de `clubId` a `EventPanel`.
+
+### Architecture Decisions
+- **Sin login por diseno**: El link de WhatsApp es el token de acceso. La seguridad es el club_id correcto en la URL (aislamiento multi-tenant). RLS permite INSERT/UPDATE anonimo.
+- **Upsert semantics**: `supabase.upsert()` con `onConflict: "club_id,event_id,athlete_name"` — el deportista puede cambiar su respuesta.
+- **Fallback offline**: Si `isSupabaseReady` es false, se simula exito (800ms timeout). La pagina funciona en modo demo sin env vars.
+- **eventId opaco en URL**: El id de evento de Elevate (e.g. `t-2026-2-1`) se usa directamente. No se necesita tabla de eventos en Supabase — el eventId es suficiente para cruzar con `event_rsvp`.
+- **Lectura remota en EventPanel**: `useEffect` con fetch a `event_rsvp` al montar el panel. Se muestra seccion separada "Confirmaciones via link" — no mezcla con RSVP local del entrenador.
+- **WhatsApp message update**: `event.type` en Calendario es `"match"` / `"training"` / `"club"` — corregido de `"partido"` / `"entrenamiento"` que nunca matcheaban.
+
+### Files Modified / Created
+- `supabase/migrations/007_event_rsvp.sql` — nueva tabla y policies RLS
+- `src/components/portal/ConfirmarAsistencia.jsx` — nuevo componente publico
+- `src/App.jsx` — lazy import + ruta `/confirmar/:clubId/:eventId`
+- `src/components/Calendario.jsx` — import supabase, clubId en EventPanel, fetch remoteRsvp, update handleReminder con link, fix tipos de evento en mensajes WhatsApp
+
+### Validation Criteria
+- Build: `npx vite build` — 0 errores, 0 warnings. Chunk `ConfirmarAsistencia-*.js` generado (10.64 kB).
+- Ruta publica `/confirmar/CLUB_ID/EVENT_ID` accesible sin sesion activa.
+- Upsert Supabase sobrescribe respuesta previa del mismo deportista en el mismo evento.
+- Panel Calendario muestra "Confirmaciones via link" solo cuando hay datos remotos.
+- Mobile-first: max-width 420px, botones minHeight 60px (touch-friendly).
+- Mensajes WhatsApp incluyen link `https://elevate-sports.vercel.app/confirmar/{clubId}/{eventId}`.
+
+---
+
 ## 2026-03-28 — Fixes P0/P1 Auditoría de Datos
 **Directive from**: Julián
 **Status**: Complete

@@ -108,6 +108,112 @@ const LoadingFallback = () => (
   </div>
 );
 
+// ── WhatsApp CTA ──────────────────────────────────────────────────────────────
+
+/** Número de WhatsApp del equipo comercial (Julián debe reemplazar con número real) */
+const WA_NUMBER = "573000000000";
+const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Hola, quiero saber más sobre Elevate Sports CRM.")}`;
+
+/**
+ * @component WhatsAppCTA
+ * @description Botón flotante circular de WhatsApp en esquina inferior derecha.
+ * Visible solo en rutas del portal público. Tooltip "Habla con nosotros".
+ * Ícono SVG propio — sin dependencias externas.
+ */
+function WhatsAppCTA() {
+  const [hovered, setHovered] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.a
+        key="wa-cta"
+        href={WA_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Habla con nosotros por WhatsApp"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 360, damping: 28, delay: 0.1 }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: "fixed",
+          bottom: 28, right: 28,
+          zIndex: 500,
+          width: 52, height: 52,
+          borderRadius: "50%",
+          background: "#25D366",
+          boxShadow: hovered
+            ? "0 8px 32px rgba(37,211,102,0.55), 0 0 0 4px rgba(37,211,102,0.15)"
+            : "0 4px 20px rgba(37,211,102,0.35)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          textDecoration: "none",
+          cursor: "pointer",
+          transition: "box-shadow 0.2s",
+        }}
+        whileHover={{ scale: 1.12, rotate: 10 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {/* WhatsApp SVG icon */}
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path fillRule="evenodd" clipRule="evenodd"
+            d="M13 2C7.477 2 3 6.477 3 12c0 1.85.502 3.58 1.376 5.06L3 23l6.12-1.348A10 10 0 0013 22c5.523 0 10-4.477 10-10S18.523 2 13 2zm-3.09 5.5c.178 0 .373.003.543.007.234.005.464.018.679.5.247.551.835 2.028.909 2.177.074.148.123.322.025.518-.1.197-.148.32-.296.494-.148.172-.311.385-.444.517-.148.148-.302.309-.13.606.173.296.77 1.27 1.655 2.057.96.85 1.77 1.112 2.066 1.234.296.124.47.104.643-.062.172-.166.74-.863.937-1.159.198-.296.395-.247.667-.148.271.099 1.723.812 2.019.96.296.147.493.222.567.345.074.123.074.714-.173 1.404-.247.69-1.432 1.332-1.974 1.38-.518.046-1.005.23-3.39-.707-2.852-1.1-4.645-4.01-4.78-4.198-.134-.19-1.104-1.467-1.104-2.798 0-1.33.699-1.983.947-2.255.247-.271.543-.34.724-.34z"
+            fill="white"
+          />
+        </svg>
+
+        {/* Tooltip */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              initial={{ opacity: 0, x: 8, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 8, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: "absolute",
+                right: "calc(100% + 12px)",
+                top: "50%", transform: "translateY(-50%)",
+                background: "rgba(10,10,15,0.95)",
+                backdropFilter: "blur(12px)",
+                border: "1px solid rgba(37,211,102,0.25)",
+                borderRadius: 8,
+                padding: "7px 12px",
+                whiteSpace: "nowrap",
+                fontSize: 11, fontWeight: 600,
+                color: "white",
+                letterSpacing: "0.5px",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                pointerEvents: "none",
+              }}
+            >
+              Habla con nosotros
+              <div style={{
+                position: "absolute",
+                right: -6, top: "50%",
+                transform: "translateY(-50%)",
+                width: 0, height: 0,
+                borderTop: "5px solid transparent",
+                borderBottom: "5px solid transparent",
+                borderLeft: "6px solid rgba(37,211,102,0.25)",
+              }} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.a>
+    </AnimatePresence>
+  );
+}
+
 // Footer: lista plana de todas las rutas del portal
 const FOOTER_LINKS = [
   { to: "/",                     label: "Home",             exact: true  },
@@ -767,6 +873,9 @@ export default function PortalLayout() {
           </AnimatePresence>
         </Suspense>
       </main>
+
+      {/* ── WhatsApp CTA flotante — solo en portal público ── */}
+      <WhatsAppCTA />
 
       {/* ── Footer ── */}
       <footer style={{
