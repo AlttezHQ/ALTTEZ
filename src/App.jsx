@@ -43,7 +43,6 @@ const JournalPage = lazy(() => import("./components/portal/JournalPage"));
 const QuienesSomos = lazy(() => import("./components/portal/QuienesSomos"));
 const Contacto = lazy(() => import("./components/portal/Contacto"));
 const PrivacyPolicy = lazy(() => import("./components/portal/PrivacyPolicy"));
-const CommercialLanding = lazy(() => import("./components/CommercialLanding"));
 const LandingPage = lazy(() => import("./components/LandingPage"));
 const Home = lazy(() => import("./components/Home"));
 const Entrenamiento = lazy(() => import("./components/Entrenamiento"));
