@@ -4,6 +4,65 @@
 
 ---
 
+## 2026-03-28 — Pizarra Táctica: Césped Realista + Posiciones en Español
+**Directive from**: Julián
+**Status**: Complete
+**Owner**: @Andres (UI)
+
+### Cambios
+
+#### 1. FieldLayer — Césped broadcast TV quality
+Archivo: `src/components/TacticalBoardV9/layers/FieldLayer.jsx`
+
+| Parámetro | Antes | Después |
+|---|---|---|
+| Fondo fuera del campo | `#0a0f1a` | `#0d1117` (oscuro neutro) |
+| Verde base | `#22600e` (oscuro apagado) | `#1a6b2a` → `#1e8030` (verde césped real) |
+| Franjas de segado | `rgba(0,0,0,0.10)` cada 12.5% | `rgba(0,0,0,0.13)` — contraste ~10% más visible |
+| Gradiente de franjas | Horizontal 90deg con `rgba(0,0,0,0)` gaps | `transparent` limpio + oscuro en bandas alternadas |
+| Iluminación cenital | Elipse 75% muy evidente | Elipse 60% muy sutil (estadio con focos) |
+| Viñeta perimetral | `rgba(0,0,0,0.48)` — excesiva | `rgba(0,0,0,0.22)` — muy sutil |
+| Líneas del campo | `rgba(255,255,255,0.70)` + drop-shadow glow | `rgba(255,255,255,0.92)` sin drop-shadow — TV clean |
+| Líneas auxiliares | `rgba(255,255,255,0.40)` | `rgba(255,255,255,0.60)` |
+| boxShadow interior | `inset 0 0 30px rgba(0,0,0,0.4)` | `inset 0 0 0 2px rgba(255,255,255,0.08)` — borde nítido |
+| filter SVG | `drop-shadow(0 0 1.5px rgba(255,255,255,0.5))` | Eliminado |
+
+Adicionado: `<defs>` internas con `feColorMatrix` para áreas de portería con tono diferencial (desgaste real).
+Adicionado: rectángulo borde interior sutil (`rgba(0,0,0,0.25)`) para delineado nítido del campo.
+
+#### 2. Posiciones en español colombiano
+Archivos: `src/components/TacticalBoardV9/TacticalBoardV9.jsx`, `src/constants/formations.js`
+
+Mapeo aplicado en `HORIZ_FORMATIONS`, `HALF_FORMATIONS`, `FORMATIONS_VERTICAL`, `POSITION_GROUPS`, `getGroup()`:
+
+| Inglés | Español | Nombre completo |
+|---|---|---|
+| GK | PO | Portero |
+| CB | DC | Defensa Central |
+| LB, LWB | LI | Lateral Izquierdo |
+| RB, RWB | LD | Lateral Derecho |
+| DM | VOL | Volante |
+| CM | MC | Mediocampista |
+| CAM | ENG | Enganche |
+| LM | MI | Mediocampista Izquierdo |
+| RM | MD | Mediocampista Derecho |
+| LW | EI | Extremo Izquierdo |
+| RW | ED | Extremo Derecho |
+| ST, CF | DEL | Delantero |
+
+`POSITION_GROUPS` y `ROLE_OPTIONS` actualizados con los nuevos códigos.
+Datos de atletas en otros módulos NO modificados — solo las definiciones de pizarra táctica.
+
+### Build
+`npx vite build` — 725 módulos, 0 errores, 714ms.
+
+### Architecture Decisions
+- Las franjas de segado usan `90deg` (verticales en landscape) con `transparent` real en vez de `rgba(0,0,0,0)` para mayor limpieza en compositing.
+- El glow excesivo en las líneas SVG (`drop-shadow filter`) causaba halos no deseados sobre el césped — eliminado. Las líneas TV reales son blanco nítido sin bloom.
+- Viñeta de `0.48` → `0.22` porque la versión anterior oscurecía demasiado las bandas laterales del campo, enmascarando los laterales (LI/LD).
+
+---
+
 ## 2026-03-28 — Estandarización Tipográfica Global
 **Directive from**: Julián
 **Status**: Complete
