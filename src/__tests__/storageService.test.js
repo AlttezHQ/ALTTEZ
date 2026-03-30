@@ -3,7 +3,7 @@
  * @description Tests para el servicio de storage.
  * @author @QA (Sara)
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { calcStats, buildSesion } from "../services/storageService";
 
 describe("calcStats", () => {

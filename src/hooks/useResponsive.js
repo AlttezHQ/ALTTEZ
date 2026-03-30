@@ -48,10 +48,7 @@ export function useResponsive() {
       clearTimeout(timer);
       timer = setTimeout(handleResize, 150);
     };
-
     window.addEventListener("resize", onResize, { passive: true });
-    // Fire once on mount to sync server/client
-    handleResize();
 
     return () => {
       window.removeEventListener("resize", onResize);

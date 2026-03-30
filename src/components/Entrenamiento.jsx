@@ -112,7 +112,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
   const sessionActive = athletes.some(a => a.status === "P" && a.rpe != null);
 
   useEffect(() => {
-    if (!sessionActive) { setElapsed(0); return; }
+    if (!sessionActive) return;
     const t0 = Date.now();
     const iv = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
     return () => clearInterval(iv);
@@ -539,7 +539,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
           "Recuperacion":    { tipos: ["Recuperación", "Recuperacion"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.green },
         };
         historial.forEach(s => {
-          for (const [cat, cfg] of Object.entries(categorias)) {
+          for (const [, cfg] of Object.entries(categorias)) {
             if (cfg.tipos.includes(s.tipo)) {
               cfg.count++;
               if (s.rpeAvg != null && s.rpeAvg !== "—") { cfg.rpeSum += Number(s.rpeAvg); cfg.rpeN++; }

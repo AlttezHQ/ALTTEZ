@@ -38,7 +38,7 @@ const RING_SIZE = TRAIL_COUNT + 1;
  * - posBuffer: ring buffer circular de posiciones [{ x, y }]
  * - bufferHead: índice del próximo slot a escribir
  */
-const GhostToken = memo(function GhostToken({ ghostRef, athlete, ovr, isDragging }) {
+const GhostToken = memo(function GhostToken({ ghostRef, athlete, ovr: _ovr, isDragging }) {
   // Refs directas a los nodos DOM de las sombras del trail
   const trailDomRefs = useRef(new Array(TRAIL_COUNT).fill(null));
   const posBuffer = useRef(Array.from({ length: RING_SIZE }, () => ({ x: -300, y: -300 })));

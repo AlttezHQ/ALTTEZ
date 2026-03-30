@@ -64,7 +64,7 @@ setSupabaseErrorHandler(_toastError);
 setAuthErrorHandler(_toastError);
 
 // ── Ejecutar migraciones al boot ──
-const migrationResult = runMigrations();
+runMigrations();
 // Migration result tracked internally — no console output in production
 
 // ── Loading fallback ──
@@ -77,6 +77,36 @@ const LoadingFallback = () => (
     </div>
   </div>
 );
+
+function MiniTopbar({
+  title,
+  accent = C.neon,
+  accentBg = "rgba(200,255,0,0.05)",
+  mode,
+  clubName,
+  clubCategory,
+  onHomeClick,
+}) {
+  return (
+    <div style={{ height:38, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${accent}33`, display:"flex", alignItems:"stretch" }}>
+      <div onClick={onHomeClick} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${C.border}`, transition:"color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
+        â† Dashboard
+      </div>
+      <div style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:"white", display:"flex", alignItems:"center", borderBottom:`2px solid ${accent}`, background:accentBg }}>
+        {title}
+      </div>
+      <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px" }}>
+        {mode === "demo" && (
+          <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:`${C.amber}33`, color:C.amber, border:`1px solid ${C.amber}66` }}>Demo</div>
+        )}
+        <div style={{ fontSize:10, color:C.textMuted, textTransform:"uppercase", letterSpacing:"1px" }}>
+          <span style={{ width:6, height:6, borderRadius:"50%", background:accent, display:"inline-block", marginRight:6 }}/>
+          {clubName || "Mi Club"} Â· {clubCategory || "General"}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
@@ -173,15 +203,6 @@ function CRMApp() {
   // SECURITY: nunca se asume un rol por defecto. Si no hay autenticacion valida, userRole = null.
   const userRole = authProfile?.role
     || ((session && validateSession(session)) ? session.role : null);
-
-  // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado, forzar logout.
-  // Esto cierra el vector donde un atacante borra authProfile y manipula localStorage
-  // para obtener el antiguo fallback "admin".
-  useEffect(() => {
-    if (mode && !userRole) {
-      handleLogout();
-    }
-  }, [mode, userRole]);
 
   // Navegación con control de acceso por rol
   const navigateTo = useCallback((mod) => {
@@ -305,14 +326,29 @@ function CRMApp() {
     navigate("/");
   }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, navigate]);
 
+  // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado, forzar logout.
+  // Esto cierra el vector donde un atacante borra authProfile y manipula localStorage
+  // para obtener el antiguo fallback "admin".
+  useEffect(() => {
+    if (mode && !userRole) {
+      const logoutId = setTimeout(() => {
+        handleLogout();
+      }, 0);
+      return () => clearTimeout(logoutId);
+    }
+  }, [mode, userRole, handleLogout]);
+
   // Auto-demo: si llegan desde el portal con ?demo=true
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") === "true" && !mode) {
-      handleDemo();
+      const demoId = setTimeout(() => {
+        handleDemo();
+      }, 0);
       window.history.replaceState({}, "", "/crm");
+      return () => clearTimeout(demoId);
     }
-  }, []);
+  }, [handleDemo, mode]);
 
   // ── Landing: directo al formulario de login/registro ──
   if (!mode) {
@@ -347,7 +383,7 @@ function CRMApp() {
   const stats = calcStats(athletes, historial);
   const clubProps = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
 
-  const MiniTopbar = ({ title, accent = C.neon, accentBg = "rgba(200,255,0,0.05)" }) => (
+  const _MiniTopbarLocal = ({ title, accent = C.neon, accentBg = "rgba(200,255,0,0.05)" }) => (
     <div style={{ height:38, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${accent}33`, display:"flex", alignItems:"stretch" }}>
       <div onClick={() => setActiveModule("home")} style={{ padding:"0 18px", fontSize:10, textTransform:"uppercase", letterSpacing:"2px", color:C.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${C.border}`, transition:"color 0.15s" }} onMouseEnter={e=>e.currentTarget.style.color="white"} onMouseLeave={e=>e.currentTarget.style.color=C.textMuted}>
         ← Dashboard
@@ -392,49 +428,49 @@ function CRMApp() {
 
           {activeModule === "entrenamiento" && (
             <ErrorBoundary>
-              <MiniTopbar title="Entrenamiento" />
+              <MiniTopbar title="Entrenamiento" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <Entrenamiento athletes={athletes} setAthletes={setAthletes} historial={historial} onGuardar={guardarSesion} stats={stats} clubInfo={clubInfo} clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "plantilla" && (
             <ErrorBoundary>
-              <MiniTopbar title="Gestion de plantilla" />
+              <MiniTopbar title="Gestion de plantilla" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <GestionPlantilla athletes={athletes} setAthletes={setAthletes} historial={historial} clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "miclub" && (
             <ErrorBoundary>
-              <MiniTopbar title="Mi club" />
+              <MiniTopbar title="Mi club" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <MiClub clubInfo={clubInfo} setClubInfo={setClubInfo} />
             </ErrorBoundary>
           )}
 
           {activeModule === "admin" && (
             <ErrorBoundary>
-              <MiniTopbar title="Administracion" accent={C.purple} accentBg="rgba(127,119,221,0.08)" />
+              <MiniTopbar title="Administracion" accent={C.purple} accentBg="rgba(127,119,221,0.08)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <Administracion athletes={athletes} finanzas={finanzas} setFinanzas={setFinanzas} />
             </ErrorBoundary>
           )}
 
           {activeModule === "calendario" && (
             <ErrorBoundary>
-              <MiniTopbar title="Calendario" accent={C.neon} accentBg="rgba(200,255,0,0.05)" />
+              <MiniTopbar title="Calendario" accent={C.neon} accentBg="rgba(200,255,0,0.05)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <Calendario athletes={athletes} clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "partidos" && (
             <ErrorBoundary>
-              <MiniTopbar title="Match Center" accent={C.neon} accentBg="rgba(200,255,0,0.05)" />
+              <MiniTopbar title="Match Center" accent={C.neon} accentBg="rgba(200,255,0,0.05)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <MatchCenter athletes={athletes} historial={historial} clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "reportes" && (
             <ErrorBoundary>
-              <MiniTopbar title="Reportes" />
+              <MiniTopbar title="Reportes" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
               <Reportes athletes={athletes} historial={historial} matchStats={matchStats} finanzas={finanzas} onNavigate={navigateTo} />
             </ErrorBoundary>
           )}
@@ -508,7 +544,6 @@ function Reportes({ athletes, historial, matchStats, finanzas, onNavigate }) {
   const last8 = historial.slice(0, 8).reverse();
   const sparkAsistencia = last8.map(s => s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0);
   const sparkSesiones = last8.map((_, i) => i + 1);
-  const sparkRpe = last8.map(s => Number(s.rpeAvg) || 0);
 
   // Calcular tendencia: comparar ultima sesion vs promedio previo
   const calcTrend = (arr) => {

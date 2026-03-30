@@ -218,7 +218,6 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
   const [fileName,    setFileName]    = useState(null);
   const [rows,        setRows]        = useState([]);
   const [parseErrors, setParseErrors] = useState([]);
-  const [headers,     setHeaders]     = useState([]);
   const [commitError, setCommitError] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -243,10 +242,9 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const { rows: parsed, parseErrors: errs, headers: hdrs } = parseCSV(e.target.result);
+      const { rows: parsed, parseErrors: errs } = parseCSV(e.target.result);
       setRows(parsed);
       setParseErrors(errs);
-      setHeaders(hdrs);
       setStage("preview");
     };
     reader.readAsText(file, "UTF-8");

@@ -21,7 +21,7 @@
  * @author   Elevate Sports
  */
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import imgEntrenamiento from "../assets/entrenamiento.jpeg";
 import imgPlantilla     from "../assets/Gestion_de_plantilla.jpeg";
@@ -30,7 +30,6 @@ import imgOficina       from "../assets/Oficina.jpeg";
 import imgProximo       from "../assets/Proximo_partido.jpeg";
 import { PALETTE }      from "../constants/palette";
 import EmptyState       from "./ui/EmptyState";
-import { useResponsive } from "../hooks/useResponsive";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
@@ -79,12 +78,6 @@ if (typeof document !== "undefined" && !document.getElementById("home-responsive
 // ─────────────────────────────────────────────
 // ANIMATION VARIANTS
 // ─────────────────────────────────────────────
-const fadeInUp = {
-  initial: { opacity: 0, y: 20, scale: 0.98 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  transition: { type: "spring", stiffness: 260, damping: 24 },
-};
-
 const staggerContainer = {
   animate: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 };
@@ -148,7 +141,7 @@ function getNextEvent() {
         if (future.length > 0) return future[0];
       }
     }
-  } catch (_) {
+  } catch {
     // localStorage no disponible o datos corruptos — continuar con fallback
   }
 
@@ -405,7 +398,6 @@ function InteractiveTile({
 // ─────────────────────────────────────────────
 export default function Home({ club, athletes, stats, matchStats, onNavigate, mode, onLogout }) {
   const { playHover, playSelect } = useGameAudio();
-  const { isMobile, isXs }        = useResponsive();
 
   const clubInitials = (club.nombre || "ES")
     .split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();

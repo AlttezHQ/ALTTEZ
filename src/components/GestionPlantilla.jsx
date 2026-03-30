@@ -1059,7 +1059,6 @@ function TacticalBoardView({ athletes }) {
   const [tacticalNote, setTacticalNote] = useState("");
   const [savingTactics, setSavingTactics] = useState(false);
   const [exportingPDF,  setExportingPDF]  = useState(false);
-  const fieldRef = useRef(null);
 
   /** Guarda formacion y notas en Supabase */
   const handleSaveFormation = async () => {
@@ -1089,7 +1088,7 @@ function TacticalBoardView({ athletes }) {
       link.href = canvas.toDataURL("image/png");
       link.click();
       showToast("Imagen exportada correctamente", "success");
-    } catch (err) {
+    } catch {
       showToast("Error al exportar — intenta de nuevo", "error");
     }
     setExportingPDF(false);

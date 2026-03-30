@@ -104,7 +104,6 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
 
   const movimientos = finanzas.movimientos || [];
   const balanceTotal = movimientos.reduce((s, m) => m.tipo === "ingreso" ? s + m.monto : s - m.monto, 0);
-  const ingresosMes = movimientos.filter(m => m.tipo === "ingreso" && m.fecha.startsWith(selectedMes)).reduce((s, m) => s + m.monto, 0);
   const egresosMes = movimientos.filter(m => m.tipo === "egreso" && m.fecha.startsWith(selectedMes)).reduce((s, m) => s + m.monto, 0);
   const tasaMorosidad = athletes.length ? Math.round((pagosDelMes.filter(p => p.estado === "pendiente").length / athletes.length) * 100) : 0;
 
@@ -202,7 +201,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
       transition: "color 0.15s, background 0.15s",
     }),
     kpiBar: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 8, marginBottom: 16 },
-    kpi: (color, i) => ({
+    kpi: (color) => ({
       padding: "14px 18px",
       background: "linear-gradient(135deg,rgba(20,20,30,0.95),rgba(12,12,22,0.98))",
       backdropFilter: "blur(20px)",
