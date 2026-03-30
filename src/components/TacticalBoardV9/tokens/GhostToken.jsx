@@ -19,7 +19,6 @@
 import { useRef, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAvatarUrl as avatar } from "../../../utils/helpers";
-import { PALETTE as C } from "../../../constants/palette";
 
 /** Número de sombras del trail */
 const TRAIL_COUNT = 3;
@@ -96,21 +95,26 @@ const GhostToken = memo(function GhostToken({ ghostRef, athlete, ovr, isDragging
 
   if (!athlete) return null;
 
-  const tokenStyle = {
-    width: 68,
+  const apellido = athlete.name?.split(" ").pop() || "";
+
+  /** Circular disc style — mirrors PlayerToken */
+  const circleStyle = {
+    width: 50,
+    height: 50,
+    borderRadius: "50%",
+    overflow: "hidden",
+    border: "2px solid rgba(255,255,255,0.7)",
+    background: "rgba(10,15,10,0.9)",
     pointerEvents: "none",
     userSelect: "none",
-    borderRadius: 3,
-    overflow: "hidden",
-    border: `2px solid ${C.neon}`,
-    background: "rgba(5,12,5,0.92)",
+    flexShrink: 0,
   };
 
   return (
     <AnimatePresence>
       {isDragging && (
         <>
-          {/* ── Trail shadows (posición relativa al cursor, gestionada via RAF) ── */}
+          {/* ── Trail shadows — circular, reduced intensity ── */}
           {TRAIL_OPACITIES.map((opacity, i) => (
             <div
               key={`trail-${i}`}
@@ -120,54 +124,65 @@ const GhostToken = memo(function GhostToken({ ghostRef, athlete, ovr, isDragging
                 zIndex: 9997 - i,
                 opacity,
                 pointerEvents: "none",
-                // blur progresivo: sombra más cercana = menos blur, más lejana = más blur
-                filter: `blur(${(i + 1) * 1.8}px)`,
+                filter: `blur(${(i + 1) * 2.2}px)`,
               }}
             >
               <div style={{
-                ...tokenStyle,
-                border: `2px solid ${C.neon}${Math.round(opacity * 255).toString(16).padStart(2, "0")}`,
-                boxShadow: `0 0 ${6 + i * 3}px ${C.neon}${Math.round(opacity * 180).toString(16).padStart(2, "0")}`,
+                ...circleStyle,
+                border: `2px solid rgba(255,255,255,${(opacity * 0.7).toFixed(2)})`,
+                boxShadow: `0 4px 16px rgba(0,0,0,0.6)`,
               }}>
-                <div style={{ height: 3, background: C.neon, opacity: opacity * 3 }} />
-                <div style={{ width: 68, height: 56, overflow: "hidden" }}>
-                  <img src={avatar(athlete.photo)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
-                </div>
+                <img
+                  src={avatar(athlete.photo)}
+                  alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+                />
               </div>
             </div>
           ))}
 
-          {/* ── Ghost principal — sigue el cursor con spring ── */}
+          {/* ── Ghost principal — circular photo, sigue el cursor ── */}
           <motion.div
             ref={ghostRef}
             initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1.1 }}
             exit={{ opacity: 0, scale: 0.85 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             style={{
               position: "fixed",
               zIndex: 9999,
               pointerEvents: "none",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 3,
             }}
           >
-            {/* OVR badge */}
-            <div style={{ fontSize: 15, fontWeight: 900, color: C.neon, textShadow: `0 0 12px ${C.neon}`, lineHeight: 1, textAlign: "center", marginBottom: 2 }}>
-              {ovr}
-            </div>
-            {/* Token con glow neón máximo */}
+            {/* Circular photo */}
             <div style={{
-              ...tokenStyle,
-              boxShadow: `0 12px 40px rgba(0,0,0,0.95), 0 0 0 2px ${C.neon}, 0 0 24px ${C.neon}88, 0 0 48px ${C.neon}33`,
+              ...circleStyle,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.85), 0 0 0 2px rgba(255,255,255,0.5)",
             }}>
-              <div style={{ height: 3, background: C.neon }} />
-              <div style={{ width: 68, height: 56, overflow: "hidden" }}>
-                <img src={avatar(athlete.photo)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
-              </div>
-              <div style={{ padding: "3px 4px 4px", background: "rgba(0,0,0,0.85)", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                <div style={{ fontSize: 8, color: C.neon, fontWeight: 700, textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "center", letterSpacing: "0.3px" }}>
-                  {athlete.name?.split(" ").pop()}
-                </div>
-              </div>
+              <img
+                src={avatar(athlete.photo)}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+              />
+            </div>
+            {/* Apellido */}
+            <div style={{
+              fontSize: 8,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.85)",
+              textTransform: "uppercase",
+              letterSpacing: "0.3px",
+              textShadow: "0 1px 4px rgba(0,0,0,0.95)",
+              whiteSpace: "nowrap",
+              maxWidth: 60,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}>
+              {apellido.length > 7 ? apellido.slice(0, 7) : apellido}
             </div>
           </motion.div>
         </>

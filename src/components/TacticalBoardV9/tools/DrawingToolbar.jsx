@@ -164,14 +164,14 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
                     }}
                   >
                     <div style={{
-                      width: isSelected ? 20 : 16,
-                      height: isSelected ? 20 : 16,
+                      width: isSelected ? 18 : 14,
+                      height: isSelected ? 18 : 14,
                       borderRadius: "50%",
                       background: c.hex,
-                      border: isSelected ? `2px solid rgba(255,255,255,0.9)` : "1.5px solid transparent",
+                      border: isSelected ? `2px solid rgba(255,255,255,0.75)` : "1.5px solid transparent",
                       boxShadow: isSelected
-                        ? `0 0 10px ${c.hex}, 0 0 18px ${c.hex}66`
-                        : `0 0 5px ${c.hex}44`,
+                        ? `0 0 6px ${c.hex}88`
+                        : "none",
                       transition: "all 0.12s",
                     }} />
                   </motion.div>
@@ -217,12 +217,10 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
         background: "rgba(5,8,16,0.96)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        border: `1px solid ${isAnyToolActive ? `${activeColor}44` : "rgba(255,255,255,0.09)"}`,
+        border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 28,
         padding: "5px 8px",
-        boxShadow: isAnyToolActive
-          ? `0 4px 20px rgba(0,0,0,0.65), 0 0 12px ${activeColor}22`
-          : "0 4px 20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04)",
         transition: "border-color 0.2s, box-shadow 0.2s",
       }}>
         {/* Herramientas en fila */}
@@ -250,9 +248,7 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
                 justifyContent: "center",
                 cursor: "pointer",
                 color: isActive ? activeColor : "rgba(255,255,255,0.45)",
-                boxShadow: isActive
-                  ? `0 0 12px ${activeColor}55, 0 0 6px ${activeColor}33`
-                  : "none",
+                boxShadow: "none",
                 transition: "background 0.12s, border 0.12s, color 0.12s, box-shadow 0.12s",
                 flexShrink: 0,
               }}
@@ -295,8 +291,8 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
             height: 14,
             borderRadius: "50%",
             background: activeColor,
-            boxShadow: `0 0 8px ${activeColor}88`,
-            border: "1.5px solid rgba(255,255,255,0.7)",
+            boxShadow: "none",
+            border: "1.5px solid rgba(255,255,255,0.55)",
           }} />
         </motion.div>
       </div>

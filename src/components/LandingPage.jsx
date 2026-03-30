@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PALETTE } from "../constants/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 import { ROLES } from "../constants/roles";
@@ -28,7 +29,35 @@ if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
 
 const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
 
+/* ── Botón sutil de regreso al portal ── */
+function BackToPortal({ navigate }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onClick={() => navigate("/")}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        position: "absolute",
+        top: 20,
+        left: 24,
+        fontSize: 11,
+        textTransform: "uppercase",
+        letterSpacing: "1.5px",
+        color: hover ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.3)",
+        cursor: "pointer",
+        transition: "color 0.2s ease",
+        userSelect: "none",
+        zIndex: 10,
+      }}
+    >
+      ← Volver al inicio
+    </div>
+  );
+}
+
 export default function LandingPage({ onDemo, onRegister, onLogin }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState("landing"); // landing | register | login
   const [form, setForm] = useState({
     nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
@@ -193,6 +222,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
   if (step === "landing") {
     return (
       <div style={css.page}>
+        <BackToPortal navigate={navigate} />
         <div style={css.logo}>
           Elevate<span style={{ color: PALETTE.neon }}>Sports</span>
         </div>

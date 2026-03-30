@@ -37,24 +37,15 @@ if (typeof document !== "undefined" && !document.getElementById("fl-landscape-st
 const PulsingDot = memo(function PulsingDot({ cx, cy, r = 0.8 }) {
   return (
     <g>
-      <circle cx={cx} cy={cy} r={r} fill="rgba(255,255,255,0.92)" filter="url(#dotGlow)" />
+      <circle cx={cx} cy={cy} r={r} fill="rgba(255,255,255,0.72)" filter="url(#dotGlow)" />
       <motion.circle
         cx={cx} cy={cy} r={r}
         fill="none"
-        stroke="rgba(255,255,255,0.6)"
-        strokeWidth="0.25"
-        initial={{ r: r, opacity: 0.6 }}
-        animate={{ r: r + 3.5, opacity: 0 }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: "easeOut", repeatDelay: 0 }}
-      />
-      <motion.circle
-        cx={cx} cy={cy} r={r}
-        fill="none"
-        stroke="rgba(255,255,255,0.35)"
-        strokeWidth="0.18"
-        initial={{ r: r, opacity: 0.35 }}
-        animate={{ r: r + 2.2, opacity: 0 }}
-        transition={{ duration: 2.6, repeat: Infinity, ease: "easeOut", delay: 1.3 }}
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth="0.2"
+        initial={{ r: r, opacity: 0.3 }}
+        animate={{ r: r + 2.8, opacity: 0 }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeOut", repeatDelay: 0.5 }}
       />
     </g>
   );
@@ -69,19 +60,19 @@ const PulsingDot = memo(function PulsingDot({ cx, cy, r = 0.8 }) {
  */
 const FieldLines = memo(function FieldLines({ viewMode = "full" }) {
   const lineStyle = {
-    stroke: "rgba(255,255,255,0.90)",
-    strokeWidth: "0.55",
+    stroke: "rgba(255,255,255,0.92)",
+    strokeWidth: "0.50",
     fill: "none",
   };
   const thinLine = {
-    stroke: "rgba(255,255,255,0.55)",
-    strokeWidth: "0.35",
+    stroke: "rgba(255,255,255,0.60)",
+    strokeWidth: "0.32",
     fill: "none",
   };
   const goalNet = {
-    fill: "rgba(255,255,255,0.05)",
-    stroke: "rgba(255,255,255,0.22)",
-    strokeWidth: "0.3",
+    fill: "rgba(255,255,255,0.04)",
+    stroke: "rgba(255,255,255,0.30)",
+    strokeWidth: "0.28",
   };
 
   const isHalf = viewMode === "half";
@@ -94,17 +85,36 @@ const FieldLines = memo(function FieldLines({ viewMode = "full" }) {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        filter: "drop-shadow(0 0 2.5px rgba(255,255,255,0.75)) drop-shadow(0 0 6px rgba(255,255,255,0.25))",
+        /* Sin drop-shadow excesivo — líneas TV limpias */
       }}
       viewBox={isHalf ? "52.5 0 52.5 68" : "0 0 105 68"}
       preserveAspectRatio="none"
     >
       <defs>
-        <filter id="dotGlow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="1.2" result="blur" />
+        <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="0.5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
+        {/* Área de portería: tono ligeramente diferente de césped (desgaste) */}
+        <filter id="goalkeeperAreaTint">
+          <feColorMatrix type="saturate" values="0.6" />
+          <feComponentTransfer>
+            <feFuncR type="linear" slope="0.95" />
+            <feFuncG type="linear" slope="1.05" />
+            <feFuncB type="linear" slope="0.85" />
+          </feComponentTransfer>
+        </filter>
       </defs>
+
+      {/* ── Sombra interna del borde del campo (desgaste perimetral muy sutil) ── */}
+      {!isHalf && (
+        <rect x="2" y="2" width="101" height="64" fill="none"
+          stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
+      )}
+      {isHalf && (
+        <rect x="52.5" y="2" width="50.5" height="64" fill="none"
+          stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
+      )}
 
       {/* ── Borde exterior ── */}
       {isHalf ? (
@@ -183,7 +193,7 @@ const FieldLayer = forwardRef(function FieldLayer({ children, viewMode = "full" 
         minWidth: 0,
         position: "relative",
         padding: "6px 8px",
-        background: "#0a0f1a",
+        background: "#0d1117",
       }}
     >
       {/* Campo centrado con aspect ratio 105:68 (1.544) */}
@@ -193,45 +203,39 @@ const FieldLayer = forwardRef(function FieldLayer({ children, viewMode = "full" 
         style={{
           flex: 1,
           position: "relative",
-          // Textura de césped LANDSCAPE
-          // Capa 1: bandas de segado verticales (90deg = franjas verticales en landscape)
-          // Capa 2: gradiente radial cenital
-          // Capa 3: viñeta perimetral
-          // Capa 4: base de color
+          // Textura de césped LANDSCAPE — broadcast TV quality
+          // Capa 1: franjas de segado con contraste real (~10% luminosidad)
+          //         verde oscuro #166325, verde claro #1e8030 — diferencia visible como TV
+          // Capa 2: iluminación cenital muy sutil (estadio con focos)
+          // Capa 3: viñeta perimetral MUY sutil — solo en los extremos
+          // Capa 4: base de color verde real #1a6b2a
           background: `
             repeating-linear-gradient(
               90deg,
-              rgba(0,0,0,0)          0%,
-              rgba(0,0,0,0)          6.25%,
-              rgba(0,0,0,0.10)       6.25%,
-              rgba(0,0,0,0.10)       12.5%
+              transparent               0%,
+              transparent               6.25%,
+              rgba(0,0,0,0.13)          6.25%,
+              rgba(0,0,0,0.13)          12.5%
             ),
             radial-gradient(
-              ellipse 75% 80% at 50% 50%,
-              rgba(255,255,255,0.05) 0%,
-              rgba(255,255,255,0.01) 45%,
-              transparent            72%
+              ellipse 60% 70% at 50% 50%,
+              rgba(255,255,255,0.04) 0%,
+              transparent            70%
             ),
             radial-gradient(
-              ellipse 110% 110% at 50% 50%,
-              transparent            40%,
-              rgba(0,0,0,0.48)       100%
+              ellipse 120% 120% at 50% 50%,
+              transparent            60%,
+              rgba(0,0,0,0.22)       100%
             ),
             linear-gradient(
-              90deg,
-              #0c2105 0%,
-              #184708 8%,
-              #1e5a0b 22%,
-              #22600e 50%,
-              #1e5a0b 78%,
-              #184708 92%,
-              #0c2105 100%
+              180deg,
+              #1a6b2a 0%,
+              #1e8030 50%,
+              #1a6b2a 100%
             )
           `,
           boxShadow: `
-            inset 0 0 40px rgba(0,0,0,0.5),
-            inset 0 0 80px rgba(0,0,0,0.2),
-            0 0 0 2px rgba(255,255,255,0.06)
+            inset 0 0 0 2px rgba(255,255,255,0.08)
           `,
           borderRadius: 4,
           overflow: "hidden",

@@ -65,59 +65,59 @@ const HORIZ_FORMATIONS = {
   "4-3-3": {
     label: "Ataque",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LB",  left:22, top:15 }, { posCode:"CB",  left:20, top:37 },
-      { posCode:"CB",  left:20, top:63 }, { posCode:"RB",  left:22, top:85 },
-      { posCode:"CM",  left:44, top:28 }, { posCode:"CM",  left:42, top:50 },
-      { posCode:"CM",  left:44, top:72 },
-      { posCode:"LW",  left:75, top:14 }, { posCode:"ST",  left:82, top:50 },
-      { posCode:"RW",  left:75, top:86 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:22, top:15 }, { posCode:"DC",  left:20, top:37 },
+      { posCode:"DC",  left:20, top:63 }, { posCode:"LD",  left:22, top:85 },
+      { posCode:"MC",  left:44, top:28 }, { posCode:"MC",  left:42, top:50 },
+      { posCode:"MC",  left:44, top:72 },
+      { posCode:"EI",  left:75, top:14 }, { posCode:"DEL", left:82, top:50 },
+      { posCode:"ED",  left:75, top:86 },
     ],
   },
   "4-4-2": {
     label: "Clasico",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LB",  left:22, top:14 }, { posCode:"CB",  left:20, top:36 },
-      { posCode:"CB",  left:20, top:64 }, { posCode:"RB",  left:22, top:86 },
-      { posCode:"LM",  left:48, top:14 }, { posCode:"CM",  left:44, top:38 },
-      { posCode:"CM",  left:44, top:62 }, { posCode:"RM",  left:48, top:86 },
-      { posCode:"ST",  left:80, top:36 }, { posCode:"ST",  left:80, top:64 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:22, top:14 }, { posCode:"DC",  left:20, top:36 },
+      { posCode:"DC",  left:20, top:64 }, { posCode:"LD",  left:22, top:86 },
+      { posCode:"MI",  left:48, top:14 }, { posCode:"MC",  left:44, top:38 },
+      { posCode:"MC",  left:44, top:62 }, { posCode:"MD",  left:48, top:86 },
+      { posCode:"DEL", left:80, top:36 }, { posCode:"DEL", left:80, top:64 },
     ],
   },
   "3-5-2": {
     label: "Compacto",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"CB",  left:20, top:25 }, { posCode:"CB",  left:20, top:50 },
-      { posCode:"CB",  left:20, top:75 },
-      { posCode:"LM",  left:44, top:10 }, { posCode:"CM",  left:42, top:30 },
-      { posCode:"CM",  left:42, top:50 }, { posCode:"CM",  left:42, top:70 },
-      { posCode:"RM",  left:44, top:90 },
-      { posCode:"ST",  left:80, top:35 }, { posCode:"ST",  left:80, top:65 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"DC",  left:20, top:25 }, { posCode:"DC",  left:20, top:50 },
+      { posCode:"DC",  left:20, top:75 },
+      { posCode:"MI",  left:44, top:10 }, { posCode:"MC",  left:42, top:30 },
+      { posCode:"MC",  left:42, top:50 }, { posCode:"MC",  left:42, top:70 },
+      { posCode:"MD",  left:44, top:90 },
+      { posCode:"DEL", left:80, top:35 }, { posCode:"DEL", left:80, top:65 },
     ],
   },
   "4-2-3-1": {
     label: "Control",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LB",  left:22, top:14 }, { posCode:"CB",  left:20, top:36 },
-      { posCode:"CB",  left:20, top:64 }, { posCode:"RB",  left:22, top:86 },
-      { posCode:"DM",  left:38, top:38 }, { posCode:"DM",  left:38, top:62 },
-      { posCode:"LW",  left:60, top:14 }, { posCode:"CAM", left:62, top:50 },
-      { posCode:"RW",  left:60, top:86 }, { posCode:"ST",  left:82, top:50 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:22, top:14 }, { posCode:"DC",  left:20, top:36 },
+      { posCode:"DC",  left:20, top:64 }, { posCode:"LD",  left:22, top:86 },
+      { posCode:"VOL", left:38, top:38 }, { posCode:"VOL", left:38, top:62 },
+      { posCode:"EI",  left:60, top:14 }, { posCode:"ENG", left:62, top:50 },
+      { posCode:"ED",  left:60, top:86 }, { posCode:"DEL", left:82, top:50 },
     ],
   },
   "5-3-2": {
     label: "Defensivo",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LWB", left:24, top:10 }, { posCode:"CB",  left:18, top:30 },
-      { posCode:"CB",  left:18, top:50 }, { posCode:"CB",  left:18, top:70 },
-      { posCode:"RWB", left:24, top:90 },
-      { posCode:"CM",  left:44, top:30 }, { posCode:"CM",  left:42, top:50 },
-      { posCode:"CM",  left:44, top:70 },
-      { posCode:"ST",  left:80, top:36 }, { posCode:"ST",  left:80, top:64 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:24, top:10 }, { posCode:"DC",  left:18, top:30 },
+      { posCode:"DC",  left:18, top:50 }, { posCode:"DC",  left:18, top:70 },
+      { posCode:"LD",  left:24, top:90 },
+      { posCode:"MC",  left:44, top:30 }, { posCode:"MC",  left:42, top:50 },
+      { posCode:"MC",  left:44, top:70 },
+      { posCode:"DEL", left:80, top:36 }, { posCode:"DEL", left:80, top:64 },
     ],
   },
 };
@@ -127,71 +127,73 @@ const HALF_FORMATIONS = {
   "4-3-3": {
     label: "Ataque",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },  // GK queda visible para referencia
-      { posCode:"LB",  left:30, top:12 }, { posCode:"CB",  left:28, top:35 },
-      { posCode:"CB",  left:28, top:65 }, { posCode:"RB",  left:30, top:88 },
-      { posCode:"CM",  left:52, top:25 }, { posCode:"CM",  left:50, top:50 },
-      { posCode:"CM",  left:52, top:75 },
-      { posCode:"LW",  left:75, top:12 }, { posCode:"ST",  left:85, top:50 },
-      { posCode:"RW",  left:75, top:88 },
+      { posCode:"PO",  left:5,  top:50 },  // PO queda visible para referencia
+      { posCode:"LI",  left:30, top:12 }, { posCode:"DC",  left:28, top:35 },
+      { posCode:"DC",  left:28, top:65 }, { posCode:"LD",  left:30, top:88 },
+      { posCode:"MC",  left:52, top:25 }, { posCode:"MC",  left:50, top:50 },
+      { posCode:"MC",  left:52, top:75 },
+      { posCode:"EI",  left:75, top:12 }, { posCode:"DEL", left:85, top:50 },
+      { posCode:"ED",  left:75, top:88 },
     ],
   },
   "4-4-2": {
     label: "Clasico",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LB",  left:30, top:10 }, { posCode:"CB",  left:28, top:33 },
-      { posCode:"CB",  left:28, top:67 }, { posCode:"RB",  left:30, top:90 },
-      { posCode:"LM",  left:54, top:10 }, { posCode:"CM",  left:50, top:35 },
-      { posCode:"CM",  left:50, top:65 }, { posCode:"RM",  left:54, top:90 },
-      { posCode:"ST",  left:83, top:35 }, { posCode:"ST",  left:83, top:65 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:30, top:10 }, { posCode:"DC",  left:28, top:33 },
+      { posCode:"DC",  left:28, top:67 }, { posCode:"LD",  left:30, top:90 },
+      { posCode:"MI",  left:54, top:10 }, { posCode:"MC",  left:50, top:35 },
+      { posCode:"MC",  left:50, top:65 }, { posCode:"MD",  left:54, top:90 },
+      { posCode:"DEL", left:83, top:35 }, { posCode:"DEL", left:83, top:65 },
     ],
   },
   "3-5-2": {
     label: "Compacto",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"CB",  left:28, top:22 }, { posCode:"CB",  left:28, top:50 },
-      { posCode:"CB",  left:28, top:78 },
-      { posCode:"LM",  left:52, top:8  }, { posCode:"CM",  left:50, top:28 },
-      { posCode:"CM",  left:50, top:50 }, { posCode:"CM",  left:50, top:72 },
-      { posCode:"RM",  left:52, top:92 },
-      { posCode:"ST",  left:83, top:35 }, { posCode:"ST",  left:83, top:65 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"DC",  left:28, top:22 }, { posCode:"DC",  left:28, top:50 },
+      { posCode:"DC",  left:28, top:78 },
+      { posCode:"MI",  left:52, top:8  }, { posCode:"MC",  left:50, top:28 },
+      { posCode:"MC",  left:50, top:50 }, { posCode:"MC",  left:50, top:72 },
+      { posCode:"MD",  left:52, top:92 },
+      { posCode:"DEL", left:83, top:35 }, { posCode:"DEL", left:83, top:65 },
     ],
   },
   "4-2-3-1": {
     label: "Control",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LB",  left:30, top:10 }, { posCode:"CB",  left:28, top:33 },
-      { posCode:"CB",  left:28, top:67 }, { posCode:"RB",  left:30, top:90 },
-      { posCode:"DM",  left:46, top:35 }, { posCode:"DM",  left:46, top:65 },
-      { posCode:"LW",  left:65, top:12 }, { posCode:"CAM", left:68, top:50 },
-      { posCode:"RW",  left:65, top:88 }, { posCode:"ST",  left:85, top:50 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:30, top:10 }, { posCode:"DC",  left:28, top:33 },
+      { posCode:"DC",  left:28, top:67 }, { posCode:"LD",  left:30, top:90 },
+      { posCode:"VOL", left:46, top:35 }, { posCode:"VOL", left:46, top:65 },
+      { posCode:"EI",  left:65, top:12 }, { posCode:"ENG", left:68, top:50 },
+      { posCode:"ED",  left:65, top:88 }, { posCode:"DEL", left:85, top:50 },
     ],
   },
   "5-3-2": {
     label: "Defensivo",
     positions: [
-      { posCode:"GK",  left:5,  top:50 },
-      { posCode:"LWB", left:32, top:8  }, { posCode:"CB",  left:26, top:28 },
-      { posCode:"CB",  left:26, top:50 }, { posCode:"CB",  left:26, top:72 },
-      { posCode:"RWB", left:32, top:92 },
-      { posCode:"CM",  left:52, top:28 }, { posCode:"CM",  left:50, top:50 },
-      { posCode:"CM",  left:52, top:72 },
-      { posCode:"ST",  left:83, top:35 }, { posCode:"ST",  left:83, top:65 },
+      { posCode:"PO",  left:5,  top:50 },
+      { posCode:"LI",  left:32, top:8  }, { posCode:"DC",  left:26, top:28 },
+      { posCode:"DC",  left:26, top:50 }, { posCode:"DC",  left:26, top:72 },
+      { posCode:"LD",  left:32, top:92 },
+      { posCode:"MC",  left:52, top:28 }, { posCode:"MC",  left:50, top:50 },
+      { posCode:"MC",  left:52, top:72 },
+      { posCode:"DEL", left:83, top:35 }, { posCode:"DEL", left:83, top:65 },
     ],
   },
 };
 
 /* ── Helpers ─────────────────────────────────────────────────────────────────── */
 const POSITION_GROUPS = {
-  GK:["GK"], DEF:["CB","LB","RB","LCB","RCB","LWB","RWB"],
-  MID:["CM","DM","LDM","RDM","CAM","LM","RM"], FWD:["ST","LS","RS","LW","RW","CF"],
+  GK:  ["PO"],
+  DEF: ["DC","LI","LD"],
+  MID: ["MC","VOL","ENG","MI","MD"],
+  FWD: ["DEL","EI","ED"],
 };
 const getGroup = (pc) => { for (const [g,c] of Object.entries(POSITION_GROUPS)) if (c.includes(pc)) return g; return "MID"; };
 const ROLE_OPTIONS = {
-  GK: ["Portero","Barredora"],
+  GK:  ["Portero","Barredora"],
   DEF: ["Defensor","Stopper","Lateral ofensivo","Marcador"],
   MID: ["Playmaker","Box to box","Pivote","Mediapunta","Interior"],
   FWD: ["Goleador","Falso 9","Extremo","Segundo delantero"],
@@ -202,8 +204,8 @@ const MiniPitch = memo(function MiniPitch({ positions, isActive, onClick }) {
   return (
     <div onClick={onClick} style={{
       width:76, height:50,
-      background: isActive ? "rgba(57,255,20,0.10)" : "rgba(255,255,255,0.03)",
-      border:`1px solid ${isActive ? C.neon : "rgba(255,255,255,0.1)"}`,
+      background: isActive ? "rgba(139,92,246,0.10)" : "rgba(255,255,255,0.03)",
+      border:`1px solid ${isActive ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.1)"}`,
       cursor:"pointer", position:"relative", overflow:"hidden", borderRadius:4,
       transition:"all 0.15s",
     }}>
@@ -216,7 +218,7 @@ const MiniPitch = memo(function MiniPitch({ positions, isActive, onClick }) {
             cx={p.left}
             cy={p.top * 0.64 + 1}
             r="3.2"
-            fill={isActive ? C.neon : "rgba(255,255,255,0.45)"}
+            fill={isActive ? C.purple : "rgba(255,255,255,0.45)"}
           />
         ))}
       </svg>
@@ -235,8 +237,8 @@ const HexRadar = memo(function HexRadar({ attrs, size=110 }) {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       {[0.33,0.66,1].map((s,si)=>(<polygon key={si} points={hex.map(p=>`${(cx+(p.x-cx)*s).toFixed(1)},${(cy+(p.y-cy)*s).toFixed(1)}`).join(" ")} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="0.5"/>))}
       {hex.map((p,i)=><line key={i} x1={cx} y1={cy} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)} stroke="rgba(255,255,255,0.07)" strokeWidth="0.5"/>)}
-      <path d={toP(data)} fill="rgba(200,255,0,0.15)" stroke={C.neon} strokeWidth="1.5"/>
-      {data.map((p,i)=><circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2.2" fill={C.neon}/>)}
+      <path d={toP(data)} fill="rgba(139,92,246,0.12)" stroke={C.purple} strokeWidth="1.5"/>
+      {data.map((p,i)=><circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="2.2" fill={C.purple}/>)}
       {hex.map((p,i)=>{const lx=cx+(p.x-cx)*1.3,ly=cy+(p.y-cy)*1.3;return(<text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="6.5" fill="rgba(255,255,255,0.45)" fontWeight="700">{keys[i]?.slice(0,3).toUpperCase()}</text>);})}
     </svg>
   );
@@ -253,9 +255,9 @@ function HealthBar({ salud, width = 48 }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   PLAYER TOKEN — Disco magnético compacto (estilo pizarra táctica profesional)
-   Círculo de 38px con número/posición, borde de salud, nombre debajo.
-   Sin foto por defecto — la foto se ve en el overlay al seleccionar.
+   PLAYER TOKEN — Circular photo token (Champions League broadcast style)
+   44px circle with athlete photo, health-color border, dorsal badge, name below.
+   No neon glow — clean, professional, broadcast-quality.
 ═══════════════════════════════════════════════════════════════════════════════ */
 const PlayerToken = memo(function PlayerToken({
   starter, salud, isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
@@ -263,120 +265,136 @@ const PlayerToken = memo(function PlayerToken({
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
 
+  /* ── Slot vacío ── */
   if (!athlete) {
     return (
       <div style={{
-        width: 36, height: 36, borderRadius: "50%",
-        border:`1.5px dashed ${isTarget ? C.drag : "rgba(255,255,255,0.18)"}`,
+        width: 44, height: 44, borderRadius: "50%",
+        border:`1.5px dashed ${isTarget ? "rgba(0,229,255,0.55)" : "rgba(255,255,255,0.15)"}`,
         display:"flex", alignItems:"center", justifyContent:"center",
-        background: isTarget ? "rgba(0,229,255,0.08)" : "rgba(255,255,255,0.03)",
+        background: isTarget ? "rgba(0,229,255,0.06)" : "rgba(255,255,255,0.02)",
         transition:"all 0.12s",
       }}>
-        <div style={{ fontSize:14, color:"rgba(255,255,255,0.15)", lineHeight:1 }}>+</div>
+        <div style={{ fontSize:16, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>+</div>
       </div>
     );
   }
 
   const saludVal = salud?.salud ?? 100;
-  const dorsal = athlete.dorsal || athlete.number || (starter.posCode);
+  const dorsal = athlete.dorsal ?? athlete.number ?? null;
   const apellido = athlete.name?.split(" ").pop() || "";
   const isActive = isSelected || isActivating;
   const isHover = hovered && !isDragged;
 
+  /* Border color: salud-based, no neon explosion. Selected = white ring. */
   const borderColor = isActivating
-    ? C.neon
-    : isTarget ? C.drag
-    : isSelected ? C.neon
+    ? "rgba(255,255,255,0.9)"
+    : isTarget ? "rgba(0,229,255,0.7)"
+    : isSelected ? "rgba(255,255,255,0.85)"
     : saludColor(saludVal);
 
+  /* Shadow: subtle depth only, no neon glow */
   const discShadow = isActivating
-    ? `0 0 0 3px ${C.neon}55, 0 0 18px ${C.neon}88`
-    : isTarget ? `0 0 0 2px ${C.drag}55, 0 0 12px ${C.drag}66`
-    : isSelected ? `0 0 0 2px ${C.neon}44, 0 0 12px ${C.neon}66`
-    : isHover ? `0 4px 14px rgba(0,0,0,0.8), 0 0 8px ${borderColor}44`
-    : `0 2px 8px rgba(0,0,0,0.7), 0 0 4px ${borderColor}22`;
+    ? `0 0 0 3px rgba(255,255,255,0.25), 0 6px 20px rgba(0,0,0,0.8)`
+    : isTarget ? `0 0 0 2px rgba(0,229,255,0.4), 0 4px 16px rgba(0,0,0,0.7)`
+    : isSelected ? `0 0 0 3px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.75)`
+    : isHover ? `0 4px 14px rgba(0,0,0,0.8)`
+    : `0 2px 8px rgba(0,0,0,0.7)`;
 
-  const scale = isActivating ? 1.14 : isTarget ? 1.1 : isActive && !isDragged ? 1.06 : isHover ? 1.04 : 1;
+  const scale = isActivating ? 1.12 : isTarget ? 1.08 : isActive && !isDragged ? 1.05 : isHover ? 1.03 : 1;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, userSelect:"none" }}>
-      {/* Disco circular */}
-      <motion.div
-        onClick={onSelect}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onPointerDown={onPointerDown}
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: "50%",
-          border: `2px solid ${borderColor}`,
-          background: isTarget
-            ? "rgba(0,50,70,0.95)"
-            : isActive
-            ? `radial-gradient(circle at 35% 35%, rgba(57,255,20,0.15), rgba(5,12,5,0.95))`
-            : "radial-gradient(circle at 35% 35%, rgba(40,55,40,0.9), rgba(8,14,8,0.96))",
+
+      {/* Circular photo disc */}
+      <div style={{ position:"relative", width:44, height:44 }}>
+        <motion.div
+          onClick={onSelect}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onPointerDown={onPointerDown}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            border: `2px solid ${borderColor}`,
+            background: "rgba(10,15,10,0.9)",
+            cursor: isDragged ? "grabbing" : "grab",
+            touchAction: "none",
+            opacity: isDragged ? 0.15 : 1,
+            transform: `scale(${scale})`,
+            boxShadow: discShadow,
+            transition: isActivating
+              ? "transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease, border-color 120ms ease"
+              : "transform 180ms ease, box-shadow 180ms ease, opacity 120ms, border-color 180ms",
+            position: "relative",
+            overflow: "hidden",
+            /* 44px is already the touch target */
+          }}
+        >
+          {/* Athlete photo — fills the circle */}
+          <img
+            src={avatar(athlete.photo)}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "top center",
+              display: "block",
+              borderRadius: "50%",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Status overlay (injury/absence) */}
+          {athlete.status !== "P" && (
+            <div style={{
+              position:"absolute", inset:0, borderRadius:"50%",
+              background:"rgba(0,0,0,0.62)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              zIndex:2,
+            }}>
+              <div style={{ fontSize:7, fontWeight:900, color:getStatusStyle(athlete.status).color, letterSpacing:"0.5px" }}>
+                {athlete.status==="L"?"LES":"AUS"}
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Dorsal badge — bottom-right corner of the circle */}
+        <div style={{
+          position: "absolute",
+          bottom: 0,
+          right: 0,
+          minWidth: 14,
+          height: 14,
+          borderRadius: 7,
+          background: "rgba(10,10,16,0.92)",
+          border: `1px solid rgba(255,255,255,0.25)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          flexDirection: "column",
-          cursor: isDragged ? "grabbing" : "grab",
-          touchAction: "none",
-          opacity: isDragged ? 0.15 : 1,
-          transform: `scale(${scale})`,
-          boxShadow: discShadow,
-          transition: isActivating
-            ? "transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease, border-color 120ms ease"
-            : "transform 180ms ease, box-shadow 180ms ease, opacity 120ms, border-color 180ms",
-          position: "relative",
-          overflow: "hidden",
-          minWidth: 44,  // touch target
-          minHeight: 44,
-        }}
-      >
-        {/* Status overlay (lesión/ausencia) */}
-        {athlete.status !== "P" && (
+          padding: "0 3px",
+          zIndex: 3,
+        }}>
           <div style={{
-            position:"absolute", inset:0, borderRadius:"50%",
-            background:"rgba(0,0,0,0.55)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            zIndex:2,
+            fontSize: 8,
+            fontWeight: 800,
+            color: "rgba(255,255,255,0.9)",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
           }}>
-            <div style={{ fontSize:7, fontWeight:900, color:getStatusStyle(athlete.status).color, letterSpacing:"0.5px" }}>
-              {athlete.status==="L"?"LES":"AUS"}
-            </div>
+            {dorsal !== null ? (typeof dorsal === "number" ? dorsal : dorsal) : starter.posCode?.slice(0,2)}
           </div>
-        )}
-        {/* Posición */}
-        <div style={{
-          fontSize: 8,
-          fontWeight: 700,
-          color: isActive ? C.neon : "rgba(255,255,255,0.4)",
-          textTransform: "uppercase",
-          letterSpacing: "0.5px",
-          lineHeight: 1,
-          transition: "color 0.15s",
-        }}>
-          {starter.posCode}
         </div>
-        {/* Dorsal o número */}
-        <div style={{
-          fontSize: 14,
-          fontWeight: 900,
-          color: isActive ? C.neon : "white",
-          lineHeight: 1,
-          textShadow: isActive ? `0 0 8px ${C.neon}` : "0 1px 4px rgba(0,0,0,0.9)",
-          transition: "color 0.15s",
-        }}>
-          {typeof dorsal === "number" ? dorsal : dorsal?.slice(0,2)}
-        </div>
-      </motion.div>
+      </div>
 
-      {/* Apellido debajo del disco */}
+      {/* Apellido debajo del círculo */}
       <div style={{
         fontSize: 8,
-        fontWeight: 700,
-        color: isActive ? C.neon : "rgba(255,255,255,0.65)",
+        fontWeight: 600,
+        color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
         textTransform: "uppercase",
         letterSpacing: "0.3px",
         textShadow: "0 1px 4px rgba(0,0,0,0.95)",
@@ -390,7 +408,7 @@ const PlayerToken = memo(function PlayerToken({
         {apellido.length > 7 ? apellido.slice(0, 7) : apellido}
       </div>
 
-      {/* Barra de salud compacta */}
+      {/* Barra de salud compacta — neon green ONLY here, by design */}
       <HealthBar salud={saludVal} width={36} />
     </div>
   );
@@ -440,7 +458,7 @@ function PlayerDetailOverlay({ starter, allAthletes, historial, onClose, onSwapS
         borderRadius: 12,
         zIndex: 50,
         overflow: "hidden",
-        boxShadow: "0 16px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.05), 0 0 24px rgba(57,255,20,0.08)",
+        boxShadow: "0 16px 48px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.05)",
         maxHeight: "calc(100% - 120px)",
         overflowY: "auto",
       }}
@@ -450,12 +468,12 @@ function PlayerDetailOverlay({ starter, allAthletes, historial, onClose, onSwapS
         <img src={avatar(athlete.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top", filter:"brightness(0.65)" }} />
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(6,10,18,1) 0%, rgba(6,10,18,0.2) 55%, transparent 100%)" }} />
         <div style={{ position:"absolute", bottom:10, left:12, right:12 }}>
-          <div style={{ fontSize:8, color:C.neon, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px" }}>{starter.posCode}</div>
+          <div style={{ fontSize:8, color:C.purple, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px" }}>{starter.posCode}</div>
           <div style={{ fontSize:16, fontWeight:900, color:"white", textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1.1 }}>{athlete.name}</div>
           <div style={{ fontSize:9, color:statusStyle.color, marginTop:2 }}>{athlete.status==="P"?"Disponible":"No disponible"}</div>
         </div>
         <div style={{ position:"absolute", top:10, right:10, display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ fontSize:26, fontWeight:900, color:C.neon, lineHeight:1, textShadow:`0 0 12px ${C.neon}` }}>{ovr}</div>
+          <div style={{ fontSize:26, fontWeight:900, color:"rgba(255,255,255,0.95)", lineHeight:1 }}>{ovr}</div>
           <motion.div onClick={onClose}
             whileHover={{ scale:1.15 }} whileTap={{ scale:0.9 }}
             style={{ width:24, height:24, borderRadius:"50%", background:"rgba(0,0,0,0.6)", border:"1px solid rgba(255,255,255,0.15)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"rgba(255,255,255,0.6)", fontSize:12 }}>
@@ -488,13 +506,13 @@ function PlayerDetailOverlay({ starter, allAthletes, historial, onClose, onSwapS
           {similar.map(a => (
             <div key={a.id} onClick={()=>onSwapSimilar(a)}
               style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", cursor:"pointer", background:"rgba(255,255,255,0.03)", border:`1px solid rgba(255,255,255,0.06)`, borderRadius:6, marginBottom:3, transition:"all 0.12s" }}
-              onMouseEnter={e=>e.currentTarget.style.background="rgba(57,255,20,0.06)"}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(139,92,246,0.08)"}
               onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"}>
               <div style={{ width:22, height:22, borderRadius:"50%", overflow:"hidden", border:`1px solid rgba(255,255,255,0.1)` }}>
                 <img src={avatar(a.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
               </div>
               <div style={{ fontSize:10, color:"white", fontWeight:600 }}>{a.name.split(" ").pop()}</div>
-              <div style={{ marginLeft:"auto", fontSize:8, color:C.neon }}>{a.posCode}</div>
+              <div style={{ marginLeft:"auto", fontSize:8, color:C.purple }}>{a.posCode}</div>
             </div>
           ))}
         </div>
@@ -540,10 +558,10 @@ function FormationsOverlay({ formationKey, onSelect, onClose }) {
             <MiniPitch positions={f.positions} isActive={formationKey===key} onClick={()=>{ onSelect(key); onClose(); }} />
             <div style={{
               fontSize:11, fontWeight:700, marginTop:4,
-              color: formationKey===key ? C.neon : C.textMuted,
+              color: formationKey===key ? "rgba(255,255,255,0.95)" : C.textMuted,
               padding:"2px 6px",
-              background: formationKey===key ? "rgba(57,255,20,0.12)" : "transparent",
-              border: formationKey===key ? `1px solid rgba(57,255,20,0.25)` : "1px solid transparent",
+              background: formationKey===key ? "rgba(139,92,246,0.14)" : "transparent",
+              border: formationKey===key ? `1px solid rgba(139,92,246,0.35)` : "1px solid transparent",
               borderRadius:16, display:"inline-block",
               transition:"all 0.15s",
             }}>{key}</div>
@@ -731,10 +749,10 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
               style={{
                 padding:"0 16px", fontSize:10, fontWeight:700,
                 textTransform:"uppercase", letterSpacing:"2px",
-                color:activeTab===t.key?C.neon:C.textMuted,
+                color:activeTab===t.key?"rgba(255,255,255,0.92)":C.textMuted,
                 display:"flex", alignItems:"center", cursor:"pointer",
-                borderBottom:activeTab===t.key?`2px solid ${C.neon}`:"2px solid transparent",
-                background:activeTab===t.key?"rgba(57,255,20,0.04)":"transparent",
+                borderBottom:activeTab===t.key?`2px solid rgba(255,255,255,0.7)`:"2px solid transparent",
+                background:activeTab===t.key?"rgba(255,255,255,0.04)":"transparent",
                 whiteSpace:"nowrap",
                 transition:"color 0.14s,background 0.14s",
               }}>
@@ -772,18 +790,18 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
             style={{
               display:"flex", alignItems:"center", gap:5,
               padding:"4px 10px", borderRadius:6, cursor:"pointer",
-              background: viewMode==="half" ? "rgba(57,255,20,0.12)" : "rgba(255,255,255,0.05)",
-              border: viewMode==="half" ? `1px solid ${C.neon}44` : "1px solid rgba(255,255,255,0.1)",
+              background: viewMode==="half" ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.05)",
+              border: viewMode==="half" ? `1px solid rgba(139,92,246,0.4)` : "1px solid rgba(255,255,255,0.1)",
               transition:"all 0.14s",
             }}
           >
             {/* Mini campo icon */}
             <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
-              <rect x="0.5" y="0.5" width="15" height="10" rx="0.5" stroke={viewMode==="half"?C.neon:"rgba(255,255,255,0.3)"} strokeWidth="0.8"/>
-              <line x1="8" y1="0.5" x2="8" y2="10.5" stroke={viewMode==="half"?C.neon:"rgba(255,255,255,0.25)"} strokeWidth="0.6"/>
-              {viewMode==="half" && <rect x="8" y="0.5" width="7.5" height="10" fill="rgba(57,255,20,0.1)"/>}
+              <rect x="0.5" y="0.5" width="15" height="10" rx="0.5" stroke={viewMode==="half"?C.purple:"rgba(255,255,255,0.3)"} strokeWidth="0.8"/>
+              <line x1="8" y1="0.5" x2="8" y2="10.5" stroke={viewMode==="half"?C.purple:"rgba(255,255,255,0.25)"} strokeWidth="0.6"/>
+              {viewMode==="half" && <rect x="8" y="0.5" width="7.5" height="10" fill="rgba(139,92,246,0.1)"/>}
             </svg>
-            <div style={{ fontSize:9, fontWeight:700, color: viewMode==="half" ? C.neon : C.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
+            <div style={{ fontSize:9, fontWeight:700, color: viewMode==="half" ? C.purple : C.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
               {viewMode==="half" ? "1/2" : "Full"}
             </div>
           </motion.div>
@@ -897,28 +915,27 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                       display:"flex", alignItems:"center", gap:8,
                       padding:"6px 10px",
                       background:"linear-gradient(135deg,rgba(18,20,30,0.92),rgba(10,12,22,0.96))",
-                      border:`1px solid ${isActivatingBench ? C.neon : saludColor(bSaludVal)+"38"}`,
+                      border:`1px solid ${isActivatingBench ? "rgba(255,255,255,0.45)" : saludColor(bSaludVal)+"38"}`,
                       cursor:isDrag("bench",i)?"grabbing":"grab",
                       opacity:isDrag("bench",i)?0.25:1,
                       touchAction:"none", flexShrink:0, borderRadius:8,
                       minWidth:130, userSelect:"none",
                       boxShadow:isActivatingBench
-                        ?`0 0 0 2px ${C.neon}, 0 0 16px rgba(57,255,20,0.45)`
+                        ?`0 0 0 2px rgba(255,255,255,0.5), 0 4px 16px rgba(0,0,0,0.6)`
                         :`0 3px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)`,
                       transform:isActivatingBench?"scale(1.05)":"scale(1)",
                       transition:"box-shadow 120ms ease, transform 120ms cubic-bezier(0.34,1.56,0.64,1), border-color 120ms ease",
                     }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:3 }}>
-                      <div style={{ width:4, height:4, borderRadius:"50%", background:saludColor(bSaludVal) }} />
-                      <div style={{ fontSize:8, fontWeight:700, color:C.textMuted, textTransform:"uppercase" }}>{b.athlete?.posCode}</div>
+                    {/* Photo */}
+                    <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`2px solid ${saludColor(bSaludVal)}`, flexShrink:0 }}>
+                      <img src={avatar(b.athlete?.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top center" }} />
                     </div>
-                    <div style={{ width:28, height:28, borderRadius:"50%", overflow:"hidden", border:`2px solid ${saludColor(bSaludVal)}`, flexShrink:0 }}>
-                      <img src={avatar(b.athlete?.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-                    </div>
-                    <div style={{ fontSize:20, fontWeight:900, color:C.neon }}>{bOvr}</div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:10, fontWeight:700, color:"white", textTransform:"uppercase", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {b.athlete?.name?.split(" ").pop() || "—"}
+                      <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:2 }}>
+                        <div style={{ fontSize:8, fontWeight:700, color:C.textMuted, textTransform:"uppercase" }}>{b.athlete?.posCode}</div>
+                        <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                          {b.athlete?.name?.split(" ").pop() || "—"}
+                        </div>
                       </div>
                       {bSalud && <HealthBar salud={bSalud.salud} width={44} />}
                     </div>
@@ -949,7 +966,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                   <div style={{ width:26, height:26, borderRadius:"50%", overflow:"hidden", border:`1px solid rgba(255,255,255,0.1)`, flexShrink:0 }}>
                     <img src={avatar(s.athlete.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
                   </div>
-                  <div style={{ fontSize:10, fontWeight:700, color:C.neon, textTransform:"uppercase", width:34 }}>{s.posCode}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.55)", textTransform:"uppercase", width:34 }}>{s.posCode}</div>
                   <div style={{ fontSize:12, fontWeight:700, color:"white", textTransform:"uppercase", flex:1 }}>{s.athlete.name.split(" ").pop()}</div>
                   <div style={{ fontSize:12, color:C.textMuted, margin:"0 6px" }}>→</div>
                   <select value={currentRole} onChange={e=>setRolesData(prev=>({...prev,[s.athlete.id]:e.target.value}))}
