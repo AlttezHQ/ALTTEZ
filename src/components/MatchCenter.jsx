@@ -592,7 +592,7 @@ function PlayerAnalytics({ athlete, stats, rpe, historial }) {
         {/* Spider Chart */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, padding: 16 }}>
           <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted, marginBottom: 12 }}>
-            Perfil de habilidades
+            Perfil de capacidades
           </div>
           <div style={{ display: "flex", justifyContent: "center" }}>
             <SpiderChart data={spiderData} size={160} uid={String(athlete.id)} />
@@ -628,7 +628,7 @@ function PlayerAnalytics({ athlete, stats, rpe, historial }) {
         {[
           { label: "Minutos jugados",    pct: stats ? Math.round((stats.minutosJugados / 90) * 100) : 0, color: C.neon   },
           { label: "Efectividad",        pct: Math.min(100, Math.round(minEfectividad * 20)),            color: C.purple },
-          { label: "Riesgo de lesion",   pct: riskPct,                                                  color: riskPct > 70 ? C.danger : riskPct > 50 ? C.amber : C.green },
+          { label: "Riesgo lesional",     pct: riskPct,                                                  color: riskPct > 70 ? C.danger : riskPct > 50 ? C.amber : C.green },
         ].map(bar => (
           <div key={bar.label} style={{ marginBottom: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: C.textMuted, marginBottom: 4 }}>
@@ -791,15 +791,15 @@ export default function MatchCenter({ athletes, historial, clubId }) {
             Match Center
           </div>
           <div style={{ fontSize: 8, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
-            Reporte post-partido · Performance Analytics
+            Ingesta post-partido · Analítica de rendimiento
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
           {[
-            { key: "ingesta",   label: "Ingesta" },
-            { key: "analytics", label: "Analytics" },
+            { key: "ingesta",   label: "Registro" },
+            { key: "analytics", label: "Analítica" },
           ].map(tab => (
             <button
               key={tab.key}
@@ -831,7 +831,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
           {/* Selector de partido */}
           <div style={{ padding: "14px 14px 10px", borderBottom: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted, marginBottom: 8 }}>
-              Partido
+              Seleccionar partido
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {DEMO_MATCH_REPORTS.map(m => (
@@ -944,7 +944,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
                 {/* Formulario de stats por jugador */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 12 }}>
-                    Estadisticas por jugador
+                    KPIs de rendimiento por deportista
                   </div>
                   <motion.div
                     variants={stagger}
@@ -1014,7 +1014,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
                         exit={{ opacity: 0 }}
                         style={{ padding: "10px 18px", fontSize: 10, color: C.neon, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", display: "flex", alignItems: "center", gap: 6 }}
                       >
-                        <span>&#10003;</span> Reporte guardado
+                        <span>&#10003;</span> Reporte confirmado
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1028,7 +1028,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
                       background: C.neon, color: "#0a0a0a", border: "none", cursor: "pointer",
                     }}
                   >
-                    Guardar reporte
+                    Confirmar reporte
                   </motion.button>
                 </div>
               </motion.div>
@@ -1041,7 +1041,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
                   {/* Player Cards */}
                   <div style={{ flex: "0 0 auto", minWidth: 280 }}>
                     <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 12 }}>
-                      Player Card Pro
+                      Ficha de rendimiento
                     </div>
                     <motion.div variants={stagger} initial="initial" animate="animate" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {matchAthletes.slice(0, 6).map(a => {
@@ -1066,7 +1066,7 @@ export default function MatchCenter({ athletes, historial, clubId }) {
                   {/* Analytics Panel del jugador seleccionado */}
                   <div style={{ flex: 1, minWidth: 300 }}>
                     <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 12 }}>
-                      Analytics detallado
+                      Analítica individual
                     </div>
                     <AnimatePresence mode="wait">
                       {selectedAthlete && (

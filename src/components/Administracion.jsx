@@ -77,10 +77,10 @@ const fmtDate = (d) => {
   return `${day}/${m}/${y}`;
 };
 
-const TABS = ["Pagos", "Movimientos", "Resumen"];
+const TABS = ["Mensualidades", "Movimientos", "Resumen ejecutivo"];
 
 export default function Administracion({ athletes, finanzas, setFinanzas }) {
-  const [activeTab, setActiveTab] = useState("Pagos");
+  const [activeTab, setActiveTab] = useState("Mensualidades");
   const [selectedMes, setSelectedMes] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -306,8 +306,8 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
       {/* ═══════════════════════════════════════════ */}
       <AnimatePresence mode="wait">
 
-      {/* TAB: PAGOS */}
-      {activeTab === "Pagos" && (
+      {/* TAB: MENSUALIDADES */}
+      {activeTab === "Mensualidades" && (
         <motion.div key="tab-pagos" variants={tabPanel} initial="initial" animate="animate" exit="exit">
           {/* KPI BAR — staggered entry */}
           <motion.div variants={kpiStagger} initial="initial" animate="animate" className="admin-kpi-bar" style={css.kpiBar}>
@@ -325,7 +325,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
             </motion.div>
             <motion.div variants={kpiItem} style={css.kpi(PALETTE.text, 3)}>
               <div style={css.kpiVal(PALETTE.text)}>{alDia}/{athletes.length}</div>
-              <div style={css.kpiLabel}>JUGADORES AL DIA</div>
+              <div style={css.kpiLabel}>AL DIA / TOTAL</div>
             </motion.div>
           </motion.div>
 
@@ -365,7 +365,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
                       <td style={{ ...css.td, color: PALETTE.textMuted }}>{fmtDate(fechaPago)}</td>
                       <td style={css.td}>
                         <button style={css.toggleBtn} onClick={() => togglePago(a.id)}>
-                          CAMBIAR
+                          ACTUALIZAR
                         </button>
                       </td>
                     </motion.tr>
@@ -394,7 +394,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
 
           {/* FORM */}
           <div style={css.panel}>
-            <div style={css.panelTitle}>REGISTRAR MOVIMIENTO</div>
+            <div style={css.panelTitle}>NUEVO MOVIMIENTO DE CAJA</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 10, alignItems: "end" }}>
               <div>
                 <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "1px", color: PALETTE.textMuted, marginBottom: 5 }}>TIPO</div>
@@ -415,7 +415,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
                 <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "1px", color: PALETTE.textMuted, marginBottom: 5 }}>FECHA</div>
                 <input style={css.input} type="date" value={movFecha} onChange={e => setMovFecha(e.target.value)} />
               </div>
-              <button style={css.submitBtn} onClick={addMovimiento}>AGREGAR</button>
+              <button style={css.submitBtn} onClick={addMovimiento}>REGISTRAR</button>
             </div>
             {formError && (
               <div style={{ marginTop:8, padding:"6px 12px", background:"rgba(226,75,74,0.12)", border:`1px solid ${PALETTE.danger}`, fontSize:10, color:PALETTE.danger, letterSpacing:"0.5px" }}>
@@ -426,9 +426,9 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
 
           {/* LIST */}
           <div style={css.panel}>
-            <div style={css.panelTitle}>HISTORIAL DE MOVIMIENTOS</div>
+            <div style={css.panelTitle}>HISTORIAL DE CAJA</div>
             {movimientos.length === 0 && (
-              <div style={{ color: PALETTE.textMuted, fontSize: 12, padding: "12px 0" }}>Sin movimientos registrados.</div>
+              <div style={{ color: PALETTE.textMuted, fontSize: 12, padding: "12px 0" }}>No hay movimientos registrados. Registra el primer ingreso o egreso del ciclo.</div>
             )}
             {[...movimientos].reverse().map((m, i) => (
               <motion.div
@@ -474,7 +474,7 @@ export default function Administracion({ athletes, finanzas, setFinanzas }) {
       )}
 
       {/* TAB: RESUMEN */}
-      {activeTab === "Resumen" && (
+      {activeTab === "Resumen ejecutivo" && (
         <motion.div key="tab-resumen" variants={tabPanel} initial="initial" animate="animate" exit="exit">
           <motion.div
             variants={kpiStagger}

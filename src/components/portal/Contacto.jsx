@@ -63,11 +63,11 @@ const CHANNELS = [
 ];
 
 const MOTIVOS = [
-  "Demo del producto",
+  "Solicitar demo del ecosistema",
   "Soporte tecnico",
-  "Precios y planes",
-  "Partnership o integracion",
-  "Prensa o medios",
+  "Planes y condiciones comerciales",
+  "Partnership o integracion tecnologica",
+  "Prensa y medios",
   "Otro",
 ];
 
@@ -259,8 +259,8 @@ export default function Contacto() {
               lineHeight: 1.7, margin: 0,
             }}
           >
-            Cuentanos que necesitas. Te respondemos rapido con una solucion concreta,
-            no con un discurso de ventas.
+            Cuentanos el desafio operativo de tu club. Te respondemos con una solucion
+            concreta, no con un discurso de ventas.
           </motion.p>
         </motion.div>
       </section>
@@ -307,14 +307,14 @@ export default function Contacto() {
                 fontSize: 22, fontWeight: 800, color: "white",
                 margin: "0 0 12px", letterSpacing: "-0.3px",
               }}>
-                Mensaje recibido
+                Recibido. Estamos en ello.
               </h3>
               <p style={{
                 fontSize: 14, color: "rgba(255,255,255,0.5)",
                 lineHeight: 1.7, margin: "0 0 32px",
               }}>
-                Gracias por escribirnos. Te contactaremos antes de 24 horas
-                al email que nos dejaste.
+                Tu mensaje llego a nuestro equipo. Te contactaremos en menos de 24 horas
+                con una respuesta directa al email que nos indicaste.
               </p>
               <motion.button
                 whileHover={{ scale: 1.03 }}
@@ -332,7 +332,7 @@ export default function Contacto() {
                   cursor: "pointer", fontFamily: "inherit",
                 }}
               >
-                Enviar otro mensaje
+                Nueva consulta
               </motion.button>
             </motion.div>
           ) : (
@@ -409,7 +409,7 @@ export default function Contacto() {
 
               <FormField label="Mensaje *" error={errors.mensaje}>
                 <textarea
-                  placeholder="Cuentanos sobre tu club, cuantos deportistas tienen, que problema quieres resolver..."
+                  placeholder="Cuentanos sobre tu club: cuantos deportistas tienen, cuales son los desafios operativos que quieres resolver y que esperas de Elevate..."
                   value={form.mensaje}
                   onChange={handleChange("mensaje")}
                   rows={5}
@@ -458,7 +458,7 @@ export default function Contacto() {
                     Enviando...
                   </>
                 ) : (
-                  "Enviar mensaje"
+                  "Enviar consulta"
                 )}
               </motion.button>
 

@@ -13,9 +13,9 @@ import { PALETTE as C } from "../../constants/palette";
 const MODULES = [
   {
     title: "Gestion de Plantilla",
-    description: "Registro completo del plantel con posiciones, disponibilidad, estado fisico y contacto de cada jugador. Visualizacion tipo FIFA con pizarra tactica interactiva y formaciones drag & drop.",
+    description: "Registro completo de la plantilla con posicion, disponibilidad, estado fisico y datos de contacto de cada deportista. Visualizacion tipo FIFA con pizarra tactica interactiva y formaciones drag & drop.",
     accent: C.neon,
-    features: ["Registro de jugadores", "Pizarra tactica FIFA", "Formaciones drag & drop", "Historial de disponibilidad", "Perfiles individuales"],
+    features: ["Registro de plantilla", "Pizarra tactica FIFA", "Formaciones drag & drop", "Historial de disponibilidad", "Perfiles individuales"],
     icon: (
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
         <rect x="6" y="10" width="36" height="28" rx="4" stroke="currentColor" strokeWidth="1.5"/>
@@ -29,9 +29,9 @@ const MODULES = [
   },
   {
     title: "Ciencia RPE",
-    description: "Motor de fatiga basado en la escala Borg CR-10. Cada sesion de entrenamiento registra la percepcion de esfuerzo de cada jugador. El sistema calcula automaticamente el indice de salud, genera alertas de sobrecarga y toma snapshots post-sesion.",
+    description: "Motor de fatiga basado en la escala Borg CR-10. Cada sesion registra la percepcion de esfuerzo de cada deportista. El sistema calcula el indice de readiness, genera alertas de sobrecarga antes de que ocurra la lesion y toma health snapshots post-sesion.",
     accent: "#7C3AED",
-    features: ["Escala Borg CR-10", "Semaforo de salud individual", "Alertas de sobrecarga", "Health Snapshots automaticos", "Historial de fatiga 7 dias"],
+    features: ["Escala Borg CR-10", "Semaforo de readiness", "Alertas de sobrecarga", "Health Snapshots automaticos", "Historial de carga aguda/cronica"],
     icon: (
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
         <path d="M8 36l8-14 7 8 6-12 7 6 4-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -43,9 +43,9 @@ const MODULES = [
   },
   {
     title: "Finanzas del Club",
-    description: "Administracion financiera integral. Control de mensualidades por jugador, registro de movimientos de caja (ingresos y egresos), semaforo de recaudo mensual y exportacion de reportes financieros para la junta directiva.",
+    description: "Administracion financiera integral del club. Control de mensualidades por deportista, registro de movimientos de caja, semaforo de recaudo mensual y exportacion de reportes ejecutivos para la junta directiva.",
     accent: C.amber,
-    features: ["Control de mensualidades", "Caja de movimientos", "Semaforo de recaudo", "Exportar reportes PDF", "Balance automatico"],
+    features: ["Control de mensualidades", "Caja de movimientos", "Semaforo de recaudo", "Reportes ejecutivos PDF", "Balance automatico"],
     icon: (
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
         <rect x="8" y="14" width="32" height="20" rx="4" stroke="currentColor" strokeWidth="1.5"/>
@@ -240,9 +240,9 @@ export default function SportsCRMPage() {
             fontSize: 16, color: C.textMuted, maxWidth: 650,
             margin: "0 auto 40px", lineHeight: 1.7,
           }}>
-            La herramienta definitiva para la estandarizacion de clubes deportivos en Colombia.
-            Gestion de plantilla, ciencia del entrenamiento y finanzas en una sola plataforma
-            disenada para entrenadores que piensan en grande.
+            La herramienta de estandarizacion operativa para clubes deportivos en Colombia.
+            Gestion de plantilla, ciencia del entrenamiento, salud financiera y analytics
+            en un ecosistema disenado para cuerpos tecnicos que toman decisiones con datos.
           </p>
 
           {/* CTAs */}
@@ -272,7 +272,7 @@ export default function SportsCRMPage() {
                 borderRadius: 8, cursor: "pointer",
               }}
             >
-              Iniciar Demo Gratis
+              Explorar entorno demo
             </motion.button>
           </div>
         </motion.div>
@@ -312,7 +312,7 @@ export default function SportsCRMPage() {
           fontSize: 10, fontWeight: 600, letterSpacing: "3px",
           textTransform: "uppercase", color: "#7C3AED",
         }}>
-          Modulos del CRM
+          Modulos del ecosistema
         </div>
 
         {MODULES.map((mod, i) => (
@@ -331,13 +331,14 @@ export default function SportsCRMPage() {
           margin: "0 0 16px",
           fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
         }}>
-          Listo para transformar tu club?
+          Tu club opera con intuicion o con datos?
         </h2>
         <p style={{
           fontSize: 14, color: C.textMuted, marginBottom: 32,
           maxWidth: 450, margin: "0 auto 32px",
         }}>
-          Empieza con el demo gratuito y descubre lo que Elevate puede hacer por tu equipo.
+          Accede al entorno demo y experimenta en minutos lo que Elevate hace por la
+          toma de decisiones de tu cuerpo tecnico.
         </p>
         <motion.button
           whileHover={{ scale: 1.04, boxShadow: `0 0 30px ${C.neonGlow}` }}
@@ -350,7 +351,7 @@ export default function SportsCRMPage() {
             borderRadius: 8, cursor: "pointer",
           }}
         >
-          Probar Demo Gratis
+          Acceder al entorno demo
         </motion.button>
       </section>
     </div>

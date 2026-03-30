@@ -167,7 +167,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
   const setRpe = (i, val) => {
     const a = athletes[i];
     if (isRsvpAbsent(a?.id)) {
-      showToast("Jugador marcado AUSENTE en el calendario — RPE bloqueado", "warning");
+      showToast("Deportista marcado como AUSENTE en el calendario. No es posible registrar RPE.", "warning");
       return;
     }
     const u = [...athletes];
@@ -197,7 +197,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                 </div>
                 <div>
                   <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.green }}>
-                    Sesion activa
+                    Sesion en curso
                   </div>
                   <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>
                     {tipo} · {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
@@ -260,7 +260,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
               {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
             </select>
             <div onClick={() => onGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"white", fontSize:9, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
-              Guardar sesión →
+              Cerrar sesion →
             </div>
           </div>
         )}
@@ -277,14 +277,14 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                   <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               }
-              title="Sin sesiones registradas"
-              subtitle="Registra tu primera sesión de entrenamiento para comenzar el seguimiento"
+              title="Plantilla lista para el registro"
+              subtitle="Ajusta el estado de cada deportista (P/A/L) y registra el RPE para activar el seguimiento de carga"
               compact
             />
           ) : (
           <>
           <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.25)", marginBottom:12 }}>
-            Toca P / A / L y registra el RPE de cada jugador
+            Marca el estado de cada deportista y registra la percepcion de esfuerzo (RPE)
           </div>
           <div className="entrenamiento-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
             {athletes.map((a, i) => {
@@ -344,7 +344,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
             })}
           </div>
           <div style={{ background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px", boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Nota general de la sesion..." rows={2} style={{ ...inp, background:"transparent", border:"none", resize:"none", lineHeight:1.6 }} maxLength={500}/>
+            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Observaciones tecnicas: objetivos trabajados, incidencias o directivas para el cuerpo tecnico..." rows={2} style={{ ...inp, background:"transparent", border:"none", resize:"none", lineHeight:1.6 }} maxLength={500}/>
           </div>
           </>
           )}
@@ -368,8 +368,8 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                   <line x1="3" y1="10" x2="21" y2="10" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               }
-              title="Sin sesiones registradas"
-              subtitle="Registra tu primera sesión de entrenamiento para comenzar el seguimiento"
+              title="Sin microciclos registrados"
+              subtitle="Cuando registres tu primera sesion, el historial de carga comenzara a construirse aqui por semana"
               compact
             />
           )}

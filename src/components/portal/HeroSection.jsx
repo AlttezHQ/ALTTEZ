@@ -11,10 +11,10 @@ import { useNavigate } from "react-router-dom";
 import { PALETTE as C } from "../../constants/palette";
 
 const STATS = [
-  { value: "500+", label: "Atletas gestionados" },
-  { value: "98%", label: "Retención de clubes" },
-  { value: "24/7", label: "Disponibilidad" },
-  { value: "3s", label: "Tiempo de carga" },
+  { value: "500+", label: "Deportistas bajo seguimiento" },
+  { value: "98%", label: "Retencion de clubes" },
+  { value: "24/7", label: "Disponibilidad operativa" },
+  { value: "<3s", label: "Tiempo de carga" },
 ];
 
 const stagger = {
@@ -119,7 +119,7 @@ export default function HeroSection() {
           textTransform: "uppercase", color: C.neon, marginBottom: 32,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.neon, boxShadow: `0 0 8px ${C.neonGlow}` }} />
-          Plataforma Deportiva Integral
+          Sistema de Inteligencia Deportiva
         </motion.div>
 
         {/* Titulo principal */}
@@ -151,8 +151,9 @@ export default function HeroSection() {
           color: C.textMuted, maxWidth: 600,
           margin: "0 auto 40px", lineHeight: 1.7,
         }}>
-          Elevate es el ecosistema tecnologico que transforma la gestion deportiva en Colombia.
-          Desde el entrenamiento hasta las finanzas, todo en una sola plataforma.
+          Elevate es el ecosistema tecnologico que estandariza la gestion deportiva en Colombia
+          al nivel de las grandes ligas. Desde la periodizacion del entrenamiento hasta la salud
+          financiera del club, en una sola plataforma.
         </motion.p>
 
         {/* CTAs */}
@@ -172,7 +173,7 @@ export default function HeroSection() {
               fontFamily: "'Barlow', Arial, sans-serif",
             }}
           >
-            Explorar Servicios
+            Explorar el CRM
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.04, borderColor: C.neon }}
@@ -187,7 +188,7 @@ export default function HeroSection() {
               fontFamily: "'Barlow', Arial, sans-serif",
             }}
           >
-            Ver Journal
+            Ver Bitacora
           </motion.button>
         </motion.div>
 
