@@ -6,6 +6,124 @@
 
 ---
 
+## Estado del Proyecto — 2026-03-29
+
+### Módulos en Producción
+| Módulo | Archivo | Status | Último deploy |
+|--------|---------|--------|---------------|
+| Home (Dashboard FIFA) | Home.jsx | 🟢 Activo | fdd04a0 |
+| Entrenamiento + RPE | Entrenamiento.jsx | 🟢 Activo | d8a9f28 |
+| Gestión de Plantilla | GestionPlantilla.jsx | 🟢 Activo | d8a9f28 |
+| Pizarra Táctica V9 | TacticalBoardV9/ | 🟢 Activo | d8a9f28 |
+| Administración | Administracion.jsx | 🟢 Activo | 275cc10 |
+| Mi Club | MiClub.jsx | 🟢 Activo | 275cc10 |
+| Calendario + RSVP | Calendario.jsx | 🟢 Activo | d636e65 |
+| Match Center | MatchCenter.jsx | 🟢 Activo | 076292a |
+| Portal Corporativo | portal/ | 🟢 Activo | d8a9f28 |
+| PWA (Service Worker) | sw.js + manifest | 🟢 Activo | 1f57008 |
+
+### Deuda Técnica Pendiente
+| ID | Severidad | Descripción | Sprint origen |
+|----|-----------|-------------|---------------|
+| DT-001 | MAJOR | Extraer cálculos financieros de Administracion.jsx a finanzasService.js | Dashboard |
+| DT-002 | MAJOR | Namespace "default" en localStorage cuando clubId vacío — patrón recurrente | QA Calendar + Match |
+| DT-003 | MINOR | JSDoc stale en useDrawingEngine.js (dice 0-100, real es 0-105 x 0-68) | QA TacticalBoard |
+| DT-004 | MINOR | CSS injection via createElement("style") — migrar a CSS modules cuando se implemente CSP | QA TacticalBoard |
+| DT-005 | MINOR | Campo `duracionMinutos` falta en schema Sesion — sRPE incalculable | Mateo spec |
+| DT-006 | BACKLOG | ACWR real (Acute:Chronic Workload Ratio) — requiere 28 días de datos | Mateo spec |
+| DT-007 | BACKLOG | Confirmación en logout + timeout de sesión para tablets compartidas (Ley 1581) | Sara spec |
+
+### Stack Actual
+- **Frontend**: React 19 + Vite 8 + Framer Motion 12
+- **Backend**: Supabase (Auth + DB + RLS)
+- **PWA**: vite-plugin-pwa + Workbox + Service Worker custom
+- **Deploy**: Vercel (auto-deploy desde master)
+- **Offline**: localStorage con namespace clubId + Service Worker cache-first
+
+---
+
+## 2026-03-29 — Activación Operativa del Dashboard + Próximo Evento Real
+**Directiva de**: Julián
+**Status**: 🟢 Completo — pendiente commit a master
+
+### Contexto
+Julián vetó los datos estáticos/ficticios del Dashboard. Los KPIs no ejecutaban acciones, "Próximo Partido" mostraba un rival hardcodeado ("vs Atlético Sur"), y la sección de estadísticas ocupaba demasiado espacio visual.
+
+### Cambios Implementados
+
+1. **KPIs clickeables con rutas reales**:
+   - Deportistas → `plantilla`
+   - Partidos → `partidos` (Match Center)
+   - Entrenamientos → `entrenamiento`
+   - Asistencia → `calendario`
+   - Cada KPI tiene hover feedback + audio FIFA (playHover/playSelect)
+
+2. **"Próximo Partido" → "Próximo Evento" con datos reales**:
+   - `getNextEvent()` lee los eventos del calendario y devuelve el más cercano en fecha
+   - Muestra tipo (Partido/Entrenamiento/Evento) con badge de color
+   - Fecha formateada (DOM 28 MAR · 17:00h), ubicación, countdown ("3 días" / "Mañana")
+   - Empty state funcional: "Sin eventos. Programar evento →" con CTA al calendario
+   - Cero datos ficticios — si no hay eventos, se refleja honestamente
+
+3. **Estadísticas de liga compactadas**:
+   - Layout centrado con flex en vez de grid rígido
+   - Font reducido (18px vs 20px), padding compacto
+   - Misma jerarquía visual que los KPIs superiores
+
+### Files Modified
+- `src/components/Home.jsx` — KPIs con onClick + hover, getNextEvent(), stats compactos
+
+### Validation Criteria
+- Click en cada KPI navega al módulo correcto
+- "Próximo Evento" muestra el evento real más cercano del calendario
+- Si no hay eventos futuros, muestra empty state con CTA
+- Badge de tipo diferencia visualmente Partido/Entrenamiento/Evento
+- Audio FIFA funciona en hover y click de los KPIs
+- Build: 0 errores
+
+---
+
+## 2026-03-29 — Restauración Home FIFA + Polish Visual
+**Directiva de**: Julián
+**Status**: 🟢 Completo — desplegado en master (commit fdd04a0)
+
+### Contexto
+Se construyó un Dashboard de Comando Operativo (grid 2×2 con 4 módulos: Alertas, Finanzas, Ingesta, Pizarra) que reemplazó completamente el Home. Julián lo rechazó: "Quitaron toda la esencia FIFA". Se revirtió y solo se aplicó polish al diseño existente.
+
+### Decisión Arquitectónica Crítica
+**NUNCA reemplazar el Home FIFA.** Los tiles interactivos con imágenes, audio sintético (useGameAudio), glow neón y scale son el DNA visual de Elevate Sports. Cualquier adición futura debe ser una EXTENSIÓN debajo de los tiles, nunca un reemplazo.
+
+### Polish Aplicado (sin cambios estructurales)
+- Transiciones más suaves: 280ms cubic-bezier en vez de 220ms linear
+- Hover: lift de 2px + glow más refinado (menos agresivo)
+- Imágenes: zoom sutil al hover (scale 1.04, 600ms ease-out)
+- Tipografía: hierarchy limpia (tag 8px, títulos con mejor tracking)
+- Topbar: blur 28px, sombra sutil, borde neón discreto
+- KPIs: gradiente de intensidad en border-bottom
+- CTAs: border-radius 2px, glow al hover
+- Footer: más discreto con badge v2.0
+
+### Files Modified
+- `src/components/Home.jsx` — polish visual sin cambios de estructura
+
+---
+
+## 2026-03-29 — Fix Vercel Deploy + PWA Icons
+**Status**: 🟢 Completo — desplegado
+
+### Problemas Resueltos
+1. **ERESOLVE en Vercel**: `vite-plugin-pwa@1.2.0` requiere Vite ^3-7 pero proyecto usa Vite 8. Fix: `.npmrc` con `legacy-peer-deps=true`
+2. **UNRESOLVED_IMPORT DrawingToolbar**: `.gitignore` tenía `tools/` (global) que bloqueaba `src/components/TacticalBoardV9/tools/`. Fix: cambiar a `/tools/` (solo raíz)
+3. **PWA no instalable**: Faltaban iconos PNG. Generados icon-192.png, icon-512.png, icon-maskable-192.png, icon-maskable-512.png desde icon-base.svg con sharp-cli
+
+### Files Created/Modified
+- `.npmrc` — legacy-peer-deps=true
+- `.gitignore` — `/tools/` en vez de `tools/`
+- `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-192.png`, `icon-maskable-512.png`
+- `public/manifest.json` — eliminadas referencias a screenshots inexistentes
+
+---
+
 ## 2026-03-28 — Match Center Ingest + Performance Analytics Engine
 **Directiva de**: Julian
 **Status**: 🟢 Completo — pendiente QA @Sara

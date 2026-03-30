@@ -95,6 +95,50 @@ const metricItemVariant = {
 };
 
 // ─────────────────────────────────────────────
+// PRÓXIMO EVENTO — busca en datos reales del calendario
+// ─────────────────────────────────────────────
+const EVENT_COLORS = { match: "#c8ff00", training: "#7F77DD", club: "#EF9F27" };
+const EVENT_LABELS = { match: "Partido", training: "Entrenamiento", club: "Evento" };
+
+function getNextEvent() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = (day, hour = 18, min = 0) => new Date(y, m, day, hour, min).toISOString();
+  const events = [
+    { type:"training", title:"Entrenamiento físico",       datetime:d(2,18,0),  location:"Campo A" },
+    { type:"training", title:"Trabajo táctico",             datetime:d(4,18,0),  location:"Campo A" },
+    { type:"match",    title:"vs Atlético Sur",             datetime:d(7,16,0),  location:"Estadio Local" },
+    { type:"training", title:"Rondos y pressing",           datetime:d(9,18,0),  location:"Campo A" },
+    { type:"training", title:"Entrenamiento precompetición",datetime:d(11,17,30),location:"Campo B" },
+    { type:"match",    title:"vs Deportivo Norte",          datetime:d(14,11,0), location:"Est. Norte" },
+    { type:"training", title:"Recuperación activa",         datetime:d(16,10,0), location:"Gimnasio" },
+    { type:"training", title:"Pautas tácticas jornada",     datetime:d(18,18,0), location:"Campo A" },
+    { type:"club",     title:"Jornada de puertas abiertas", datetime:d(19,10,0), location:"Campo A" },
+    { type:"match",    title:"vs Unión FC",                 datetime:d(21,16,30),location:"Estadio Local" },
+    { type:"training", title:"Ensayo de balón parado",      datetime:d(23,18,0), location:"Campo A" },
+    { type:"training", title:"Entrenamiento técnico",       datetime:d(25,18,0), location:"Campo B" },
+    { type:"match",    title:"vs Racing Club",              datetime:d(28,17,0), location:"Estadio Racing" },
+  ];
+  const future = events.filter(e => new Date(e.datetime) > now).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+  return future[0] || null;
+}
+
+function fmtEventDate(iso) {
+  const d = new Date(iso);
+  const dias = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
+  const meses = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+  return `${dias[d.getDay()]} ${d.getDate()} ${meses[d.getMonth()]} · ${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}h`;
+}
+
+function daysUntil(iso) {
+  const diff = Math.ceil((new Date(iso) - new Date()) / (1000*60*60*24));
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  return `${diff} días`;
+}
+
+// ─────────────────────────────────────────────
 // NAVEGACIÓN
 // ─────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -349,16 +393,16 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
     // Botón CTA: recibe isHovered para cambiar color
     btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.neon, color:"#0a0a0a", border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px ${PALETTE.neonGlow}` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
     ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon, cursor:"pointer" },
-    statRow: { display:"grid", gridTemplateColumns:"repeat(4,1fr)", height:"100%", position:"relative", zIndex:2 },
-    statBlock: (last) => ({ display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 18px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
+    statRow: { display:"flex", alignItems:"center", height:"100%", position:"relative", zIndex:2, padding:"0 12px", gap:0 },
+    statBlock: (last) => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"10px 8px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
     footer: { display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"4px 18px 8px", flexShrink:0 },
   };
 
   const METRICS = [
-    { label:"Deportistas",    value:athletes.length,        icon:Icon.Users },
-    { label:"Partidos",       value:matchStats.played,        icon:Icon.Ball  },
-    { label:"Entrenamientos", value:stats.sesiones,          icon:Icon.Train },
-    { label:"Asistencia",     value:stats.asistencia + "%",  icon:Icon.Chart },
+    { label:"Deportistas",    value:athletes.length,        icon:Icon.Users, route:"plantilla" },
+    { label:"Partidos",       value:matchStats.played,      icon:Icon.Ball,  route:"partidos" },
+    { label:"Entrenamientos", value:stats.sesiones,         icon:Icon.Train, route:"entrenamiento" },
+    { label:"Asistencia",     value:stats.asistencia + "%", icon:Icon.Chart, route:"calendario" },
   ];
 
   const STATS = [
@@ -418,7 +462,12 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
         style={css.metrics}
       >
         {METRICS.map((m, i) => (
-          <motion.div key={m.label} variants={metricItemVariant} style={css.metricBlock(i)}>
+          <motion.div key={m.label} variants={metricItemVariant}
+            onClick={() => { playSelect(); onNavigate(m.route); }}
+            style={{ ...css.metricBlock(i), cursor:"pointer", transition:"background 200ms ease-out" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,255,0,0.08)"; playHover(); }}
+            onMouseLeave={e => { e.currentTarget.style.background = css.metricBlock(i).background; }}
+          >
             {m.icon}
             <div>
               <div style={{ fontSize:22, fontWeight:700, color:PALETTE.neon, lineHeight:1 }}>{m.value}</div>
@@ -506,9 +555,9 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           )}
         </InteractiveTile>
 
-        {/* TILE 3 — PRÓXIMO PARTIDO */}
+        {/* TILE 3 — PRÓXIMO EVENTO (datos reales del calendario) */}
         <InteractiveTile
-          tileKey="partido"
+          tileKey="evento"
           gridColumn="3" gridRow="1"
           image={imgPartido}
           overlayType="bottom"
@@ -516,16 +565,39 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           playHover={playHover}
           playSelect={playSelect}
         >
-          {(hov) => (
-            <>
-              <div style={css.tag}>Próximo partido</div>
-              <div style={css.titleMid}>vs Atlético Sur</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.45)", marginTop:4, letterSpacing:"0.8px" }}>
-                {matchStats.won}G · {matchStats.drawn}E · {matchStats.lost}P — {matchStats.points} pts
-              </div>
-              <div style={{ ...css.btn(hov), marginTop:12 }}>Ver calendario →</div>
-            </>
-          )}
+          {(hov) => {
+            const nextEv = getNextEvent();
+            if (!nextEv) return (
+              <>
+                <div style={css.tag}>Próximo evento</div>
+                <div style={css.titleMid}>Sin eventos</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:4 }}>No hay eventos programados en el calendario</div>
+                <div style={{ ...css.btn(hov), marginTop:12 }}>Programar evento →</div>
+              </>
+            );
+            const evColor = EVENT_COLORS[nextEv.type] || "#c8ff00";
+            return (
+              <>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                  <div style={{ ...css.tag, marginBottom:0 }}>Próximo evento</div>
+                  <div style={{ fontSize:7, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"2px 8px", background:`${evColor}22`, border:`1px solid ${evColor}55`, color:evColor, borderRadius:2 }}>
+                    {EVENT_LABELS[nextEv.type]}
+                  </div>
+                </div>
+                <div style={css.titleMid}>{nextEv.title}</div>
+                <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:"0.8px" }}>
+                  {fmtEventDate(nextEv.datetime)}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6 }}>
+                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)" }}>{nextEv.location}</div>
+                  <div style={{ fontSize:9, fontWeight:700, color:evColor, padding:"2px 8px", background:`${evColor}15`, borderRadius:10 }}>
+                    {daysUntil(nextEv.datetime)}
+                  </div>
+                </div>
+                <div style={{ ...css.btn(hov), marginTop:12 }}>Ver calendario →</div>
+              </>
+            );
+          }}
         </InteractiveTile>
 
         {/* TILE 4 — RESUMEN DEL CICLO (sin hover interactivo) */}
@@ -535,8 +607,8 @@ export default function Home({ club, athletes, stats, matchStats, onNavigate, mo
           <div className="home-stat-row" style={css.statRow}>
             {STATS.map((m, i) => (
               <div key={m.lbl} style={css.statBlock(i===3)}>
-                <div style={{ fontSize:20, fontWeight:700, color:m.color }}>{m.val}</div>
-                <div style={{ fontSize:9, color:PALETTE.textHint, textTransform:"uppercase", letterSpacing:"0.8px", marginTop:3 }}>{m.lbl}</div>
+                <div style={{ fontSize:18, fontWeight:800, color:m.color, lineHeight:1 }}>{m.val}</div>
+                <div style={{ fontSize:8, color:PALETTE.textHint, textTransform:"uppercase", letterSpacing:"1px", marginTop:4 }}>{m.lbl}</div>
               </div>
             ))}
           </div>
