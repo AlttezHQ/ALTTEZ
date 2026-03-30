@@ -32,16 +32,43 @@
       "description": "Registro historico de una sesion de entrenamiento.",
       "primaryKey": "num",
       "fields": {
-        "num":       { "type": "integer",             "required": true,  "unique": true, "autoIncrement": true, "description": "Numero secuencial" },
-        "fecha":     { "type": "string",              "required": true,  "minLength": 1, "description": "Fecha formateada legible" },
-        "presentes": { "type": "integer",             "required": true,  "minimum": 0,   "description": "Jugadores presentes" },
-        "total":     { "type": "integer",             "required": true,  "minimum": 0,   "description": "Total jugadores en plantilla" },
-        "rpeAvg":    { "type": ["number","string","null"], "required": false, "description": "RPE promedio (null si no hay datos)" },
-        "tipo":      { "type": "string",              "required": true,  "enum": ["Tactica","Tactia","Fisico","Fisico","Recuperacion","Recuperacion","Partido","Partido interno","Sesion","Sesion"], "description": "Tipo de sesion" },
-        "nota":      { "type": "string",              "required": false, "description": "Nota del entrenador" }
+        "num":          { "type": "integer",                  "required": true,  "unique": true, "autoIncrement": true, "description": "Numero secuencial" },
+        "fecha":        { "type": "string",                   "required": true,  "minLength": 1, "description": "Fecha formateada legible (e.g. 'Mar 18 Mar')" },
+        "presentes":    { "type": "integer",                  "required": true,  "minimum": 0,   "description": "Jugadores presentes" },
+        "total":        { "type": "integer",                  "required": true,  "minimum": 0,   "description": "Total jugadores en plantilla" },
+        "rpeAvg":       { "type": ["number","string","null"], "required": false, "description": "RPE promedio del equipo (null o '—' si no hay datos)" },
+        "rpeByAthlete": { "type": ["object","null"],          "required": false, "description": "Mapa athleteId -> RPE individual. Keys son strings o numeros. Introducido en rpeEngine v2.0 para per-athlete tracking." },
+        "savedAt":      { "type": ["string","null"],          "required": false, "format": "date-time", "description": "ISO 8601 timestamp del guardado. Usado por rpeEngine para filtrar ventana de 7 dias. Null en sesiones legacy." },
+        "tipo":         { "type": "string",                   "required": true,  "enum": ["Tactica","Fisico","Recuperacion","Partido","Partido interno","Sesion"], "description": "Tipo de sesion (valores normalizados, sin duplicados ni typos)" },
+        "nota":         { "type": "string",                   "required": false, "description": "Nota del entrenador" }
       },
       "constraints": [
         "presentes <= total"
+      ]
+    },
+
+    "HealthSnapshot": {
+      "storageKey": "elevate_healthSnapshots",
+      "description": "Estado de salud calculado por el motor RPE para un atleta en un momento dado. Generado automaticamente por calcSaludActual() tras cada sesion guardada.",
+      "primaryKey": ["athleteId", "sessionNum"],
+      "fields": {
+        "athleteId":   { "type": "integer",            "required": true,  "description": "FK -> Athlete.id" },
+        "athleteName": { "type": "string",             "required": true,  "description": "Nombre legible (desnormalizado para display rapido)" },
+        "fecha":       { "type": "string",             "required": true,  "format": "date-time", "description": "ISO 8601 del snapshot (= Sesion.savedAt)" },
+        "sessionNum":  { "type": "integer",            "required": true,  "description": "FK -> Sesion.num — sesion que genero este snapshot" },
+        "salud":       { "type": "integer",            "required": true,  "minimum": 0, "maximum": 100, "description": "Indice de salud [0-100]. Formula: clamp(100 - rpeAvg7d*10, 0, 100)" },
+        "riskLevel":   { "type": "string",             "required": true,  "enum": ["optimo","precaucion","riesgo","sin_datos"], "description": "Clasificacion semaforo. optimo: salud>=50 | precaucion: 25-49 | riesgo: <25" },
+        "rpeAvg7d":    { "type": ["number","null"],    "required": false, "description": "Promedio de RPE del atleta en los ultimos 7 dias (ventana deslizante, max 7 sesiones)" },
+        "rpeActual":   { "type": ["integer","null"],   "required": false, "minimum": 1, "maximum": 10, "description": "RPE reportado en la sesion que genero este snapshot. Puede ser null si el atleta no reporto." }
+      },
+      "relationships": {
+        "athlete":  { "type": "manyToOne", "target": "Athlete", "foreignKey": "athleteId" },
+        "sesion":   { "type": "manyToOne", "target": "Sesion",  "foreignKey": "sessionNum" }
+      },
+      "notes": [
+        "Generado por calcSaludActual() en rpeEngine.js",
+        "El array se persiste en elevate_healthSnapshots (localStorage) o tabla health_snapshots (Supabase)",
+        "Para ACWR se necesitan >= 4 semanas de datos — planificado para v3.0"
       ]
     },
 
@@ -116,10 +143,14 @@
   ],
 
   "localStorageKeys": {
-    "elevate_athletes":   "Athlete[]",
-    "elevate_historial":  "Sesion[]",
-    "elevate_finanzas":   "{ pagos: Pago[], movimientos: Movimiento[] }",
-    "elevate_clubInfo":   "ClubInfo",
-    "elevate_matchStats": "MatchStats"
+    "elevate_athletes":       "Athlete[]",
+    "elevate_historial":      "Sesion[]",
+    "elevate_finanzas":       "{ pagos: Pago[], movimientos: Movimiento[] }",
+    "elevate_clubInfo":       "ClubInfo",
+    "elevate_matchStats":     "MatchStats",
+    "elevate_healthSnapshots":"HealthSnapshot[]",
+    "elevate_club_id":        "string — UUID o 'demo'. Identifica el club activo en sesion.",
+    "elevate_roles_v2":       "{ [userId: string]: 'admin' | 'coach' | 'viewer' }",
+    "elevate_mode":           "'demo' | 'real'"
   }
 }

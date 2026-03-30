@@ -4,6 +4,76 @@
 
 ---
 
+## 2026-03-28 — Fixes P0/P1 Auditoría de Datos
+**Directive from**: Julián
+**Status**: Complete
+**Owner**: @Mateo (Data)
+
+### Resumen
+Ejecución de todos los fixes P0 (acción inmediata) y P1 (credibilidad) del informe de auditoría de datos. Build verificado: 0 errores.
+
+### P0 — Acción Inmediata
+
+#### P0.1 — elevate_club_id incorporado a STORAGE_KEYS
+`src/constants/initialStates.js` — Agregado `"elevate_club_id"` al array STORAGE_KEYS. La clave existía en uso pero no estaba registrada, causando que el logout no la limpiara.
+
+#### P0.2 — DEMO_HISTORIAL.total corregido a 15
+`src/constants/initialStates.js` — Cambiado `total: 18` a `total: 15` en las 5 sesiones demo. El plantel tiene 15 atletas (IDs 1–15). Los `presentes` se ajustaron proporcionalmente para mantener coherencia (presentes <= total).
+
+| Sesion | presentes antes | presentes ahora | total |
+|--------|----------------|----------------|-------|
+| #14    | 14             | 14             | 15    |
+| #13    | 16 (imposible) | 13             | 15    |
+| #12    | 15             | 12             | 15    |
+| #11    | 13             | 11             | 15    |
+| #10    | 17 (imposible) | 14             | 15    |
+
+#### P0.3 — DEMO_MATCH_STATS alineado con 4 partidos reales
+`src/constants/initialStates.js` — Corregido de `played: 5, won: 3, drawn: 1, lost: 1` (sumaban 5 pero había 4 reports) a `played: 4, won: 2, drawn: 1, lost: 1`. Constraint `played == won + drawn + lost` ahora satisfecha. Goals ajustados a 8-4 (coherente con los 4 resultados: 3-1, 1-1, 2-0, 0-2).
+
+#### P0.4 — RLS profiles: club_id y role inmutables
+`supabase/migrations/006_fix_profiles_club_id_write.sql` — Nueva migración que reemplaza `profiles_update_own`. La policy anterior permitía que un usuario cambiara su propio `club_id` o `role` via UPDATE. La nueva usa `WITH CHECK` que valida que ambos campos mantengan sus valores originales.
+
+### P1 — Credibilidad
+
+#### P1.1 + P1.2 — SCHEMA_MODEL.json: HealthSnapshot + campos Sesion
+`docs/SCHEMA_MODEL.json`:
+- **Nueva entidad HealthSnapshot**: 8 campos, PK compuesta `[athleteId, sessionNum]`, relaciones documentadas, notas de generación automática.
+- **Sesion ampliada**: campos `rpeByAthlete` (object|null) y `savedAt` (ISO 8601) ahora documentados formalmente.
+- **Typos corregidos**: enum `tipo` eliminó "Tactia" y duplicados ("Fisico","Fisico", etc.). Valores canónicos: `["Tactica","Fisico","Recuperacion","Partido","Partido interno","Sesion"]`.
+- **localStorageKeys ampliado**: agregadas `elevate_healthSnapshots`, `elevate_club_id`, `elevate_roles_v2`, `elevate_mode`.
+
+#### P1.3 — getNextEvent() lee eventos reales del calendario
+`src/components/Home.jsx` — Refactorizado en dos funciones:
+- `getDemoEvents()` — genera los 13 eventos demo del mes actual (fallback).
+- `getNextEvent()` — primero lee `elevate_events_{clubId}` de localStorage; si hay eventos futuros, retorna el próximo. Si no, usa `getDemoEvents()`. El `clubId` se obtiene de `localStorage.getItem("elevate_club_id") || "demo"`.
+
+#### P1.4 — Atleta ID 12 (Andrés Mena) incorporado a DEMO_MATCH_REPORTS
+`src/utils/elevateScore.js` — Andrés Mena (CM) ahora tiene stats en 2 de los 4 partidos:
+- match-001: 0G 1A 7R 6D 68min — rendimiento estándar de mediocampista entrante.
+- match-002: 0G 0A 5R 4D 82min — sólido, sin tarjetas.
+
+#### P1.5 — Umbrales RPE recalibrados (v2.1)
+`src/utils/rpeEngine.js` — Umbrales actualizados en `calcSaludActual()` y `saludColor()`:
+
+| Nivel      | Umbral anterior | Umbral nuevo | RPE equivalente |
+|------------|----------------|--------------|----------------|
+| optimo     | salud >= 60    | salud >= 50  | RPE avg <= 5.0  |
+| precaucion | 30-59          | 25-49        | RPE avg 5.0-7.5 |
+| riesgo     | < 30           | < 25         | RPE avg > 7.5   |
+
+Elimina falso positivo: RPE 5-6 (entrenamiento normal) ya no clasifica como precaución.
+
+#### P1.6 — elevate_roles marcada deprecated en STORAGE_KEYS
+`src/constants/initialStates.js` — `"elevate_roles"` eliminada del array activo y reemplazada por comentario que indica deprecación. Solo `elevate_roles_v2` permanece activa.
+
+### Métricas finales
+- Archivos modificados: 5
+- Archivo nuevo: 1 (migración SQL)
+- Build: ✓ 0 errores | 725 módulos transformados | 791ms
+
+---
+
 ## 2026-03-28 — Pizarra Táctica: Césped Realista + Posiciones en Español
 **Directive from**: Julián
 **Status**: Complete
