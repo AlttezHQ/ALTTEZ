@@ -43,6 +43,7 @@ const JournalPage = lazy(() => import("./components/portal/JournalPage"));
 const QuienesSomos = lazy(() => import("./components/portal/QuienesSomos"));
 const Contacto = lazy(() => import("./components/portal/Contacto"));
 const PrivacyPolicy = lazy(() => import("./components/portal/PrivacyPolicy"));
+const ConfirmarAsistencia = lazy(() => import("./components/portal/ConfirmarAsistencia"));
 const LandingPage = lazy(() => import("./components/LandingPage"));
 const Home = lazy(() => import("./components/Home"));
 const Entrenamiento = lazy(() => import("./components/Entrenamiento"));
@@ -98,6 +99,15 @@ export default function App() {
           element={
             <Suspense fallback={<LoadingFallback />}>
               <PrivacyPolicy />
+            </Suspense>
+          }
+        />
+        {/* Confirmacion de asistencia — publica, sin login, acceso via link de WhatsApp */}
+        <Route
+          path="/confirmar/:clubId/:eventId"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ConfirmarAsistencia />
             </Suspense>
           }
         />
