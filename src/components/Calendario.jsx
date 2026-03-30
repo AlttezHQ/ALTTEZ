@@ -22,6 +22,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../constants/palette";
 import { showToast } from "./Toast";
+import { supabase, isSupabaseReady } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RESPONSIVE CSS — inyectado una sola vez en el DOM
@@ -490,10 +491,32 @@ function AthleteRsvpRow({ athlete, currentState, onChangeState }) {
 // SUB-COMPONENTE: PANEL LATERAL DE EVENTO SELECCIONADO
 // ─────────────────────────────────────────────────────────────────────────────
 
-function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClose }) {
+function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClose, clubId = "" }) {
   const def = EVENT_TYPES[event.type];
   const athleteIds = athletes.map(a => a.id ?? `ath-${athletes.indexOf(a)}`);
   const availability = getAvailability(event.id, athleteIds);
+
+  // ── Respuestas remotas desde Supabase (deportistas que confirmaron via link) ──
+  const [remoteRsvp, setRemoteRsvp] = useState([]);
+
+  useEffect(() => {
+    if (!isSupabaseReady || !clubId || !event.id) return;
+    let cancelled = false;
+
+    supabase
+      .from("event_rsvp")
+      .select("athlete_name, status, responded_at")
+      .eq("club_id", clubId)
+      .eq("event_id", event.id)
+      .order("responded_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!cancelled && !error && data) {
+          setRemoteRsvp(data);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [clubId, event.id]);
 
   // Atletas convocados: para partido usa el número convocados (tomar primeros N)
   // Para entrenamiento y club: todos los atletas
@@ -509,9 +532,14 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
     const titulo    = event.title;
     const ubicacion = event.location || "Por confirmar";
 
+    // Link publico de confirmacion — el deportista confirma sin login
+    const effectiveClubId = clubId || "demo";
+    const encodedEventId  = encodeURIComponent(event.id);
+    const confirmLink = `https://elevate-sports.vercel.app/confirmar/${effectiveClubId}/${encodedEventId}`;
+
     let mensajeTexto;
 
-    if (event.type === "partido") {
+    if (event.type === "match") {
       mensajeTexto =
         `*CONVOCATORIA OFICIAL*\n` +
         `*${titulo}*\n` +
@@ -521,8 +549,9 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
         `Lugar: ${ubicacion}\n` +
         `---\n` +
         `Confirma tu disponibilidad a la brevedad. Tu respuesta es parte de la preparacion del equipo.\n\n` +
+        `Confirma aqui: ${confirmLink}\n\n` +
         `_Cuerpo Tecnico - ${titulo}_`;
-    } else if (event.type === "entrenamiento") {
+    } else if (event.type === "training") {
       mensajeTexto =
         `*SESION DE ENTRENAMIENTO*\n` +
         `*${titulo}*\n` +
@@ -532,6 +561,7 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
         `Lugar: ${ubicacion}\n` +
         `---\n` +
         `Confirma tu asistencia. La puntualidad y presencia son parte del rendimiento.\n\n` +
+        `Confirma aqui: ${confirmLink}\n\n` +
         `_Cuerpo Tecnico - ${titulo}_`;
     } else {
       // club — institucional
@@ -544,6 +574,7 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
         `Lugar: ${ubicacion}\n` +
         `---\n` +
         `Se espera tu participacion. Confirma tu asistencia a la brevedad.\n\n` +
+        `Confirma aqui: ${confirmLink}\n\n` +
         `_${titulo} - Elevate Sports_`;
     }
 
@@ -683,6 +714,87 @@ function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClos
                 />
               );
             })
+        )}
+
+        {/* ── Respuestas remotas (confirmadas via link de WhatsApp) ── */}
+        {remoteRsvp.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{
+              fontSize: 9,
+              textTransform: "uppercase",
+              letterSpacing: "2px",
+              color: C.textMuted,
+              marginBottom: 8,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}>
+              Confirmaciones via link
+              <span style={{
+                fontSize: 8,
+                fontWeight: 700,
+                color: "#39FF14",
+                background: "rgba(57,255,20,0.12)",
+                border: "1px solid rgba(57,255,20,0.3)",
+                borderRadius: 3,
+                padding: "1px 5px",
+              }}>
+                {remoteRsvp.length}
+              </span>
+            </div>
+            {remoteRsvp.map((r, i) => {
+              const colorMap = { confirmed: "#39FF14", absent: "#E24B4A", maybe: "#EF9F27" };
+              const labelMap = { confirmed: "Confirmo", absent: "No puede", maybe: "Duda" };
+              const iconMap  = { confirmed: "✓", absent: "✗", maybe: "~" };
+              const color = colorMap[r.status] || C.textMuted;
+              return (
+                <motion.div
+                  key={`remote-${i}`}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 0",
+                    borderBottom: `1px solid ${C.border}`,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      background: `${color}18`,
+                      border: `1px solid ${color}55`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      color,
+                      flexShrink: 0,
+                    }}>
+                      {iconMap[r.status] || "?"}
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "white" }}>
+                      {r.athlete_name}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: 8,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    color,
+                  }}>
+                    {labelMap[r.status] || r.status}
+                  </span>
+                </motion.div>
+              );
+            })}
+          </div>
         )}
       </div>
     </motion.div>
@@ -1515,6 +1627,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
                 setRsvp={setRsvp}
                 getAvailability={getAvailability}
                 onClose={() => setSelected(null)}
+                clubId={clubId}
               />
             ) : (
               <PanelEmpty key="empty" />
