@@ -29,6 +29,7 @@ import TacticalBoardV9 from "./TacticalBoardV9/TacticalBoardV9";
 import BulkAthleteUploader from "./BulkAthleteUploader";
 import EmptyState from "./ui/EmptyState";
 import { PALETTE } from "../constants/palette";
+import { useStore } from "../store/useStore";
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("gestion-responsive")) {
   const s = document.createElement("style");
@@ -1059,7 +1060,6 @@ function TacticalBoardView({ athletes }) {
   const [tacticalNote, setTacticalNote] = useState("");
   const [savingTactics, setSavingTactics] = useState(false);
   const [exportingPDF,  setExportingPDF]  = useState(false);
-  const fieldRef = useRef(null);
 
   /** Guarda formacion y notas en Supabase */
   const handleSaveFormation = async () => {
@@ -1089,7 +1089,7 @@ function TacticalBoardView({ athletes }) {
       link.href = canvas.toDataURL("image/png");
       link.click();
       showToast("Imagen exportada correctamente", "success");
-    } catch (err) {
+    } catch {
       showToast("Error al exportar — intenta de nuevo", "error");
     }
     setExportingPDF(false);
@@ -1375,7 +1375,11 @@ function TacticalBoardView({ athletes }) {
 // ─────────────────────────────────────────────
 // COMPONENTE RAÍZ
 // ─────────────────────────────────────────────
-export default function GestionPlantilla({ athletes, setAthletes, historial = [], clubId = "" }) {
+export default function GestionPlantilla({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
+  const setAthletes = useStore(state => state.setAthletes);
+  const historial = useStore(state => state.historial);
+
   const [activeTab, setActiveTab] = useState("lista");
 
   /**

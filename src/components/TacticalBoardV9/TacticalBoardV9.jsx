@@ -590,7 +590,6 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
   const [confirmAction, setConfirmAction] = useState(null);
 
   // Usa HORIZ_FORMATIONS como base — landscape correcto
-  const formations = viewMode === "half" ? HALF_FORMATIONS : HORIZ_FORMATIONS;
 
   const [starters, setStarters] = useState(() =>
     HORIZ_FORMATIONS["4-3-3"].positions.map((pos, i) => ({
@@ -906,7 +905,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
               {bench.map((b, i) => {
                 const bSalud = b.athlete ? saludMap.get(b.athlete.id) : null;
                 const bSaludVal = bSalud?.salud ?? 100;
-                const bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
+                const _bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
                 const isActivatingBench = dragActivating?.type==="bench"&&dragActivating?.index===i;
                 return (
                   <div key={b.id}

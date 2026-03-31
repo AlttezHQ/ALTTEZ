@@ -345,12 +345,12 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
  * @returns {JSX.Element | null}
  */
 export default function DemoGate({ onNavigateToRegister }) {
-  const demoStart = getOrInitDemoStart();
-  const elapsed = Math.floor((Date.now() - demoStart) / 1000);
-  const initialSeconds = Math.max(0, DEMO_DURATION_SEC - elapsed);
-
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
-  const [showModal, setShowModal] = useState(initialSeconds === 0);
+  const [secondsLeft, setSecondsLeft] = useState(() => {
+    const demoStart = getOrInitDemoStart();
+    const elapsed = Math.floor((Date.now() - demoStart) / 1000);
+    return Math.max(0, DEMO_DURATION_SEC - elapsed);
+  });
+  const [showModal, setShowModal] = useState(() => secondsLeft === 0);
   const [bannerVisible, setBannerVisible] = useState(true);
 
   const expired = secondsLeft === 0;

@@ -142,7 +142,7 @@ export default function useDragEngine({
     const onUp = (e) => {
       const di = dragInfoRef.current;
       const curSt = startersRef.current || [];
-      const curBn = benchRef.current || [];
+      const _curBn = benchRef.current || [];
       if (!di) { cleanup(); return; }
 
       if (fieldRef.current) {

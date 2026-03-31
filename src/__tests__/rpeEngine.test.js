@@ -32,7 +32,7 @@ describe("calcSaludActual — basico", () => {
   it("calcula correctamente con RPE actual de 5 → salud 50", () => {
     const result = calcSaludActual(5, []);
     expect(result.salud).toBe(50);
-    expect(result.riskLevel).toBe("precaucion");
+    expect(result.riskLevel).toBe("optimo");
     expect(result.rpeAvg7d).toBe(5);
   });
 
@@ -81,7 +81,7 @@ describe("calcSaludActual — per-athlete RPE", () => {
     const r1 = calcSaludActual(7, historial, 1);
     expect(r1.rpeAvg7d).toBe(7.5);
     expect(r1.salud).toBe(25);
-    expect(r1.riskLevel).toBe("riesgo");
+    expect(r1.riskLevel).toBe("precaucion");
 
     // Atleta 2: RPE actual 2, historico 3 → avg (2+3)/2 = 2.5 → salud 75
     const r2 = calcSaludActual(2, historial, 2);
@@ -201,20 +201,20 @@ describe("calcSaludActual — validacion", () => {
 // ════════════════════════════════════════════════
 
 describe("saludColor", () => {
-  it("retorna verde para salud >= 60", () => {
-    expect(saludColor(60)).toBe("#1D9E75");
+  it("retorna verde para salud >= 50", () => {
+    expect(saludColor(50)).toBe("#1D9E75");
     expect(saludColor(100)).toBe("#1D9E75");
     expect(saludColor(75)).toBe("#1D9E75");
   });
 
-  it("retorna ambar para salud 30-59", () => {
-    expect(saludColor(30)).toBe("#EF9F27");
-    expect(saludColor(59)).toBe("#EF9F27");
+  it("retorna ambar para salud 25-49", () => {
+    expect(saludColor(25)).toBe("#EF9F27");
+    expect(saludColor(49)).toBe("#EF9F27");
     expect(saludColor(45)).toBe("#EF9F27");
   });
 
-  it("retorna rojo para salud < 30", () => {
-    expect(saludColor(29)).toBe("#E24B4A");
+  it("retorna rojo para salud < 25", () => {
+    expect(saludColor(24)).toBe("#E24B4A");
     expect(saludColor(0)).toBe("#E24B4A");
     expect(saludColor(10)).toBe("#E24B4A");
   });

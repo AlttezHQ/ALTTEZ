@@ -85,7 +85,6 @@ function extractArrayLiteral(source, varName) {
   const literal = source.slice(afterEquals, i + 1);
 
   // Evaluate in a sandboxed Function — no access to process, global, etc.
-  // eslint-disable-next-line no-new-func
   return new Function(`return ${literal}`)();
 }
 
@@ -111,7 +110,6 @@ function extractObjectLiteral(source, varName) {
   }
 
   const literal = source.slice(afterEquals, i + 1);
-  // eslint-disable-next-line no-new-func
   return new Function(`return (${literal})`)();
 }
 
@@ -146,7 +144,6 @@ function extractSesionTipos(source) {
     else if (source[i] === ']') { depth--; if (depth === 0) break; }
   }
   const literal = source.slice(arrStart, i + 1);
-  // eslint-disable-next-line no-new-func
   return new Function(`return ${literal}`)();
 }
 

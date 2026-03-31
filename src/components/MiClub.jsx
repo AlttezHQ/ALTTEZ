@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sanitizeText } from "../utils/sanitize";
 import { PALETTE as C } from "../constants/palette";
+import { useStore } from "../store/useStore";
 
 // ── Inject styles once ──────────────────────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("miclub-styles")) {
@@ -22,7 +23,9 @@ const CATEGORIAS_DEFAULT = [
   "Sub-20","Sub-23","Mayores","Femenino"
 ];
 
-export default function MiClub({ clubInfo, setClubInfo }) {
+export default function MiClub() {
+  const clubInfo = useStore(state => state.clubInfo);
+  const setClubInfo = useStore(state => state.setClubInfo);
   const [newCat, setNewCat] = useState("");
   const [newCampo, setNewCampo] = useState("");
   const [saved, setSaved] = useState(false);

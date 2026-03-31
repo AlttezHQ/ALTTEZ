@@ -12,21 +12,20 @@ import { useCallback, useEffect, useRef } from "react";
 import { isSupabaseReady } from "../lib/supabase";
 import * as sb from "../services/supabaseService";
 
+import { useStore } from "../store/useStore";
+
 /**
  * Hook que sincroniza datos desde Supabase al montar el componente.
  * Usa localStorage como cache; sobrescribe con datos de Supabase si disponible.
- *
- * @param {Object} params
- * @param {Function} params.setAthletes
- * @param {Function} params.setHistorial
- * @param {Function} params.setClubInfo
- * @param {Function} params.setMatchStats
- * @param {Function} params.setFinanzas
- * @param {string} params.mode - "demo" | "production" | null
  */
-export default function useSupabaseSync({
-  setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, mode,
-}) {
+export default function useSupabaseSync() {
+  const setAthletes = useStore(state => state.setAthletes);
+  const setHistorial = useStore(state => state.setHistorial);
+  const setClubInfo = useStore(state => state.setClubInfo);
+  const setMatchStats = useStore(state => state.setMatchStats);
+  const setFinanzas = useStore(state => state.setFinanzas);
+  const mode = useStore(state => state.mode);
+
   const synced = useRef(false);
 
   useEffect(() => {

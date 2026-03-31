@@ -16,13 +16,10 @@
  * @author @Carlos (Arquitecto)
  */
 
-import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { createRequire } from 'module';
+import { dirname } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(__dirname, '..');
 
 // ── ANSI helpers ──
 const RED    = '\x1b[31m';

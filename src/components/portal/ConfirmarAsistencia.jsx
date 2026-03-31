@@ -13,7 +13,7 @@
  * @author @Arquitecto (Carlos)
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseReady } from "../../lib/supabase";
@@ -96,23 +96,23 @@ function decodeEventTitle(eventId) {
  * @returns {{ eventData: object|null, loading: boolean }}
  */
 function useEventData(clubId, eventId) {
-  const [eventData, setEventData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const eventData = null;
+  const loading = false;
 
-  useEffect(() => {
-    if (!isSupabaseReady || !clubId || !eventId) return;
+  {
+    void clubId;
+    void eventId;
 
-    let cancelled = false;
-    setLoading(true);
+    
+    
 
     // Intentar obtener el evento desde una tabla de eventos si existiera.
     // Por ahora Elevate usa localStorage para eventos — el eventId es suficiente.
     // En el futuro, cuando se migren eventos a Supabase, este fetch enriquecera la UI.
     // Por diseno: no bloqueamos el UI si no hay datos.
-    setLoading(false);
+    
 
-    return () => { cancelled = true; };
-  }, [clubId, eventId]);
+  }
 
   return { eventData, loading };
 }
