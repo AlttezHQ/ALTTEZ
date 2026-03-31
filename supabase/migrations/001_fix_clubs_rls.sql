@@ -13,11 +13,14 @@
 -- 1. Asegurar RLS activo en clubs
 ALTER TABLE clubs ENABLE ROW LEVEL SECURITY;
 
--- 2. Eliminar policies existentes que puedan estar en conflicto
-DROP POLICY IF EXISTS "Users can create clubs"   ON clubs;
-DROP POLICY IF EXISTS "Users can view clubs"     ON clubs;
-DROP POLICY IF EXISTS "Users can update clubs"   ON clubs;
-DROP POLICY IF EXISTS "Admins can manage clubs"  ON clubs;
+-- 2. Eliminar policies existentes que puedan estar en conflicto (viejas y nuevas)
+DROP POLICY IF EXISTS "Users can create clubs"             ON clubs;
+DROP POLICY IF EXISTS "Users can view clubs"               ON clubs;
+DROP POLICY IF EXISTS "Users can update clubs"             ON clubs;
+DROP POLICY IF EXISTS "Admins can manage clubs"            ON clubs;
+DROP POLICY IF EXISTS "authenticated_insert_clubs"         ON clubs;
+DROP POLICY IF EXISTS "authenticated_select_own_club"      ON clubs;
+DROP POLICY IF EXISTS "admin_update_own_club"              ON clubs;
 
 -- 3. Policy INSERT: cualquier usuario autenticado puede crear UN club
 -- (se valida club_id en profile después)

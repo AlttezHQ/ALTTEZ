@@ -1,17 +1,18 @@
 -- MIGRATION 008: Create wellness_logs table with RLS
 -- Ejecutar en Supabase SQL Editor DESPUÉS de 001_fix_clubs_rls.sql
+-- Idempotente: seguro de re-ejecutar
 
--- 1. Crear tabla
+-- 1. Crear tabla (club_id como UUID para coincidir con profiles.club_id)
 CREATE TABLE IF NOT EXISTS wellness_logs (
-  id           UUID    DEFAULT gen_random_uuid() PRIMARY KEY,
-  club_id      TEXT    NOT NULL,
-  athlete_id   TEXT    NOT NULL,
-  logged_at    TIMESTAMPTZ DEFAULT now() NOT NULL,
+  id            UUID    DEFAULT gen_random_uuid() PRIMARY KEY,
+  club_id       UUID    NOT NULL,
+  athlete_id    TEXT    NOT NULL,
+  logged_at     TIMESTAMPTZ DEFAULT now() NOT NULL,
   sleep_quality SMALLINT CHECK (sleep_quality BETWEEN 1 AND 5) NOT NULL,
   fatigue_level SMALLINT CHECK (fatigue_level BETWEEN 1 AND 5) NOT NULL,
   stress_level  SMALLINT CHECK (stress_level  BETWEEN 1 AND 5) NOT NULL,
   doms_level    SMALLINT CHECK (doms_level    BETWEEN 1 AND 5) NOT NULL,
-  notes        TEXT,
+  notes         TEXT,
   wellness_score NUMERIC(5,2)
 );
 
