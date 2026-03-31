@@ -29,6 +29,7 @@ import TacticalBoardV9 from "./TacticalBoardV9/TacticalBoardV9";
 import BulkAthleteUploader from "./BulkAthleteUploader";
 import EmptyState from "./ui/EmptyState";
 import { PALETTE } from "../constants/palette";
+import { useStore } from "../store/useStore";
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("gestion-responsive")) {
   const s = document.createElement("style");
@@ -1374,7 +1375,11 @@ function TacticalBoardView({ athletes }) {
 // ─────────────────────────────────────────────
 // COMPONENTE RAÍZ
 // ─────────────────────────────────────────────
-export default function GestionPlantilla({ athletes, setAthletes, historial = [], clubId = "" }) {
+export default function GestionPlantilla({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
+  const setAthletes = useStore(state => state.setAthletes);
+  const historial = useStore(state => state.historial);
+
   const [activeTab, setActiveTab] = useState("lista");
 
   /**

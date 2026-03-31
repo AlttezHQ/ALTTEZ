@@ -30,6 +30,8 @@ import imgOficina       from "../assets/Oficina.jpeg";
 import imgProximo       from "../assets/Proximo_partido.jpeg";
 import { PALETTE }      from "../constants/palette";
 import EmptyState       from "./ui/EmptyState";
+import { useStore } from "../store/useStore";
+import { calcStats } from "../services/storageService";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
@@ -396,7 +398,16 @@ function InteractiveTile({
 // ─────────────────────────────────────────────
 // HOME PRINCIPAL
 // ─────────────────────────────────────────────
-export default function Home({ club, athletes, stats, matchStats, onNavigate, mode, onLogout }) {
+export default function Home({ onNavigate, onLogout }) {
+  const mode = useStore(state => state.mode);
+  const athletes = useStore(state => state.athletes);
+  const historial = useStore(state => state.historial);
+  const clubInfo = useStore(state => state.clubInfo);
+  const matchStats = useStore(state => state.matchStats);
+
+  const stats = calcStats(athletes, historial);
+  const club = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
+
   const { playHover, playSelect } = useGameAudio();
 
   const clubInitials = (club.nombre || "ES")

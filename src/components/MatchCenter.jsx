@@ -16,6 +16,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../constants/palette";
+import { useStore } from "../store/useStore";
 import {
   calcElevateScore,
   calcOVR,
@@ -690,7 +691,9 @@ function PlayerAnalytics({ athlete, stats, rpe, historial: _historial }) {
  * @param {Object[]} historial - Historial de sesiones (para RPE)
  * @param {string}   clubId   - ID del club para namespace de localStorage
  */
-export default function MatchCenter({ athletes, historial, clubId }) {
+export default function MatchCenter({ clubId }) {
+  const athletes = useStore(state => state.athletes);
+  const historial = useStore(state => state.historial);
   // ── Vista activa: "ingesta" | "analytics" ──────────────────────────────────
   const [view, setView] = useState("ingesta");
 

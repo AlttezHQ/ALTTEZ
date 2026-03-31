@@ -5,6 +5,10 @@ import { PALETTE } from "../constants/palette";
 import { sanitizeNote } from "../utils/sanitize";
 import EmptyState from "./ui/EmptyState";
 import { showToast } from "./Toast";
+import { useStore } from "../store/useStore";
+import { calcStats, buildSesion } from "../services/storageService";
+import { takeHealthSnapshot } from "../services/healthService";
+import useSupabaseSync from "../hooks/useSupabaseSync";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
@@ -100,7 +104,28 @@ function MiniSparkBars({ values, color, height = 24, width = 52 }) {
   );
 }
 
-export default function Entrenamiento({ athletes, setAthletes, historial, onGuardar, stats, clubInfo, clubId = "" }) {
+export default function Entrenamiento({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
+  const setAthletes = useStore(state => state.setAthletes);
+  const historial = useStore(state => state.historial);
+  const setHistorial = useStore(state => state.setHistorial);
+  const clubInfo = useStore(state => state.clubInfo);
+  const stats = calcStats(athletes, historial);
+  const { syncSession, syncHealthSnapshots } = useSupabaseSync();
+
+  const handleGuardar = (n, t) => {
+    const sesion = buildSesion(athletes, historial, n, t);
+    if (!sesion) {
+      showToast("No se pudo guardar la sesión — datos inválidos", "error");
+      return;
+    }
+    setHistorial([sesion, ...historial]);
+    const snapshots = takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
+    showToast(`Sesión #${sesion.num} guardada correctamente`, "success");
+    syncSession(sesion);
+    if (snapshots?.length) syncHealthSnapshots(snapshots);
+  };
+
   const [tab, setTab] = useState("sesion");
   const [tipo, setTipo] = useState("Táctica");
   const [nota, setNota] = useState("");
@@ -259,7 +284,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
             <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{ ...inp, width:"auto", fontSize:10, padding:"3px 8px" }}>
               {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
             </select>
-            <div onClick={() => onGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"white", fontSize:9, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
+            <div onClick={() => handleGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"#08080E", fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
               Cerrar sesion →
             </div>
           </div>

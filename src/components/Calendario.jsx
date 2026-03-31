@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../constants/palette";
 import { showToast } from "./Toast";
 import { supabase, isSupabaseReady } from "../lib/supabase";
+import { useStore } from "../store/useStore";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RESPONSIVE CSS — inyectado una sola vez en el DOM
@@ -1258,7 +1259,8 @@ function CreateEventModal({ onClose, onSave }) {
  * @param {Array}   athletes - Lista de deportistas del club (desde App state)
  * @param {string}  clubId   - ID del club (para namespacing de localStorage)
  */
-export default function Calendario({ athletes = [], clubId = "" }) {
+export default function Calendario({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
   const today = new Date();
   const [year, setYear]         = useState(today.getFullYear());
   const [month, setMonth]       = useState(today.getMonth());

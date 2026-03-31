@@ -13,21 +13,22 @@
 
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import useLocalStorage, { setHookErrorHandler } from "./hooks/useLocalStorage";
+import { setHookErrorHandler } from "./hooks/useLocalStorage";
+import { useStore } from "./store/useStore";
 import FieldBackground from "./components/FieldBackground";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ToastContainer, { showToast } from "./components/Toast";
 import { EMPTY_ATHLETES, EMPTY_HISTORIAL, EMPTY_MATCH_STATS, EMPTY_FINANZAS } from "./constants/initialStates";
 import {
-  loadDemoState, loadProductionState, logout as logoutService, calcStats, buildSesion,
+  loadDemoState, loadProductionState, logout as logoutService,
   setStorageErrorHandler,
 } from "./services/storageService";
-import { takeHealthSnapshot, clearSnapshots, setHealthErrorHandler, setHealthClubId } from "./services/healthService";
+import { clearSnapshots, setHealthErrorHandler, setHealthClubId } from "./services/healthService";
 import { runMigrations } from "./services/migrationService";
 import { PALETTE as C } from "./constants/palette";
 import { SESSION_KEY, createSession, validateSession, canAccessModule } from "./constants/roles";
 import { setValidationErrorHandler } from "./constants/schemas";
-import useSupabaseSync from "./hooks/useSupabaseSync";
+
 import { isSupabaseReady } from "./lib/supabase";
 import { createClub as sbCreateClub, setClubId, setSupabaseErrorHandler, migrateLocalToSupabase, loadClubIdFromProfile } from "./services/supabaseService";
 import { exportBackupJSON } from "./services/backupService";
@@ -152,19 +153,21 @@ export default function App() {
 // ── CRM App: todo el sistema de gestion deportiva ──
 function CRMApp() {
   const navigate = useNavigate();
-  const [mode, setMode] = useLocalStorage("elevate_mode", null);
-  const [session, setSession] = useLocalStorage(SESSION_KEY, null);
-  const [activeModule, setActiveModule] = useState("home");
-  const [athletes, setAthletes] = useLocalStorage("elevate_athletes", EMPTY_ATHLETES);
-  const [historial, setHistorial] = useLocalStorage("elevate_historial", EMPTY_HISTORIAL);
-  const [clubInfo, setClubInfo] = useLocalStorage("elevate_clubInfo", DEFAULT_CLUB);
-  const [matchStats, setMatchStats] = useLocalStorage("elevate_matchStats", EMPTY_MATCH_STATS);
-  const [finanzas, setFinanzas] = useLocalStorage("elevate_finanzas", EMPTY_FINANZAS);
+  const mode = useStore(state => state.mode);
+  const setMode = useStore(state => state.setMode);
+  const session = useStore(state => state.session);
+  const setSession = useStore(state => state.setSession);
+  const activeModule = useStore(state => state.activeModule);
+  const setActiveModule = useStore(state => state.setActiveModule);
+  const setAthletes = useStore(state => state.setAthletes);
+  const setHistorial = useStore(state => state.setHistorial);
+  const clubInfo = useStore(state => state.clubInfo);
+  const setClubInfo = useStore(state => state.setClubInfo);
+  const setMatchStats = useStore(state => state.setMatchStats);
+  const setFinanzas = useStore(state => state.setFinanzas);
+  const clearStore = useStore(state => state.clearStore);
 
-  // Supabase sync: carga datos de la nube al montar (offline-first)
-  const { syncSession, syncHealthSnapshots } = useSupabaseSync({
-    setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, mode,
-  });
+  // ── Sync handling has been moved to useStore/components ──
 
   // Auth state: perfil de Supabase (club_id + role)
   const [authProfile, setAuthProfile] = useState(null);
@@ -365,23 +368,7 @@ function CRMApp() {
     );
   }
 
-  // ── Guardar sesion: localStorage inmediato + Supabase en background ──
-  const guardarSesion = (nota, tipo) => {
-    const sesion = buildSesion(athletes, historial, nota, tipo);
-    if (!sesion) {
-      showToast("No se pudo guardar la sesion — datos invalidos", "error");
-      return;
-    }
-    setHistorial(prev => [sesion, ...prev]);
-    const snapshots = takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
-    showToast(`Sesion #${sesion.num} guardada correctamente`, "success");
-    // Sync to Supabase (fire-and-forget)
-    syncSession(sesion);
-    if (snapshots?.length) syncHealthSnapshots(snapshots);
-  };
 
-  const stats = calcStats(athletes, historial);
-  const clubProps = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
 
   const _MiniTopbarLocal = ({ title, accent = C.neon, accentBg = "rgba(200,255,0,0.05)" }) => (
     <div style={{ height:38, background:"rgba(10,10,15,0.85)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${accent}33`, display:"flex", alignItems:"stretch" }}>
@@ -422,56 +409,56 @@ function CRMApp() {
 
           {activeModule === "home" && (
             <ErrorBoundary>
-              <Home club={clubProps} athletes={athletes} historial={historial} stats={stats} matchStats={matchStats} onNavigate={navigateTo} mode={mode} onLogout={handleLogout} userRole={userRole} onExportBackup={() => { exportBackupJSON(); showToast("Backup descargado correctamente", "success"); }} />
+              <Home onNavigate={navigateTo} mode={mode} onLogout={handleLogout} userRole={userRole} onExportBackup={() => { exportBackupJSON(); showToast("Backup descargado correctamente", "success"); }} />
             </ErrorBoundary>
           )}
 
           {activeModule === "entrenamiento" && (
             <ErrorBoundary>
               <MiniTopbar title="Entrenamiento" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <Entrenamiento athletes={athletes} setAthletes={setAthletes} historial={historial} onGuardar={guardarSesion} stats={stats} clubInfo={clubInfo} clubId={authProfile?.club_id || ""} />
+              <Entrenamiento clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "plantilla" && (
             <ErrorBoundary>
               <MiniTopbar title="Gestion de plantilla" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <GestionPlantilla athletes={athletes} setAthletes={setAthletes} historial={historial} clubId={authProfile?.club_id || ""} />
+              <GestionPlantilla clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "miclub" && (
             <ErrorBoundary>
               <MiniTopbar title="Mi club" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <MiClub clubInfo={clubInfo} setClubInfo={setClubInfo} />
+              <MiClub />
             </ErrorBoundary>
           )}
 
           {activeModule === "admin" && (
             <ErrorBoundary>
               <MiniTopbar title="Administracion" accent={C.purple} accentBg="rgba(127,119,221,0.08)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <Administracion athletes={athletes} finanzas={finanzas} setFinanzas={setFinanzas} />
+              <Administracion />
             </ErrorBoundary>
           )}
 
           {activeModule === "calendario" && (
             <ErrorBoundary>
               <MiniTopbar title="Calendario" accent={C.neon} accentBg="rgba(200,255,0,0.05)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <Calendario athletes={athletes} clubId={authProfile?.club_id || ""} />
+              <Calendario clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "partidos" && (
             <ErrorBoundary>
               <MiniTopbar title="Match Center" accent={C.neon} accentBg="rgba(200,255,0,0.05)" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <MatchCenter athletes={athletes} historial={historial} clubId={authProfile?.club_id || ""} />
+              <MatchCenter clubId={authProfile?.club_id || ""} />
             </ErrorBoundary>
           )}
 
           {activeModule === "reportes" && (
             <ErrorBoundary>
               <MiniTopbar title="Reportes" mode={mode} clubName={clubInfo.nombre} clubCategory={(clubInfo.categorias || [])[0]} onHomeClick={() => setActiveModule("home")} />
-              <Reportes athletes={athletes} historial={historial} matchStats={matchStats} finanzas={finanzas} onNavigate={navigateTo} />
+              <Reportes onNavigate={navigateTo} />
             </ErrorBoundary>
           )}
 
@@ -528,7 +515,11 @@ function TrendArrow({ trend }) {
   );
 }
 
-function Reportes({ athletes, historial, matchStats, finanzas, onNavigate }) {
+function Reportes({ onNavigate }) {
+  const athletes = useStore(state => state.athletes);
+  const historial = useStore(state => state.historial);
+  const matchStats = useStore(state => state.matchStats);
+  const finanzas = useStore(state => state.finanzas);
   const movs = finanzas.movimientos || [];
   const ingresos = movs.filter(m => m.tipo === "ingreso").reduce((s,m) => s+m.monto, 0);
   const egresos = movs.filter(m => m.tipo === "egreso").reduce((s,m) => s+m.monto, 0);

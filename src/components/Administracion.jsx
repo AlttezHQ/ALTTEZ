@@ -14,6 +14,7 @@ import { PALETTE } from "../constants/palette";
 import { createMovimiento, validatePago } from "../constants/schemas";
 import { showToast } from "./Toast";
 import ConfirmModal from "./ConfirmModal";
+import { useStore } from "../store/useStore";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("admin-responsive")) {
@@ -79,7 +80,11 @@ const fmtDate = (d) => {
 
 const TABS = ["Mensualidades", "Movimientos", "Resumen ejecutivo"];
 
-export default function Administracion({ athletes, finanzas, setFinanzas }) {
+export default function Administracion() {
+  const athletes = useStore(state => state.athletes);
+  const finanzas = useStore(state => state.finanzas);
+  const setFinanzas = useStore(state => state.setFinanzas);
+
   const [activeTab, setActiveTab] = useState("Mensualidades");
   const [selectedMes, setSelectedMes] = useState(() => {
     const now = new Date();
