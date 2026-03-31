@@ -4,6 +4,7 @@
  *
  * ══════════════════════════════════════════════════════════════════
  *  MODELO MATEMATICO — Elevate Sports RPE Health Engine v2.1
+ *  ACWR Engine v3.1 — promedios diarios (Hulin et al., 2014)
  * ══════════════════════════════════════════════════════════════════
  *
  *  FUNDAMENTO CIENTIFICO
@@ -80,10 +81,12 @@
  *     cortas (30 min) y largas (90 min) con mismo RPE pesan igual.
  *     Planificado: agregar campo `duracionMinutos` al formulario de
  *     entrenamiento y recalcular como unidades de carga (UA).
- *  2. Sin ACWR: Acute:Chronic Workload Ratio (Hulin et al., 2014)
- *     requiere >= 4 semanas de carga acumulada. Con datos insuficientes,
- *     el ratio produce falsos positivos. Planificado para v3.0 cuando
- *     los clubes tengan 4+ semanas de historial continuo.
+ *  2. Sin duracion de sesion para ACWR: El sRPE canonico es RPE × duracion(min).
+ *     El ACWR actual usa promedio de RPEs como proxy de intensidad media diaria.
+ *     Impacto: sesiones cortas (30 min) y largas (90 min) con mismo RPE pesan
+ *     igual. Planificado: agregar campo `duracionMinutos` y recalcular como
+ *     unidades de carga (UA = RPE × min). Motor v3.1 usa promedios diarios
+ *     segun el modelo canonico de Hulin et al. (2014).
  *  3. Promedio aritmetico (no EWMA): La ponderacion exponencial (EWMA)
  *     sesga el calculo hacia sesiones recientes, lo cual es fisiologicamente
  *     mas preciso. Requiere datos diarios consistentes para ser estable.
@@ -108,15 +111,15 @@
  *     with increased injury risk in elite cricket fast bowlers. British
  *     Journal of Sports Medicine, 48(8), 708-712.
  *     https://doi.org/10.1136/bjsports-2013-092524
- *     [Nota: ACWR implementado en v3.0 — referencia para la arquitectura futura]
  *
  * @author @Data (Mateo-Data_Engine)
- * @version 2.1.0
+ * @version 3.1.0
  */
 
 // ── Constantes ──
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const TWENTY_EIGHT_DAYS_MS = 28 * 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 7;
 
 // ── Utilidades internas ──
@@ -338,4 +341,249 @@ export function saludColor(salud) {
   if (salud >= 50) return "#1D9E75";
   if (salud >= 25) return "#EF9F27";
   return "#E24B4A";
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  ACWR ENGINE — Acute:Chronic Workload Ratio (Hulin et al., 2014)
+//  v3.1: promedios diarios en lugar de sumas directas.
+//  Requiere >= 1 sesion entre 7d y 28d para que el ratio sea significativo.
+// ══════════════════════════════════════════════════════════════════════
+
+/**
+ * Extrae los RPEs de un atleta dentro de una ventana temporal arbitraria.
+ *
+ * Version generalizada de extractAthleteRpes que acepta un rango
+ * [minAgeMs, maxAgeMs] relativo al momento actual. Esto permite calcular
+ * cargas de cualquier ventana (0-7d aguda, 0-28d cronica, 7-14d semana
+ * anterior, etc.) sin duplicar la logica de resolucion de RPE individual
+ * vs. fallback.
+ *
+ * Estrategia de resolucion de RPE: identica a extractAthleteRpes —
+ *   1. rpeByAthlete[id] (string o number)
+ *   2. rpeAvg (fallback legacy)
+ *
+ * A diferencia de extractAthleteRpes, NO aplica limite MAX_ENTRIES porque
+ * la ventana de 28 dias puede contener mas de 7 sesiones validas.
+ *
+ * @param {number|string} athleteId - ID del atleta
+ * @param {Array<{savedAt?: string, rpeByAthlete?: Object, rpeAvg?: number|string}>} historial
+ * @param {number} now - Timestamp actual en milisegundos
+ * @param {number} minAgeMs - Edad minima de la sesion en ms (0 = hoy, SEVEN_DAYS_MS = hace 7 dias)
+ * @param {number} maxAgeMs - Edad maxima de la sesion en ms (SEVEN_DAYS_MS = hasta 7 dias atras)
+ * @returns {number[]} Array de RPEs validos dentro de la ventana temporal
+ */
+function extractAthleteRpesWindow(athleteId, historial, now, minAgeMs, maxAgeMs) {
+  const rpes = [];
+  const id = String(athleteId);
+
+  for (const session of historial) {
+    // Resolver RPE individual con el mismo patron de extractAthleteRpes
+    let rpe = null;
+    if (session.rpeByAthlete && session.rpeByAthlete[id] != null) {
+      rpe = Number(session.rpeByAthlete[id]);
+    } else if (session.rpeByAthlete && session.rpeByAthlete[Number(athleteId)] != null) {
+      rpe = Number(session.rpeByAthlete[Number(athleteId)]);
+    } else if (session.rpeAvg != null && session.rpeAvg !== "\u2014") {
+      rpe = Number(session.rpeAvg);
+    }
+
+    // Validar rango Borg CR-10
+    if (rpe == null || isNaN(rpe) || rpe < 1 || rpe > 10) continue;
+
+    // Para ACWR solo procesamos sesiones con savedAt explicito.
+    // Las sesiones legacy sin savedAt no tienen suficiente precision temporal
+    // para el calculo de ventanas de 28 dias.
+    if (!session.savedAt) continue;
+
+    const sessionTime = new Date(session.savedAt).getTime();
+    if (isNaN(sessionTime)) continue;
+
+    const ageMs = now - sessionTime;
+    if (ageMs >= minAgeMs && ageMs <= maxAgeMs) {
+      rpes.push(rpe);
+    }
+  }
+
+  return rpes;
+}
+
+/**
+ * Calcula el Acute:Chronic Workload Ratio (ACWR) de un atleta.
+ *
+ * Implementa el modelo canonico de Hulin et al. (2014) con promedios diarios:
+ *
+ *   Carga Aguda   = promedio de RPEs en los ultimos 7 dias  (ventana 0-7d)
+ *   Carga Cronica = promedio de RPEs en los ultimos 28 dias (ventana 0-28d)
+ *   ACWR = Carga Aguda / Carga Cronica
+ *
+ * El uso de promedios (en lugar de sumas) permite que el ratio supere 1.0
+ * cuando la semana actual tiene mayor intensidad media que el mes previo.
+ * Ejemplo: crónico RPE 3, agudo RPE 8 → ACWR = 8/3 = 2.67 → zona roja.
+ *
+ * El ratio solo es calculable si existen sesiones en la ventana cronica
+ * MAS ALLA de los 7 dias agudos (7d a 28d). Sin esa evidencia historica,
+ * el denominador esta contaminado por la misma semana aguda y el ratio
+ * seria 1.0 trivialmente. Esto garantiza significancia estadistica.
+ *
+ * Zona optima ACWR: 0.8 – 1.3 (Gabbett, 2016; Hulin et al., 2014)
+ * Zona peligro:     > 1.5 (incremento del riesgo de lesion hasta 2.1x)
+ *
+ * @param {number|string} athleteId - ID del atleta
+ * @param {Array<{savedAt?: string, rpeByAthlete?: Object, rpeAvg?: number|string}>} [historial=[]]
+ *   Historial de sesiones. Requiere savedAt para precision temporal.
+ * @param {number|null} [currentRpe=null]
+ *   RPE de la sesion actual (no guardada aun). Si es valido [1,10],
+ *   se incluye en ambas ventanas como sesion del dia de hoy.
+ * @returns {{
+ *   ratio: number|null,  // ACWR calculado. null si no hay datos cronicos fuera de los 7d agudos
+ *   acute: number,       // Promedio de RPEs en los ultimos 7 dias (redondeado 2 decimales)
+ *   chronic: number      // Promedio de RPEs en los ultimos 28 dias (redondeado 2 decimales)
+ * }}
+ *
+ * @references
+ *   Hulin, B. T., et al. (2014). Spikes in acute workload are associated
+ *     with increased injury risk. BJSM, 48(8), 708-712.
+ *   Gabbett, T. J. (2016). The training-injury prevention paradox: should
+ *     athletes be training smarter and harder? BJSM, 50(5), 273-280.
+ */
+export function calcACWR(athleteId, historial = [], currentRpe = null) {
+  const now = Date.now();
+  const currentValid = currentRpe != null && currentRpe >= 1 && currentRpe <= 10;
+
+  // Ventana aguda: 0 a 7 dias atras
+  const acuteRpes = extractAthleteRpesWindow(athleteId, historial, now, 0, SEVEN_DAYS_MS);
+  if (currentValid) acuteRpes.unshift(currentRpe);
+
+  // Ventana cronica: 0 a 28 dias atras (incluye la ventana aguda)
+  const chronicRpes = extractAthleteRpesWindow(athleteId, historial, now, 0, TWENTY_EIGHT_DAYS_MS);
+  if (currentValid) chronicRpes.unshift(currentRpe);
+
+  // Promedio agudo: media de RPEs en la ventana 0-7d
+  const acute = acuteRpes.length > 0
+    ? Number((acuteRpes.reduce((s, v) => s + v, 0) / acuteRpes.length).toFixed(2))
+    : 0;
+
+  // Promedio cronico: media de RPEs en la ventana 0-28d
+  const chronic = chronicRpes.length > 0
+    ? Number((chronicRpes.reduce((s, v) => s + v, 0) / chronicRpes.length).toFixed(2))
+    : 0;
+
+  // El ratio solo es significativo cuando existe historial fuera de la ventana aguda
+  // (al menos una sesion entre 7d y 28d). Sin ello, chronic == acute y el ratio
+  // seria 1.0 trivialmente — no hay informacion sobre la base cronica real.
+  const hasChronicData = extractAthleteRpesWindow(
+    athleteId, historial, now, SEVEN_DAYS_MS, TWENTY_EIGHT_DAYS_MS
+  ).length > 0;
+
+  if (!hasChronicData || chronic === 0) {
+    return { ratio: null, acute, chronic };
+  }
+
+  const ratio = Number((acute / chronic).toFixed(2));
+  return { ratio, acute, chronic };
+}
+
+/**
+ * Calcula el perfil de riesgo ACWR completo de un atleta, listo para el store.
+ *
+ * Combina calcACWR con clasificacion de status (semaforo), tendencia temporal
+ * (trend) y sugerencia textual para el entrenador. Diseñado como selector
+ * directo para componentes React/Zustand.
+ *
+ * Umbrales de status (zona optima segun Gabbett, 2016):
+ *   null         → "unknown"  — datos insuficientes (< 28d de historial)
+ *   ratio < 0.8  → "yellow"   — desentrenamiento, carga demasiado baja
+ *   0.8 – 1.3   → "green"    — zona optima de carga
+ *   1.3 – 1.5   → "yellow"   — carga elevada, precaucion
+ *   > 1.5        → "red"      — zona de peligro, alto riesgo de lesion
+ *
+ * Calculo de tendencia (trend):
+ *   ACWR semana anterior = aguda[7-14d] / cronica[21-28d de referencia].
+ *   El "cronica de referencia" son las sesiones de 21-28 dias atras, que
+ *   representan el estado cronico base de hace una semana.
+ *   Si ratio_actual > ratio_anterior + 0.1 → "up" (carga creciente)
+ *   Si ratio_actual < ratio_anterior - 0.1 → "down" (carga decreciente)
+ *   Sino → "stable"
+ *
+ * @param {number|string} athleteId
+ * @param {Array} [historial=[]]
+ * @param {number|null} [currentRpe=null]
+ * @returns {{
+ *   ratio: number|null,
+ *   status: "green"|"yellow"|"red"|"unknown",
+ *   trend: "up"|"down"|"stable",
+ *   suggestion: string
+ * }}
+ *
+ * @references
+ *   Gabbett, T. J. (2016). BJSM, 50(5), 273-280.
+ *   Hulin, B. T., et al. (2014). BJSM, 48(8), 708-712.
+ */
+export function calcAthleteRisk(athleteId, historial = [], currentRpe = null) {
+  const now = Date.now();
+  const { ratio } = calcACWR(athleteId, historial, currentRpe);
+
+  // ── Clasificacion de status ──
+  let status, suggestion;
+
+  if (ratio === null) {
+    status = "unknown";
+    suggestion = "Necesitas al menos 28 dias de historial para calcular el ACWR.";
+  } else if (ratio < 0.8) {
+    status = "yellow";
+    suggestion = "Carga muy baja. Riesgo de desentrenamiento.";
+  } else if (ratio <= 1.3) {
+    status = "green";
+    suggestion = "Zona optima. El atleta esta bien cargado.";
+  } else if (ratio <= 1.5) {
+    status = "yellow";
+    suggestion = "Carga elevada. Considera reducir intensidad.";
+  } else {
+    status = "red";
+    suggestion = "Zona de peligro. Alto riesgo de lesion. Descanso recomendado.";
+  }
+
+  // ── Calculo de tendencia (semana anterior) ──
+  // prevAcute  = promedio RPEs en los dias 7-14 (semana aguda de hace 1 semana)
+  // prevChronic = promedio RPEs en los dias 0-28 desplazados 7 dias atras
+  //               (misma ventana cronica de 28d pero vista desde hace 7 dias)
+  //               Aproximado como: sesiones entre 0-28d excluyendo las ultimas 7d agudas
+  //               = ventana 7-28d. Esto representa el denominador cronico estable.
+  let trend = "stable";
+
+  if (ratio !== null) {
+    const prevAcuteRpes = extractAthleteRpesWindow(
+      athleteId, historial, now,
+      SEVEN_DAYS_MS,
+      2 * SEVEN_DAYS_MS
+    );
+    // Cronica de la semana anterior: promedio de la ventana 0-28d excluyendo aguda actual
+    // Usamos la ventana 7-28d como aproximacion del denominador cronico estable
+    const prevChronicRpes = extractAthleteRpesWindow(
+      athleteId, historial, now,
+      SEVEN_DAYS_MS,
+      TWENTY_EIGHT_DAYS_MS
+    );
+
+    const prevAcute = prevAcuteRpes.length > 0
+      ? prevAcuteRpes.reduce((s, v) => s + v, 0) / prevAcuteRpes.length
+      : 0;
+    const prevChronic = prevChronicRpes.length > 0
+      ? prevChronicRpes.reduce((s, v) => s + v, 0) / prevChronicRpes.length
+      : 0;
+
+    if (prevChronic > 0) {
+      const prevRatio = prevAcute / prevChronic;
+
+      if (ratio > prevRatio + 0.1) {
+        trend = "up";
+      } else if (ratio < prevRatio - 0.1) {
+        trend = "down";
+      }
+      // else: stable (diferencia <= 0.1)
+    }
+    // Si prevChronic === 0: sin datos suficientes para trend → mantener "stable"
+  }
+
+  return { ratio, status, trend, suggestion };
 }

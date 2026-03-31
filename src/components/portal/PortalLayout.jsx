@@ -287,7 +287,10 @@ function ServicesDropdown() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    const closeId = setTimeout(() => setOpen(false), 0);
+    return () => clearTimeout(closeId);
+  }, [location.pathname]);
 
   const isServicesActive = location.pathname.startsWith("/servicios");
 

@@ -25,7 +25,9 @@ import { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../../constants/palette";
 import { getAvatarUrl as avatar, getStatusStyle } from "../../utils/helpers";
-import { calcSaludActual, saludColor } from "../../utils/rpeEngine";
+import { calcSaludActual, saludColor, calcAthleteRisk } from "../../utils/rpeEngine";
+import { useStore } from "../../store/useStore";
+import { calcWellnessScore, getWellnessStatus } from "../../types/wellnessTypes";
 import useLocalStorage from "../../hooks/useLocalStorage";
 import useDragEngine from "../../hooks/useDragEngine";
 import useDrawingEngine from "../../hooks/useDrawingEngine";
@@ -199,6 +201,12 @@ const ROLE_OPTIONS = {
   FWD: ["Goleador","Falso 9","Extremo","Segundo delantero"],
 };
 
+/* ── Wellness + ACWR combined risk ──────────────────────────────────────────── */
+const STATUS_PRIORITY = { "red": 3, "yellow": 2, "green": 1, "unknown": 0 };
+function worstStatus(a, b) {
+  return STATUS_PRIORITY[a] >= STATUS_PRIORITY[b] ? a : b;
+}
+
 /* ── Mini cancha SVG para selector de formaciones ────────────────────────────── */
 const MiniPitch = memo(function MiniPitch({ positions, isActive, onClick }) {
   return (
@@ -260,7 +268,8 @@ function HealthBar({ salud, width = 48 }) {
    No neon glow — clean, professional, broadcast-quality.
 ═══════════════════════════════════════════════════════════════════════════════ */
 const PlayerToken = memo(function PlayerToken({
-  starter, salud, isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
+  starter, salud, riskStatus = "unknown", viewLayer = "normal",
+  isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
 }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
@@ -293,11 +302,14 @@ const PlayerToken = memo(function PlayerToken({
     : isSelected ? "rgba(255,255,255,0.85)"
     : saludColor(saludVal);
 
-  /* Shadow: subtle depth only, no neon glow */
+  /* Neon glow color driven by riskStatus */
+  const riskGlowColor = riskStatus === "red" ? "226,75,74" : riskStatus === "yellow" ? "239,159,39" : riskStatus === "green" ? "57,255,20" : null;
+
   const discShadow = isActivating
     ? `0 0 0 3px rgba(255,255,255,0.25), 0 6px 20px rgba(0,0,0,0.8)`
     : isTarget ? `0 0 0 2px rgba(0,229,255,0.4), 0 4px 16px rgba(0,0,0,0.7)`
     : isSelected ? `0 0 0 3px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.75)`
+    : riskGlowColor ? `0 0 12px rgba(${riskGlowColor},0.45), 0 0 24px rgba(${riskGlowColor},0.2), 0 2px 8px rgba(0,0,0,0.7)`
     : isHover ? `0 4px 14px rgba(0,0,0,0.8)`
     : `0 2px 8px rgba(0,0,0,0.7)`;
 
@@ -360,6 +372,27 @@ const PlayerToken = memo(function PlayerToken({
               </div>
             </div>
           )}
+
+          {/* Layer Mode Overlay */}
+          {viewLayer !== "normal" && athlete.status === "P" && (
+            <div style={{
+              position:"absolute", inset:0, borderRadius:"50%",
+              background: viewLayer === "heatmap"
+                // Heatmap: overlay según riskStatus (carga ACWR)
+                ? riskStatus === "red"    ? "rgba(226,75,74,0.5)"
+                : riskStatus === "yellow" ? "rgba(239,159,39,0.35)"
+                : riskStatus === "green"  ? "rgba(29,158,117,0.2)"
+                : "rgba(255,255,255,0.05)"
+                // Recovery: overlay según salud (wellnessMap ya mezclado en riskStatus)
+                : riskStatus === "red"    ? "rgba(226,75,74,0.45)"
+                : riskStatus === "yellow" ? "rgba(239,159,39,0.3)"
+                : riskStatus === "green"  ? "rgba(57,255,20,0.2)"
+                : "rgba(255,255,255,0.05)",
+              zIndex:1,
+              pointerEvents:"none",
+              transition:"background 300ms ease",
+            }}/>
+          )}
         </motion.div>
 
         {/* Dorsal badge — bottom-right corner of the circle */}
@@ -388,6 +421,35 @@ const PlayerToken = memo(function PlayerToken({
             {dorsal !== null ? (typeof dorsal === "number" ? dorsal : dorsal) : starter.posCode?.slice(0,2)}
           </div>
         </div>
+
+        {/* ── Neon Vitality Ring ── */}
+        {athlete && riskStatus !== "unknown" && riskStatus !== "green" && (
+          <div style={{
+            position:"absolute", inset:-5, borderRadius:"50%",
+            border:`1.5px solid ${riskStatus==="red" ? "rgba(226,75,74,0.7)" : "rgba(239,159,39,0.6)"}`,
+            boxShadow: riskStatus==="red"
+              ? `0 0 8px rgba(226,75,74,0.5), inset 0 0 6px rgba(226,75,74,0.1)`
+              : `0 0 6px rgba(239,159,39,0.4)`,
+            pointerEvents:"none", zIndex:0,
+          }}/>
+        )}
+
+        {/* ── Pulse animation: solo rojo (Engine Alert) ── */}
+        {athlete && riskStatus === "red" && (
+          <motion.div
+            style={{
+              position:"absolute", inset:-8, borderRadius:"50%",
+              border:"1.5px solid rgba(226,75,74,0.4)",
+              boxShadow:"0 0 16px rgba(226,75,74,0.3)",
+              pointerEvents:"none", zIndex:0,
+            }}
+            animate={{
+              opacity: [0.8, 0, 0.8],
+              scale:   [1,   1.2, 1],
+            }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
       </div>
 
       {/* Apellido debajo del círculo */}
@@ -408,6 +470,16 @@ const PlayerToken = memo(function PlayerToken({
         {apellido.length > 7 ? apellido.slice(0, 7) : apellido}
       </div>
 
+      {viewLayer === "heatmap" && riskStatus !== "unknown" && (
+        <div style={{ fontSize:7, color:
+          riskStatus==="red" ? "#E24B4A" : riskStatus==="yellow" ? "#EF9F27" : "#1D9E75",
+          letterSpacing:"0.5px", lineHeight:1, marginTop:1,
+          fontFamily:"'JetBrains Mono',monospace",
+        }}>
+          {riskStatus.toUpperCase()}
+        </div>
+      )}
+
       {/* Barra de salud compacta — neon green ONLY here, by design */}
       <HealthBar salud={saludVal} width={36} />
     </div>
@@ -416,6 +488,8 @@ const PlayerToken = memo(function PlayerToken({
   prev.starter?.athlete?.id === next.starter?.athlete?.id &&
   prev.starter?.posCode === next.starter?.posCode &&
   prev.salud?.salud === next.salud?.salud &&
+  prev.riskStatus === next.riskStatus &&
+  prev.viewLayer === next.viewLayer &&
   prev.isSelected === next.isSelected &&
   prev.isDragged === next.isDragged &&
   prev.isTarget === next.isTarget &&
@@ -581,6 +655,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
 
   const [formationKey, setFormationKey] = useState("4-3-3");
   const [viewMode, setViewMode] = useState("full");          // "full" | "half"
+  const [viewLayer, setViewLayer] = useState("normal");      // "normal" | "heatmap" | "recovery"
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [showFormations, setShowFormations] = useState(false);
   const [activeTab, setActiveTab] = useState("plantilla");
@@ -590,7 +665,6 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
   const [confirmAction, setConfirmAction] = useState(null);
 
   // Usa HORIZ_FORMATIONS como base — landscape correcto
-  const formations = viewMode === "half" ? HALF_FORMATIONS : HORIZ_FORMATIONS;
 
   const [starters, setStarters] = useState(() =>
     HORIZ_FORMATIONS["4-3-3"].positions.map((pos, i) => ({
@@ -681,6 +755,39 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     athletes.forEach(a => m.set(a.id, calcSaludActual(a.rpe, historial, a.id)));
     return m;
   }, [athletes, historial]);
+
+  // ── Risk map (ACWR) ───────────────────────────────────────────────────────
+  const riskMap = useMemo(() => {
+    const m = new Map();
+    athletes.forEach(a => m.set(a.id, calcAthleteRisk(a.id, historial, a.rpe)));
+    return m;
+  }, [athletes, historial]);
+
+  // ── Wellness map (daily check-in) ─────────────────────────────────────────
+  const wellnessLogs = useStore(state => state.wellnessLogs);
+  const wellnessMap = useMemo(() => {
+    const m = new Map();
+    const today = new Date().toDateString();
+    athletes.forEach(a => {
+      const athleteLogs = wellnessLogs.filter(
+        l => String(l.athlete_id) === String(a.id) &&
+             new Date(l.logged_at).toDateString() === today
+      );
+      if (athleteLogs.length === 0) {
+        m.set(a.id, "unknown");
+        return;
+      }
+      // Tomar el log más reciente de hoy
+      const latest = athleteLogs.sort((x, y) => new Date(y.logged_at) - new Date(x.logged_at))[0];
+      try {
+        const score = calcWellnessScore(latest);
+        m.set(a.id, getWellnessStatus(score).status);
+      } catch {
+        m.set(a.id, "unknown");
+      }
+    });
+    return m;
+  }, [athletes, wellnessLogs]);
 
   // ── Swap similar ──────────────────────────────────────────────────────────
   const doSwap = useCallback((na) => {
@@ -806,6 +913,41 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
             </div>
           </motion.div>
 
+          {/* Layer Mode Selector */}
+          <div style={{
+            display:"flex", gap:1,
+            background:"rgba(0,0,0,0.5)",
+            border:"1px solid rgba(255,255,255,0.08)",
+            borderRadius:6, padding:2, flexShrink:0,
+          }}>
+            {[
+              { key:"normal",   label:"Normal",  icon:"⬤" },
+              { key:"heatmap",  label:"Carga",   icon:"🔥" },
+              { key:"recovery", label:"Recup.",  icon:"💧" },
+            ].map(({ key, label, icon }) => (
+              <div
+                key={key}
+                onClick={() => setViewLayer(key)}
+                style={{
+                  padding:"3px 8px",
+                  fontSize:8,
+                  fontWeight: viewLayer===key ? 700 : 400,
+                  textTransform:"uppercase",
+                  letterSpacing:"0.5px",
+                  cursor:"pointer",
+                  borderRadius:4,
+                  background: viewLayer===key ? "rgba(124,58,237,0.3)" : "transparent",
+                  color: viewLayer===key ? "#7C3AED" : "rgba(255,255,255,0.35)",
+                  border: viewLayer===key ? "1px solid rgba(124,58,237,0.4)" : "1px solid transparent",
+                  transition:"all 150ms ease",
+                  whiteSpace:"nowrap",
+                }}
+              >
+                {icon} {label}
+              </div>
+            ))}
+          </div>
+
           <motion.div
             onClick={() => showToast("Guarda la formación y accede desde Match Center", "info")}
             whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
@@ -840,6 +982,11 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                   <PlayerToken
                     starter={st}
                     salud={st.athlete ? saludMap.get(st.athlete.id) : null}
+                    riskStatus={st.athlete ? worstStatus(
+                      riskMap.get(st.athlete.id)?.status ?? "unknown",
+                      wellnessMap.get(st.athlete.id) ?? "unknown"
+                    ) : "unknown"}
+                    viewLayer={viewLayer}
                     isSelected={selectedIdx===i}
                     isDragged={isDrag("starter",i)}
                     isTarget={nearTarget===i}
@@ -906,7 +1053,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
               {bench.map((b, i) => {
                 const bSalud = b.athlete ? saludMap.get(b.athlete.id) : null;
                 const bSaludVal = bSalud?.salud ?? 100;
-                const bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
+                const _bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
                 const isActivatingBench = dragActivating?.type==="bench"&&dragActivating?.index===i;
                 return (
                   <div key={b.id}

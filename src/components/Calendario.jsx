@@ -23,6 +23,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../constants/palette";
 import { showToast } from "./Toast";
 import { supabase, isSupabaseReady } from "../lib/supabase";
+import { useStore } from "../store/useStore";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RESPONSIVE CSS — inyectado una sola vez en el DOM
@@ -421,9 +422,9 @@ function AvailabilityWidget({ availability }) {
 
 function AthleteRsvpRow({ athlete, currentState, onChangeState }) {
   const stateDef = RSVP_STATES[currentState] || RSVP_STATES.PENDIENTE;
-  const order = ["CONFIRMADO", "DUDA", "AUSENTE", "PENDIENTE"];
 
   const cycle = useCallback(() => {
+    const order = ["CONFIRMADO", "DUDA", "AUSENTE", "PENDIENTE"];
     const idx = order.indexOf(currentState);
     const next = order[(idx + 1) % order.length];
     onChangeState(next);
@@ -494,7 +495,6 @@ function AthleteRsvpRow({ athlete, currentState, onChangeState }) {
 function EventPanel({ event, athletes, getRsvp, setRsvp, getAvailability, onClose, clubId = "" }) {
   const def = EVENT_TYPES[event.type];
   const athleteIds = athletes.map(a => a.id ?? `ath-${athletes.indexOf(a)}`);
-  const availability = getAvailability(event.id, athleteIds);
 
   // ── Respuestas remotas desde Supabase (deportistas que confirmaron via link) ──
   const [remoteRsvp, setRemoteRsvp] = useState([]);
@@ -1259,7 +1259,8 @@ function CreateEventModal({ onClose, onSave }) {
  * @param {Array}   athletes - Lista de deportistas del club (desde App state)
  * @param {string}  clubId   - ID del club (para namespacing de localStorage)
  */
-export default function Calendario({ athletes = [], clubId = "" }) {
+export default function Calendario({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
   const today = new Date();
   const [year, setYear]         = useState(today.getFullYear());
   const [month, setMonth]       = useState(today.getMonth());
@@ -1302,7 +1303,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
       if (m === 0) { setYear(y => y - 1); return 11; }
       return m - 1;
     });
-  }, []);
+  }, [setYear]);
 
   const nextMonth = useCallback(() => {
     setSelected(null);
@@ -1310,14 +1311,12 @@ export default function Calendario({ athletes = [], clubId = "" }) {
       if (m === 11) { setYear(y => y + 1); return 0; }
       return m + 1;
     });
-  }, []);
+  }, [setYear]);
 
-  // Cuando se cambia de mes, si el evento seleccionado ya no existe, cerrar el panel
-  useEffect(() => {
-    if (selected && !events.find(e => e.id === selected.id)) {
-      setSelected(null);
-    }
-  }, [events, selected]);
+  const selectedEvent = useMemo(
+    () => (selected ? events.find(e => e.id === selected.id) ?? null : null),
+    [events, selected]
+  );
 
   const handleSelectEvent = useCallback((event) => {
     setSelected(prev => prev?.id === event.id ? null : event);
@@ -1332,7 +1331,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
     const evDate = new Date(saved.datetime);
     setYear(evDate.getFullYear());
     setMonth(evDate.getMonth());
-  }, [addEvent]);
+  }, [addEvent, setYear]);
 
   // Leyenda de tipos de evento
   const LEGEND = Object.entries(EVENT_TYPES).map(([, v]) => ({ label: v.label, color: v.color }));
@@ -1486,7 +1485,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
               const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
               const dayEvents = eventsByDay[key] || [];
               const today_ = isToday(date);
-              const hasSelectedEvent = selected && isSameDay(date, new Date(selected.datetime));
+              const hasSelectedEvent = selectedEvent && isSameDay(date, new Date(selectedEvent.datetime));
 
               return (
                 <div
@@ -1540,7 +1539,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
                         key={ev.id}
                         event={ev}
                         onClick={handleSelectEvent}
-                        isSelected={selected?.id === ev.id}
+                        isSelected={selectedEvent?.id === ev.id}
                       />
                     ))}
                     {dayEvents.length > 3 && (
@@ -1564,7 +1563,7 @@ export default function Calendario({ athletes = [], clubId = "" }) {
                 .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
                 .map(ev => {
                   const def = EVENT_TYPES[ev.type];
-                  const isSelected = selected?.id === ev.id;
+                  const isSelected = selectedEvent?.id === ev.id;
                   return (
                     <motion.div
                       key={ev.id}
@@ -1618,10 +1617,10 @@ export default function Calendario({ athletes = [], clubId = "" }) {
         {/* ── PANEL LATERAL — EVENTO SELECCIONADO ── */}
         <div>
           <AnimatePresence mode="wait">
-            {selected ? (
+            {selectedEvent ? (
               <EventPanel
-                key={selected.id}
-                event={selected}
+                key={selectedEvent.id}
+                event={selectedEvent}
                 athletes={athletes}
                 getRsvp={getRsvp}
                 setRsvp={setRsvp}

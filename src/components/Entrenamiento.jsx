@@ -1,10 +1,18 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../utils/helpers";
 import { PALETTE } from "../constants/palette";
 import { sanitizeNote } from "../utils/sanitize";
 import EmptyState from "./ui/EmptyState";
 import { showToast } from "./Toast";
+import { useStore } from "../store/useStore";
+import { calcStats, buildSesion } from "../services/storageService";
+import { takeHealthSnapshot } from "../services/healthService";
+import useSupabaseSync from "../hooks/useSupabaseSync";
+import WellnessCheckIn from "./ui/WellnessCheckIn";
+import { calcSaludActual } from "../utils/rpeEngine";
+import { getWellnessStatus } from "../types/wellnessTypes";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
@@ -100,7 +108,30 @@ function MiniSparkBars({ values, color, height = 24, width = 52 }) {
   );
 }
 
-export default function Entrenamiento({ athletes, setAthletes, historial, onGuardar, stats, clubInfo, clubId = "" }) {
+export default function Entrenamiento({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
+  const setAthletes = useStore(state => state.setAthletes);
+  const historial = useStore(state => state.historial);
+  const setHistorial = useStore(state => state.setHistorial);
+  const clubInfo = useStore(state => state.clubInfo);
+  const addWellnessLog = useStore(state => state.addWellnessLog);
+  const wellnessLogs = useStore(state => state.wellnessLogs);
+  const stats = calcStats(athletes, historial);
+  const { syncSession, syncHealthSnapshots } = useSupabaseSync();
+
+  const handleGuardar = (n, t) => {
+    const sesion = buildSesion(athletes, historial, n, t);
+    if (!sesion) {
+      showToast("No se pudo guardar la sesión — datos inválidos", "error");
+      return;
+    }
+    setHistorial([sesion, ...historial]);
+    const snapshots = takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
+    showToast(`Sesión #${sesion.num} guardada correctamente`, "success");
+    syncSession(sesion);
+    if (snapshots?.length) syncHealthSnapshots(snapshots);
+  };
+
   const [tab, setTab] = useState("sesion");
   const [tipo, setTipo] = useState("Táctica");
   const [nota, setNota] = useState("");
@@ -112,11 +143,17 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
   const sessionActive = athletes.some(a => a.status === "P" && a.rpe != null);
 
   useEffect(() => {
-    if (!sessionActive) { setElapsed(0); return; }
+    if (!sessionActive) return;
     const t0 = Date.now();
     const iv = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
     return () => clearInterval(iv);
   }, [sessionActive]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
 
   const fmtElapsed = (s) => {
     const m = Math.floor(s / 60);
@@ -173,6 +210,27 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
     const u = [...athletes];
     u[i] = { ...u[i], rpe: u[i].rpe === val ? null : val };
     setAthletes(u);
+  };
+
+  const [wellnessTarget, setWellnessTarget] = useState(null); // { athlete, index }
+  const [healthFeedback, setHealthFeedback] = useState(null); // { athleteName, salud, riskLevel, color }
+  const feedbackTimerRef = useRef(null);
+
+  const handleWellnessSubmit = (log) => {
+    addWellnessLog(log);
+    const athlete = wellnessTarget?.athlete;
+    if (athlete) {
+      const result = calcSaludActual(athlete.rpe, historial, athlete.id);
+      setHealthFeedback({
+        athleteName: athlete.name.split(" ")[0],
+        salud: result.salud,
+        riskLevel: result.riskLevel,
+        color: result.color,
+      });
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
+    }
+    setWellnessTarget(null);
   };
 
   const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"6px 8px", fontSize:11, color:"white", fontFamily:"inherit", width:"100%", outline:"none" };
@@ -259,7 +317,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
             <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{ ...inp, width:"auto", fontSize:10, padding:"3px 8px" }}>
               {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
             </select>
-            <div onClick={() => onGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"white", fontSize:9, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
+            <div onClick={() => handleGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"#08080E", fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
               Cerrar sesion →
             </div>
           </div>
@@ -306,6 +364,29 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
                           <div style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:"1.5px", padding:"3px 8px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente?"rgba(226,75,74,0.1)":"rgba(239,159,39,0.1)" }}>
                             {ausente ? "Ausente" : "Lesionado"}
                           </div>
+                        </div>
+                      )}
+                      {presente && (
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setWellnessTarget({ athlete: a, index: i }); }}
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: "rgba(124,58,237,0.85)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: 10,
+                            zIndex: 2,
+                          }}
+                          title="Check-in Wellness"
+                        >
+                          ✚
                         </div>
                       )}
                     </div>
@@ -539,7 +620,7 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
           "Recuperacion":    { tipos: ["Recuperación", "Recuperacion"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.green },
         };
         historial.forEach(s => {
-          for (const [cat, cfg] of Object.entries(categorias)) {
+          for (const [, cfg] of Object.entries(categorias)) {
             if (cfg.tipos.includes(s.tipo)) {
               cfg.count++;
               if (s.rpeAvg != null && s.rpeAvg !== "—") { cfg.rpeSum += Number(s.rpeAvg); cfg.rpeN++; }
@@ -695,6 +776,95 @@ export default function Entrenamiento({ athletes, setAthletes, historial, onGuar
           </div>
         );
       })()}
+
+      {/* ── Wellness Check-in Overlay ── */}
+      <AnimatePresence>
+        {wellnessTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(6px)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={() => setWellnessTarget(null)}
+          >
+            <div onClick={e => e.stopPropagation()}>
+              <WellnessCheckIn
+                athleteId={wellnessTarget.athlete.id}
+                athleteName={wellnessTarget.athlete.name}
+                clubId={clubId}
+                onSubmit={handleWellnessSubmit}
+                onClose={() => setWellnessTarget(null)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Health Feedback Toast ── */}
+      <AnimatePresence>
+        {healthFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+            style={{
+              position: "fixed",
+              bottom: 24,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(8,8,20,0.95)",
+              backdropFilter: "blur(20px)",
+              border: `1px solid ${healthFeedback.color}44`,
+              borderRadius: 12,
+              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              zIndex: 10000,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${healthFeedback.color}22`,
+              minWidth: 240,
+            }}
+          >
+            {/* Health gauge mini */}
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              border: `3px solid ${healthFeedback.color}`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: `${healthFeedback.color}12`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: healthFeedback.color, lineHeight: 1 }}>
+                {healthFeedback.salud}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "white" }}>
+                {healthFeedback.athleteName} — Bateria actualizada
+              </div>
+              <div style={{ fontSize: 9, color: healthFeedback.color, textTransform: "uppercase", letterSpacing: "1px", marginTop: 2 }}>
+                {healthFeedback.riskLevel === "optimo" ? "Estado optimo" :
+                 healthFeedback.riskLevel === "precaucion" ? "Precaucion" :
+                 healthFeedback.riskLevel === "riesgo" ? "En riesgo" : "Sin datos"}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -68,30 +68,40 @@ try {
 // ════════════════════════════════════════════════
 
 /**
- * Crea un club nuevo en Supabase.
+ * Crea un club nuevo en Supabase via RPC con SECURITY DEFINER.
+ * El RPC create_club_and_link_admin crea el club y vincula al creador
+ * como admin en profiles dentro de una sola transacción, evitando el
+ * bloqueo RLS que ocurre con INSERT directo desde el anon key.
  * @param {Object} form - Datos del formulario de registro
  * @param {string} mode - "demo" | "production"
  * @returns {Promise<string|null>} club_id o null si falla
  */
 export async function createClub(form, mode = "production") {
   if (!isSupabaseReady) return null;
-  const { data, error } = await supabase.from("clubs").insert({
-    nombre: form.nombre || "",
-    disciplina: form.disciplina || "Futbol",
-    ciudad: form.ciudad || "",
-    entrenador: form.entrenador || "",
-    temporada: form.temporada || "2025-26",
-    categorias: form.categorias ? [form.categorias] : ["General"],
-    campos: form.campo ? [form.campo] : [],
-    descripcion: "",
-    telefono: form.telefono || "",
-    email: form.email || "",
-    mode,
-  }).select("id").single();
 
-  if (error) { reportError("Error creando club", error); return null; }
-  setClubId(data.id);
-  return data.id;
+  // Usar RPC con SECURITY DEFINER para evitar RLS en clubs + vincular admin
+  const { data, error } = await supabase.rpc("create_club_and_link_admin", {
+    p_nombre:      form.nombre      || "",
+    p_disciplina:  form.disciplina  || "Futbol",
+    p_ciudad:      form.ciudad      || "",
+    p_entrenador:  form.entrenador  || "",
+    p_temporada:   form.temporada   || "2025-26",
+    p_categorias:  form.categorias  ? [form.categorias] : ["General"],
+    p_campos:      form.campo       ? [form.campo]      : [],
+    p_telefono:    form.telefono    || "",
+    p_email:       form.email       || "",
+    p_mode:        mode,
+  });
+
+  if (error) {
+    reportError("Error creando club", error);
+    return null;
+  }
+
+  // data es directamente el UUID retornado por la función
+  const clubId = data;
+  setClubId(clubId);
+  return clubId;
 }
 
 /** Lee el club actual */
@@ -173,18 +183,17 @@ export async function bulkInsertAthletes(athletes, fileName = "bulk_upload.csv",
 
   // Mapear filas del parser al schema de athletes
   const rows = athletes.map(a => ({
-    club_id: _clubId,
-    name: a.nombre || "",
-    apellido: a.apellido || "",
-    pos: a.posicion || "GEN",
-    pos_code: a.posicion || "GEN",
-    dob: a.fecha_nacimiento || null,
-    numero_dorsal: a.dorsal || null,
-    documento_identidad: a.documento_identidad || "",
-    contacto_emergencia: a.contacto_emergencia || "",
-    contact: a.contacto_emergencia || "",
-    status: "P",
-    available: true,
+    club_id:      _clubId,
+    name:         a.name    || "",
+    pos:          a.pos     || "GEN",
+    pos_code:     a.posCode || "GEN",
+    dob:          a.dob     || null,
+    contact:      a.contact || "",
+    status:       "P",
+    available:    true,
+    goals:        a.goals       ?? 0,
+    yellow_cards: a.yellowCards ?? 0,
+    red_cards:    a.redCards    ?? 0,
   }));
 
   // Insertar en lote

@@ -102,7 +102,6 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
     if (!isExpanded) setIsExpanded(true);
   };
 
-  const isAnyToolActive = activeTool !== null;
 
   return (
     /* Posicionado en el borde inferior del campo, centrado horizontalmente */
