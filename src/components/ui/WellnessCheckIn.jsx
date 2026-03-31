@@ -1,7 +1,8 @@
 /**
  * @component WellnessCheckIn
  * @description Panel de check-in de bienestar del atleta.
- * 4 sliders (Sueño, Fatiga, Estrés, DOMS) con diseño glassmorphism.
+ * 4 sliders custom (Sueño, Fatiga, Estrés, DOMS) con diseño Glassmorphism Dark Premium.
+ * Circular SVG progress ring reactivo al score total.
  * Llama onSubmit(log) al confirmar, donde log tiene la forma WellnessLog.
  *
  * @prop {string|number} athleteId   - ID del atleta
@@ -10,12 +11,52 @@
  * @prop {Function}      onClose     - Callback para cerrar el panel
  *
  * @author Andres-UI (Elevate Sports)
- * @version 1.0
+ * @version 2.0 — Custom sliders + Circular Progress Ring
  */
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { PALETTE } from "../../constants/palette";
 import { calcWellnessScore, getWellnessStatus } from "../../types/wellnessTypes";
+
+/* ── Custom slider CSS — inyectar una vez en el <head> ── */
+if (typeof document !== "undefined" && !document.getElementById("wellness-slider-css")) {
+  const s = document.createElement("style");
+  s.id = "wellness-slider-css";
+  s.textContent = `
+    .wci-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+      outline: none;
+    }
+    .wci-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0,0,0,0.4);
+      box-shadow: 0 0 8px currentColor, 0 2px 4px rgba(0,0,0,0.6);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+    .wci-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      box-shadow: 0 0 14px currentColor, 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .wci-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(0,0,0,0.4);
+    }
+  `;
+  document.head.appendChild(s);
+}
 
 const SLIDERS = [
   { key: "sleep_quality", label: "Sueño",  icon: "🌙", description: "Calidad del descanso nocturno", inverted: false },
@@ -39,7 +80,7 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
     doms_level:    3,
   });
 
-  const score = calcWellnessScore(values);
+  const score         = calcWellnessScore(values);
   const wellnessStatus = getWellnessStatus(score);
 
   const statusColor =
@@ -48,11 +89,11 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
 
   const handleSubmit = () => {
     const log = {
-      athlete_id:    athleteId,
-      logged_at:     new Date().toISOString(),
+      athlete_id:     athleteId,
+      logged_at:      new Date().toISOString(),
       ...values,
       wellness_score: score,
-      notes:         null,
+      notes:          null,
     };
     onSubmit?.(log);
     onClose?.();
@@ -76,7 +117,7 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
       }}
     >
       {/* Header */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:700, color:"white", textTransform:"uppercase", letterSpacing:"0.5px" }}>
             Wellness Check-in
@@ -86,24 +127,43 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
           )}
         </div>
 
-        {/* Score badge */}
-        <div style={{
-          display:       "flex",
-          flexDirection: "column",
-          alignItems:    "center",
-          background:    `${statusColor}18`,
-          border:        `1px solid ${statusColor}40`,
-          borderRadius:  8,
-          padding:       "4px 10px",
-          minWidth:      48,
-        }}>
-          <div style={{ fontSize:16, fontWeight:900, color:statusColor, lineHeight:1 }}>
-            {Math.round(score)}
-          </div>
-          <div style={{ fontSize:7, color:statusColor, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>
-            {wellnessStatus.label}
-          </div>
-        </div>
+        {/* Circular Progress Ring */}
+        <svg width="60" height="60" viewBox="0 0 60 60" style={{ flexShrink:0 }}>
+          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4"/>
+          <circle
+            cx="30" cy="30" r="24"
+            fill="none"
+            stroke={statusColor}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeDasharray={`${(score / 100) * 150.8} 150.8`}
+            strokeDashoffset="37.7"
+            transform="rotate(-90 30 30)"
+            style={{ transition:"stroke-dasharray 600ms cubic-bezier(0.34,1.56,0.64,1), stroke 300ms ease" }}
+          />
+          {/* Inner glow ring */}
+          <circle
+            cx="30" cy="30" r="24"
+            fill="none"
+            stroke={statusColor}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeDasharray={`${(score / 100) * 150.8} 150.8`}
+            strokeDashoffset="37.7"
+            transform="rotate(-90 30 30)"
+            opacity="0.35"
+            filter="url(#wellnessGlow)"
+            style={{ transition:"stroke-dasharray 600ms ease" }}
+          />
+          <defs>
+            <filter id="wellnessGlow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <text x="30" y="27" textAnchor="middle" fill="white" fontSize="14" fontWeight="900" fontFamily="'JetBrains Mono',monospace">{Math.round(score)}</text>
+          <text x="30" y="36" textAnchor="middle" fill={statusColor} fontSize="6" fontWeight="700" letterSpacing="1">{wellnessStatus.label.toUpperCase()}</text>
+        </svg>
       </div>
 
       {/* Sliders */}
@@ -117,7 +177,7 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
 
           return (
             <div key={key}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                   <span style={{ fontSize:13 }}>{icon}</span>
                   <span style={{ fontSize:10, fontWeight:600, color:"rgba(255,255,255,0.85)" }}>{label}</span>
@@ -133,14 +193,13 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
                 step={1}
                 value={val}
                 onChange={e => setValues(prev => ({ ...prev, [key]: Number(e.target.value) }))}
+                className="wci-slider"
                 style={{
-                  width:       "100%",
-                  accentColor: sliderColor,
-                  height:      3,
-                  cursor:      "pointer",
+                  background: `linear-gradient(to right, ${sliderColor} 0%, ${sliderColor} ${(val - 1) / 4 * 100}%, rgba(255,255,255,0.1) ${(val - 1) / 4 * 100}%, rgba(255,255,255,0.1) 100%)`,
+                  color: sliderColor,
                 }}
               />
-              <div style={{ display:"flex", justifyContent:"space-between", marginTop:2 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:3 }}>
                 <span style={{ fontSize:7, color:"rgba(255,255,255,0.2)" }}>1</span>
                 <span style={{ fontSize:7, color:"rgba(255,255,255,0.2)" }}>5</span>
               </div>
@@ -155,18 +214,18 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
           <button
             onClick={onClose}
             style={{
-              flex:            1,
-              padding:         "8px 0",
-              fontSize:        10,
-              fontWeight:      600,
-              background:      "rgba(255,255,255,0.04)",
-              border:          "1px solid rgba(255,255,255,0.1)",
-              color:           "rgba(255,255,255,0.5)",
-              borderRadius:    7,
-              cursor:          "pointer",
-              textTransform:   "uppercase",
-              letterSpacing:   "0.5px",
-              minHeight:       44,
+              flex:          1,
+              padding:       "8px 0",
+              fontSize:      10,
+              fontWeight:    600,
+              background:    "rgba(255,255,255,0.04)",
+              border:        "1px solid rgba(255,255,255,0.1)",
+              color:         "rgba(255,255,255,0.5)",
+              borderRadius:  7,
+              cursor:        "pointer",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              minHeight:     44,
             }}
           >
             Cancelar

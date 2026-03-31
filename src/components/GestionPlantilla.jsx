@@ -259,9 +259,31 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
     reader.readAsDataURL(file);
   };
 
-  const historial = useStore(state => state.historial);
+  const historial    = useStore(state => state.historial);
+  const wellnessLogs = useStore(state => state.wellnessLogs);
   const rpeResult = calcSaludActual(athlete?.rpe ?? null, historial, athlete?.id ?? null);
   const risk = calcAthleteRisk(athlete?.id ?? null, historial, athlete?.rpe ?? null);
+
+  // Extrae los últimos 7 RPEs del atleta del historial (cronológico)
+  const rpeSparkData = (() => {
+    const id = String(athlete?.id ?? "");
+    const pts = [];
+    for (const s of historial) {
+      if (pts.length >= 7) break;
+      const rpe = s.rpeByAthlete?.[id] ?? s.rpeByAthlete?.[Number(id)] ?? null;
+      if (rpe != null && rpe >= 1 && rpe <= 10) pts.push(rpe);
+    }
+    return pts.reverse();
+  })();
+
+  // Últimos 7 wellness scores del atleta
+  const wellnessSparkData = (() => {
+    return (wellnessLogs || [])
+      .filter(l => String(l.athlete_id) === String(athlete?.id ?? ""))
+      .slice(0, 7)
+      .map(l => l.wellness_score)
+      .reverse();
+  })();
 
   if (!athlete) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", color: PALETTE.textHint, gap:12 }}>
@@ -347,99 +369,197 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
         <div onClick={onClose} style={{ fontSize:16, color: PALETTE.textMuted, cursor:"pointer", padding:"2px 6px" }}>✕</div>
       </div>
 
-      {/* ── Decision Card: Salud + ACWR ── */}
-      <div style={{ padding:"12px 16px", borderBottom:`1px solid ${PALETTE.border}` }}>
-        <div style={sectionTitle}>Estado de Rendimiento</div>
+      {/* ══════════════════════════════════════════
+          PERFORMANCE ELITE — BENTO GRID
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"14px 16px", borderBottom:`1px solid rgba(255,255,255,0.05)` }}>
 
-        {/* Wellness Gauge — arco de salud */}
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
-          {/* Arc gauge SVG */}
-          <svg width="64" height="40" viewBox="0 0 64 40">
-            {/* Track */}
-            <path d="M 8 36 A 28 28 0 0 1 56 36" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" strokeLinecap="round"/>
-            {/* Fill — calculado de 0 a 1 según salud */}
-            <path
-              d="M 8 36 A 28 28 0 0 1 56 36"
-              fill="none"
-              stroke={saludColor(rpeResult.salud)}
-              strokeWidth="5"
-              strokeLinecap="round"
-              strokeDasharray={`${(rpeResult.salud / 100) * 75.4} 75.4`}
-              style={{ transition: "stroke-dasharray 600ms ease, stroke 300ms ease" }}
-            />
-            {/* Valor central */}
-            <text x="32" y="33" textAnchor="middle" fill="white" fontSize="11" fontWeight="700" fontFamily="inherit">
-              {rpeResult.salud}
-            </text>
-          </svg>
-          <div>
-            <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"1px" }}>Índice Salud</div>
-            <div style={{ fontSize:11, color:saludColor(rpeResult.salud), fontWeight:700, textTransform:"uppercase" }}>
+        {/* Label sección */}
+        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"3px", color:"rgba(255,255,255,0.2)", marginBottom:10, borderLeft:"2px solid #7C3AED", paddingLeft:7 }}>
+          Performance Intel
+        </div>
+
+        {/* Bento row 1: Salud + ACWR lado a lado */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:6 }}>
+
+          {/* Celda salud — circular gauge SVG */}
+          <div style={{
+            background:"linear-gradient(135deg,rgba(8,8,20,0.9),rgba(4,4,12,0.95))",
+            border:`1px solid ${rpeResult.color}22`,
+            borderRadius:10,
+            padding:"10px 8px",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+            boxShadow:`0 0 20px ${rpeResult.color}08`,
+          }}>
+            {/* Full circle SVG gauge */}
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4"/>
+              <circle
+                cx="26" cy="26" r="21"
+                fill="none"
+                stroke={rpeResult.color}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${(rpeResult.salud / 100) * 131.9} 131.9`}
+                strokeDashoffset="33"
+                transform="rotate(-90 26 26)"
+                style={{ transition:"stroke-dasharray 800ms cubic-bezier(0.34,1.56,0.64,1), stroke 400ms ease" }}
+              />
+              <defs>
+                <filter id={`glow-${athlete.id}`}>
+                  <feGaussianBlur stdDeviation="2" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+              <circle
+                cx="26" cy="26" r="21"
+                fill="none"
+                stroke={rpeResult.color}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray={`${(rpeResult.salud / 100) * 131.9} 131.9`}
+                strokeDashoffset="33"
+                transform="rotate(-90 26 26)"
+                filter={`url(#glow-${athlete.id})`}
+                opacity="0.6"
+                style={{ transition:"stroke-dasharray 800ms cubic-bezier(0.34,1.56,0.64,1)" }}
+              />
+              <text x="26" y="24" textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="'JetBrains Mono',monospace">
+                {rpeResult.salud}
+              </text>
+              <text x="26" y="33" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="6" fontWeight="500">
+                SALUD
+              </text>
+            </svg>
+            <div style={{ fontSize:8, color:rpeResult.color, textTransform:"uppercase", letterSpacing:"0.5px", textAlign:"center", lineHeight:1.2 }}>
               {rpeResult.riskLevel === "sin_datos" ? "Sin datos" :
                rpeResult.riskLevel === "optimo" ? "Óptimo" :
                rpeResult.riskLevel === "precaucion" ? "Precaución" : "En riesgo"}
             </div>
           </div>
-        </div>
 
-        {/* ACWR Widget */}
-        <div style={{
-          background: "rgba(255,255,255,0.03)",
-          border: `1px solid rgba(255,255,255,0.07)`,
-          borderRadius: 6,
-          padding: "8px 10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 8,
-        }}>
-          <div>
-            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint }}>ACWR Ratio</div>
-            <div style={{ fontSize:18, fontWeight:900, color:"white", lineHeight:1, marginTop:2 }}>
+          {/* Celda ACWR */}
+          <div style={{
+            background:"linear-gradient(135deg,rgba(8,8,20,0.9),rgba(4,4,12,0.95))",
+            border:`1px solid ${
+              risk.status==="red" ? "rgba(226,75,74,0.2)" :
+              risk.status==="yellow" ? "rgba(239,159,39,0.2)" :
+              risk.status==="green" ? "rgba(29,158,117,0.2)" : "rgba(255,255,255,0.06)"
+            }`,
+            borderRadius:10,
+            padding:"10px 8px",
+            display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:4,
+          }}>
+            <div style={{ fontSize:7, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"2px", fontFamily:"'JetBrains Mono',monospace" }}>ACWR</div>
+            <div style={{
+              fontSize:26, fontWeight:900, lineHeight:1,
+              fontFamily:"'JetBrains Mono',monospace",
+              color: risk.status==="red" ? "#E24B4A" : risk.status==="yellow" ? "#EF9F27" : risk.status==="green" ? "#1D9E75" : "rgba(255,255,255,0.3)",
+              textShadow: risk.status==="red" ? "0 0 20px rgba(226,75,74,0.5)" : risk.status==="green" ? "0 0 20px rgba(29,158,117,0.4)" : "none",
+            }}>
               {risk.ratio !== null ? risk.ratio.toFixed(2) : "—"}
             </div>
-          </div>
-          {/* Status badge */}
-          <div style={{
-            padding: "4px 10px",
-            borderRadius: 4,
-            fontSize: 9,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-            background: risk.status === "red" ? "rgba(226,75,74,0.15)" :
-                        risk.status === "yellow" ? "rgba(239,159,39,0.15)" :
-                        risk.status === "green" ? "rgba(29,158,117,0.15)" : "rgba(255,255,255,0.06)",
-            color: risk.status === "red" ? "#E24B4A" :
-                   risk.status === "yellow" ? "#EF9F27" :
-                   risk.status === "green" ? "#1D9E75" : PALETTE.textMuted,
-            border: `1px solid ${
-              risk.status === "red" ? "rgba(226,75,74,0.3)" :
-              risk.status === "yellow" ? "rgba(239,159,39,0.3)" :
-              risk.status === "green" ? "rgba(29,158,117,0.3)" : "rgba(255,255,255,0.1)"
-            }`,
-          }}>
-            {risk.status === "red" ? "Peligro" :
-             risk.status === "yellow" ? "Precaución" :
-             risk.status === "green" ? "Óptimo" : "Sin datos"}
+            <div style={{
+              fontSize:7, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px",
+              padding:"2px 8px", borderRadius:20,
+              background: risk.status==="red" ? "rgba(226,75,74,0.15)" : risk.status==="yellow" ? "rgba(239,159,39,0.15)" : risk.status==="green" ? "rgba(29,158,117,0.15)" : "rgba(255,255,255,0.04)",
+              color: risk.status==="red" ? "#E24B4A" : risk.status==="yellow" ? "#EF9F27" : risk.status==="green" ? "#1D9E75" : "rgba(255,255,255,0.3)",
+            }}>
+              {risk.status==="red" ? "Peligro" : risk.status==="yellow" ? "Atención" : risk.status==="green" ? "Óptimo" : "Sin datos"}
+            </div>
+            {risk.trend && risk.trend !== "stable" && (
+              <div style={{ fontSize:10, color: risk.trend==="up" ? "#E24B4A" : "#1D9E75" }}>
+                {risk.trend === "up" ? "↑" : "↓"}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* AI Insight */}
-        {risk.suggestion && (
+        {/* Bento row 2: Sparklines */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:6 }}>
+
+          {/* RPE Sparkline */}
           <div style={{
-            background: "rgba(124,58,237,0.08)",
-            border: "1px solid rgba(124,58,237,0.2)",
-            borderRadius: 5,
-            padding: "6px 10px",
-            fontSize: 10,
-            color: "rgba(255,255,255,0.75)",
-            lineHeight: 1.4,
+            background:"rgba(255,255,255,0.02)",
+            border:"1px solid rgba(255,255,255,0.05)",
+            borderRadius:8, padding:"8px",
           }}>
-            <span style={{ color: PALETTE.purple, fontWeight:700, fontSize:8, textTransform:"uppercase", letterSpacing:"1px" }}>Insight · </span>
-            {risk.suggestion}
+            <div style={{ fontSize:7, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1.5px", marginBottom:5, fontFamily:"'JetBrains Mono',monospace" }}>RPE 7d</div>
+            {rpeSparkData.length > 0 ? (
+              <svg width="100%" height="28" viewBox={`0 0 ${Math.max(rpeSparkData.length * 10, 60)} 28`} preserveAspectRatio="none">
+                {rpeSparkData.map((v, i) => {
+                  const barH = Math.max(Math.round((v / 10) * 22), 2);
+                  const barColor = v <= 3 ? "#1D9E75" : v <= 7 ? "#EF9F27" : "#E24B4A";
+                  return (
+                    <rect
+                      key={i}
+                      x={i * 10 + 1}
+                      y={26 - barH}
+                      width={7}
+                      height={barH}
+                      rx={2}
+                      fill={barColor}
+                      opacity={i === rpeSparkData.length - 1 ? 1 : 0.4 + (i / rpeSparkData.length) * 0.4}
+                    />
+                  );
+                })}
+              </svg>
+            ) : (
+              <div style={{ height:28, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:"rgba(255,255,255,0.15)" }}>sin datos</div>
+            )}
           </div>
-        )}
+
+          {/* Wellness Sparkline */}
+          <div style={{
+            background:"rgba(255,255,255,0.02)",
+            border:"1px solid rgba(255,255,255,0.05)",
+            borderRadius:8, padding:"8px",
+          }}>
+            <div style={{ fontSize:7, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1.5px", marginBottom:5, fontFamily:"'JetBrains Mono',monospace" }}>WELLNESS</div>
+            {wellnessSparkData.length > 0 ? (
+              <svg width="100%" height="28" viewBox={`0 0 ${Math.max(wellnessSparkData.length * 10, 60)} 28`} preserveAspectRatio="none">
+                {wellnessSparkData.map((v, i) => {
+                  const barH = Math.max(Math.round((v / 100) * 22), 2);
+                  const barColor = v >= 70 ? "#1D9E75" : v >= 40 ? "#EF9F27" : "#E24B4A";
+                  return (
+                    <rect key={i} x={i * 10 + 1} y={26 - barH} width={7} height={barH} rx={2}
+                      fill={barColor} opacity={i === wellnessSparkData.length - 1 ? 1 : 0.4 + (i / wellnessSparkData.length) * 0.4}
+                    />
+                  );
+                })}
+              </svg>
+            ) : (
+              <div style={{ height:28, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, color:"rgba(255,255,255,0.15)" }}>sin datos</div>
+            )}
+          </div>
+        </div>
+
+        {/* Predictive Insight — Electric Violet container */}
+        <div style={{
+          background:"linear-gradient(135deg,rgba(124,58,237,0.12),rgba(79,32,168,0.06))",
+          border:"1px solid rgba(124,58,237,0.25)",
+          borderRadius:8,
+          padding:"10px 12px",
+          position:"relative",
+          overflow:"hidden",
+        }}>
+          <div style={{ position:"absolute", top:-1, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(124,58,237,0.6),transparent)" }}/>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:5 }}>
+            <div style={{ width:5, height:5, borderRadius:"50%", background:"#7C3AED", boxShadow:"0 0 6px rgba(124,58,237,0.8)" }}/>
+            <div style={{ fontSize:7, fontWeight:800, textTransform:"uppercase", letterSpacing:"2.5px", color:"rgba(124,58,237,0.9)", fontFamily:"'JetBrains Mono',monospace" }}>
+              Predictive Insight
+            </div>
+          </div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.7)", lineHeight:1.6, fontStyle:"italic" }}>
+            {risk.suggestion || "Registra datos de entrenamiento para activar el análisis predictivo."}
+          </div>
+          {risk.ratio !== null && (
+            <div style={{ marginTop:5, fontSize:8, color:"rgba(124,58,237,0.6)", fontFamily:"'JetBrains Mono',monospace" }}>
+              ratio:{risk.ratio?.toFixed(2)} · trend:{risk.trend || "—"} · 7d_avg:{rpeResult.rpeAvg7d ?? "—"}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Métricas del ciclo */}
@@ -1429,7 +1549,7 @@ function TacticalBoardView({ athletes }) {
           >
             {savingTactics ? (
               <>
-                <div style={{ width: 10, height: 10, border: "2px solid #0a0a0a", borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div style={{ width: 10, height: 10, borderStyle: "solid", borderWidth: 2, borderColor: "#0a0a0a #0a0a0a #0a0a0a transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Guardando...
               </>
             ) : "Guardar formacion"}
@@ -1450,7 +1570,7 @@ function TacticalBoardView({ athletes }) {
           >
             {exportingPDF ? (
               <>
-                <div style={{ width: 10, height: 10, border: `2px solid ${PALETTE.neon}`, borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div style={{ width: 10, height: 10, borderStyle: "solid", borderWidth: 2, borderColor: `${PALETTE.neon} ${PALETTE.neon} ${PALETTE.neon} transparent`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Exportando...
               </>
             ) : "Exportar imagen"}
