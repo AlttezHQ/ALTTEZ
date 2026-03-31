@@ -28,14 +28,14 @@
 //   doms_level    SMALLINT    CHECK (doms_level    BETWEEN 1 AND 5) NOT NULL,
 //   notes         TEXT,
 //   -- Columna calculada: se almacena para evitar recalculo en consultas de reporte.
-//   -- Formula: ((sleep_quality*2 + (6-fatigue_level)*2 + (6-stress_level) + (6-doms_level)) / 20) * 100
+//   -- Formula: ((sleep_quality*2 + (6-fatigue_level)*2 + (6-stress_level) + (6-doms_level)) / 30) * 100
 //   wellness_score NUMERIC(5,2) GENERATED ALWAYS AS (
 //     ((
 //       sleep_quality * 2 +
 //       (6 - fatigue_level) * 2 +
 //       (6 - stress_level) +
 //       (6 - doms_level)
-//     )::NUMERIC / 20) * 100
+//     )::NUMERIC / 30) * 100
 //   ) STORED
 // );
 //
@@ -82,7 +82,7 @@
  *
  * Formula (Fullagar et al., 2015 — adaptacion multimodal):
  *   wellness_score = ((sleep_quality * 2 + (6 - fatigue_level) * 2
- *                      + (6 - stress_level) + (6 - doms_level)) / 20) * 100
+ *                      + (6 - stress_level) + (6 - doms_level)) / 30) * 100
  *
  * Ponderaciones:
  *   - sleep_quality  : factor 2 (doble peso — mayor predictor de rendimiento)
@@ -90,13 +90,15 @@
  *   - stress_level   : factor 1, invertido
  *   - doms_level     : factor 1, invertido
  *
- * Denominador maximo = (5*2) + (5*2) + 5 + 5 = 30... simplificado a 20 al usar
- * la inversion (6 - valor) con valor_min=1 => contribucion maxima = 5 por dimension
- * no ponderada, y 10 para las ponderadas. Total max = 10 + 10 + 5 + 5 = 30.
- * El denominador en la formula original del ticket es 20 — se respeta tal cual
- * para mantener coherencia con el esquema SQL GENERATED ALWAYS.
+ * Denominador maximo = (5*2) + (5*2) + 5 + 5 = 30.
+ *   Con inversion (6 - valor), valor_min=1 => contribucion maxima por dimension:
+ *   sleep_quality (ponderada x2): 5*2 = 10
+ *   fatigue_level (invertido x2): (6-1)*2 = 10
+ *   stress_level  (invertido x1): (6-1) = 5
+ *   doms_level    (invertido x1): (6-1) = 5
+ *   Total maximo del numerador = 30. Denominador = 30. Rango real: [0, 100].
  *
- * Rango de salida: 0-100 (puede exceder 100 matematicamente; se clampea a [0, 100]).
+ * Rango de salida: [0, 100] exacto. El clampeo es defensa ante inputs invalidos.
  *
  * @param {WellnessLog} log - Registro de bienestar con las 4 dimensiones evaluadas
  * @returns {number} Score en rango [0, 100], redondeado a 2 decimales
@@ -121,7 +123,7 @@ export function calcWellnessScore(log) {
     (6 - stress_level) +
     (6 - doms_level);
 
-  const raw = (numerator / 20) * 100;
+  const raw = (numerator / 30) * 100;
 
   // Clamp to [0, 100] and round to 2 decimal places
   return Math.round(Math.min(100, Math.max(0, raw)) * 100) / 100;

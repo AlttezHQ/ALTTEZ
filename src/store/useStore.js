@@ -103,7 +103,9 @@ export const useStore = create(
         }));
       },
       addWellnessLog: (log) => {
-        set(state => ({ wellnessLogs: [log, ...state.wellnessLogs] }));
+        set(state => ({
+          wellnessLogs: [log, ...state.wellnessLogs].slice(0, 365)
+        }));
       },
       getAthleteWellness: (athleteId) => {
         const { wellnessLogs } = get();

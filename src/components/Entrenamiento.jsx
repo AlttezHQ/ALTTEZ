@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../utils/helpers";
@@ -149,6 +149,12 @@ export default function Entrenamiento({ clubId = "" }) {
     return () => clearInterval(iv);
   }, [sessionActive]);
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
+
   const fmtElapsed = (s) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -208,6 +214,7 @@ export default function Entrenamiento({ clubId = "" }) {
 
   const [wellnessTarget, setWellnessTarget] = useState(null); // { athlete, index }
   const [healthFeedback, setHealthFeedback] = useState(null); // { athleteName, salud, riskLevel, color }
+  const feedbackTimerRef = useRef(null);
 
   const handleWellnessSubmit = (log) => {
     addWellnessLog(log);
@@ -220,7 +227,8 @@ export default function Entrenamiento({ clubId = "" }) {
         riskLevel: result.riskLevel,
         color: result.color,
       });
-      setTimeout(() => setHealthFeedback(null), 3500);
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
     }
     setWellnessTarget(null);
   };
@@ -792,6 +800,7 @@ export default function Entrenamiento({ clubId = "" }) {
               <WellnessCheckIn
                 athleteId={wellnessTarget.athlete.id}
                 athleteName={wellnessTarget.athlete.name}
+                clubId={clubId}
                 onSubmit={handleWellnessSubmit}
                 onClose={() => setWellnessTarget(null)}
               />

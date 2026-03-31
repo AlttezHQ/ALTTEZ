@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-31 — QA Blockers Sprint Final (3 fixes pre-release)
+**Directive from**: Sara-QA via Julián
+**Status**: Complete
+
+### Plan
+Tres blockers identificados por QA antes del release. Cambios quirúrgicos, sin refactor colateral.
+
+### Task Assignment
+- @Carlos (Arquitecto): Todos los fixes (scope acotado, sin dependencias cruzadas)
+
+### Architecture Decisions
+
+**BLOCKER 1 — KioskMode accesible sin autenticación (Ley 1581)**
+- Archivo: `src/App.jsx`
+- `Navigate` agregado al import de `react-router-dom` (línea 15)
+- Guard `if (!mode) return <Navigate to="/crm" replace />` insertado antes del render de `KioskMode`
+- Rationale: sin `mode` el club no está configurado — permitir acceso al kiosk exponía datos sin contexto de club, violando el modelo de aislamiento por club_id
+
+**BLOCKER 2 — Migration wellness_logs tabla en Supabase**
+- Archivo creado: `supabase/migrations/008_wellness_logs.sql`
+- Tabla `wellness_logs` con campos tipados (SMALLINT con CHECK 1-5), índice compuesto `(club_id, athlete_id, logged_at DESC)`
+- RLS activado: SELECT y INSERT restringidos al club propio del usuario autenticado; DELETE solo para role='admin'
+- Sigue el mismo patrón RLS de las migrations 002-007
+
+**BLOCKER 3 — healthFeedback setTimeout sin cleanup (memory leak)**
+- Archivo: `src/components/Entrenamiento.jsx`
+- `useRef` agregado al import de React (línea 1)
+- `feedbackTimerRef = useRef(null)` declarado junto a los estados de wellness (línea 217)
+- `setTimeout` reemplazado por patrón cancelar-antes-de-asignar (líneas 230-231)
+- `useEffect` de cleanup con `return () => clearTimeout` agregado tras el effect de sesión (líneas 152-155)
+- Rationale: sin cleanup, el componente podía llamar `setHealthFeedback` sobre un componente ya desmontado, causando warning de React y posible leak
+
+### Validation Criteria
+- [ ] Sara: navegar a `/crm/kiosk` sin sesión activa debe redirigir a `/crm`
+- [ ] Mateo: ejecutar `008_wellness_logs.sql` en Supabase SQL Editor y verificar tabla + políticas RLS
+- [ ] Sara: desmontar `Entrenamiento` mientras el timer de feedback está activo — cero warnings de React en consola
+
+---
+
 ## 2026-03-31 — P0 Fix: RLS clubs + auto-assign admin via RPC
 **Directive from**: Julián
 **Status**: Complete

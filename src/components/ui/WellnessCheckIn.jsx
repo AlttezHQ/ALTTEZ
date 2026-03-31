@@ -7,6 +7,7 @@
  *
  * @prop {string|number} athleteId   - ID del atleta
  * @prop {string}        athleteName - Nombre visible en el header
+ * @prop {string}        clubId      - ID del club (multi-tenancy — incluido en el log)
  * @prop {Function}      onSubmit    - Callback con el WellnessLog construido
  * @prop {Function}      onClose     - Callback para cerrar el panel
  *
@@ -72,7 +73,7 @@ const SLIDER_LABELS = {
   doms_level:    ["Sin dolor","Leve",   "Moderado","Intenso", "Severo"   ],
 };
 
-export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onClose }) {
+export default function WellnessCheckIn({ athleteId, athleteName, clubId, onSubmit, onClose }) {
   const [values, setValues] = useState({
     sleep_quality: 3,
     fatigue_level: 3,
@@ -89,6 +90,7 @@ export default function WellnessCheckIn({ athleteId, athleteName, onSubmit, onCl
 
   const handleSubmit = () => {
     const log = {
+      club_id:        clubId || null,
       athlete_id:     athleteId,
       logged_at:      new Date().toISOString(),
       ...values,

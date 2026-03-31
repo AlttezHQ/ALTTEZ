@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { setHookErrorHandler } from "./hooks/useLocalStorage";
 import { useStore } from "./store/useStore";
 import FieldBackground from "./components/FieldBackground";
@@ -357,6 +357,9 @@ function CRMApp() {
 
   // ── Kiosk mode: URL directa /crm/kiosk — sin auth, sin wrapper ──
   if (location.pathname === "/crm/kiosk") {
+    if (!mode) {
+      return <Navigate to="/crm" replace />;
+    }
     return (
       <Suspense fallback={<LoadingFallback />}>
         <KioskMode />

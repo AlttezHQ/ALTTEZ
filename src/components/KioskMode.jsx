@@ -20,6 +20,7 @@ export default function KioskMode() {
   const addWellnessLog = useStore(state => state.addWellnessLog);
   const wellnessLogs = useStore(state => state.wellnessLogs);
   const clubInfo = useStore(state => state.clubInfo);
+  const session = useStore(state => state.session);
 
   const [selected, setSelected] = useState(null); // athlete
   const [lastChecked, setLastChecked] = useState({}); // athleteId → timestamp
@@ -188,6 +189,7 @@ export default function KioskMode() {
             <WellnessCheckIn
               athleteId={selected.id}
               athleteName={selected.name}
+              clubId={session?.club_id || ""}
               onSubmit={handleSubmit}
               onClose={() => setSelected(null)}
             />
