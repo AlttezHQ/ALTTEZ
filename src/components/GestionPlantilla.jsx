@@ -993,14 +993,17 @@ function BulkUploaderModal({ onClose, onSaveAll }) {
       showToast(`${result.inserted} deportistas importados correctamente`, "success");
       // Convertir filas al schema local y propagar al estado
       const newAthletes = validRows.map((r, i) => ({
-        name: `${r.nombre || ""} ${r.apellido || ""}`.trim() || r.name || "",
-        pos: r.posicion || r.pos || "General",
-        posCode: r.posicion || r.posCode || "GEN",
-        id: r.dorsal || (200 + i),
-        dob: r.fecha_nacimiento || r.dob || null,
-        contact: r.contacto_emergencia || r.contact || "",
-        status: "P", available: true,
-        goals: 0, yellowCards: 0, redCards: 0,
+        name:        r.name    || "",
+        pos:         r.pos     || "General",
+        posCode:     r.posCode || "GEN",
+        id:          200 + i,
+        dob:         r.dob     || null,
+        contact:     r.contact || "",
+        status:      "P",
+        available:   true,
+        goals:       0,
+        yellowCards: 0,
+        redCards:    0,
       }));
       onSaveAll(newAthletes);
     } else {
