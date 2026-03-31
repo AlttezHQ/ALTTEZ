@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-31 — P0 Fix: RLS clubs + auto-assign admin via RPC
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Error en producción: `new row violates row-level security policy for table "clubs"`.
+Raíz: `createClub` hacía `supabase.from("clubs").insert(...)` directo con el anon key.
+El anon key no tiene bypass de RLS — INSERT bloqueado si no hay policy permisiva
+o si el usuario no tiene el claim correcto al momento del insert.
+
+Solución en dos capas:
+1. SQL: definir 3 policies (INSERT/SELECT/UPDATE) y una función RPC `SECURITY DEFINER`
+   que ejecuta INSERT en clubs + UPDATE en profiles en una sola transacción atómica,
+   saltando RLS de forma controlada y segura.
+2. JS: reemplazar el insert directo por `supabase.rpc("create_club_and_link_admin", {...})`.
+
+### Task Assignment
+- @Mateo (Data): migration SQL + función RPC — `supabase/migrations/001_fix_clubs_rls.sql`
+- @Mateo (Data): reemplazar `createClub` en `src/services/supabaseService.js`
+- @Sara (QA): verificar en dashboard que las 3 policies existen y la función aparece en Database > Functions; confirmar flujo de registro crea club y asigna role=admin en profiles
+
+### Architecture Decisions
+- `SECURITY DEFINER` + `SET search_path = public` es el patrón correcto para RPCs que
+  necesitan escribir en tablas con RLS sin exponer bypass al cliente.
+- La función retorna UUID directamente — `data` en el cliente es el club_id, sin `.id`.
+- No se toca `linkProfileToClub` en authService.js — ese flujo es para onboarding alternativo.
+- Fallback `if (!isSupabaseReady) return null` se mantiene — modo offline sigue usando localStorage.
+
+### Validation Criteria
+- `supabase/migrations/001_fix_clubs_rls.sql` ejecuta sin errores en SQL Editor
+- Table Editor > clubs > RLS muestra exactamente 3 policies activas
+- Database > Functions muestra `create_club_and_link_admin`
+- Registro de club desde la app NO lanza error RLS
+- profiles del creador queda con `club_id` y `role = 'admin'`
+- Ningún otro archivo fue modificado
+
+---
+
 ## 2026-03-31 — Ticket #002.5: Ruta /crm/kiosk + Anillos reactivos al wellness
 **Directive from**: Julián
 **Status**: Complete

@@ -268,7 +268,8 @@ function HealthBar({ salud, width = 48 }) {
    No neon glow — clean, professional, broadcast-quality.
 ═══════════════════════════════════════════════════════════════════════════════ */
 const PlayerToken = memo(function PlayerToken({
-  starter, salud, riskStatus = "unknown", isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
+  starter, salud, riskStatus = "unknown", viewLayer = "normal",
+  isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
 }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
@@ -301,11 +302,14 @@ const PlayerToken = memo(function PlayerToken({
     : isSelected ? "rgba(255,255,255,0.85)"
     : saludColor(saludVal);
 
-  /* Shadow: subtle depth only, no neon glow */
+  /* Neon glow color driven by riskStatus */
+  const riskGlowColor = riskStatus === "red" ? "226,75,74" : riskStatus === "yellow" ? "239,159,39" : riskStatus === "green" ? "57,255,20" : null;
+
   const discShadow = isActivating
     ? `0 0 0 3px rgba(255,255,255,0.25), 0 6px 20px rgba(0,0,0,0.8)`
     : isTarget ? `0 0 0 2px rgba(0,229,255,0.4), 0 4px 16px rgba(0,0,0,0.7)`
     : isSelected ? `0 0 0 3px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.75)`
+    : riskGlowColor ? `0 0 12px rgba(${riskGlowColor},0.45), 0 0 24px rgba(${riskGlowColor},0.2), 0 2px 8px rgba(0,0,0,0.7)`
     : isHover ? `0 4px 14px rgba(0,0,0,0.8)`
     : `0 2px 8px rgba(0,0,0,0.7)`;
 
@@ -368,6 +372,27 @@ const PlayerToken = memo(function PlayerToken({
               </div>
             </div>
           )}
+
+          {/* Layer Mode Overlay */}
+          {viewLayer !== "normal" && athlete.status === "P" && (
+            <div style={{
+              position:"absolute", inset:0, borderRadius:"50%",
+              background: viewLayer === "heatmap"
+                // Heatmap: overlay según riskStatus (carga ACWR)
+                ? riskStatus === "red"    ? "rgba(226,75,74,0.5)"
+                : riskStatus === "yellow" ? "rgba(239,159,39,0.35)"
+                : riskStatus === "green"  ? "rgba(29,158,117,0.2)"
+                : "rgba(255,255,255,0.05)"
+                // Recovery: overlay según salud (wellnessMap ya mezclado en riskStatus)
+                : riskStatus === "red"    ? "rgba(226,75,74,0.45)"
+                : riskStatus === "yellow" ? "rgba(239,159,39,0.3)"
+                : riskStatus === "green"  ? "rgba(57,255,20,0.2)"
+                : "rgba(255,255,255,0.05)",
+              zIndex:1,
+              pointerEvents:"none",
+              transition:"background 300ms ease",
+            }}/>
+          )}
         </motion.div>
 
         {/* Dorsal badge — bottom-right corner of the circle */}
@@ -397,31 +422,32 @@ const PlayerToken = memo(function PlayerToken({
           </div>
         </div>
 
-        {/* Vitality Ring — ACWR risk indicator (static border) */}
+        {/* ── Neon Vitality Ring ── */}
         {athlete && riskStatus !== "unknown" && riskStatus !== "green" && (
           <div style={{
-            position: "absolute",
-            inset: -4,
-            borderRadius: "50%",
-            border: `2px solid ${riskStatus === "red" ? "#E24B4A" : "#EF9F27"}`,
-            pointerEvents: "none",
-            zIndex: 0,
-          }} />
+            position:"absolute", inset:-5, borderRadius:"50%",
+            border:`1.5px solid ${riskStatus==="red" ? "rgba(226,75,74,0.7)" : "rgba(239,159,39,0.6)"}`,
+            boxShadow: riskStatus==="red"
+              ? `0 0 8px rgba(226,75,74,0.5), inset 0 0 6px rgba(226,75,74,0.1)`
+              : `0 0 6px rgba(239,159,39,0.4)`,
+            pointerEvents:"none", zIndex:0,
+          }}/>
         )}
 
-        {/* Vitality Ring — pulse animation for red zone only */}
+        {/* ── Pulse animation: solo rojo (Engine Alert) ── */}
         {athlete && riskStatus === "red" && (
           <motion.div
             style={{
-              position: "absolute",
-              inset: -4,
-              borderRadius: "50%",
-              border: "2px solid #E24B4A",
-              pointerEvents: "none",
-              zIndex: 0,
+              position:"absolute", inset:-8, borderRadius:"50%",
+              border:"1.5px solid rgba(226,75,74,0.4)",
+              boxShadow:"0 0 16px rgba(226,75,74,0.3)",
+              pointerEvents:"none", zIndex:0,
             }}
-            animate={{ opacity: [1, 0.2, 1], scale: [1, 1.15, 1] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            animate={{
+              opacity: [0.8, 0, 0.8],
+              scale:   [1,   1.2, 1],
+            }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
           />
         )}
       </div>
@@ -444,6 +470,16 @@ const PlayerToken = memo(function PlayerToken({
         {apellido.length > 7 ? apellido.slice(0, 7) : apellido}
       </div>
 
+      {viewLayer === "heatmap" && riskStatus !== "unknown" && (
+        <div style={{ fontSize:7, color:
+          riskStatus==="red" ? "#E24B4A" : riskStatus==="yellow" ? "#EF9F27" : "#1D9E75",
+          letterSpacing:"0.5px", lineHeight:1, marginTop:1,
+          fontFamily:"'JetBrains Mono',monospace",
+        }}>
+          {riskStatus.toUpperCase()}
+        </div>
+      )}
+
       {/* Barra de salud compacta — neon green ONLY here, by design */}
       <HealthBar salud={saludVal} width={36} />
     </div>
@@ -453,6 +489,7 @@ const PlayerToken = memo(function PlayerToken({
   prev.starter?.posCode === next.starter?.posCode &&
   prev.salud?.salud === next.salud?.salud &&
   prev.riskStatus === next.riskStatus &&
+  prev.viewLayer === next.viewLayer &&
   prev.isSelected === next.isSelected &&
   prev.isDragged === next.isDragged &&
   prev.isTarget === next.isTarget &&
@@ -618,6 +655,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
 
   const [formationKey, setFormationKey] = useState("4-3-3");
   const [viewMode, setViewMode] = useState("full");          // "full" | "half"
+  const [viewLayer, setViewLayer] = useState("normal");      // "normal" | "heatmap" | "recovery"
   const [selectedIdx, setSelectedIdx] = useState(null);
   const [showFormations, setShowFormations] = useState(false);
   const [activeTab, setActiveTab] = useState("plantilla");
@@ -875,6 +913,41 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
             </div>
           </motion.div>
 
+          {/* Layer Mode Selector */}
+          <div style={{
+            display:"flex", gap:1,
+            background:"rgba(0,0,0,0.5)",
+            border:"1px solid rgba(255,255,255,0.08)",
+            borderRadius:6, padding:2, flexShrink:0,
+          }}>
+            {[
+              { key:"normal",   label:"Normal",  icon:"⬤" },
+              { key:"heatmap",  label:"Carga",   icon:"🔥" },
+              { key:"recovery", label:"Recup.",  icon:"💧" },
+            ].map(({ key, label, icon }) => (
+              <div
+                key={key}
+                onClick={() => setViewLayer(key)}
+                style={{
+                  padding:"3px 8px",
+                  fontSize:8,
+                  fontWeight: viewLayer===key ? 700 : 400,
+                  textTransform:"uppercase",
+                  letterSpacing:"0.5px",
+                  cursor:"pointer",
+                  borderRadius:4,
+                  background: viewLayer===key ? "rgba(124,58,237,0.3)" : "transparent",
+                  color: viewLayer===key ? "#7C3AED" : "rgba(255,255,255,0.35)",
+                  border: viewLayer===key ? "1px solid rgba(124,58,237,0.4)" : "1px solid transparent",
+                  transition:"all 150ms ease",
+                  whiteSpace:"nowrap",
+                }}
+              >
+                {icon} {label}
+              </div>
+            ))}
+          </div>
+
           <motion.div
             onClick={() => showToast("Guarda la formación y accede desde Match Center", "info")}
             whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
@@ -913,6 +986,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                       riskMap.get(st.athlete.id)?.status ?? "unknown",
                       wellnessMap.get(st.athlete.id) ?? "unknown"
                     ) : "unknown"}
+                    viewLayer={viewLayer}
                     isSelected={selectedIdx===i}
                     isDragged={isDrag("starter",i)}
                     isTarget={nearTarget===i}
