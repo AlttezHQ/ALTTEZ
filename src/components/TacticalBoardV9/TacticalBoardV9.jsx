@@ -25,7 +25,9 @@ import { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PALETTE as C } from "../../constants/palette";
 import { getAvatarUrl as avatar, getStatusStyle } from "../../utils/helpers";
-import { calcSaludActual, saludColor } from "../../utils/rpeEngine";
+import { calcSaludActual, saludColor, calcAthleteRisk } from "../../utils/rpeEngine";
+import { useStore } from "../../store/useStore";
+import { calcWellnessScore, getWellnessStatus } from "../../types/wellnessTypes";
 import useLocalStorage from "../../hooks/useLocalStorage";
 import useDragEngine from "../../hooks/useDragEngine";
 import useDrawingEngine from "../../hooks/useDrawingEngine";
@@ -199,6 +201,12 @@ const ROLE_OPTIONS = {
   FWD: ["Goleador","Falso 9","Extremo","Segundo delantero"],
 };
 
+/* ── Wellness + ACWR combined risk ──────────────────────────────────────────── */
+const STATUS_PRIORITY = { "red": 3, "yellow": 2, "green": 1, "unknown": 0 };
+function worstStatus(a, b) {
+  return STATUS_PRIORITY[a] >= STATUS_PRIORITY[b] ? a : b;
+}
+
 /* ── Mini cancha SVG para selector de formaciones ────────────────────────────── */
 const MiniPitch = memo(function MiniPitch({ positions, isActive, onClick }) {
   return (
@@ -260,7 +268,7 @@ function HealthBar({ salud, width = 48 }) {
    No neon glow — clean, professional, broadcast-quality.
 ═══════════════════════════════════════════════════════════════════════════════ */
 const PlayerToken = memo(function PlayerToken({
-  starter, salud, isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
+  starter, salud, riskStatus = "unknown", isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
 }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
@@ -388,6 +396,34 @@ const PlayerToken = memo(function PlayerToken({
             {dorsal !== null ? (typeof dorsal === "number" ? dorsal : dorsal) : starter.posCode?.slice(0,2)}
           </div>
         </div>
+
+        {/* Vitality Ring — ACWR risk indicator (static border) */}
+        {athlete && riskStatus !== "unknown" && riskStatus !== "green" && (
+          <div style={{
+            position: "absolute",
+            inset: -4,
+            borderRadius: "50%",
+            border: `2px solid ${riskStatus === "red" ? "#E24B4A" : "#EF9F27"}`,
+            pointerEvents: "none",
+            zIndex: 0,
+          }} />
+        )}
+
+        {/* Vitality Ring — pulse animation for red zone only */}
+        {athlete && riskStatus === "red" && (
+          <motion.div
+            style={{
+              position: "absolute",
+              inset: -4,
+              borderRadius: "50%",
+              border: "2px solid #E24B4A",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+            animate={{ opacity: [1, 0.2, 1], scale: [1, 1.15, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        )}
       </div>
 
       {/* Apellido debajo del círculo */}
@@ -416,6 +452,7 @@ const PlayerToken = memo(function PlayerToken({
   prev.starter?.athlete?.id === next.starter?.athlete?.id &&
   prev.starter?.posCode === next.starter?.posCode &&
   prev.salud?.salud === next.salud?.salud &&
+  prev.riskStatus === next.riskStatus &&
   prev.isSelected === next.isSelected &&
   prev.isDragged === next.isDragged &&
   prev.isTarget === next.isTarget &&
@@ -681,6 +718,39 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     return m;
   }, [athletes, historial]);
 
+  // ── Risk map (ACWR) ───────────────────────────────────────────────────────
+  const riskMap = useMemo(() => {
+    const m = new Map();
+    athletes.forEach(a => m.set(a.id, calcAthleteRisk(a.id, historial, a.rpe)));
+    return m;
+  }, [athletes, historial]);
+
+  // ── Wellness map (daily check-in) ─────────────────────────────────────────
+  const wellnessLogs = useStore(state => state.wellnessLogs);
+  const wellnessMap = useMemo(() => {
+    const m = new Map();
+    const today = new Date().toDateString();
+    athletes.forEach(a => {
+      const athleteLogs = wellnessLogs.filter(
+        l => String(l.athlete_id) === String(a.id) &&
+             new Date(l.logged_at).toDateString() === today
+      );
+      if (athleteLogs.length === 0) {
+        m.set(a.id, "unknown");
+        return;
+      }
+      // Tomar el log más reciente de hoy
+      const latest = athleteLogs.sort((x, y) => new Date(y.logged_at) - new Date(x.logged_at))[0];
+      try {
+        const score = calcWellnessScore(latest);
+        m.set(a.id, getWellnessStatus(score).status);
+      } catch {
+        m.set(a.id, "unknown");
+      }
+    });
+    return m;
+  }, [athletes, wellnessLogs]);
+
   // ── Swap similar ──────────────────────────────────────────────────────────
   const doSwap = useCallback((na) => {
     if (selectedIdx === null) return;
@@ -839,6 +909,10 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                   <PlayerToken
                     starter={st}
                     salud={st.athlete ? saludMap.get(st.athlete.id) : null}
+                    riskStatus={st.athlete ? worstStatus(
+                      riskMap.get(st.athlete.id)?.status ?? "unknown",
+                      wellnessMap.get(st.athlete.id) ?? "unknown"
+                    ) : "unknown"}
                     isSelected={selectedIdx===i}
                     isDragged={isDrag("starter",i)}
                     isTarget={nearTarget===i}

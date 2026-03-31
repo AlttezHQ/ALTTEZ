@@ -83,6 +83,7 @@ if (typeof document !== "undefined" && !document.getElementById("gestion-respons
 }
 import { FORMATIONS_VERTICAL as FORMATIONS } from "../constants/formations";
 import { getAvatarUrl, getStatusStyle } from "../utils/helpers";
+import { calcSaludActual, calcAthleteRisk, saludColor } from "../utils/rpeEngine";
 import { sanitizeText, sanitizeTextFinal } from "../utils/sanitize";
 import { showToast } from "./Toast";
 import { insertAthlete, bulkInsertAthletes, saveTacticalData } from "../services/supabaseService";
@@ -258,6 +259,10 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
     reader.readAsDataURL(file);
   };
 
+  const historial = useStore(state => state.historial);
+  const rpeResult = calcSaludActual(athlete?.rpe ?? null, historial, athlete?.id ?? null);
+  const risk = calcAthleteRisk(athlete?.id ?? null, historial, athlete?.rpe ?? null);
+
   if (!athlete) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", height:"100%", color: PALETTE.textHint, gap:12 }}>
       <div style={{ fontSize:28, opacity:0.3 }}>👤</div>
@@ -342,15 +347,99 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
         <div onClick={onClose} style={{ fontSize:16, color: PALETTE.textMuted, cursor:"pointer", padding:"2px 6px" }}>✕</div>
       </div>
 
-      {/* Valoración (V2 con partidos) */}
+      {/* ── Decision Card: Salud + ACWR ── */}
       <div style={{ padding:"12px 16px", borderBottom:`1px solid ${PALETTE.border}` }}>
-        <div style={sectionTitle}>Valoración general</div>
-        <div style={{ background:"linear-gradient(135deg,rgba(57,255,20,0.1),rgba(57,255,20,0.03))", border:`1px solid rgba(57,255,20,0.2)`, padding:"10px 12px", display:"flex", alignItems:"center", gap:10, borderRadius:8, boxShadow:"0 0 16px rgba(57,255,20,0.08),inset 0 1px 0 rgba(57,255,20,0.1)" }}>
-          <div style={{ fontSize:28, fontWeight:900, color: PALETTE.neon, lineHeight:1 }}>—</div>
-          <div style={{ fontSize:9, color: PALETTE.textMuted, lineHeight:1.6 }}>
-            Se genera automáticamente<br/>con partidos registrados (V2)
+        <div style={sectionTitle}>Estado de Rendimiento</div>
+
+        {/* Wellness Gauge — arco de salud */}
+        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+          {/* Arc gauge SVG */}
+          <svg width="64" height="40" viewBox="0 0 64 40">
+            {/* Track */}
+            <path d="M 8 36 A 28 28 0 0 1 56 36" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" strokeLinecap="round"/>
+            {/* Fill — calculado de 0 a 1 según salud */}
+            <path
+              d="M 8 36 A 28 28 0 0 1 56 36"
+              fill="none"
+              stroke={saludColor(rpeResult.salud)}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${(rpeResult.salud / 100) * 75.4} 75.4`}
+              style={{ transition: "stroke-dasharray 600ms ease, stroke 300ms ease" }}
+            />
+            {/* Valor central */}
+            <text x="32" y="33" textAnchor="middle" fill="white" fontSize="11" fontWeight="700" fontFamily="inherit">
+              {rpeResult.salud}
+            </text>
+          </svg>
+          <div>
+            <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"1px" }}>Índice Salud</div>
+            <div style={{ fontSize:11, color:saludColor(rpeResult.salud), fontWeight:700, textTransform:"uppercase" }}>
+              {rpeResult.riskLevel === "sin_datos" ? "Sin datos" :
+               rpeResult.riskLevel === "optimo" ? "Óptimo" :
+               rpeResult.riskLevel === "precaucion" ? "Precaución" : "En riesgo"}
+            </div>
           </div>
         </div>
+
+        {/* ACWR Widget */}
+        <div style={{
+          background: "rgba(255,255,255,0.03)",
+          border: `1px solid rgba(255,255,255,0.07)`,
+          borderRadius: 6,
+          padding: "8px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}>
+          <div>
+            <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint }}>ACWR Ratio</div>
+            <div style={{ fontSize:18, fontWeight:900, color:"white", lineHeight:1, marginTop:2 }}>
+              {risk.ratio !== null ? risk.ratio.toFixed(2) : "—"}
+            </div>
+          </div>
+          {/* Status badge */}
+          <div style={{
+            padding: "4px 10px",
+            borderRadius: 4,
+            fontSize: 9,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            background: risk.status === "red" ? "rgba(226,75,74,0.15)" :
+                        risk.status === "yellow" ? "rgba(239,159,39,0.15)" :
+                        risk.status === "green" ? "rgba(29,158,117,0.15)" : "rgba(255,255,255,0.06)",
+            color: risk.status === "red" ? "#E24B4A" :
+                   risk.status === "yellow" ? "#EF9F27" :
+                   risk.status === "green" ? "#1D9E75" : PALETTE.textMuted,
+            border: `1px solid ${
+              risk.status === "red" ? "rgba(226,75,74,0.3)" :
+              risk.status === "yellow" ? "rgba(239,159,39,0.3)" :
+              risk.status === "green" ? "rgba(29,158,117,0.3)" : "rgba(255,255,255,0.1)"
+            }`,
+          }}>
+            {risk.status === "red" ? "Peligro" :
+             risk.status === "yellow" ? "Precaución" :
+             risk.status === "green" ? "Óptimo" : "Sin datos"}
+          </div>
+        </div>
+
+        {/* AI Insight */}
+        {risk.suggestion && (
+          <div style={{
+            background: "rgba(124,58,237,0.08)",
+            border: "1px solid rgba(124,58,237,0.2)",
+            borderRadius: 5,
+            padding: "6px 10px",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.75)",
+            lineHeight: 1.4,
+          }}>
+            <span style={{ color: PALETTE.purple, fontWeight:700, fontSize:8, textTransform:"uppercase", letterSpacing:"1px" }}>Insight · </span>
+            {risk.suggestion}
+          </div>
+        )}
       </div>
 
       {/* Métricas del ciclo */}

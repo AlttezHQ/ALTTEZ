@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../utils/helpers";
 import { PALETTE } from "../constants/palette";
@@ -9,6 +10,9 @@ import { useStore } from "../store/useStore";
 import { calcStats, buildSesion } from "../services/storageService";
 import { takeHealthSnapshot } from "../services/healthService";
 import useSupabaseSync from "../hooks/useSupabaseSync";
+import WellnessCheckIn from "./ui/WellnessCheckIn";
+import { calcSaludActual } from "../utils/rpeEngine";
+import { getWellnessStatus } from "../types/wellnessTypes";
 
 // ── Inject responsive media queries once ────────────────────────────────────
 if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
@@ -110,6 +114,8 @@ export default function Entrenamiento({ clubId = "" }) {
   const historial = useStore(state => state.historial);
   const setHistorial = useStore(state => state.setHistorial);
   const clubInfo = useStore(state => state.clubInfo);
+  const addWellnessLog = useStore(state => state.addWellnessLog);
+  const wellnessLogs = useStore(state => state.wellnessLogs);
   const stats = calcStats(athletes, historial);
   const { syncSession, syncHealthSnapshots } = useSupabaseSync();
 
@@ -198,6 +204,25 @@ export default function Entrenamiento({ clubId = "" }) {
     const u = [...athletes];
     u[i] = { ...u[i], rpe: u[i].rpe === val ? null : val };
     setAthletes(u);
+  };
+
+  const [wellnessTarget, setWellnessTarget] = useState(null); // { athlete, index }
+  const [healthFeedback, setHealthFeedback] = useState(null); // { athleteName, salud, riskLevel, color }
+
+  const handleWellnessSubmit = (log) => {
+    addWellnessLog(log);
+    const athlete = wellnessTarget?.athlete;
+    if (athlete) {
+      const result = calcSaludActual(athlete.rpe, historial, athlete.id);
+      setHealthFeedback({
+        athleteName: athlete.name.split(" ")[0],
+        salud: result.salud,
+        riskLevel: result.riskLevel,
+        color: result.color,
+      });
+      setTimeout(() => setHealthFeedback(null), 3500);
+    }
+    setWellnessTarget(null);
   };
 
   const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"6px 8px", fontSize:11, color:"white", fontFamily:"inherit", width:"100%", outline:"none" };
@@ -331,6 +356,29 @@ export default function Entrenamiento({ clubId = "" }) {
                           <div style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:"1.5px", padding:"3px 8px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente?"rgba(226,75,74,0.1)":"rgba(239,159,39,0.1)" }}>
                             {ausente ? "Ausente" : "Lesionado"}
                           </div>
+                        </div>
+                      )}
+                      {presente && (
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setWellnessTarget({ athlete: a, index: i }); }}
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: "rgba(124,58,237,0.85)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: 10,
+                            zIndex: 2,
+                          }}
+                          title="Check-in Wellness"
+                        >
+                          ✚
                         </div>
                       )}
                     </div>
@@ -720,6 +768,94 @@ export default function Entrenamiento({ clubId = "" }) {
           </div>
         );
       })()}
+
+      {/* ── Wellness Check-in Overlay ── */}
+      <AnimatePresence>
+        {wellnessTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(6px)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={() => setWellnessTarget(null)}
+          >
+            <div onClick={e => e.stopPropagation()}>
+              <WellnessCheckIn
+                athleteId={wellnessTarget.athlete.id}
+                athleteName={wellnessTarget.athlete.name}
+                onSubmit={handleWellnessSubmit}
+                onClose={() => setWellnessTarget(null)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Health Feedback Toast ── */}
+      <AnimatePresence>
+        {healthFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+            style={{
+              position: "fixed",
+              bottom: 24,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(8,8,20,0.95)",
+              backdropFilter: "blur(20px)",
+              border: `1px solid ${healthFeedback.color}44`,
+              borderRadius: 12,
+              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              zIndex: 10000,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${healthFeedback.color}22`,
+              minWidth: 240,
+            }}
+          >
+            {/* Health gauge mini */}
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              border: `3px solid ${healthFeedback.color}`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: `${healthFeedback.color}12`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: healthFeedback.color, lineHeight: 1 }}>
+                {healthFeedback.salud}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "white" }}>
+                {healthFeedback.athleteName} — Bateria actualizada
+              </div>
+              <div style={{ fontSize: 9, color: healthFeedback.color, textTransform: "uppercase", letterSpacing: "1px", marginTop: 2 }}>
+                {healthFeedback.riskLevel === "optimo" ? "Estado optimo" :
+                 healthFeedback.riskLevel === "precaucion" ? "Precaucion" :
+                 healthFeedback.riskLevel === "riesgo" ? "En riesgo" : "Sin datos"}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

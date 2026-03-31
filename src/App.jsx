@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { setHookErrorHandler } from "./hooks/useLocalStorage";
 import { useStore } from "./store/useStore";
 import FieldBackground from "./components/FieldBackground";
@@ -54,6 +54,7 @@ const Administracion = lazy(() => import("./components/Administracion"));
 const Calendario     = lazy(() => import("./components/Calendario"));
 const MatchCenter    = lazy(() => import("./components/MatchCenter"));
 const DemoGate       = lazy(() => import("./components/DemoGate"));
+const KioskMode      = lazy(() => import("./components/KioskMode"));
 
 // ── Conectar handlers de error de storage al boot (antes de que cualquier hook escriba) ──
 const _toastError = (msg) => showToast(msg, "error");
@@ -153,6 +154,7 @@ export default function App() {
 // ── CRM App: todo el sistema de gestion deportiva ──
 function CRMApp() {
   const navigate = useNavigate();
+  const location = useLocation();
   const mode = useStore(state => state.mode);
   const setMode = useStore(state => state.setMode);
   const session = useStore(state => state.session);
@@ -352,6 +354,15 @@ function CRMApp() {
       return () => clearTimeout(demoId);
     }
   }, [handleDemo, mode]);
+
+  // ── Kiosk mode: URL directa /crm/kiosk — sin auth, sin wrapper ──
+  if (location.pathname === "/crm/kiosk") {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <KioskMode />
+      </Suspense>
+    );
+  }
 
   // ── Landing: directo al formulario de login/registro ──
   if (!mode) {

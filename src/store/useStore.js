@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { calcAthleteRisk } from '../utils/rpeEngine';
+import { calcAthleteWellnessTrend } from '../types/wellnessTypes';
 import {
   EMPTY_ATHLETES,
   EMPTY_HISTORIAL,
@@ -60,7 +62,7 @@ const customStorage = {
 
 export const useStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       mode: null,
       session: null,
       activeModule: "home",
@@ -69,6 +71,7 @@ export const useStore = create(
       clubInfo: { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" },
       matchStats: EMPTY_MATCH_STATS,
       finanzas: EMPTY_FINANZAS,
+      wellnessLogs: [],
       _checksum: null,
 
       setMode: (mode) => set({ mode }),
@@ -99,6 +102,22 @@ export const useStore = create(
           finanzas: typeof finanzas === 'function' ? finanzas(state.finanzas) : finanzas 
         }));
       },
+      addWellnessLog: (log) => {
+        set(state => ({ wellnessLogs: [log, ...state.wellnessLogs] }));
+      },
+      getAthleteWellness: (athleteId) => {
+        const { wellnessLogs } = get();
+        const athleteLogs = wellnessLogs.filter(
+          l => String(l.athlete_id) === String(athleteId)
+        );
+        return calcAthleteWellnessTrend(athleteId, athleteLogs);
+      },
+      getAthleteRisk: (athleteId) => {
+        const state = get();
+        const athlete = state.athletes.find(a => String(a.id) === String(athleteId));
+        const currentRpe = athlete?.rpe ?? null;
+        return calcAthleteRisk(athleteId, state.historial, currentRpe);
+      },
       clearStore: () => set({
         mode: null,
         session: null,
@@ -108,6 +127,7 @@ export const useStore = create(
         clubInfo: { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" },
         matchStats: EMPTY_MATCH_STATS,
         finanzas: EMPTY_FINANZAS,
+        wellnessLogs: [],
       })
     }),
     {

@@ -4,6 +4,72 @@
 
 ---
 
+## 2026-03-31 — Ticket #002.5: Ruta /crm/kiosk + Anillos reactivos al wellness
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Dos integraciones independientes: routing de Kiosk y señal de wellness en PlayerToken.
+
+### Task Assignment
+- @Andres (UI): sin cambios de UI requeridos — PlayerToken ya tiene la lógica de anillos, solo se cambia el input.
+- @Mateo (Data): sin cambios de store ni schema requeridos — `wellnessLogs` ya existía.
+- @Carlos (Arquitecto): App.jsx routing + TacticalBoardV9 wellness map.
+- @Sara (QA): verificar (a) navegación directa a `/crm/kiosk` no exige login, (b) anillo rojo aparece cuando un atleta hace check-in con valores bajos de wellness hoy, (c) el módulo de Kiosk no renderiza MiniTopbar ni DemoGate.
+
+### Architecture Decisions
+1. **Ruta Kiosk como early-return en CRMApp**: interceptar antes del guard `if (!mode)` garantiza que la vista no pase por autenticación ni efectos de sesión. `useLocation` es suficiente — no se necesita una ruta `<Route>` adicional en el árbol porque `/crm/*` ya captura la URL.
+2. **`worstStatus` fuera del componente**: función pura definida a nivel de módulo. Evita re-creación en cada render y es testeable de forma aislada.
+3. **`wellnessMap` en `useMemo` con `[athletes, wellnessLogs]`**: el mapa se recomputa cada vez que un atleta hace check-in (store actualiza `wellnessLogs`) → `PlayerToken` re-renderiza con el nuevo `riskStatus` combinado sin polling ni intervalo.
+4. **try/catch en `calcWellnessScore`**: la función lanza si los valores de dimensión están fuera de rango. Se captura y se asigna "unknown" para no romper el render del campo.
+
+### Validation Criteria
+- `GET /crm/kiosk` renderiza `<KioskMode />` directamente, sin `FieldBackground`, sin `MiniTopbar`, sin `DemoGate`.
+- Anillo amarillo/rojo en `PlayerToken` refleja el peor valor entre ACWR y wellness del día.
+- Si no hay wellness log de hoy para un atleta, `wellnessMap` devuelve `"unknown"` (no afecta el anillo existente de ACWR).
+- Sin regresiones en los módulos de CRM existentes.
+
+---
+
+## 2026-03-31 — Ticket #002: wellnessLogs en Store + Reactividad
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Extender el store de Zustand con estado de wellness y verificar la cadena reactiva completa desde el store hasta TacticalBoardV9.
+
+### Task Assignment
+- @Carlos (Arquitecto): propietario — modificaciones a `useStore.js`, verificacion de props en GestionPlantilla
+
+### Architecture Decisions
+
+**wellnessLogs incluido en persistencia:**
+`wellnessLogs` es estado serializable (array de objetos planos). Se incluye en la persistencia sin exclusion. El `customStorage` con `secureHash` cubre automaticamente el nuevo campo al calcular el checksum sobre `restState` (spread completo del estado persistido). No se requiere ningun cambio al mecanismo de checksum.
+
+**getAthleteWellness usa get() no set():**
+El selector `getAthleteWellness` accede al estado via `get()` para que siempre lea el valor mas reciente del slice `wellnessLogs` sin crear subscripciones adicionales. Pattern identico a `getAthleteRisk`.
+
+**calcAthleteWellnessTrend ya filtra por athlete_id y ventana 7 dias:**
+La funcion en `wellnessTypes.js` realiza el doble filtrado internamente (por `athlete_id` y por ventana temporal de 7 dias). El selector pre-filtra por `athlete_id` antes de pasar al helper para reducir iteraciones en arrays grandes, pero la funcion es defensivamente correcta incluso sin ese pre-filtro.
+
+**Cadena reactiva GestionPlantilla -> TacticalBoardV9 — sin cambios necesarios:**
+Verificado en `GestionPlantilla.jsx` linea 1381: `const historial = useStore(state => state.historial)`.
+Verificado en linea 1453: `<TacticalBoardV9 athletes={athletes} historial={historial} clubId={clubId} />`.
+Cadena completamente funcional. No se requirio ninguna modificacion a archivos JSX.
+
+**getAthleteRisk — firma validada:**
+Lineas 115-120 de `useStore.js`. Usa `get()` para acceso reactivo, extrae `currentRpe` del slice `athletes`, llama `calcAthleteRisk(athleteId, state.historial, currentRpe)`. Firma correcta — sin cambios.
+
+### Validation Criteria
+- `wellnessLogs: []` presente en estado inicial (linea 74)
+- `wellnessLogs: []` presente en `clearStore` (linea 130)
+- `addWellnessLog` prepend al frente del array — O(1) para UI que muestra logs recientes primero
+- `getAthleteWellness` retorna `number | null` — null cuando no hay datos en ventana de 7 dias
+- Import ES module de `calcAthleteWellnessTrend` en linea 4 — sin `require()`
+- Ningún archivo JSX modificado
+
+---
+
 ## 2026-03-28 — CI/CD Pipelines con GitHub Actions
 **Directive from**: Julián
 **Status**: Complete
@@ -56,6 +122,46 @@ El drift es esperado durante fases de migración (Supabase tiene tablas extra co
 - [x] check-schema-drift.js: reporta drift real (Finanzas, HealthSnapshot, tablas infra) como WARNING sin bloquear
 - [x] Todos los workflows usan `--legacy-peer-deps` en npm ci
 - [x] No se modificó ningún archivo existente del CRM
+
+---
+
+## 2026-03-31 — Ticket #001.2: Schema wellness_logs
+**Directive from**: Ticket de soporte — Mateo-Data_Engine
+**Status**: Complete
+
+### Tarea
+Definir el esquema TypeScript/JSDoc + SQL para la tabla `wellness_logs` y el motor de calculo de bienestar del atleta.
+
+### Entregable
+`src/types/wellnessTypes.js` — nuevo archivo creado.
+
+### Funciones implementadas
+
+| Funcion | Descripcion | Resultado verificado |
+|---|---|---|
+| `calcWellnessScore(log)` | Score compuesto [0-100] con doble peso para sueno | score=100 optimo, score=30 riesgo |
+| `getWellnessStatus(score)` | Semaforo verde/amarillo/rojo | Umbrales 70/40 correctos |
+| `calcAthleteWellnessTrend(athleteId, logs)` | Promedio 7 dias filtrado por atleta | Filtra ventana y atleta correctamente |
+
+### Formula implementada (Fullagar et al., 2015)
+```
+wellness_score = ((sleep_quality * 2 + (6 - fatigue_level) * 2
+                   + (6 - stress_level) + (6 - doms_level)) / 20) * 100
+```
+
+### Decisiones de diseno
+- `wellness_score` es columna GENERATED ALWAYS AS STORED en SQL — calculada en DB para evitar inconsistencias entre cliente y servidor.
+- Indice compuesto `(club_id, athlete_id, logged_at DESC)` para las consultas mas frecuentes del dashboard.
+- RLS habilitado con politica `club_isolation` via `current_setting('app.current_club_id')`.
+- Las funciones JS validan rangos [1,5] y lanzan Error descriptivo en lugar de retornar NaN silencioso.
+- `calcAthleteWellnessTrend` acepta array global y filtra en JS — en produccion el filtrado debe hacerse en la query Supabase para eficiencia.
+
+### Validation (node --input-type=module)
+- 5/5 casos de prueba PASS (optimo, precaucion, riesgo, trend 7d, validacion rango invalido)
+
+### Listo para visualizacion
+- Componente `Entrenamiento.jsx` puede importar `calcWellnessScore` + `getWellnessStatus` para el Health Snapshot del atleta.
+- El semaforo de status mapea directamente a la paleta neon del proyecto: green/yellow/red.
 
 ---
 
