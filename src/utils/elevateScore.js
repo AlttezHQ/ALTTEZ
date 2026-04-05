@@ -1,17 +1,17 @@
 /**
  * @module elevateScore
- * @description Motor de Elevate Score v1.0 — Algoritmo de rendimiento post-partido.
+ * @description Motor de ALTTEZ Score v1.0 — Algoritmo de rendimiento post-partido.
  *
  * ══════════════════════════════════════════════════════════════════
- *  MODELO MATEMATICO — Elevate Sports Performance Engine v1.0
+ *  MODELO MATEMATICO — ALTTEZ Performance Engine v1.0
  * ══════════════════════════════════════════════════════════════════
  *
  *  FILOSOFIA DE DISENO
  *  -------------------
- *  El Elevate Score es un indice de rendimiento compuesto (0-10) para
+ *  El ALTTEZ Score es un indice de rendimiento compuesto (0-10) para
  *  futbol formativo Sub-17. A diferencia de modelos de analisis de
  *  rendimiento de alto nivel (InStat, Opta, WyScout), que procesan
- *  datos de tracking GPS y video, el Elevate Score opera sobre
+ *  datos de tracking GPS y video, el ALTTEZ Score opera sobre
  *  estadisticas basicas registrables por un entrenador con lapiz y papel.
  *
  *  El diseno de pesos sigue la jerarquia de impacto en el resultado
@@ -87,13 +87,13 @@
  *
  *  MODELO OVR (Overall Rating)
  *  ---------------------------
- *  Mapeo de ElevateScore promedio a escala FIFA 50-99:
+ *  Mapeo de ALTTEZ Score promedio a escala FIFA 50-99:
  *    OVR = round(50 + (avgScore / 10) * 49)
  *  La escala 50-99 es convencional en videojuegos de futbol y es
  *  reconocida intuitivamente por entrenadores y jugadores jovenes,
  *  lo que facilita la adopcion del producto.
  *
- *  UMBRALES DE ALERTA CRUZADA (RPE × ElevateScore)
+ *  UMBRALES DE ALERTA CRUZADA (RPE × ALTTEZ Score)
  *  ------------------------------------------------
  *  La alerta combina rendimiento de partido con fatiga percibida para
  *  identificar el patron mas peligroso en formativas: alto rendimiento
@@ -152,7 +152,7 @@
  */
 
 /**
- * Pesos del algoritmo Elevate Score v1.0.
+ * Pesos del algoritmo ALTTEZ Score v1.0.
  *
  * Separados como constantes nombradas para tres propositos:
  *   1. Auditabilidad: cualquier cambio de peso queda en el historial git.
@@ -184,7 +184,7 @@ export const ELEVATE_WEIGHTS = {
 };
 
 /**
- * Calcula el Elevate Score de un jugador para un partido dado.
+ * Calcula el ALTTEZ Score de un jugador para un partido dado.
  *
  * Aplica la formula ponderada del Performance Engine v1.0:
  *
@@ -277,7 +277,7 @@ export function calcOVR(matchHistory) {
  * en partido oficial es esperable; RPE > 8 indica esfuerzo extraordinario.
  *
  * @param {number} rpe - RPE post-partido del jugador, escala Borg CR-10 [1-10]
- * @param {number} elevateScore - Elevate Score del partido, calculado por calcElevateScore [0-10]
+ * @param {number} elevateScore - ALTTEZ Score del partido, calculado por calcElevateScore [0-10]
  * @returns {{ level: "critical"|"warning", message: string, color: string } | null}
  *   null si no hay condicion de alerta (RPE <= 7)
  */
@@ -339,7 +339,7 @@ export function getPerformanceAlert(rpe, elevateScore) {
  *     numerica). El analisis de video es parte estandar del protocolo
  *     disciplinario en academias de futbol profesional.
  *
- *   Regla 7 — ElevateScore >= 8: Reconocimiento y liderazgo.
+ *   Regla 7 — ALTTEZ Score >= 8: Reconocimiento y liderazgo.
  *     Justificacion: Rendimiento excepcional debe ser reforzado
  *     positivamente (principio de condicionamiento operante en psicologia
  *     del deporte). Asignar al jugador rol de liderazgo tactico en el
@@ -454,7 +454,7 @@ export const DEMO_MATCH_REPORTS = [
 ];
 
 /**
- * Obtiene el historial cronologico de Elevate Score de un atleta.
+ * Obtiene el historial cronologico de ALTTEZ Score de un atleta.
  *
  * Funcion de presentacion para el grafico de tendencia de rendimiento
  * (mini line chart en el perfil del jugador). Ordena los partidos de

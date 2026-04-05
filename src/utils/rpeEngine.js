@@ -3,7 +3,7 @@
  * @description Motor de Inteligencia Deportiva — Salud Actual basada en RPE.
  *
  * ══════════════════════════════════════════════════════════════════
- *  MODELO MATEMATICO — Elevate Sports RPE Health Engine v2.1
+ *  MODELO MATEMATICO — ALTTEZ RPE Health Engine v2.1
  *  ACWR Engine v3.1 — promedios diarios (Hulin et al., 2014)
  * ══════════════════════════════════════════════════════════════════
  *
@@ -321,7 +321,7 @@ export function calcSaludPlantel(athletes, historial = []) {
  * Retorna el color hex del semaforo para un valor de salud dado.
  *
  * Funcion de presentacion pura: convierte el indice numerico al color
- * visual del semaforo neon de Elevate Sports. Umbrales sincronizados
+ * visual del semaforo neon de ALTTEZ. Umbrales sincronizados
  * con calcSaludActual v2.1 para garantizar consistencia visual.
  *
  * Uso tipico: barras de progreso, badges, indicadores de estado en UI.

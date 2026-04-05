@@ -11,7 +11,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 
-const DISMISS_KEY = "elevate_pwa_dismissed_until";
+const DISMISS_KEY = "alttez_pwa_dismissed_until";
 const DISMISS_DAYS = 7;
 
 function isDismissedNow() {

@@ -2,11 +2,11 @@
  * @hook usePageTitle
  * @description Actualiza el document.title dinámicamente según la ruta activa del portal.
  * Mejora SEO en SPA: el título refleja la página actual en cada navegación.
- * Patrón: "[Nombre de Página] — Elevate Sports"
+ * Patrón: "[Nombre de Página] — ALTTEZ"
  *
  * @example
- *   usePageTitle("Quiénes Somos"); // → "Quiénes Somos — Elevate Sports"
- *   usePageTitle();                // → "Elevate Sports — Gestión Deportiva"
+ *   usePageTitle("Quiénes Somos"); // → "Quiénes Somos — ALTTEZ"
+ *   usePageTitle();                // → "ALTTEZ — Gestión Deportiva Profesional"
  *
  * @param {string} [pageTitle] - Título de la página actual. Si se omite, usa el default.
  * @returns {void}
@@ -17,8 +17,8 @@
 
 import { useEffect } from "react";
 
-const BASE_TITLE = "Elevate Sports";
-const DEFAULT_TITLE = "Elevate Sports — Gestión Deportiva Profesional";
+const BASE_TITLE = "ALTTEZ";
+const DEFAULT_TITLE = "ALTTEZ — Gestión Deportiva Profesional";
 
 /**
  * Hook que actualiza document.title en cada render.

@@ -7,12 +7,12 @@
  * La capa de dibujo opera en coordenadas porcentuales (0-100) relativas al campo,
  * independiente del tamaño real del DOM — iguales que las coordenadas de los tokens.
  *
- * @param {string} [storageKey="elevate_tactical_drawings_v1"]
+ * @param {string} [storageKey="alttez_tactical_drawings_v1"]
  * @returns {object} drawingState + handlers
  */
 import { useState, useCallback, useRef } from "react";
 
-const BASE_STORAGE_KEY = "elevate_tactical_drawings_v1";
+const BASE_STORAGE_KEY = "alttez_tactical_drawings_v1";
 
 /** Genera la clave de localStorage con namespace de club para aislamiento multi-tenancy */
 function getStorageKey(clubId) {
@@ -52,7 +52,7 @@ function uid() {
  * Colores neón disponibles para los trazados.
  */
 export const DRAW_COLORS = [
-  { id: "neon",   hex: "#39FF14", label: "Neon Green"   },
+  { id: "neon",   hex: "#22C55E", label: "Neon Green"   },
   { id: "violet", hex: "#8B5CF6", label: "Violet"       },
   { id: "amber",  hex: "#EF9F27", label: "Amber"        },
   { id: "danger", hex: "#E24B4A", label: "Red"          },

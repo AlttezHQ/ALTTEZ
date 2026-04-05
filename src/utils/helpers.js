@@ -1,10 +1,10 @@
 /**
  * @module helpers
- * @description Funciones utilitarias compartidas en Elevate Sports.
+ * @description Funciones utilitarias compartidas en ALTTEZ.
  * Centraliza logica duplicada que existia en GestionPlantilla, TacticalBoard y Entrenamiento.
  *
  * @version 1.0
- * @author Elevate Sports
+ * @author ALTTEZ
  */
 
 /**
