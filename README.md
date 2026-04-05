@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="public/icons/icon-base.svg" width="80" alt="Elevate Sports" />
+  <img src="public/icons/icon-base.svg" width="80" alt="ALTTEZ" />
 </p>
 
-<h1 align="center">Elevate Sports</h1>
+<h1 align="center">ALTTEZ</h1>
 
 <p align="center">
-  <strong>CRM Deportivo Inteligente</strong><br/>
-  La herramienta de mando para clubes deportivos
+  <strong>Sports Management Platform</strong><br/>
+  La plataforma de gestión profesional para clubes deportivos
 </p>
 
 <p align="center">
@@ -19,46 +19,46 @@
 
 ## El Problema
 
-Los clubes deportivos juveniles en Latinoamerica gestionan sus operaciones con hojas de calculo, grupos de WhatsApp y memoria. No existe una herramienta accesible que integre lo deportivo con lo administrativo de forma profesional.
+Los clubes deportivos en Latinoamérica gestionan sus operaciones con hojas de cálculo, grupos de WhatsApp y memoria. No existe una herramienta accesible que integre lo deportivo con lo administrativo de forma profesional.
 
-## La Solucion
+## La Solución
 
-Elevate Sports unifica entrenamiento, tactica, calendario, finanzas y rendimiento de atletas en una sola plataforma con estetica premium, experiencia offline-first y algoritmos de ciencia deportiva.
+ALTTEZ unifica entrenamiento, táctica, calendario, finanzas y rendimiento de atletas en una sola plataforma enterprise — diseño monochrome de alto nivel, experiencia offline-first y algoritmos de ciencia deportiva.
 
 ---
 
 ## Plataforma
 
-| Capacidad | Descripcion |
+| Capacidad | Descripción |
 |-----------|-------------|
-| Gestion de plantilla | Registro de atletas, stats, fotos, bulk import |
-| Pizarra tactica | Campo interactivo con drag & drop, formaciones, herramientas de dibujo |
-| Entrenamiento | Sesiones RPE, planificacion, export PDF, historial completo |
+| Gestión de plantilla | Registro de atletas, stats, fotos, bulk import |
+| Pizarra táctica | Campo interactivo con drag & drop, formaciones, herramientas de dibujo |
+| Entrenamiento | Sesiones RPE, planificación, export PDF, historial completo |
 | Match Center | Ingesta post-partido, scoring inteligente, player cards, analytics |
-| Calendario + RSVP | Eventos, confirmacion de asistencia, recordatorios WhatsApp |
-| Finanzas | Control de pagos, morosidad, movimientos, semaforo financiero |
-| Motor de salud | Algoritmo RPE con alertas automaticas de riesgo y sobrecarga |
-| Rendimiento | Elevate Score (0-10), recomendaciones tacticas, spider charts |
+| Calendario + RSVP | Eventos, confirmación de asistencia, recordatorios WhatsApp |
+| Finanzas | Control de pagos, morosidad, movimientos, semáforo financiero |
+| Motor de salud | Algoritmo RPE con alertas automáticas de riesgo y sobrecarga |
+| Rendimiento | ALTTEZ Score (0-10), recomendaciones tácticas, spider charts |
 
-## Caracteristicas Tecnicas
+## Características Técnicas
 
-- Aplicacion web progresiva (PWA) — instalable en cualquier dispositivo
-- Funciona offline — sincroniza automaticamente al recuperar conexion
+- Aplicación web progresiva (PWA) — instalable en cualquier dispositivo
+- Funciona offline — sincroniza automáticamente al recuperar conexión
 - Multi-tenancy — datos aislados por club con seguridad a nivel de fila
 - Cumplimiento Ley 1581 (Habeas Data Colombia) para datos de menores
-- Estetica gaming/consola inspirada en FIFA/EA Sports FC
+- Stack: React + Vite + Tailwind CSS v4 + Supabase + Framer Motion
 
 ---
 
 ## Propiedad Intelectual
 
-Este software es propiedad exclusiva de **Elevate Sports Holding**.
+Este software es propiedad exclusiva de **ALTTEZ**.
 Todos los derechos reservados. Uso no autorizado prohibido.
 
-Algoritmos deportivos, logica de negocio, diseño visual y arquitectura de datos son activos protegidos de la empresa.
+Algoritmos deportivos, lógica de negocio, diseño visual y arquitectura de datos son activos protegidos de la empresa.
 
 ---
 
 <p align="center">
-  <strong>Elevate Sports</strong> &mdash; Tecnologia deportiva que eleva el rendimiento
+  <strong>ALTTEZ</strong> &mdash; Tecnología deportiva de alto rendimiento
 </p>

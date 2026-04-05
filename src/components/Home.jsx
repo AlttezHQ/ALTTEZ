@@ -1,139 +1,72 @@
 /**
  * @component Home
- * @description Pantalla principal de Elevate Sports con UX nivel consola.
+ * @description Dashboard principal ALTTEZ — Enterprise SaaS Layout v9.0
+ * Bento Grid estilo Teamworks/Linear. Sin imágenes, sin gradientes decorativos.
+ * Negro total, tipografía masiva, Action Blue CTAs, hover suave.
+ * Pure Tailwind — zero inline styles, zero CSS injection.
  *
- * @ux-features
- * - Hover/Focus con glow neón radial por tile
- * - Scale transform suave (1.02) en tile activo
- * - Imagen de fondo: oscura en reposo, saturada al hover
- * - Botón CTA: cambia a blanco al hover
- * - Audio sintetizado con Web Audio API (sin archivos externos):
- *     · hover  → "woosh" suave de baja frecuencia (tipo FIFA nav)
- *     · click  → "confirmación" metálica breve
- *
- * @audio-architecture
- * AudioContext se crea una sola vez (lazy) para evitar warnings del browser.
- * Dos funciones de síntesis: playHover() y playSelect()
- * que generan sonido programáticamente con OscillatorNode + GainNode.
- *
- * @palette  Ver objeto PALETTE (centralizado)
- * @version  5.0
- * @author   Elevate Sports
+ * @version  9.0 — Full Tailwind migration (dynamic PALETTE colors via style prop only)
+ * @author   ALTTEZ
  */
 
-import { useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import imgEntrenamiento from "../assets/entrenamiento.jpeg";
-import imgPlantilla     from "../assets/Gestion_de_plantilla.jpeg";
-import imgPartido       from "../assets/Partido.jpeg";
-import imgOficina       from "../assets/Oficina.jpeg";
-import imgProximo       from "../assets/Proximo_partido.jpeg";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  Dumbbell,
+  Activity,
+  Calendar,
+  TrendingUp,
+  ChevronRight,
+  Circle,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import { PALETTE }      from "../constants/palette";
 import EmptyState       from "./ui/EmptyState";
-import { useStore } from "../store/useStore";
-import { calcStats } from "../services/storageService";
+import { useStore }     from "../store/useStore";
+import { calcStats }    from "../services/storageService";
 
-// ── Inject responsive media queries once ────────────────────────────────────
-if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
-  const s = document.createElement("style");
-  s.id = "home-responsive";
-  s.textContent = `
-    /* Home topbar nav: horizontal scroll on mobile */
-    .home-topbar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    /* Home grid: single column on mobile, 2-col on tablet */
-    @media (max-width: 479px) {
-      .home-grid {
-        grid-template-columns: 1fr !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-        padding: 3px 8px 10px !important;
-      }
-      .home-grid > * {
-        grid-column: auto !important;
-        grid-row: auto !important;
-      }
-      .home-tile-big { font-size: clamp(28px, 8vw, 44px) !important; }
-      .home-tile-mid { font-size: clamp(18px, 5.5vw, 24px) !important; }
-    }
-    @media (min-width: 480px) and (max-width: 767px) {
-      .home-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-      }
-      .home-stat-row {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-    /* KPI metrics: 2-col on mobile */
-    @media (max-width: 767px) {
-      .home-metrics { grid-template-columns: repeat(2, 1fr) !important; }
-      .home-brand-full { display: none !important; }
-    }
-    /* Club badge: hide name on xs */
-    @media (max-width: 479px) {
-      .home-club-name { display: none !important; }
-    }
-  `;
-  document.head.appendChild(s);
-}
-
-// ─────────────────────────────────────────────
-// ANIMATION VARIANTS
-// ─────────────────────────────────────────────
+// ── Animation variants ───────────────────────────────────────────────────────
 const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+  animate: { transition: { staggerChildren: 0.05, delayChildren: 0.02 } },
 };
 
-const metricItemVariant = {
-  initial: { opacity: 0, y: 12, scale: 0.96 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 320, damping: 26 } },
+const fadeInItem = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 320, damping: 28 } },
 };
 
-// ─────────────────────────────────────────────
-// PRÓXIMO EVENTO — busca en datos reales del calendario
-// ─────────────────────────────────────────────
-const EVENT_COLORS = { match: "#c8ff00", training: "#7F77DD", club: "#EF9F27" };
+// ── Próximo evento logic ─────────────────────────────────────────────────────
 const EVENT_LABELS = { match: "Partido", training: "Entrenamiento", club: "Evento" };
 
-/**
- * Genera los eventos demo del mes actual como fallback.
- * @returns {Array} Eventos demo con datetime ISO
- */
 function getDemoEvents() {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = (day, hour = 18, min = 0) => new Date(y, m, day, hour, min).toISOString();
   return [
-    { type:"training", title:"Entrenamiento físico",        datetime:d(2,18,0),  location:"Campo A" },
-    { type:"training", title:"Trabajo táctico",             datetime:d(4,18,0),  location:"Campo A" },
-    { type:"match",    title:"vs Atlético Sur",             datetime:d(7,16,0),  location:"Estadio Local" },
-    { type:"training", title:"Rondos y pressing",           datetime:d(9,18,0),  location:"Campo A" },
-    { type:"training", title:"Entrenamiento precompetición",datetime:d(11,17,30),location:"Campo B" },
-    { type:"match",    title:"vs Deportivo Norte",          datetime:d(14,11,0), location:"Est. Norte" },
-    { type:"training", title:"Recuperación activa",         datetime:d(16,10,0), location:"Gimnasio" },
-    { type:"training", title:"Pautas tácticas jornada",     datetime:d(18,18,0), location:"Campo A" },
-    { type:"club",     title:"Jornada de puertas abiertas", datetime:d(19,10,0), location:"Campo A" },
-    { type:"match",    title:"vs Unión FC",                 datetime:d(21,16,30),location:"Estadio Local" },
-    { type:"training", title:"Ensayo de balón parado",      datetime:d(23,18,0), location:"Campo A" },
-    { type:"training", title:"Entrenamiento técnico",       datetime:d(25,18,0), location:"Campo B" },
-    { type:"match",    title:"vs Racing Club",              datetime:d(28,17,0), location:"Estadio Racing" },
+    { type: "training", title: "Entrenamiento físico",         datetime: d(2,  18, 0),  location: "Campo A"         },
+    { type: "training", title: "Trabajo táctico",              datetime: d(4,  18, 0),  location: "Campo A"         },
+    { type: "match",    title: "vs Atlético Sur",              datetime: d(7,  16, 0),  location: "Estadio Local"   },
+    { type: "training", title: "Rondos y pressing",            datetime: d(9,  18, 0),  location: "Campo A"         },
+    { type: "training", title: "Entrenamiento precompetición", datetime: d(11, 17, 30), location: "Campo B"         },
+    { type: "match",    title: "vs Deportivo Norte",           datetime: d(14, 11, 0),  location: "Est. Norte"      },
+    { type: "training", title: "Recuperación activa",          datetime: d(16, 10, 0),  location: "Gimnasio"        },
+    { type: "training", title: "Pautas tácticas jornada",      datetime: d(18, 18, 0),  location: "Campo A"         },
+    { type: "club",     title: "Jornada de puertas abiertas",  datetime: d(19, 10, 0),  location: "Campo A"         },
+    { type: "match",    title: "vs Unión FC",                  datetime: d(21, 16, 30), location: "Estadio Local"   },
+    { type: "training", title: "Ensayo de balón parado",       datetime: d(23, 18, 0),  location: "Campo A"         },
+    { type: "training", title: "Entrenamiento técnico",        datetime: d(25, 18, 0),  location: "Campo B"         },
+    { type: "match",    title: "vs Racing Club",               datetime: d(28, 17, 0),  location: "Estadio Racing"  },
   ];
 }
 
-/**
- * Obtiene el proximo evento del club.
- * Prioridad: eventos reales del calendario (elevate_events_{clubId})
- * Fallback: eventos demo del mes en curso.
- * @returns {{ type: string, title: string, datetime: string, location: string } | null}
- */
 function getNextEvent() {
   const now = new Date();
-
-  // 1. Intentar leer eventos reales del calendario del club
   try {
-    const clubId = localStorage.getItem("elevate_club_id") || "demo";
-    const rawEvents = localStorage.getItem(`elevate_events_${clubId}`);
+    const clubId = localStorage.getItem("alttez_club_id") || "demo";
+    const rawEvents = localStorage.getItem(`alttez_events_${clubId}`);
     if (rawEvents) {
       const customEvents = JSON.parse(rawEvents);
       if (Array.isArray(customEvents) && customEvents.length > 0) {
@@ -143,401 +76,332 @@ function getNextEvent() {
         if (future.length > 0) return future[0];
       }
     }
-  } catch {
-    // localStorage no disponible o datos corruptos — continuar con fallback
-  }
-
-  // 2. Fallback: eventos demo del mes actual
+  } catch { /* continue with fallback */ }
   const demoEvents = getDemoEvents();
-  const future = demoEvents.filter(e => new Date(e.datetime) > now).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+  const future = demoEvents
+    .filter(e => new Date(e.datetime) > now)
+    .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
   return future[0] || null;
 }
 
 function fmtEventDate(iso) {
   const d = new Date(iso);
-  const dias = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
-  const meses = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
-  return `${dias[d.getDay()]} ${d.getDate()} ${meses[d.getMonth()]} · ${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}h`;
+  const dias  = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+  const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+  return `${dias[d.getDay()]} ${d.getDate()} ${meses[d.getMonth()]} · ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}h`;
 }
 
 function daysUntil(iso) {
-  const diff = Math.ceil((new Date(iso) - new Date()) / (1000*60*60*24));
+  const diff = Math.ceil((new Date(iso) - new Date()) / (1000 * 60 * 60 * 24));
   if (diff === 0) return "Hoy";
   if (diff === 1) return "Mañana";
   return `${diff} días`;
 }
 
-// ─────────────────────────────────────────────
-// NAVEGACIÓN
-// ─────────────────────────────────────────────
+// ── Nav items ────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { key:"home",          label:"Inicio",               navigable:false },
-  { key:"entrenamiento", label:"Entrenamiento",         navigable:true  },
-  { key:"plantilla",     label:"Gestión de plantilla",  navigable:true  },
-  { key:"calendario",    label:"Calendario",            navigable:true  },
-  { key:"admin",         label:"Administración",        navigable:true  },
-  { key:"reportes",      label:"Reportes",              navigable:true  },
-  { key:"miclub",        label:"Mi club",               navigable:true  },
+  { key: "home",          label: "Inicio",        navigable: false },
+  { key: "entrenamiento", label: "Entrenamiento",  navigable: true  },
+  { key: "plantilla",     label: "Plantilla",      navigable: true  },
+  { key: "calendario",    label: "Calendario",     navigable: true  },
+  { key: "admin",         label: "Administración", navigable: true  },
+  { key: "reportes",      label: "Reportes",       navigable: true  },
+  { key: "miclub",        label: "Mi Club",        navigable: true  },
 ];
 
-// ─────────────────────────────────────────────
-// ICONOS SVG
-// ─────────────────────────────────────────────
-const Icon = {
-  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={PALETTE.neon} strokeWidth="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/></svg>,
-  Ball:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={PALETTE.neon} strokeWidth="2"/><path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.neon} strokeWidth="1.5"/></svg>,
-  Train: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  Chart: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-};
+// ── Sub-components ───────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────
-// WEB AUDIO API — SÍNTESIS DE SONIDO
-// No requiere archivos externos.
-// AudioContext se crea de forma lazy al primer uso.
-// ─────────────────────────────────────────────
-
-/**
- * Hook que expone dos funciones de audio sintetizado:
- * - playHover():  sonido de navegación suave (woosh FIFA)
- * - playSelect(): sonido de confirmación metálica
- */
-function useGameAudio() {
-  const ctxRef = useRef(null);
-
-  /** Obtiene o crea el AudioContext (lazy, evita warnings del browser) */
-  const getCtx = useCallback(() => {
-    if (!ctxRef.current) {
-      ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return ctxRef.current;
-  }, []);
-
-  /**
-   * Sonido de hover/navegación
-   * Síntesis: oscilador sinusoidal de baja frecuencia (80→40 Hz)
-   * con envelope rápido — reproduce el "thud" suave de menús FIFA.
-   */
-  const playHover = useCallback(() => {
-    try {
-      const ctx  = getCtx();
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(120, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.12);
-
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
-    } catch {
-      // AudioContext puede estar bloqueado hasta interacción del usuario — silencioso
-    }
-  }, [getCtx]);
-
-  /**
-   * Sonido de selección/click
-   * Síntesis: dos osciladores (fundamental + armónico) con
-   * envelope más largo y frecuencia ascendente — "ding" metálico FIFA.
-   */
-  const playSelect = useCallback(() => {
-    try {
-      const ctx   = getCtx();
-      const now   = ctx.currentTime;
-
-      // Oscilador 1: fundamental
-      const osc1  = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.type = "triangle";
-      osc1.frequency.setValueAtTime(320, now);
-      osc1.frequency.exponentialRampToValueAtTime(480, now + 0.08);
-      gain1.gain.setValueAtTime(0.22, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc1.start(now);
-      osc1.stop(now + 0.26);
-
-      // Oscilador 2: armónico (5ª justa)
-      const osc2  = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.type = "sine";
-      osc2.frequency.setValueAtTime(480, now);
-      osc2.frequency.exponentialRampToValueAtTime(720, now + 0.08);
-      gain2.gain.setValueAtTime(0.1, now);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-      osc2.start(now);
-      osc2.stop(now + 0.21);
-    } catch { /* audio context not supported */ }
-  }, [getCtx]);
-
-  return { playHover, playSelect };
+function MetricCard({ label, value, icon, onClick }) {
+  return (
+    <motion.div
+      variants={fadeInItem}
+      onClick={onClick}
+      className="bg-[#0D0D0D] px-6 py-5 cursor-pointer relative group transition-shadow duration-150 hover:shadow-[inset_0_0_0_1px_rgba(26,106,255,0.35)]"
+    >
+      <div className="absolute top-4 right-4 text-[#888888] opacity-60 group-hover:opacity-100 transition-opacity duration-150">
+        {icon}
+      </div>
+      <div className="text-[40px] font-black text-white tracking-[-2px] leading-none mb-2 [font-variant-numeric:tabular-nums]">
+        {value}
+      </div>
+      <div className="text-[10px] uppercase tracking-[1.5px] text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-150">
+        {label}
+      </div>
+    </motion.div>
+  );
 }
 
-// ─────────────────────────────────────────────
-// COMPONENTE TILE INTERACTIVO
-// Encapsula toda la lógica de hover/focus/audio
-// para no repetirla en cada mosaico.
-// ─────────────────────────────────────────────
+function ActionTile({ title, tag, ctaLabel, onClick, className = "" }) {
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className={`bg-[#0D0D0D] border border-white/[0.08] cursor-pointer flex flex-col justify-between p-6 relative overflow-hidden group min-h-[220px] hover:border-[#1A6AFF]/35 transition-colors duration-150 ${className}`}
+    >
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-transparent group-hover:bg-[#1A6AFF] transition-colors duration-150" />
 
-/**
- * @component InteractiveTile
- * @param {string}   tileKey        - Identificador único del tile
- * @param {string}   gridColumn     - CSS grid-column
- * @param {string}   gridRow        - CSS grid-row
- * @param {string}   image          - URL de imagen de fondo
- * @param {string}   overlayType    - "left" | "bottom"
- * @param {string}   borderTopColor - Color del borde superior
- * @param {number}   borderTopWidth - Grosor del borde superior
- * @param {Function} onClick        - Callback al hacer click
- * @param {Function} playHover      - Función de audio hover
- * @param {Function} playSelect     - Función de audio selección
- * @param {ReactNode} children      - Contenido del tile
- */
-function InteractiveTile({
-  gridColumn, gridRow,
-  image, overlayType = "bottom",
-  borderTopColor = PALETTE.neon, borderTopWidth = 4,
-  onClick, playHover, playSelect,
-  children,
-}) {
-  const [hovered, setHovered] = useState(false);
+      <div>
+        <div className="text-[9px] font-semibold uppercase tracking-[2.5px] text-[#555555] mb-4">
+          {tag}
+        </div>
+        <div className="text-[28px] font-black text-white uppercase tracking-[-1.2px] leading-none">
+          {title}
+        </div>
+      </div>
 
-  const handleMouseEnter = () => {
-    setHovered(true);
-    playHover();
-  };
+      <div className="mt-6">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1.5px] px-5 py-2.5 bg-[#1A6AFF] group-hover:bg-[#1557E0] text-white rounded-md transition-colors duration-150 cursor-pointer">
+          {ctaLabel}
+          <ChevronRight size={12} strokeWidth={1.5} />
+        </span>
+      </div>
+    </motion.div>
+  );
+}
 
-  const handleMouseLeave = () => {
-    setHovered(false);
-  };
+function ActionTileSmall({ title, tag, ctaLabel, onClick }) {
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="bg-[#0D0D0D] border border-white/[0.08] cursor-pointer flex flex-col justify-between p-6 relative overflow-hidden group min-h-[160px] hover:border-[#1A6AFF]/35 transition-colors duration-150"
+    >
+      <div className="absolute top-0 left-0 right-0 h-px bg-transparent group-hover:bg-[#1A6AFF] transition-colors duration-150" />
 
-  const handleClick = () => {
-    playSelect();
-    onClick && onClick();
-  };
+      <div>
+        <div className="text-[9px] font-semibold uppercase tracking-[2.5px] text-[#555555] mb-4">
+          {tag}
+        </div>
+        <div className="text-[22px] font-black text-white uppercase tracking-[-1px] leading-none">
+          {title}
+        </div>
+      </div>
 
-  // Overlay gradiente según tipo de tile
-  const overlayGradient = overlayType === "left"
-    ? "linear-gradient(to right, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.22) 65%, transparent 100%)"
-    : "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.05) 100%)";
+      <div className="mt-4">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1.5px] px-5 py-2.5 bg-[#1A6AFF] group-hover:bg-[#1557E0] text-white rounded-md transition-colors duration-150 cursor-pointer">
+          {ctaLabel}
+          <ChevronRight size={12} strokeWidth={1.5} />
+        </span>
+      </div>
+    </motion.div>
+  );
+}
 
+function BannerTile({ title, description, icon, ctaLabel, onClick }) {
   return (
     <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-      style={{
-        position:    "relative",
-        overflow:    "hidden",
-        cursor:      "pointer",
-        gridColumn,
-        gridRow,
-        borderTop:   `${borderTopWidth}px solid ${borderTopColor}`,
-        // ── Glow effect ──
-        boxShadow: hovered
-          ? `0 0 0 1px ${PALETTE.neon}88, 0 0 20px 2px ${PALETTE.neonGlow}, inset 0 0 30px rgba(200,255,0,0.04), 0 12px 40px rgba(0,0,0,0.7)`
-          : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
-        // ── Scale + lift ──
-        transform:  hovered ? "scale(1.018) translateY(-2px)" : "scale(1) translateY(0)",
-        zIndex:     hovered ? 3 : 1,
-        transition: "transform 280ms cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 280ms cubic-bezier(0.25,0.46,0.45,0.94)",
-      }}
+      onClick={onClick}
+      className="bg-[#0D0D0D] border border-white/[0.08] cursor-pointer flex items-center justify-between px-7 min-h-[68px] gap-4 group hover:bg-[#111111] hover:border-[#1A6AFF]/40 transition-colors duration-150"
     >
-      {/* Imagen de fondo con filtro dinámico */}
-      <div style={{
-        position:        "absolute",
-        inset:           0,
-        backgroundImage: `url(${image})`,
-        backgroundSize:  "cover",
-        backgroundPosition: "center",
-        zIndex:          0,
-        // Cuando NO está en hover: desaturado y oscuro (reposo)
-        // Cuando SÍ está en hover: saturado y brillante
-        filter: hovered
-          ? "brightness(1.05) saturate(1.2) contrast(1.05)"
-          : "brightness(0.65) saturate(0.7)",
-        transform: hovered ? "scale(1.04)" : "scale(1)",
-        transition: "filter 350ms ease-out, transform 600ms ease-out",
-      }}/>
-
-      {/* Overlay de gradiente */}
-      <div style={{
-        position:   "absolute",
-        inset:      0,
-        background: overlayGradient,
-        zIndex:     2,
-        // Overlay más claro en hover para resaltar imagen
-        opacity:    hovered ? 0.78 : 1,
-        transition: "opacity 350ms ease-out",
-      }}/>
-
-      {/* Contenido del tile con prop isHovered para CTA */}
-      <div style={{
-        position: "relative",
-        zIndex:   5,
-        height:   "100%",
-        display:  "flex",
-        flexDirection:  "column",
-        justifyContent: "flex-end",
-        padding:  "18px 20px",
-      }}>
-        {typeof children === "function" ? children(hovered) : children}
+      <div className="flex items-center gap-4">
+        <div className="w-9 h-9 border border-white/10 flex items-center justify-center text-[#888888] group-hover:border-[#1A6AFF]/40 group-hover:bg-[#1A6AFF]/[0.08] transition-all duration-150 flex-shrink-0">
+          {icon}
+        </div>
+        <div>
+          <div className="text-[13px] font-extrabold text-white uppercase tracking-[-0.2px]">
+            {title}
+          </div>
+          {description && (
+            <div className="text-[9px] text-[#555555] uppercase tracking-[0.5px] mt-0.5">
+              {description}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="text-[9px] font-bold uppercase tracking-[1.5px] px-4 py-1.5 border border-white/[0.12] text-[#888888] group-hover:border-[#1A6AFF]/50 group-hover:text-[#1A6AFF] transition-all duration-150 whitespace-nowrap flex-shrink-0">
+        {ctaLabel}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────
-// HOME PRINCIPAL
-// ─────────────────────────────────────────────
+function NextEventTile({ event, onClick }) {
+  return (
+    <motion.div
+      onClick={onClick}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="bg-[#0D0D0D] border border-white/[0.08] cursor-pointer flex flex-col justify-between p-6 relative overflow-hidden group min-h-[220px] hover:border-[#1A6AFF]/35 transition-colors duration-150"
+    >
+      {/* Top accent */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-transparent group-hover:bg-[#1A6AFF] transition-colors duration-150" />
+
+      <div>
+        {/* Tag row */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="text-[9px] font-semibold uppercase tracking-[2.5px] text-[#555555]">
+            Próximo evento
+          </div>
+          <div className="text-[8px] font-bold uppercase tracking-[1px] px-2 py-0.5 bg-[#1A6AFF]/10 border border-[#1A6AFF]/25 text-[#1A6AFF]">
+            {EVENT_LABELS[event.type] || "Evento"}
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="text-[22px] font-black text-white uppercase tracking-[-0.8px] leading-[1.05] mb-3">
+          {event.title}
+        </div>
+
+        {/* Date */}
+        <div className="flex items-center gap-1.5 text-[11px] text-[#888888] tracking-[0.5px] mb-2">
+          <Clock size={12} strokeWidth={1.5} className="text-[#555555] flex-shrink-0" />
+          {fmtEventDate(event.datetime)}
+        </div>
+
+        {/* Location + days until */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1 text-[10px] text-[#555555]">
+            <MapPin size={12} strokeWidth={1.5} className="flex-shrink-0" />
+            {event.location}
+          </div>
+          <div className="text-[9px] font-bold text-[#1A6AFF] px-2 py-0.5 bg-[#1A6AFF]/[0.08] border border-[#1A6AFF]/20">
+            {daysUntil(event.datetime)}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="mt-5">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[1.5px] px-5 py-2.5 bg-[#1A6AFF] group-hover:bg-[#1557E0] text-white rounded-md transition-colors duration-150 cursor-pointer">
+          Ver calendario
+          <ChevronRight size={12} strokeWidth={1.5} />
+        </span>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
 export default function Home({ onNavigate, onLogout }) {
-  const mode = useStore(state => state.mode);
-  const athletes = useStore(state => state.athletes);
-  const historial = useStore(state => state.historial);
-  const clubInfo = useStore(state => state.clubInfo);
+  const mode       = useStore(state => state.mode);
+  const athletes   = useStore(state => state.athletes);
+  const historial  = useStore(state => state.historial);
+  const clubInfo   = useStore(state => state.clubInfo);
   const matchStats = useStore(state => state.matchStats);
 
   const stats = calcStats(athletes, historial);
-  const club = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
+  const club  = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
 
-  const { playHover, playSelect } = useGameAudio();
-
-  const clubInitials = (club.nombre || "ES")
+  const clubInitials = (club.nombre || "ALT")
     .split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
-  // ── Estilos estáticos ────────────────────
-  const css = {
-    app: { minHeight:"100vh", background:PALETTE.bg, display:"flex", flexDirection:"column" },
-    topbar: { height:44, background:"rgba(6,8,14,0.88)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", borderBottom:`1px solid rgba(200,255,0,0.12)`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto", boxShadow:"0 1px 0 rgba(255,255,255,0.02), 0 4px 16px rgba(0,0,0,0.4)" },
-    brandBlock: { padding:"0 22px", display:"flex", alignItems:"center", background:"rgba(0,0,0,0.6)", borderRight:`1px solid ${PALETTE.border}` },
-    navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.neon}` : "2px solid transparent", background: active ? "rgba(200,255,0,0.05)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
-    clubBadge: { marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px", borderLeft:`1px solid ${PALETTE.border}` },
-    clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(200,255,0,0.12)", border:`2px solid ${PALETTE.neon}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.neon, flexShrink:0 },
-    metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid rgba(255,255,255,0.06)` },
-    metricBlock: (i) => ({ padding:"14px 20px", display:"flex", alignItems:"center", gap:14, background: i===0 ? "linear-gradient(135deg,rgba(200,255,0,0.08),rgba(200,255,0,0.02))" : "linear-gradient(135deg,rgba(16,16,28,0.92),rgba(8,8,18,0.96))", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", borderBottom:`2px solid ${i===0 ? PALETTE.neon : "rgba(200,255,0,0.3)"}`, borderRight:`1px solid rgba(255,255,255,0.05)`, boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.04)" }),
-    grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))", gridAutoRows:"minmax(180px,1fr)", gap:4, padding:"4px 12px 12px", minHeight:0 },
-    tag: { fontSize:8, textTransform:"uppercase", letterSpacing:"3.5px", fontWeight:600, color:PALETTE.neon, marginBottom:10, opacity:0.85 },
-    titleBig: { fontSize:42, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-1.5px", lineHeight:0.92, textShadow:"0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.4)", marginBottom:18 },
-    titleMid: { fontSize:22, fontWeight:800, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1.05, textShadow:"0 2px 12px rgba(0,0,0,0.85)", marginBottom:14 },
-    // Botón CTA: recibe isHovered para cambiar color
-    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.neon, color:"#0a0a0a", border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px ${PALETTE.neonGlow}` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
-    ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon, cursor:"pointer" },
-    statRow: { display:"flex", alignItems:"center", height:"100%", position:"relative", zIndex:2, padding:"0 12px", gap:0 },
-    statBlock: (last) => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"10px 8px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
-    footer: { display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"4px 18px 8px", flexShrink:0 },
-  };
-
   const METRICS = [
-    { label:"Plantilla",      value:athletes.length,        icon:Icon.Users, route:"plantilla" },
-    { label:"Partidos",       value:matchStats.played,      icon:Icon.Ball,  route:"partidos" },
-    { label:"Sesiones",       value:stats.sesiones,         icon:Icon.Train, route:"entrenamiento" },
-    { label:"Asistencia",     value:stats.asistencia + "%", icon:Icon.Chart, route:"calendario" },
+    { label: "Plantilla",  value: athletes.length,        icon: <Users       size={16} strokeWidth={1.5} />, route: "plantilla"      },
+    { label: "Partidos",   value: matchStats.played,      icon: <Circle      size={16} strokeWidth={1.5} />, route: "partidos"       },
+    { label: "Sesiones",   value: stats.sesiones,         icon: <Activity    size={16} strokeWidth={1.5} />, route: "entrenamiento"  },
+    { label: "Asistencia", value: stats.asistencia + "%", icon: <TrendingUp  size={16} strokeWidth={1.5} />, route: "calendario"     },
   ];
 
   const STATS = [
-    { val:matchStats.won,         lbl:"Ganados",   color:PALETTE.green },
-    { val:matchStats.lost,        lbl:"Perdidos",  color:PALETTE.danger },
-    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.neon },
-    { val:`${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl:"Goles F/C", color:"white" },
+    { val: matchStats.won,   lbl: "Ganados",  color: PALETTE.success },
+    { val: matchStats.lost,  lbl: "Perdidos", color: PALETTE.danger  },
+    { val: matchStats.points, lbl: "Puntos",  color: "#FFFFFF"       },
+    { val: `${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl: "Goles F/C", color: "#FFFFFF" },
   ];
 
-  return (
-    <div style={css.app}>
+  const nextEv = getNextEvent();
 
-      {/* TOPBAR */}
-      <div className="home-topbar" style={css.topbar}>
-        <div style={css.brandBlock}>
-          <span className="home-brand-full" style={{ fontSize:17, fontWeight:700, color:PALETTE.text, letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>
-            Elevate<span style={{ color:PALETTE.neon }}>Sports</span>
+  return (
+    <div className="min-h-screen bg-black flex flex-col">
+
+      {/* ── TOPBAR ─────────────────────────────────────────────────────────── */}
+      <div className="h-11 bg-black border-b border-[#1C1C1C] flex items-stretch flex-shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+        {/* Brand */}
+        <div className="px-5 flex items-center border-r border-[#1C1C1C] flex-shrink-0">
+          <span className="text-[14px] font-black text-white tracking-[-0.5px] whitespace-nowrap max-md:hidden">
+            ALTTEZ
           </span>
         </div>
-        {NAV_ITEMS.map(({ key, label, navigable }) => (
-          <div key={key} onClick={() => navigable && onNavigate(key)} style={css.navItem(key==="home")}>
-            {label}
-          </div>
-        ))}
-        <div style={css.clubBadge}>
+
+        {/* Nav items */}
+        {NAV_ITEMS.map(({ key, label, navigable }) => {
+          const isActive = key === "home";
+          return (
+            <div
+              key={key}
+              onClick={() => navigable && onNavigate(key)}
+              className={[
+                "px-3.5 text-[10px] uppercase tracking-[2px] flex items-center border-r border-[#1C1C1C] whitespace-nowrap font-medium transition-colors duration-150 border-b-2 flex-shrink-0",
+                isActive
+                  ? "text-white border-b-[#1A6AFF] font-bold"
+                  : "text-[#888888] border-b-transparent hover:text-white",
+                !navigable ? "cursor-default" : "cursor-pointer",
+              ].join(" ")}
+            >
+              {label}
+            </div>
+          );
+        })}
+
+        {/* Club badge */}
+        <div className="ml-auto flex items-center gap-2.5 px-4 border-l border-[#1C1C1C] flex-shrink-0">
           {mode === "demo" && (
-            <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:"rgba(239,159,39,0.2)", color:"#EF9F27", border:"1px solid rgba(239,159,39,0.4)", marginRight:6 }}>
+            <div className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-[1px] bg-[#1A6AFF]/10 text-[#1A6AFF] border border-[#1A6AFF]/30">
               Demo
             </div>
           )}
-          <div style={css.clubLogo}>{clubInitials}</div>
-          <div className="home-club-name">
-            <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"1px", whiteSpace:"nowrap" }}>
+
+          <div className="w-[26px] h-[26px] border border-[#2A2A2A] bg-[#111111] flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0 tracking-[0.5px]">
+            {clubInitials}
+          </div>
+
+          <div className="max-sm:hidden">
+            <div className="text-[11px] font-bold text-white uppercase tracking-[0.8px] whitespace-nowrap">
               {club.nombre || "Mi Club"}
             </div>
-            <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>
-              {(club.categorias||[])[0]||"General"} · {club.temporada||"2025-26"}
+            <div className="text-[9px] text-[#555555] uppercase tracking-[0.5px] mt-px">
+              {(club.categorias || [])[0] || "General"} · {club.temporada || "2025-26"}
             </div>
           </div>
+
           {onLogout && (
-            <div
+            <button
               onClick={onLogout}
-              style={{ marginLeft:10, padding:"4px 10px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)", border:"1px solid rgba(255,255,255,0.12)", cursor:"pointer", whiteSpace:"nowrap" }}
+              className="ml-1.5 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[1px] text-[#555555] border border-[#1C1C1C] hover:text-white hover:border-[#2A2A2A] transition-colors duration-150 whitespace-nowrap cursor-pointer bg-transparent"
             >
-              Cerrar sesion
-            </div>
+              Salir
+            </button>
           )}
         </div>
       </div>
 
-      {/* METRICS */}
+      {/* ── KPI METRICS — Bento 4-col ──────────────────────────────────────── */}
       <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="home-metrics"
-        style={css.metrics}
+        className="grid grid-cols-4 max-md:grid-cols-2 gap-px bg-[#1C1C1C]"
       >
-        {METRICS.map((m, i) => (
-          <motion.div key={m.label} variants={metricItemVariant}
-            onClick={() => { playSelect(); onNavigate(m.route); }}
-            style={{ ...css.metricBlock(i), cursor:"pointer", transition:"background 200ms ease-out" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,255,0,0.08)"; playHover(); }}
-            onMouseLeave={e => { e.currentTarget.style.background = css.metricBlock(i).background; }}
-          >
-            {m.icon}
-            <div>
-              <div style={{ fontSize:22, fontWeight:700, color:PALETTE.neon, lineHeight:1 }}>{m.value}</div>
-              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.textMuted, marginTop:2 }}>{m.label}</div>
-            </div>
-          </motion.div>
+        {METRICS.map((m) => (
+          <MetricCard
+            key={m.label}
+            label={m.label}
+            value={m.value}
+            icon={m.icon}
+            onClick={() => onNavigate(m.route)}
+          />
         ))}
       </motion.div>
 
-      {/* EMPTY STATE — shown when no athletes registered yet */}
+      {/* ── EMPTY STATE ────────────────────────────────────────────────────── */}
       {athletes.length === 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
-          style={{
-            margin: "0 12px",
-            background: "rgba(139,92,246,0.06)",
-            border: "1px solid rgba(139,92,246,0.2)",
-            borderRadius: 8,
-            overflow: "hidden",
-          }}
+          transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.15 }}
+          className="my-px bg-[#1A6AFF]/[0.04] border-b border-[#1C1C1C] overflow-hidden"
         >
           <EmptyState
-            icon={
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke="#8B5CF6" strokeWidth="1.8"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            }
-            title="Tu plantilla esta vacia"
-            subtitle="Incorpora deportistas a la plantilla para activar el seguimiento de carga, el control de asistencia y los analytics de rendimiento"
+            icon={<Users size={28} strokeWidth={1.5} className="text-[#1A6AFF]" />}
+            title="Tu plantilla está vacía"
+            subtitle="Incorpora deportistas para activar el seguimiento de carga, control de asistencia y analytics de rendimiento"
             actionLabel="Registrar primer deportista"
             onAction={() => onNavigate("plantilla")}
             compact
@@ -545,241 +409,129 @@ export default function Home({ onNavigate, onLogout }) {
         </motion.div>
       )}
 
-      {/* GRID DE MOSAICOS */}
+      {/* ── MAIN BENTO GRID ────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="home-grid"
-        style={css.grid}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="grid grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1 gap-px bg-[#1C1C1C] flex-1"
       >
-
         {/* TILE 1 — ENTRENAMIENTO */}
-        <InteractiveTile
-          tileKey="entrenamiento"
-          gridColumn="1" gridRow="1"
-          image={imgEntrenamiento}
-          overlayType="left"
+        <ActionTile
+          title="Entrenamiento"
+          tag="Módulo · Carga y sesiones"
+          ctaLabel="Abrir módulo"
           onClick={() => onNavigate("entrenamiento")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.titleMid}>Entrenamiento</div>
-              <div style={css.btn(hov)}>Entrar →</div>
-            </>
-          )}
-        </InteractiveTile>
+        />
 
         {/* TILE 2 — GESTIÓN DE PLANTILLA */}
-        <InteractiveTile
-          tileKey="plantilla"
-          gridColumn="2" gridRow="1"
-          image={imgPlantilla}
-          overlayType="bottom"
+        <ActionTile
+          title="Gestión de plantilla"
+          tag="Módulo · Deportistas y datos"
+          ctaLabel="Ver plantilla"
           onClick={() => onNavigate("plantilla")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.titleMid}>Gestión de plantilla</div>
-              <div style={css.btn(hov)}>Ver plantilla →</div>
-            </>
-          )}
-        </InteractiveTile>
+        />
 
-        {/* TILE 3 — PRÓXIMO EVENTO (datos reales del calendario) */}
-        <InteractiveTile
-          tileKey="evento"
-          gridColumn="3" gridRow="1"
-          image={imgPartido}
-          overlayType="bottom"
-          onClick={() => onNavigate("calendario")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => {
-            const nextEv = getNextEvent();
-            if (!nextEv) return (
-              <>
-                <div style={css.tag}>Próximo evento</div>
-                <div style={css.titleMid}>Sin eventos</div>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:4 }}>No hay eventos programados en el calendario</div>
-                <div style={{ ...css.btn(hov), marginTop:12 }}>Programar evento →</div>
-              </>
-            );
-            const evColor = EVENT_COLORS[nextEv.type] || "#c8ff00";
-            return (
-              <>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <div style={{ ...css.tag, marginBottom:0 }}>Próximo evento</div>
-                  <div style={{ fontSize:7, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"2px 8px", background:`${evColor}22`, border:`1px solid ${evColor}55`, color:evColor, borderRadius:2 }}>
-                    {EVENT_LABELS[nextEv.type]}
-                  </div>
-                </div>
-                <div style={css.titleMid}>{nextEv.title}</div>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:"0.8px" }}>
-                  {fmtEventDate(nextEv.datetime)}
-                </div>
-                <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6 }}>
-                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)" }}>{nextEv.location}</div>
-                  <div style={{ fontSize:9, fontWeight:700, color:evColor, padding:"2px 8px", background:`${evColor}15`, borderRadius:10 }}>
-                    {daysUntil(nextEv.datetime)}
-                  </div>
-                </div>
-                <div style={{ ...css.btn(hov), marginTop:12 }}>Ver calendario →</div>
-              </>
-            );
-          }}
-        </InteractiveTile>
+        {/* TILE 3 — PRÓXIMO EVENTO */}
+        {nextEv ? (
+          <NextEventTile event={nextEv} onClick={() => onNavigate("calendario")} />
+        ) : (
+          <ActionTile
+            title="Sin eventos"
+            tag="Próximo evento · Calendario"
+            ctaLabel="Programar evento"
+            onClick={() => onNavigate("calendario")}
+          />
+        )}
 
-        {/* TILE 4 — RESUMEN DEL CICLO */}
+        {/* TILE 4 — STATS (full width) */}
         <div
-          onClick={() => { playSelect(); onNavigate("partidos"); }}
-          onMouseEnter={() => playHover()}
-          style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"pointer" }}
+          className="col-span-3 max-md:col-span-2 max-sm:col-span-1 bg-[#0D0D0D] border border-white/[0.08] cursor-pointer group hover:border-[#1A6AFF]/20 transition-colors duration-150"
+          onClick={() => onNavigate("partidos")}
         >
-          <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
-          <div className="home-stat-row" style={css.statRow}>
+          <div className="grid grid-cols-4 max-sm:grid-cols-2 h-full">
             {STATS.map((m, i) => (
-              <div key={m.lbl} style={css.statBlock(i===3)}>
-                <div style={{ fontSize:18, fontWeight:800, color:m.color, lineHeight:1 }}>{m.val}</div>
-                <div style={{ fontSize:8, color:PALETTE.textHint, textTransform:"uppercase", letterSpacing:"1px", marginTop:4 }}>{m.lbl}</div>
+              <div
+                key={m.lbl}
+                className={[
+                  "flex flex-col justify-center items-center py-5 px-4",
+                  i < STATS.length - 1 ? "border-r border-white/[0.06]" : "",
+                ].join(" ")}
+              >
+                <div
+                  className="text-[32px] font-black leading-none tracking-[-1px] [font-variant-numeric:tabular-nums]"
+                  style={{ color: m.color }}
+                >
+                  {m.val}
+                </div>
+                <div className="text-[9px] text-[#555555] uppercase tracking-[1.2px] mt-1.5 font-semibold">
+                  {m.lbl}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* TILE 5 — OFICINA */}
-        <InteractiveTile
-          tileKey="oficina"
-          gridColumn="3" gridRow="2"
-          image={imgOficina}
-          overlayType="bottom"
-          borderTopWidth={2}
-          borderTopColor={PALETTE.neonBorder}
+        {/* TILE 5 — ADMINISTRACIÓN */}
+        <ActionTileSmall
+          title="Administración"
+          tag="Gestión · Finanzas del club"
+          ctaLabel="Entrar"
           onClick={() => onNavigate("admin")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", height:"100%", paddingBottom:4 }}>
-              <div>
-                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Finanzas</div>
-                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Salud financiera del club</div>
-              </div>
-              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.purple : "rgba(127,119,221,0.4)", color: hov ? "white" : PALETTE.purple, transition:"color 200ms, border-color 200ms" }}>
-                Entrar →
-              </div>
-            </div>
-          )}
-        </InteractiveTile>
+        />
 
-        {/* TILE 6 — MATCH CENTER */}
-        <div
-          onClick={() => onNavigate("partidos")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"3",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(127,119,221,0.06),rgba(10,10,18,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(127,119,221,0.35)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(127,119,221,0.08)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke={PALETTE.purple} strokeWidth="1.5"/>
-                <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.purple} strokeWidth="1.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Match Center
-              </div>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Rendimiento · Player Cards · Analítica post-partido
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(127,119,221,0.4)`, color:PALETTE.purple }}>
-              Abrir →
-            </div>
-          </div>
+        {/* TILE 6 — MI CLUB */}
+        <ActionTileSmall
+          title="Mi club"
+          tag="Configuración · Perfil del club"
+          ctaLabel="Configurar"
+          onClick={() => onNavigate("miclub")}
+        />
+
+        {/* TILE 7 — REPORTES */}
+        <ActionTileSmall
+          title="Reportes"
+          tag="Análisis · Datos exportables"
+          ctaLabel="Ver reportes"
+          onClick={() => onNavigate("reportes")}
+        />
+
+        {/* BANNER — MATCH CENTER */}
+        <div className="col-span-3 max-md:col-span-2 max-sm:col-span-1">
+          <BannerTile
+            title="Match Center"
+            description="Rendimiento · Player Cards · Analítica post-partido"
+            icon={<Circle size={16} strokeWidth={1.5} />}
+            ctaLabel="Abrir →"
+            onClick={() => onNavigate("partidos")}
+          />
         </div>
 
-        {/* TILE 7 — CALENDARIO (fila 4, ancho completo) */}
-        <div
-          onClick={() => onNavigate("calendario")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"4",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(200,255,0,0.04),rgba(10,10,18,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          {/* Icono calendario */}
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(200,255,0,0.3)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(200,255,0,0.06)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="18" rx="1" stroke={PALETTE.neon} strokeWidth="1.5"/>
-                <path d="M3 10h18M8 2v4M16 2v4" stroke={PALETTE.neon} strokeWidth="1.5" strokeLinecap="round"/>
-                <rect x="7" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.7"/>
-                <rect x="10.5" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.4"/>
-                <rect x="14" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Calendario & RSVP
-              </div>
-            </div>
-          </div>
-
-          {/* Descripción + CTA */}
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Partidos · Entrenamiento · RSVP en tiempo real
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon }}>
-              Abrir →
-            </div>
-          </div>
+        {/* BANNER — CALENDARIO */}
+        <div className="col-span-3 max-md:col-span-2 max-sm:col-span-1">
+          <BannerTile
+            title="Calendario & RSVP"
+            description="Partidos · Entrenamiento · RSVP en tiempo real"
+            icon={<Calendar size={16} strokeWidth={1.5} />}
+            ctaLabel="Abrir →"
+            onClick={() => onNavigate("calendario")}
+          />
         </div>
-
       </motion.div>
 
-      {/* FOOTER */}
-      <div style={css.footer}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ background:PALETTE.neon, color:"#0a0a0a", fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:1 }}>ES</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", letterSpacing:"1.5px", fontWeight:600, textTransform:"uppercase" }}>Elevate Sports</div>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.15)", letterSpacing:"1px" }}>v2.0</div>
+      {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-5 py-2 border-t border-[#1C1C1C] flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="bg-[#1A6AFF] text-white text-[8px] font-bold px-1.5 py-0.5 tracking-[1px]">
+            ALT
+          </div>
+          <div className="text-[10px] text-[#333333] tracking-[2px] font-bold uppercase">
+            ALTTEZ
+          </div>
+          <div className="text-[9px] text-[#222222] tracking-[0.5px]">v2.0</div>
+        </div>
+        <div className="text-[9px] text-[#333333] uppercase tracking-[1px]">
+          CRM Deportivo Profesional
         </div>
       </div>
 
