@@ -133,7 +133,7 @@ export const useStore = create(
       })
     }),
     {
-      name: 'elevate-store',
+      name: 'alttez-store',
       storage: createJSONStorage(() => customStorage),
       // No omitimos campos ya que validamos la firma de todo el state
     }

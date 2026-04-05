@@ -1,6 +1,6 @@
 /**
  * @module supabase
- * @description Cliente Supabase singleton para Elevate Sports.
+ * @description Cliente Supabase singleton para ALTTEZ.
  * Lee credenciales de variables de entorno VITE_SUPABASE_*.
  *
  * @author @Data (Mateo-Data_Engine)

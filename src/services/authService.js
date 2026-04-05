@@ -1,6 +1,6 @@
 /**
  * @module authService
- * @description Autenticacion con Supabase Auth para Elevate Sports.
+ * @description Autenticacion con Supabase Auth para ALTTEZ.
  * Reemplaza el sistema RBAC con checksum por auth real (email/password).
  * El profile (club_id + role) se crea automaticamente via trigger en DB.
  *

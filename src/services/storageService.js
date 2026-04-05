@@ -52,10 +52,10 @@ function remove(key) {
 
 /** Lee el modo actual de la app */
 export function getMode() {
-  return read("elevate_mode", null);
+  return read("alttez_mode", null);
 }
 
-/** Limpia selectivamente todas las keys de Elevate */
+/** Limpia selectivamente todas las keys de ALTTEZ */
 export function clearAll() {
   STORAGE_KEYS.forEach(k => remove(k));
 }
@@ -63,12 +63,12 @@ export function clearAll() {
 /** Carga estado demo: limpia + escribe datos simulados + sesion admin */
 export function loadDemoState() {
   clearAll();
-  write("elevate_athletes", DEMO_ATHLETES);
-  write("elevate_historial", DEMO_HISTORIAL);
-  write("elevate_clubInfo", DEMO_CLUB_INFO);
-  write("elevate_matchStats", DEMO_MATCH_STATS);
-  write("elevate_finanzas", DEMO_FINANZAS);
-  write("elevate_mode", "demo");
+  write("alttez_athletes", DEMO_ATHLETES);
+  write("alttez_historial", DEMO_HISTORIAL);
+  write("alttez_clubInfo", DEMO_CLUB_INFO);
+  write("alttez_matchStats", DEMO_MATCH_STATS);
+  write("alttez_finanzas", DEMO_FINANZAS);
+  write("alttez_mode", "demo");
   // Sesion RBAC: demo siempre es admin
   const session = createSession("admin", "Demo User");
   write(SESSION_KEY, session);
@@ -77,12 +77,12 @@ export function loadDemoState() {
 /** Carga estado produccion: limpia + escribe esquema vacio + sesion admin */
 export function loadProductionState(form) {
   clearAll();
-  write("elevate_athletes", EMPTY_ATHLETES);
-  write("elevate_historial", EMPTY_HISTORIAL);
-  write("elevate_clubInfo", createEmptyClubInfo(form));
-  write("elevate_matchStats", EMPTY_MATCH_STATS);
-  write("elevate_finanzas", EMPTY_FINANZAS);
-  write("elevate_mode", "production");
+  write("alttez_athletes", EMPTY_ATHLETES);
+  write("alttez_historial", EMPTY_HISTORIAL);
+  write("alttez_clubInfo", createEmptyClubInfo(form));
+  write("alttez_matchStats", EMPTY_MATCH_STATS);
+  write("alttez_finanzas", EMPTY_FINANZAS);
+  write("alttez_mode", "production");
   // Sesion RBAC: creador del club es admin
   const session = createSession("admin", form.entrenador || "Entrenador");
   write(SESSION_KEY, session);
@@ -183,12 +183,12 @@ export function getCurrentRole() {
 
 // ── Backup / Export ──
 
-/** Exporta todos los datos de Elevate como JSON descargable */
+/** Exporta todos los datos de ALTTEZ como JSON descargable */
 export function exportBackup() {
-  const clubInfo = read("elevate_clubInfo", {});
-  const clubSlug = (clubInfo.nombre || "elevate").replace(/[^a-zA-Z0-9]/g, "_");
+  const clubInfo = read("alttez_clubInfo", {});
+  const clubSlug = (clubInfo.nombre || "alttez").replace(/[^a-zA-Z0-9]/g, "_");
   const backup = {
-    _app: "Elevate Sports",
+    _app: "ALTTEZ",
     _version: "1.2.0",
     _exportedAt: new Date().toISOString(),
   };
@@ -212,12 +212,12 @@ export function exportBackup() {
 export function importBackup(jsonString) {
   try {
     const data = JSON.parse(jsonString);
-    if (!data._app || data._app !== "Elevate Sports") {
-      return { success: false, error: "No es un backup valido de Elevate Sports" };
+    if (!data._app || (data._app !== "ALTTEZ" && data._app !== "Elevate Sports")) {
+      return { success: false, error: "No es un backup valido de ALTTEZ" };
     }
     clearAll();
     STORAGE_KEYS.forEach(key => { if (data[key] != null) write(key, data[key]); });
-    return { success: true, clubName: data.elevate_clubInfo?.nombre || "Club" };
+    return { success: true, clubName: data.alttez_clubInfo?.nombre || data.elevate_clubInfo?.nombre || "Club" };
   } catch (e) {
     return { success: false, error: "Error leyendo archivo: " + e.message };
   }

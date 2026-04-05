@@ -1,6 +1,6 @@
 /**
  * @module backupService
- * @description Exportar backup JSON completo de todos los datos de Elevate Sports.
+ * @description Exportar backup JSON completo de todos los datos de ALTTEZ.
  * Si el navegador falla, el usuario no pierde su vida.
  *
  * @author @Data (Mateo-Data_Engine)
@@ -10,7 +10,7 @@
 import { STORAGE_KEYS } from "../constants/initialStates";
 
 /**
- * Genera un backup JSON con todas las keys de Elevate y lo descarga como archivo.
+ * Genera un backup JSON con todas las keys de ALTTEZ y lo descarga como archivo.
  * Incluye metadata (timestamp, versión, keys exportadas).
  *
  * @returns {boolean} true si descarga exitosa, false si falló
@@ -19,9 +19,9 @@ export function exportBackupJSON() {
   try {
     const backup = {
       _meta: {
-        app: "Elevate Sports",
+        app: "ALTTEZ",
         exportedAt: new Date().toISOString(),
-        schemaVersion: localStorage.getItem("elevate_schema_version") || "unknown",
+        schemaVersion: localStorage.getItem("alttez_schema_version") || "unknown",
         keysExported: STORAGE_KEYS.length,
       },
       data: {},
@@ -43,8 +43,8 @@ export function exportBackupJSON() {
     const a = document.createElement("a");
     a.href = url;
     const date = new Date().toISOString().slice(0, 10);
-    const clubName = (backup.data["elevate_clubInfo"]?.nombre || "elevate").replace(/\s+/g, "_").toLowerCase();
-    a.download = `elevate_backup_${clubName}_${date}.json`;
+    const clubName = (backup.data["alttez_clubInfo"]?.nombre || "alttez").replace(/\s+/g, "_").toLowerCase();
+    a.download = `alttez_backup_${clubName}_${date}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -72,8 +72,8 @@ export function importBackupJSON(jsonString) {
       return { success: false, error: "Formato de backup inválido: falta _meta o data" };
     }
 
-    if (backup._meta.app !== "Elevate Sports") {
-      return { success: false, error: "Este archivo no es un backup de Elevate Sports" };
+    if (backup._meta.app !== "ALTTEZ" && backup._meta.app !== "Elevate Sports") {
+      return { success: false, error: "Este archivo no es un backup valido de ALTTEZ" };
     }
 
     let keysRestored = 0;

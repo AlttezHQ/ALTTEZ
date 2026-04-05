@@ -1,6 +1,6 @@
 /**
  * @module supabaseService
- * @description Capa de persistencia Supabase para Elevate Sports.
+ * @description Capa de persistencia Supabase para ALTTEZ.
  * API compatible con storageService — reemplaza localStorage por Supabase.
  * Si Supabase no está disponible, fallback a localStorage transparente.
  *
@@ -29,7 +29,7 @@ let _clubId = null;
 export function getClubId() { return _clubId; }
 export function setClubId(id) {
   _clubId = id;
-  try { if (id) localStorage.setItem("elevate_club_id", id); else localStorage.removeItem("elevate_club_id"); }
+  try { if (id) localStorage.setItem("alttez_club_id", id); else localStorage.removeItem("alttez_club_id"); }
   catch { /* noop */ }
 }
 
@@ -44,7 +44,7 @@ export async function loadClubIdFromProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       // No autenticado — fallback a localStorage
-      _clubId = localStorage.getItem("elevate_club_id") || null;
+      _clubId = localStorage.getItem("alttez_club_id") || null;
       return _clubId;
     }
     const { data, error } = await supabase.from("profiles").select("club_id").eq("id", user.id).single();
@@ -54,13 +54,13 @@ export async function loadClubIdFromProfile() {
     }
   } catch { /* noop */ }
   // Fallback
-  _clubId = localStorage.getItem("elevate_club_id") || null;
+  _clubId = localStorage.getItem("alttez_club_id") || null;
   return _clubId;
 }
 
 // Restaurar club_id al boot (sincrono, desde cache)
 try {
-  _clubId = localStorage.getItem("elevate_club_id") || null;
+  _clubId = localStorage.getItem("alttez_club_id") || null;
 } catch { /* noop */ }
 
 // ════════════════════════════════════════════════

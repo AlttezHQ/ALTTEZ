@@ -8,8 +8,11 @@
  * @version 1.0.0
  */
 
-const SCHEMA_KEY = "elevate_schema_version";
-const CURRENT_VERSION = "1.2.0";
+// v4+: la key del schema migra de elevate_ a alttez_
+// Al arrancar se lee la clave vieja primero (retrocompatibilidad) y luego la nueva.
+const LEGACY_SCHEMA_KEY = "elevate_schema_version";
+const SCHEMA_KEY = "alttez_schema_version";
+const CURRENT_VERSION = "2.0.0";
 
 /**
  * Registry de migraciones.
@@ -64,14 +67,74 @@ const MIGRATIONS = [
       };
     },
   },
+  {
+    from: "1.2.0",
+    to: "2.0.0",
+    /**
+     * v4 — Rebrand ALTTEZ (2026-04-01)
+     * Renombra TODAS las keys elevate_* a alttez_* en localStorage.
+     * Opera directamente sobre localStorage (no sobre data deserializada)
+     * porque este paso afecta keys que el motor de migraciones no serializa
+     * (mode, session, club_id, roles_v2, instructions, tacticas, healthSnapshots, schema_version).
+     * Los datos de athletes/historial/etc. son copiados via el ciclo generico.
+     * Las keys elevate_* son eliminadas al final.
+     */
+    migrate: (data) => {
+      // Prefijos a migrar
+      const PREFIX_OLD = "elevate_";
+      const PREFIX_NEW = "alttez_";
+
+      // Recopilar todas las keys elevate_* presentes
+      const keysToMigrate = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(PREFIX_OLD)) {
+          keysToMigrate.push(k);
+        }
+      }
+
+      // Copiar cada key al nuevo prefijo (si la nueva no existe ya)
+      keysToMigrate.forEach(oldKey => {
+        const newKey = PREFIX_NEW + oldKey.slice(PREFIX_OLD.length);
+        if (!localStorage.getItem(newKey)) {
+          const val = localStorage.getItem(oldKey);
+          if (val !== null) {
+            try { localStorage.setItem(newKey, val); } catch { /* quota */ }
+          }
+        }
+        // Eliminar la key vieja
+        localStorage.removeItem(oldKey);
+      });
+
+      // Migrar tambien la key del store Zustand (elevate-store → alttez-store)
+      const zustandOld = "elevate-store";
+      const zustandNew = "alttez-store";
+      if (!localStorage.getItem(zustandNew)) {
+        const val = localStorage.getItem(zustandOld);
+        if (val !== null) {
+          try { localStorage.setItem(zustandNew, val); } catch { /* quota */ }
+        }
+      }
+      localStorage.removeItem(zustandOld);
+
+      // Retornar data sin cambios — writeAllData se encarga de persistir
+      // athletes/historial/etc. con las nuevas keys alttez_
+      return data;
+    },
+  },
 ];
 
 /**
  * Lee la version actual del schema en localStorage.
+ * Busca primero en la key nueva (alttez_), luego en la legacy (elevate_).
  * @returns {string|null}
  */
 function getStoredVersion() {
-  return localStorage.getItem(SCHEMA_KEY) || null;
+  return (
+    localStorage.getItem(SCHEMA_KEY) ||
+    localStorage.getItem(LEGACY_SCHEMA_KEY) ||
+    null
+  );
 }
 
 /**
@@ -83,33 +146,38 @@ function setStoredVersion(version) {
 
 /**
  * Lee todos los datos actuales de localStorage.
+ * Fallback: si una key alttez_ no existe, intenta la key legacy elevate_.
+ * Esto permite que readAllData() funcione correctamente ANTES de la migración v4.
  */
 function readAllData() {
-  const read = (key, fallback) => {
-    try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; }
+  const read = (key, legacyKey, fallback) => {
+    try {
+      const r = localStorage.getItem(key) ?? localStorage.getItem(legacyKey);
+      return r ? JSON.parse(r) : fallback;
+    }
     catch { return fallback; }
   };
   return {
-    athletes: read("elevate_athletes", []),
-    historial: read("elevate_historial", []),
-    clubInfo: read("elevate_clubInfo", {}),
-    matchStats: read("elevate_matchStats", { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0 }),
-    finanzas: read("elevate_finanzas", { pagos:[], movimientos:[] }),
+    athletes:   read("alttez_athletes",   "elevate_athletes",   []),
+    historial:  read("alttez_historial",  "elevate_historial",  []),
+    clubInfo:   read("alttez_clubInfo",   "elevate_clubInfo",   {}),
+    matchStats: read("alttez_matchStats", "elevate_matchStats", { played:0, won:0, drawn:0, lost:0, goalsFor:0, goalsAgainst:0, points:0 }),
+    finanzas:   read("alttez_finanzas",   "elevate_finanzas",   { pagos:[], movimientos:[] }),
   };
 }
 
 /**
- * Escribe datos migrados de vuelta a localStorage.
+ * Escribe datos migrados de vuelta a localStorage usando las keys alttez_.
  */
 function writeAllData(data) {
   const write = (key, val) => {
     try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(`[migrationService] Quota exceeded writing ${key}:`, e.name); }
   };
-  write("elevate_athletes", data.athletes);
-  write("elevate_historial", data.historial);
-  write("elevate_clubInfo", data.clubInfo);
-  write("elevate_matchStats", data.matchStats);
-  write("elevate_finanzas", data.finanzas);
+  write("alttez_athletes",   data.athletes);
+  write("alttez_historial",  data.historial);
+  write("alttez_clubInfo",   data.clubInfo);
+  write("alttez_matchStats", data.matchStats);
+  write("alttez_finanzas",   data.finanzas);
 }
 
 /**
@@ -123,8 +191,8 @@ export function runMigrations() {
     return { migrated: false, from: storedVersion, to: CURRENT_VERSION, steps: 0 };
   }
 
-  // Si no hay datos (fresh install), solo setear version
-  const mode = localStorage.getItem("elevate_mode");
+  // Si no hay datos (fresh install): ninguna de las dos keys de modo existe
+  const mode = localStorage.getItem("alttez_mode") || localStorage.getItem("elevate_mode");
   if (!mode) {
     setStoredVersion(CURRENT_VERSION);
     return { migrated: false, from: null, to: CURRENT_VERSION, steps: 0 };

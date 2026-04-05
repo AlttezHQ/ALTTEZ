@@ -45,7 +45,7 @@
  *  PERSISTENCIA
  *  ------------
  *  Los snapshots se almacenan en localStorage con aislamiento por club:
- *    clave: "elevate_healthSnapshots_{clubId}"
+ *    clave: "alttez_healthSnapshots_{clubId}"
  *  Limite: MAX_SNAPSHOTS = 500 (FIFO, se eliminan los mas antiguos).
  *  En futuras versiones, se sincronizaran a Supabase para persistencia
  *  multi-dispositivo (planificado en v3.0 junto con ACWR).
@@ -62,7 +62,7 @@
 
 import { calcSaludActual } from "../utils/rpeEngine";
 
-const STORAGE_KEY_BASE = "elevate_healthSnapshots";
+const STORAGE_KEY_BASE = "alttez_healthSnapshots";
 const MAX_SNAPSHOTS = 500;
 
 let _onError = null;

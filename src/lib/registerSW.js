@@ -1,6 +1,6 @@
 /**
  * @module registerSW
- * @description Registra el Service Worker de Elevate Sports y emite eventos
+ * @description Registra el Service Worker de ALTTEZ y emite eventos
  * para que los componentes UI reaccionen a actualizaciones disponibles.
  *
  * Eventos emitidos:
