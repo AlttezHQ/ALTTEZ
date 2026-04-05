@@ -1,0 +1,870 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Planificacion from "./Planificacion";
+import { getAvatarUrl as PHOTO } from "../../shared/utils/helpers";
+import { PALETTE } from "../../shared/tokens/palette";
+import { sanitizeNote } from "../../shared/utils/sanitize";
+import EmptyState from "../../shared/ui/EmptyState";
+import { showToast } from "../../shared/ui/Toast";
+import { useStore } from "../../shared/store/useStore";
+import { calcStats, buildSesion } from "../../shared/services/storageService";
+import { takeHealthSnapshot } from "../../shared/services/healthService";
+import useSupabaseSync from "../../shared/hooks/useSupabaseSync";
+import WellnessCheckIn from "../../shared/ui/WellnessCheckIn";
+import { calcSaludActual } from "../../shared/utils/rpeEngine";
+import { getWellnessStatus } from "../../shared/types/wellnessTypes";
+
+// ── Inject responsive media queries once ────────────────────────────────────
+if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
+  const s = document.createElement("style");
+  s.id = "entrenamiento-responsive";
+  s.textContent = `
+    @media (max-width: 767px) {
+      .entrenamiento-grid { grid-template-columns: 1fr !important; }
+      .entrenamiento-controls { flex-direction: column !important; align-items: stretch !important; }
+      .entrenamiento-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
+      .entrenamiento-tabs > * { flex-shrink: 0; }
+    }
+    @media (max-width: 479px) {
+      .entrenamiento-rpe-bar { height: 3px !important; }
+    }
+    .ent-kpi-card { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important; }
+    .ent-kpi-card:hover { transform: translateY(-3px) scale(1.02) !important; box-shadow: 0 12px 36px rgba(0,0,0,0.6) !important; border-color: rgba(255,255,255,0.18) !important; }
+    .ent-session-header:hover { background: rgba(255,255,255,0.06) !important; }
+    .ent-athlete-rpe-row { transition: background 0.12s ease; }
+    .ent-athlete-rpe-row:hover { background: rgba(255,255,255,0.04) !important; }
+  `;
+  document.head.appendChild(s);
+}
+const RPE_COLOR = (v) => v <= 3 ? PALETTE.green : v <= 8 ? PALETTE.amber : PALETTE.danger;
+
+/* ── Helper: agrupa sesiones del historial por semana ISO ── */
+function groupByWeek(sessions) {
+  const weeks = [];
+  const weekMap = {};
+  sessions.forEach(s => {
+    const d = new Date(s.fecha);
+    if (isNaN(d.getTime())) {
+      const key = "unknown";
+      if (!weekMap[key]) { weekMap[key] = { key, label: "FECHA DESCONOCIDA", sessions: [] }; weeks.push(weekMap[key]); }
+      weekMap[key].sessions.push(s);
+      return;
+    }
+    const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    tmp.setUTCDate(tmp.getUTCDate() + 4 - (tmp.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+    const weekNum = Math.ceil(((tmp - yearStart) / 86400000 + 1) / 7);
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    const fmt = (dt) => dt.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
+    const key = `${mon.getFullYear()}-W${weekNum}`;
+    if (!weekMap[key]) {
+      weekMap[key] = { key, weekNum, label: `Semana ${weekNum} — ${fmt(mon)}-${fmt(sun)}`, sessions: [] };
+      weeks.push(weekMap[key]);
+    }
+    weekMap[key].sessions.push(s);
+  });
+  return weeks;
+}
+
+/* ── Keyframe CSS inyectada una sola vez para el pulso verde ── */
+if (typeof document !== "undefined" && !document.getElementById("alttez-pulse-kf")) {
+  const style = document.createElement("style");
+  style.id = "alttez-pulse-kf";
+  style.textContent = "@keyframes elv_pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.45)}}";
+  document.head.appendChild(style);
+}
+
+/* ── Colores por tipo de tarea (Feature C) ── */
+const TIPO_COLORS = {
+  "Táctica": PALETTE.purple,
+  "Físico": PALETTE.amber,
+  "Recuperación": PALETTE.green,
+  "Partido": PALETTE.danger,
+  "Partido interno": PALETTE.danger,
+};
+
+/* ── Mini sparkline de barras — SVG inline, sin librería ── */
+function MiniSparkBars({ values, color, height = 24, width = 52 }) {
+  if (!values || values.length === 0) return null;
+  const max = Math.max(...values, 1);
+  const n = values.length;
+  const barW = Math.floor((width - (n - 1) * 2) / n);
+  return (
+    <svg width={width} height={height} style={{ display:"block", flexShrink:0 }}>
+      {values.map((v, i) => {
+        const barH = Math.max(Math.round((v / max) * height), 2);
+        const x = i * (barW + 2);
+        const y = height - barH;
+        return (
+          <rect key={i} x={x} y={y} width={barW} height={barH} rx={1}
+            fill={color} opacity={i === n - 1 ? 1 : 0.35 + (i / n) * 0.35}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+export default function Entrenamiento({ clubId = "" }) {
+  const athletes = useStore(state => state.athletes);
+  const setAthletes = useStore(state => state.setAthletes);
+  const historial = useStore(state => state.historial);
+  const setHistorial = useStore(state => state.setHistorial);
+  const clubInfo = useStore(state => state.clubInfo);
+  const addWellnessLog = useStore(state => state.addWellnessLog);
+  const wellnessLogs = useStore(state => state.wellnessLogs);
+  const stats = calcStats(athletes, historial);
+  const { syncSession, syncHealthSnapshots } = useSupabaseSync();
+
+  const handleGuardar = (n, t) => {
+    const sesion = buildSesion(athletes, historial, n, t);
+    if (!sesion) {
+      showToast("No se pudo guardar la sesión — datos inválidos", "error");
+      return;
+    }
+    setHistorial([sesion, ...historial]);
+    const snapshots = takeHealthSnapshot(athletes, [sesion, ...historial], sesion.num);
+    showToast(`Sesión #${sesion.num} guardada correctamente`, "success");
+    syncSession(sesion);
+    if (snapshots?.length) syncHealthSnapshots(snapshots);
+  };
+
+  const [tab, setTab] = useState("sesion");
+  const [tipo, setTipo] = useState("Táctica");
+  const [nota, setNota] = useState("");
+  const [expandedHist, setExpandedHist] = useState(null);
+  const [collapsedWeeks, setCollapsedWeeks] = useState({});
+
+  /* ── Feature B: elapsed timer ── */
+  const [elapsed, setElapsed] = useState(0);
+  const sessionActive = athletes.some(a => a.status === "P" && a.rpe != null);
+
+  useEffect(() => {
+    if (!sessionActive) return;
+    const t0 = Date.now();
+    const iv = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    return () => clearInterval(iv);
+  }, [sessionActive]);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    };
+  }, []);
+
+  const fmtElapsed = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  /* ── Feature A: historial agrupado ── */
+  const weekGroups = useMemo(() => groupByWeek(historial), [historial]);
+
+  const toggleWeek = (key) => setCollapsedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
+
+  /* ── Feature C: estadísticas por tipo ── */
+  const tipoStats = useMemo(() => {
+    const counts = {};
+    const total = historial.length || 1;
+    historial.forEach(s => {
+      const t = s.tipo || "Sin tipo";
+      counts[t] = (counts[t] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }))
+      .sort((a, b) => b.count - a.count);
+  }, [historial]);
+
+  const setStatus = (i, s) => {
+    const u = [...athletes];
+    u[i] = { ...u[i], status: s, rpe: s !== "P" ? null : u[i].rpe };
+    setAthletes(u);
+  };
+
+  /** Verifica si un atleta está AUSENTE en el calendario RSVP para hoy */
+  const isRsvpAbsent = useCallback((athleteId) => {
+    if (!athleteId) return false;
+    const cid = clubId || "demo";
+    const today = new Date().toISOString().slice(0, 10);
+    // Buscar cualquier clave de ausencia para hoy
+    for (let k = 0; k < localStorage.length; k++) {
+      const key = localStorage.key(k);
+      if (key?.startsWith(`alttez_rsvp_absent_${cid}_`) && key.endsWith(`_${athleteId}`) && localStorage.getItem(key) === "1") {
+        // Extraer fecha del eventId para verificar si es hoy
+        if (key.includes(today)) return true;
+      }
+    }
+    return false;
+  }, [clubId]);
+
+  const setRpe = (i, val) => {
+    const a = athletes[i];
+    if (isRsvpAbsent(a?.id)) {
+      showToast("Deportista marcado como AUSENTE en el calendario. No es posible registrar RPE.", "warning");
+      return;
+    }
+    const u = [...athletes];
+    u[i] = { ...u[i], rpe: u[i].rpe === val ? null : val };
+    setAthletes(u);
+  };
+
+  const [wellnessTarget, setWellnessTarget] = useState(null); // { athlete, index }
+  const [healthFeedback, setHealthFeedback] = useState(null); // { athleteName, salud, riskLevel, color }
+  const feedbackTimerRef = useRef(null);
+
+  const handleWellnessSubmit = (log) => {
+    addWellnessLog(log);
+    const athlete = wellnessTarget?.athlete;
+    if (athlete) {
+      const result = calcSaludActual(athlete.rpe, historial, athlete.id);
+      setHealthFeedback({
+        athleteName: athlete.name.split(" ")[0],
+        salud: result.salud,
+        riskLevel: result.riskLevel,
+        color: result.color,
+      });
+      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+      feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
+    }
+    setWellnessTarget(null);
+  };
+
+  const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"6px 8px", fontSize:11, color:"white", fontFamily:"inherit", width:"100%", outline:"none" };
+
+  return (
+    <div>
+      {/* ── Feature B: SESIÓN ACTIVA — banner prominente ── */}
+      {sessionActive && (() => {
+        const presentes = athletes.filter(a => a.status === "P");
+        const conRpe = presentes.filter(a => a.rpe != null).length;
+        const sinRpe = presentes.length - conRpe;
+        const rpeAvg = conRpe > 0
+          ? (presentes.filter(a => a.rpe != null).reduce((s, a) => s + a.rpe, 0) / conRpe).toFixed(1)
+          : "—";
+        return (
+          <div style={{ background:"linear-gradient(135deg, rgba(29,158,117,0.15) 0%, rgba(29,158,117,0.05) 100%)", borderBottom:`2px solid ${PALETTE.green}`, padding:"12px 20px" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ position:"relative", width:14, height:14 }}>
+                  <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:PALETTE.green, animation:"elv_pulse 1.4s ease-in-out infinite" }} />
+                  <div style={{ position:"absolute", inset:2, borderRadius:"50%", background:PALETTE.green }} />
+                </div>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.green }}>
+                    Sesion en curso
+                  </div>
+                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>
+                    {tipo} · {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, fontFamily:"monospace", color:"white" }}>{fmtElapsed(elapsed)}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>Tiempo</div>
+                </div>
+                <div style={{ width:1, height:28, background:"rgba(255,255,255,0.1)" }} />
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, color:PALETTE.green }}>{conRpe}/{presentes.length}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE reg.</div>
+                </div>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:18, fontWeight:700, color: rpeAvg === "—" ? "rgba(255,255,255,0.3)" : PALETTE.amber }}>{rpeAvg}</div>
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE prom</div>
+                </div>
+                {sinRpe > 0 && (
+                  <div style={{ padding:"4px 10px", background:"rgba(239,159,39,0.15)", border:`1px solid ${PALETTE.amber}`, fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.amber }}>
+                    {sinRpe} sin RPE
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* MÉTRICAS */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:2 }}>
+        {[
+          { label:"Presentes", value:stats.presentes, color:PALETTE.green, border:PALETTE.green },
+          { label:"Ausentes", value:stats.ausentes, color:PALETTE.danger, border:PALETTE.danger },
+          { label:"RPE promedio", value:stats.rpeAvg, color:PALETTE.amber, border:PALETTE.amber },
+          { label:"Sesión", value:`#${(historial[0]?.num || 0) + 1}`, color:PALETTE.purple, border:PALETTE.purple },
+        ].map((m,i) => (
+          <div key={i} style={{ padding:"12px 16px", background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${m.border}`, border:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"default" }}>
+            <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1 }}>{m.value}</div>
+            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)" }}>{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* SUBTABS */}
+      <div className="entrenamiento-tabs" style={{ display:"flex", alignItems:"stretch", height:36, background:"rgba(8,8,14,0.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, padding:"0 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
+        {[["sesion","Sesión de hoy"],["planificacion","Planificación"],["historial","Historial"],["analisis","Análisis"]].map(([k,l]) => (
+          <div key={k} onClick={() => setTab(k)} style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", color: tab===k ? PALETTE.green : PALETTE.textMuted, display:"flex", alignItems:"center", padding:"0 14px", cursor:"pointer", borderBottom: tab===k ? `2px solid ${PALETTE.green}` : "2px solid transparent", background: tab===k ? "rgba(29,158,117,0.06)" : "transparent", boxShadow: tab===k ? `inset 0 -2px 8px rgba(29,158,117,0.15)` : "none", transition:"color 0.15s,background 0.15s" }}>
+            {l}
+          </div>
+        ))}
+        {tab === "sesion" && (
+          <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8, padding:"0 8px" }}>
+            <div style={{ fontSize:10, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1px" }}>
+              {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
+            </div>
+            <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{ ...inp, width:"auto", fontSize:10, padding:"3px 8px" }}>
+              {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
+            </select>
+            <div onClick={() => handleGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"#08080E", fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
+              Cerrar sesion →
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* SESIÓN DE HOY — CARTAS */}
+      {tab === "sesion" && (
+        <div style={{ padding:16 }}>
+          {athletes.length === 0 ? (
+            <EmptyState
+              icon={
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              }
+              title="Plantilla lista para el registro"
+              subtitle="Ajusta el estado de cada deportista (P/A/L) y registra el RPE para activar el seguimiento de carga"
+              compact
+            />
+          ) : (
+          <>
+          <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.25)", marginBottom:12 }}>
+            Marca el estado de cada deportista y registra la percepcion de esfuerzo (RPE)
+          </div>
+          <div className="entrenamiento-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
+            {athletes.map((a, i) => {
+              const presente = a.status === "P";
+              const ausente = a.status === "A";
+              const lesionado = a.status === "L";
+              const borderColor = presente ? PALETTE.green : ausente ? PALETTE.danger : lesionado ? PALETTE.amber : PALETTE.border;
+              const bgColor = presente ? "linear-gradient(135deg,rgba(4,32,20,0.97),rgba(2,18,12,0.98))" : ausente ? "linear-gradient(135deg,rgba(32,4,4,0.97),rgba(18,2,2,0.98))" : lesionado ? "linear-gradient(135deg,rgba(32,18,4,0.97),rgba(18,10,2,0.98))" : "linear-gradient(135deg,rgba(14,20,14,0.97),rgba(8,12,8,0.98))";
+              const opacity = ausente || lesionado ? 0.72 : 1;
+              const photoBg = ausente || lesionado ? "555" : "059669";
+              return (
+                <div key={a.id} style={{ cursor:"pointer", opacity }}>
+                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden", boxShadow:`0 4px 16px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03),inset 0 1px 0 rgba(255,255,255,0.04)`, borderRadius:6 }}>
+                    <div style={{ height:4, background:borderColor }}/>
+                    <div style={{ position:"relative" }}>
+                      <img src={PHOTO(a.photo, photoBg)} alt="" style={{ width:"100%", height:80, objectFit:"cover", objectPosition:"top", display:"block" }}/>
+                      {(ausente || lesionado) && (
+                        <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          <div style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:"1.5px", padding:"3px 8px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente?"rgba(226,75,74,0.1)":"rgba(239,159,39,0.1)" }}>
+                            {ausente ? "Ausente" : "Lesionado"}
+                          </div>
+                        </div>
+                      )}
+                      {presente && (
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setWellnessTarget({ athlete: a, index: i }); }}
+                          style={{
+                            position: "absolute",
+                            top: 4,
+                            right: 4,
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            background: "rgba(124,58,237,0.85)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            fontSize: 10,
+                            zIndex: 2,
+                          }}
+                          title="Check-in Wellness"
+                        >
+                          ✚
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding:"6px 8px 4px" }}>
+                      <div style={{ fontSize:10, fontWeight:500, color:"white", textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{a.name.split(" ")[0]} {a.name.split(" ")[1]?.[0]}.</div>
+                      <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>{a.posCode}</div>
+                    </div>
+                    <div style={{ display:"flex", gap:1, padding:"0 6px 6px" }}>
+                      {[["P",PALETTE.green,"white"],["A",PALETTE.danger,"white"],["L",PALETTE.amber,"#1a0f00"]].map(([s,bg,tc]) => (
+                        <div key={s} onClick={() => setStatus(i, s)} style={{ flex:1, fontSize:8, padding:"3px 0", textAlign:"center", cursor:"pointer", textTransform:"uppercase", background: a.status===s ? bg : "rgba(255,255,255,0.05)", color: a.status===s ? tc : "rgba(255,255,255,0.3)" }}>
+                          {s}
+                        </div>
+                      ))}
+                    </div>
+                    {presente && (
+                      <div style={{ padding:"4px 6px 8px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:7, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1px", marginBottom:4 }}>
+                          <span>RPE</span>
+                          <span style={{ color: a.rpe ? RPE_COLOR(a.rpe) : "rgba(255,255,255,0.25)" }}>{a.rpe || "—"}</span>
+                        </div>
+                        <div style={{ display:"flex", gap:2 }}>
+                          {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                            const rpeGrad = n <= 3 ? "linear-gradient(135deg,#1d9e75,#059669)" : n <= 7 ? "linear-gradient(135deg,#ef9f27,#d97706)" : "linear-gradient(135deg,#e24b4a,#dc2626)";
+                            return (
+                              <div key={n} onClick={() => setRpe(i,n)} style={{ flex:1, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, cursor:"pointer", background: a.rpe===n ? rpeGrad : "rgba(255,255,255,0.06)", color: a.rpe===n ? "white" : "rgba(255,255,255,0.3)", border:`1px solid ${a.rpe===n ? RPE_COLOR(n) : "rgba(255,255,255,0.08)"}`, boxShadow: a.rpe===n ? `0 0 6px ${RPE_COLOR(n)}66` : "none", fontWeight: a.rpe===n ? 700 : 400, transition:"background 120ms,box-shadow 120ms" }}>
+                                {n}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px", boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
+            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Observaciones tecnicas: objetivos trabajados, incidencias o directivas para el cuerpo tecnico..." rows={2} style={{ ...inp, background:"transparent", border:"none", resize:"none", lineHeight:1.6 }} maxLength={500}/>
+          </div>
+          </>
+          )}
+        </div>
+      )}
+
+      {tab === "planificacion" && (
+        <Planificacion athletes={athletes} clubInfo={clubInfo} sessionCount={historial.length} />
+      )}
+
+      {/* ── Feature A: Historial agrupado por semana/microciclo ── */}
+      {tab === "historial" && (
+        <div style={{ padding:16 }}>
+          {weekGroups.length === 0 && (
+            <EmptyState
+              icon={
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#8B5CF6" strokeWidth="1.8"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
+              }
+              title="Sin microciclos registrados"
+              subtitle="Cuando registres tu primera sesion, el historial de carga comenzara a construirse aqui por semana"
+              compact
+            />
+          )}
+          {weekGroups.map(week => {
+            const isCollapsed = !!collapsedWeeks[week.key];
+            const weekRpeAvg = week.sessions.filter(s => s.rpeAvg != null).length > 0
+              ? (week.sessions.reduce((sum, s) => sum + (s.rpeAvg || 0), 0) / week.sessions.filter(s => s.rpeAvg != null).length).toFixed(1)
+              : "—";
+            return (
+              <div key={week.key} style={{ marginBottom:8 }}>
+                {/* Week header */}
+                <div
+                  onClick={() => toggleWeek(week.key)}
+                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:"linear-gradient(135deg,rgba(124,58,237,0.12),rgba(124,58,237,0.04))", borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2, boxShadow:"0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)", borderRadius:"0 6px 6px 0" }}
+                >
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:600, color:PALETTE.purple, textTransform:"uppercase", letterSpacing:"1.5px" }}>
+                      {week.label}
+                    </div>
+                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px", marginTop:2 }}>
+                      {week.sessions.length} sesión{week.sessions.length !== 1 ? "es" : ""} · RPE prom: {weekRpeAvg}
+                    </div>
+                  </div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{isCollapsed ? "▶" : "▼"}</div>
+                </div>
+                {/* Sessions inside week */}
+                {!isCollapsed && week.sessions.map((s, i) => {
+                  const globalIdx = `${week.key}-${i}`;
+                  const isExpanded = expandedHist === globalIdx;
+                  const asistPct = s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0;
+                  const rpeNum = Number(s.rpeAvg);
+                  const rpeColor = isNaN(rpeNum) ? "rgba(255,255,255,0.3)" : rpeNum <= 3 ? PALETTE.green : rpeNum <= 7 ? PALETTE.amber : PALETTE.danger;
+                  const tipoColor = TIPO_COLORS[s.tipo] || "rgba(255,255,255,0.4)";
+
+                  // Atletas con RPE individual guardado en la sesion
+                  const rpeEntries = s.rpeByAthlete ? Object.entries(s.rpeByAthlete) : [];
+
+                  return (
+                    <div key={globalIdx} style={{ marginLeft:12 }}>
+                      {/* Session row header */}
+                      <div
+                        className="ent-session-header"
+                        onClick={() => setExpandedHist(isExpanded ? null : globalIdx)}
+                        style={{
+                          background:"rgba(0,0,0,0.6)",
+                          border:"1px solid rgba(255,255,255,0.07)",
+                          borderLeft:`3px solid ${tipoColor}`,
+                          padding:"12px 16px",
+                          display:"flex",
+                          justifyContent:"space-between",
+                          alignItems:"center",
+                          marginBottom:2,
+                          cursor:"pointer",
+                          transition:"background 0.15s ease",
+                        }}
+                      >
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                            <div style={{ fontSize:13, fontWeight:600, color:"white" }}>Sesion #{s.num} — {s.fecha}</div>
+                            <div style={{ fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:tipoColor, padding:"2px 6px", border:`1px solid ${tipoColor}33`, borderRadius:4 }}>{s.tipo || "Sin tipo"}</div>
+                          </div>
+                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:3, display:"flex", gap:12 }}>
+                            <span>{s.presentes}/{s.total} presentes ({asistPct}%)</span>
+                            <span>RPE: <span style={{ color:rpeColor, fontWeight:600 }}>{s.rpeAvg ?? "—"}</span></span>
+                          </div>
+                        </div>
+                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginLeft:12 }}>{isExpanded ? "▲" : "▼"}</div>
+                      </div>
+
+                      {/* Expanded: reporte de sesion completo */}
+                      {isExpanded && (
+                        <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderLeft:`3px solid ${tipoColor}33`, padding:16, marginBottom:4, marginLeft:0 }}>
+
+                          {/* Fila de stats de sesion */}
+                          <div style={{ display:"flex", gap:20, marginBottom:16, flexWrap:"wrap" }}>
+                            {[
+                              { lbl:"Tipo", val: s.tipo || "Sin tipo", color: tipoColor },
+                              { lbl:"Asistencia", val: `${asistPct}%`, color: asistPct >= 75 ? PALETTE.green : PALETTE.amber },
+                              { lbl:"RPE promedio", val: s.rpeAvg ?? "—", color: rpeColor },
+                              { lbl:"Presentes", val: `${s.presentes}/${s.total}`, color: "white" },
+                            ].map((stat, si) => (
+                              <div key={si}>
+                                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:3 }}>{stat.lbl}</div>
+                                <div style={{ fontSize:15, fontWeight:700, color:stat.color }}>{stat.val}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Observaciones / nota */}
+                          <div style={{ marginBottom: rpeEntries.length > 0 ? 16 : 0 }}>
+                            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:6 }}>Observaciones</div>
+                            <div style={{ fontSize:12, color: s.nota ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)", fontStyle: s.nota ? "normal" : "italic", lineHeight:1.5 }}>
+                              {s.nota || "Sin observaciones registradas."}
+                            </div>
+                          </div>
+
+                          {/* RPE individual por atleta */}
+                          {rpeEntries.length > 0 && (
+                            <div>
+                              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:8 }}>RPE individual</div>
+                              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))", gap:6 }}>
+                                {rpeEntries
+                                  .sort((a, b) => Number(b[1]) - Number(a[1]))
+                                  .map(([athleteId, rpe]) => {
+                                    const athlete = athletes.find(a => String(a.id) === String(athleteId));
+                                    const rpeVal = Number(rpe);
+                                    const barColor = rpeVal <= 3 ? PALETTE.green : rpeVal <= 7 ? PALETTE.amber : PALETTE.danger;
+                                    return (
+                                      <div
+                                        key={athleteId}
+                                        className="ent-athlete-rpe-row"
+                                        style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", borderRadius:6, background:"rgba(0,0,0,0.3)" }}
+                                      >
+                                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                          {athlete ? athlete.name : `#${athleteId}`}
+                                        </div>
+                                        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                                          <div style={{ width:40, height:3, background:"rgba(255,255,255,0.08)", borderRadius:2, overflow:"hidden" }}>
+                                            <div style={{ height:"100%", width:`${(rpeVal / 10) * 100}%`, background:barColor }} />
+                                          </div>
+                                          <div style={{ fontSize:11, fontWeight:700, color:barColor, width:14, textAlign:"right" }}>{rpeVal}</div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Guardado en */}
+                          {s.savedAt && (
+                            <div style={{ marginTop:12, fontSize:9, color:"rgba(255,255,255,0.15)" }}>
+                              Guardado: {new Date(s.savedAt).toLocaleString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── ANÁLISIS tab — datos reales desde localStorage/historial ── */}
+      {tab === "analisis" && (() => {
+        /* Metricas calculadas desde datos reales */
+        const totalSesiones = historial.length;
+        const sesionesConRpe = historial.filter(s => s.rpeAvg != null && s.rpeAvg !== "—");
+        const rpeGlobal = sesionesConRpe.length > 0
+          ? (sesionesConRpe.reduce((s, h) => s + Number(h.rpeAvg), 0) / sesionesConRpe.length).toFixed(1)
+          : "—";
+        const picoRpe = sesionesConRpe.length > 0
+          ? Math.max(...sesionesConRpe.map(h => Number(h.rpeAvg))).toFixed(1)
+          : "—";
+        const asistenciaGlobal = totalSesiones > 0
+          ? Math.round((historial.reduce((s, h) => s + h.presentes, 0) / historial.reduce((s, h) => s + h.total, 0)) * 100)
+          : 0;
+
+        /* Agrupacion tecnico vs fisico con RPE promedio por categoria */
+        const categorias = {
+          "Tecnico/Tactico": { tipos: ["Táctica", "Tactica"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.purple },
+          "Fisico":          { tipos: ["Físico", "Fisico"],   count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.amber },
+          "Competitivo":     { tipos: ["Partido", "Partido interno"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.danger },
+          "Recuperacion":    { tipos: ["Recuperación", "Recuperacion"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.green },
+        };
+        historial.forEach(s => {
+          for (const [, cfg] of Object.entries(categorias)) {
+            if (cfg.tipos.includes(s.tipo)) {
+              cfg.count++;
+              if (s.rpeAvg != null && s.rpeAvg !== "—") { cfg.rpeSum += Number(s.rpeAvg); cfg.rpeN++; }
+              break;
+            }
+          }
+        });
+        const maxCount = Math.max(...Object.values(categorias).map(c => c.count), 1);
+
+        // Sparkline data: ultimas 8 sesiones para tendencia visual
+        const last8 = historial.slice(0, 8).reverse();
+        const sparkAsist = last8.map(s => s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0);
+        const sparkRpeArr = last8.map(s => Number(s.rpeAvg) || 0);
+        const sparkSesiones = last8.map((_, i) => i + 1);
+
+        const kpiItems = [
+          {
+            label: "Asistencia promedio",
+            value: asistenciaGlobal + "%",
+            color: PALETTE.green,
+            spark: sparkAsist,
+            hint: asistenciaGlobal >= 80 ? "Excelente nivel" : asistenciaGlobal >= 60 ? "Nivel aceptable" : "Mejorar asistencia",
+          },
+          {
+            label: "RPE promedio",
+            value: rpeGlobal,
+            color: rpeGlobal !== "—" ? (Number(rpeGlobal) <= 4 ? PALETTE.green : Number(rpeGlobal) <= 7 ? PALETTE.amber : PALETTE.danger) : "rgba(255,255,255,0.4)",
+            spark: sparkRpeArr,
+            hint: "Carga promedio del ciclo",
+          },
+          {
+            label: "Pico RPE",
+            value: picoRpe,
+            color: picoRpe !== "—" ? (Number(picoRpe) <= 6 ? PALETTE.amber : PALETTE.danger) : "rgba(255,255,255,0.4)",
+            spark: sparkRpeArr.map(v => v > 0 ? v : 0),
+            hint: "Sesion de mayor carga",
+          },
+          {
+            label: "Sesiones totales",
+            value: totalSesiones,
+            color: "white",
+            spark: sparkSesiones,
+            hint: `${totalSesiones} sesion${totalSesiones !== 1 ? "es" : ""} registrada${totalSesiones !== 1 ? "s" : ""}`,
+          },
+        ];
+
+        return (
+          <div style={{ padding:16 }}>
+            {/* KPIs interactivas con sparklines */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, marginBottom:16 }}>
+              {kpiItems.map((m, i) => (
+                <div
+                  key={i}
+                  className="ent-kpi-card"
+                  onClick={() => setTab("historial")}
+                  style={{
+                    background:"rgba(255,255,255,0.03)",
+                    backdropFilter:"blur(16px)",
+                    WebkitBackdropFilter:"blur(16px)",
+                    border:`1px solid ${PALETTE.border}`,
+                    borderRadius:12,
+                    padding:14,
+                    boxShadow:"0 8px 32px rgba(0,0,0,0.4)",
+                    cursor:"pointer",
+                    position:"relative",
+                    overflow:"hidden",
+                  }}
+                >
+                  {/* Ambient glow */}
+                  <div style={{ position:"absolute", top:-16, right:-16, width:60, height:60, borderRadius:"50%", background: m.color === "white" ? "rgba(255,255,255,0.6)" : m.color, opacity:0.05, filter:"blur(16px)", pointerEvents:"none" }} />
+                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
+                  <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1, marginBottom:8 }}>{m.value}</div>
+                  <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:4 }}>
+                    <div style={{ fontSize:8, color:"rgba(255,255,255,0.22)", lineHeight:1.3, flex:1 }}>{m.hint}</div>
+                    {m.spark.length > 1 && (
+                      <MiniSparkBars values={m.spark} color={m.color === "white" ? "rgba(255,255,255,0.7)" : m.color} />
+                    )}
+                  </div>
+                  <div style={{ marginTop:10, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.05)", fontSize:8, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px" }}>
+                    Ver historial →
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Grafico de barras verticales: Tecnico vs Fisico vs Competitivo vs Recuperacion */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+              <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:16 }}>
+                  Distribucion por categoria
+                </div>
+                <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
+                  {Object.entries(categorias).map(([cat, cfg]) => {
+                    const h = maxCount > 0 ? Math.max((cfg.count / maxCount) * 100, cfg.count > 0 ? 8 : 0) : 0;
+                    return (
+                      <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
+                        <div style={{ fontSize:12, fontWeight:700, color: cfg.color, marginBottom:4 }}>{cfg.count}</div>
+                        <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: cfg.color, minHeight: cfg.count > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0" }} />
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* RPE promedio por categoria */}
+              <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
+                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:16 }}>
+                  RPE promedio por categoria
+                </div>
+                <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
+                  {Object.entries(categorias).map(([cat, cfg]) => {
+                    const avg = cfg.rpeN > 0 ? (cfg.rpeSum / cfg.rpeN) : 0;
+                    const h = avg > 0 ? Math.max((avg / 10) * 100, 8) : 0;
+                    const rpeColor = avg <= 3 ? PALETTE.green : avg <= 7 ? PALETTE.amber : PALETTE.danger;
+                    return (
+                      <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
+                        <div style={{ fontSize:12, fontWeight:700, color: rpeColor, marginBottom:4 }}>{avg > 0 ? avg.toFixed(1) : "—"}</div>
+                        <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: rpeColor, minHeight: avg > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0", opacity: avg > 0 ? 1 : 0.2 }} />
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Barras horizontales por tipo detallado */}
+            <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
+              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:14 }}>
+                Detalle por tipo de tarea
+              </div>
+              {tipoStats.length === 0 && (
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:16 }}>Sin datos</div>
+              )}
+              {tipoStats.map(t => {
+                const color = TIPO_COLORS[t.name] || "rgba(255,255,255,0.4)";
+                return (
+                  <div key={t.name} style={{ marginBottom:10 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
+                      <div style={{ fontSize:11, fontWeight:500, color:"white", textTransform:"uppercase", letterSpacing:"0.8px" }}>{t.name}</div>
+                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.45)" }}>
+                        {t.count} sesion{t.count !== 1 ? "es" : ""} · <span style={{ color, fontWeight:600 }}>{t.pct}%</span>
+                      </div>
+                    </div>
+                    <div style={{ width:"100%", height:6, background:"rgba(255,255,255,0.06)" }}>
+                      <div style={{ width:`${t.pct}%`, height:"100%", background:color, transition:"width 0.4s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Wellness Check-in Overlay ── */}
+      <AnimatePresence>
+        {wellnessTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.7)",
+              backdropFilter: "blur(6px)",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onClick={() => setWellnessTarget(null)}
+          >
+            <div onClick={e => e.stopPropagation()}>
+              <WellnessCheckIn
+                athleteId={wellnessTarget.athlete.id}
+                athleteName={wellnessTarget.athlete.name}
+                clubId={clubId}
+                onSubmit={handleWellnessSubmit}
+                onClose={() => setWellnessTarget(null)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Health Feedback Toast ── */}
+      <AnimatePresence>
+        {healthFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 420, damping: 30 }}
+            style={{
+              position: "fixed",
+              bottom: 24,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(8,8,20,0.95)",
+              backdropFilter: "blur(20px)",
+              border: `1px solid ${healthFeedback.color}44`,
+              borderRadius: 12,
+              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              zIndex: 10000,
+              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${healthFeedback.color}22`,
+              minWidth: 240,
+            }}
+          >
+            {/* Health gauge mini */}
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: "50%",
+              border: `3px solid ${healthFeedback.color}`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              background: `${healthFeedback.color}12`,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: healthFeedback.color, lineHeight: 1 }}>
+                {healthFeedback.salud}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "white" }}>
+                {healthFeedback.athleteName} — Bateria actualizada
+              </div>
+              <div style={{ fontSize: 9, color: healthFeedback.color, textTransform: "uppercase", letterSpacing: "1px", marginTop: 2 }}>
+                {healthFeedback.riskLevel === "optimo" ? "Estado optimo" :
+                 healthFeedback.riskLevel === "precaucion" ? "Precaucion" :
+                 healthFeedback.riskLevel === "riesgo" ? "En riesgo" : "Sin datos"}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

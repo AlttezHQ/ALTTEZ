@@ -1,64 +1,8 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   ALTTEZ — Global Stylesheet
+   ELEVATE SPORTS — Global Stylesheet
    Responsive-first: fluid typography, safe areas, touch targets
    Breakpoints: xs(0-479) | sm(480-767) | md(768-1023) | lg(1024+)
 ───────────────────────────────────────────────────────────────────────────── */
-
-/* ── Google Fonts: Plus Jakarta Sans — ALTTEZ Enterprise SaaS typeface ──── */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
-
-/* ── ALTTEZ Design Tokens ────────────────────────────────────────────────── */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Configuración base para el look futurista */
-body {
-  background-color: #000000;
-  color: #ffffff;
-  margin: 0;
-  font-family: 'Inter', sans-serif; /* O la que uses */
-  -webkit-font-smoothing: antialiased;
-}
-:root {
-  /* Backgrounds */
-  --alz-bg-base:    #000000;
-  --alz-bg-surface: #0D0D0D;
-  --alz-bg-raised:  #111111;
-  --alz-bg-overlay: #161616;
-
-  /* Grays */
-  --alz-gray-700:   #252525;   /* bordes */
-  --alz-gray-600:   #333333;   /* bordes hover */
-  --alz-gray-500:   #555555;   /* iconos secundarios */
-  --alz-gray-400:   #888888;   /* texto secundario */
-  --alz-gray-300:   #AAAAAA;   /* texto apoyo */
-  --alz-gray-200:   #CCCCCC;   /* labels */
-  --alz-gray-100:   #E8E8E8;   /* texto jerarquía alta */
-  --alz-white:      #FFFFFF;
-
-  /* Acentos — Enterprise SaaS blue (Teamworks reference) */
-  --alz-accent:     #1A6AFF;   /* azul enterprise — acento único */
-  --alz-blue:       #1A6AFF;   /* azul estructural (unificado con accent) */
-  --alz-blue-dim:   rgba(26, 106, 255, 0.12);
-
-  /* Semánticos */
-  --alz-success:    #22C55E;
-  --alz-warning:    #F59E0B;
-  --alz-danger:     #EF4444;
-
-  /* Radius scale — Minimalism Swiss */
-  --alz-radius-sm:  4px;
-  --alz-radius-md:  6px;
-  --alz-radius-lg:  8px;
-
-  /* Border */
-  --alz-border:     #1C1C1C;
-
-  /* Surface scale */
-  --alz-surface-2:  #0D0D0D;
-  --alz-surface-3:  #161616;
-}
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
 *,
@@ -78,13 +22,13 @@ html {
 }
 
 body {
-  background: var(--alz-bg-base);
-  color: var(--alz-white);
+  background: #060d06;
+  color: white;
   /* Fluid base font: 13px at 320px → 15px at 1200px */
   font-size: clamp(13px, 0.8125rem + 0.25vw, 15px);
-  /* Plus Jakarta Sans is the ALTTEZ enterprise typeface — pesos: 300/400/500/600/700.
-     Permitted exceptions: monospace (timers/clocks), Courier New (raw CSV/code) */
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* 'Arial Narrow' is the design-system typeface for the entire ALTTEZ app shell.
+     Barlow Condensed (portal pages) and monospace (timer/CSV) are the only permitted overrides. */
+  font-family: 'Arial Narrow', Arial, sans-serif;
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport on iOS Safari */
   /* Smooth momentum scrolling on iOS */
@@ -123,9 +67,9 @@ select option {
   outline: none;
 }
 
-/* Keyboard-only focus ring — ALTTEZ blue accent, accessible contrast */
+/* Keyboard-only focus ring — neon green at low opacity, accessible contrast */
 :focus-visible {
-  outline: 2px solid var(--alz-accent);
+  outline: 2px solid rgba(57, 255, 20, 0.5);
   outline-offset: 2px;
 }
 
@@ -180,7 +124,7 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
   --safe-right:  env(safe-area-inset-right,  0px);
 
   /* ── Typography scale (app shell) ─────────────────────────────────────────
-     Font family: 'Manrope', system-ui, -apple-system, sans-serif (set on body — do NOT override)
+     Font family: 'Arial Narrow', Arial, sans-serif (set on body — do NOT override)
      Permitted exceptions: monospace (timers/clocks), Courier New (raw CSV/code)
      Portal pages (/portal/*) may use Barlow Condensed / Barlow (loaded in index.html)
   ── */
@@ -327,13 +271,3 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
 .touch-pan-y   { touch-action: pan-y; }
 .touch-manip   { touch-action: manipulation; }
 .touch-pinch   { touch-action: pinch-zoom; }
-
-/* ── Reduced motion — accessibility (WCAG 2.3.3) ────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration:   0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration:  0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}

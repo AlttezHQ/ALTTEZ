@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import LandingPage from '../components/LandingPage';
+import LandingPage from "../shared/auth/LandingPage";
 
 // LandingPage usa useNavigate → necesita un Router provider
 const renderWithRouter = (ui) =>

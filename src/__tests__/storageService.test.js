@@ -4,7 +4,7 @@
  * @author @QA (Sara)
  */
 import { describe, it, expect } from "vitest";
-import { calcStats, buildSesion } from "../services/storageService";
+import { calcStats, buildSesion } from "../shared/services/storageService";
 
 describe("calcStats", () => {
   it("calcula stats correctamente con datos", () => {
