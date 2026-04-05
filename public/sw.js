@@ -1,11 +1,11 @@
 /**
- * Service Worker — Elevate Sports
+ * Service Worker — ALTTEZ
  * Strategy: Cache-first for assets, Network-first for API/HTML
  *
  * Versión: Bump CACHE_NAME to force update propagation.
  */
 
-const CACHE_NAME = "elevate-v1";
+const CACHE_NAME = "alttez-v1";
 
 // Assets to pre-cache on install
 const PRECACHE_URLS = [

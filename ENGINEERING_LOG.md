@@ -1,6 +1,206 @@
-# ENGINEERING LOG — Elevate Sports
+# ENGINEERING LOG — ALTTEZ
 
 > Diario de a bordo del equipo de ingeniería.
+
+---
+
+## 2026-04-04 — UI/UX Overhaul: Gaming → Enterprise SaaS (Teamworks Reference)
+**Directive from**: Julián
+**Status**: ✅ COMPLETO — Fases 1–4 ejecutadas. Listo para QA (@Sara)
+
+### Context
+La plataforma opera actualmente bajo una estética gaming/FIFA con:
+- Acento amarillo neon `#E8E847` (alias `PALETTE.neon`) como color principal
+- Efectos: glow pulsante, audio Web Audio API, scale + neon boxShadow en tiles
+- Imágenes de fondo con filtros de saturación/brillo dinámicos en Home
+- Fuente: Inter (400–900)
+
+El objetivo es migrar a un SaaS enterprise profesional con referencia directa a Teamworks:
+- Acento único: Azul `#1A6AFF` — reemplaza el amarillo neon en TODO el codebase
+- Fuente: Manrope (pesos 400, 600, 700, 800) desde Google Fonts
+- Anti-patterns eliminados: neon glows, gaming audio, scale glow en hover, PALETTE.purple como acento secundario
+- Filosofía: editorial, monochrome base + functional blue accent, border-radius 8–14px
+
+### Scope Analysis — Hallazgos críticos
+
+**palette.js**: El token `accent` apunta a `#E8E847`. Existen 4 aliases legacy (`neon`, `neonGlow`, `neonDim`, `neonBorder`) que siguen apuntando al amarillo — esos aliases son los que usa LandingPage y Home activamente. El token `blue` existe pero apunta a `#2563EB` (Tailwind blue-600), no al `#1A6AFF` de Teamworks.
+
+**index.css**: `--alz-accent: #E8E847`, `--alz-blue: #2563EB`, font-family Inter en body. El token `--alz-accent` se usa en `:focus-visible` outline.
+
+**LandingPage.jsx**: Usa `PALETTE.neon` (amarillo) en: botón Demo (tag, border, CTA), botón Login link, label "Cuenta de acceso", botón submit principal del register form. Usa `PALETTE.purple` (undefined — bug latente, fallback a undefined) en: card Registro, checkbox accentColor, link "Incorporar club". Contiene keyframes `ldg_glow` con `rgba(232,232,71,...)` hardcodeados.
+
+**Home.jsx**: Usa `PALETTE.neon` en: iconos SVG, navItem active border, clubLogo border+color, metricBlock gradiente y border, métrica value color, tag color, btn background, ghostBtn border+color, boxShadow del tile en hover (neonGlow), STATS "Puntos" color, EVENT_COLORS match color. Contiene `useGameAudio()` con Web Audio API (woosh FIFA + ding metálico) — ELIMINAR. Contiene `"ElevateSports"` como texto en topbar brand (bug rebrand residual en L459).
+
+### Plan de Ejecución
+
+#### Fase 1 — Design Tokens (FUNDACIÓN) — @Carlos ejecuta directo
+**Archivos**: `src/constants/palette.js` + `src/index.css`
+
+Cambios en palette.js:
+- `accent` → `#1A6AFF`
+- `accentGlow` → `rgba(26,106,255,0.35)`
+- `accentDim` → `rgba(26,106,255,0.08)`
+- `accentBorder` → `rgba(26,106,255,0.22)`
+- `blue` → `#1A6AFF` (unificar con accent — mismo valor)
+- `blueDim` → `rgba(26,106,255,0.12)`
+- `blueBorder` → `rgba(26,106,255,0.28)`
+- Aliases legacy `neon*` → redirigen a los nuevos tokens azules (no eliminar hasta que Home/Landing sean migrados)
+- `drag` → `#1A6AFF`
+- `dragDim` → `rgba(26,106,255,0.18)`
+- Eliminar duplicado `textMuted` (línea 76 repite el key del objeto)
+
+Cambios en index.css:
+- Import Google Fonts: Manrope 400,600,700,800 (reemplazar Inter)
+- `font-family` en body: 'Manrope', system-ui, -apple-system, sans-serif
+- `--alz-accent` → `#1A6AFF`
+- `--alz-blue` → `#1A6AFF`
+- `--alz-blue-dim` → `rgba(26,106,255,0.12)`
+- Actualizar comentario del token tipográfico (Inter → Manrope)
+
+#### Fase 2 — LandingPage Enterprise Redesign — @Andres
+**Archivo**: `src/components/LandingPage.jsx`
+
+Cambios requeridos:
+1. Eliminar keyframes `ldg_glow` con amarillo hardcodeado — reemplazar con versión azul o sin glow
+2. Reemplazar todas las referencias `PALETTE.neon` → `PALETTE.accent`
+3. Reemplazar todas las referencias `PALETTE.purple` → `PALETTE.accent` (o `PALETTE.textSub` para elementos secundarios)
+4. Estética de los cards: `borderTop` azul, hover shadow azul, btn sólido azul (no amarillo)
+5. Botón submit register: background `PALETTE.accent` (#1A6AFF), color `white` (no `#0a0a0a`)
+6. Checkboxes `accentColor`: `PALETTE.accent`
+7. Subtitulo "Cuenta de acceso": color `PALETTE.accent`
+8. Sección consentimiento: color `PALETTE.accent` (no purple)
+9. Tipografía del logo ALTTEZ: mantener 900 weight — Manrope lo soporta
+10. Fondo de página: `radial-gradient(ellipse at 50% 30%, rgba(26,106,255,0.05) 0%, #0A0A0A 70%)` — sutil
+
+#### Fase 3 — Home Dashboard Redesign — @Andres
+**Archivo**: `src/components/Home.jsx`
+
+Cambios requeridos:
+1. **Eliminar `useGameAudio()`** — la función completa (L204–L282), sus llamadas `playHover`/`playSelect` en handlers y props de `InteractiveTile`. Anti-pattern enterprise.
+2. **Eliminar prop `playHover`/`playSelect` de `InteractiveTile`** — simplificar el componente
+3. **Tiles**: eliminar `neonGlow` boxShadow en hover. Reemplazar con: `0 0 0 1px rgba(26,106,255,0.4), 0 12px 40px rgba(0,0,0,0.6)` — sutil, sin glow
+4. **Iconos SVG**: color `PALETTE.accent` (#1A6AFF, no neon)
+5. **NavItem active**: `borderBottom: 2px solid PALETTE.accent`, background `rgba(26,106,255,0.06)`
+6. **ClubLogo**: border + color → `PALETTE.accent`
+7. **MetricBlock**: gradiente del primer bloque → azul. Border bottom → `PALETTE.accent`. Hover bg → `rgba(26,106,255,0.06)`. Valor numérico color → `PALETTE.accent`
+8. **Tag** (`css.tag`): color → `PALETTE.accent`
+9. **Btn CTA** (`css.btn`): background → `PALETTE.accent`, color → `white`, hover → background `white`, color → `PALETTE.accent` (inversión limpia)
+10. **GhostBtn**: border + color → `PALETTE.accent`
+11. **STATS "Puntos"**: color → `PALETTE.accent`
+12. **EVENT_COLORS match**: `"#1A6AFF"` (no amarillo)
+13. **Brand topbar** L459: "ElevateS ports" → "ALTTEZ" (bug rebrand residual)
+14. **MetricBlock hover** en `onMouseEnter`: `rgba(26,106,255,0.06)` no amarillo
+
+#### Fase 4 — Audit de componentes secundarios — @Andres
+Grep exhaustivo reveló 17 archivos JSX con referencias amarillo/purple. Prioridad por visibilidad:
+
+**Alta prioridad (visibles al usuario directamente):**
+- `src/components/Calendario.jsx` — L96, L850, L1132, L1152–1159, L1166, L1182, L1498 (hardcoded `#E8E847` masivo)
+- `src/components/GestionPlantilla.jsx` — referencias neon/purple
+- `src/components/Entrenamiento.jsx` — referencias neon
+- `src/components/Planificacion.jsx` — referencias neon
+- `src/components/MatchCenter.jsx` — referencias neon
+- `src/components/DemoGate.jsx` — L106 radial-gradient amarillo hardcodeado
+- `src/components/Administracion.jsx` — L66: `const ADMIN = PALETTE.purple` (undefined bug)
+
+**Media prioridad (portal público):**
+- `src/components/portal/HeroSection.jsx`
+- `src/components/portal/SportsCRMPage.jsx`
+- `src/components/portal/PrivacyPolicy.jsx`
+
+**Baja prioridad (UI helpers):**
+- `src/components/ui/EmptyState.jsx`
+- `src/components/ui/InstallAppBanner.jsx`
+- `src/components/ui/ImportIcons.jsx`
+- `src/components/KioskMode.jsx`
+- `src/components/ErrorBoundary.jsx`
+
+**JS files (no JSX):**
+- `src/hooks/useDrawingEngine.js` — solo label string "Neon Green", no afecta color UI
+
+**Estrategia**: `PALETTE.neon` ahora apunta a `#1A6AFF` (ya migrado en palette.js v3.0). Los componentes que usan `PALETTE.neon` cambiarán de color automáticamente sin tocar el código. Los que tienen `#E8E847` hardcodeado deben ser editados manualmente. Priorizar hardcoded primero.
+
+### Task Assignment
+- **@Carlos (Arch)**: Ejecuta Fase 1 (palette.js + index.css) — diseño token layer, fundación. Directo.
+- **@Andres (UI)**: Ejecuta Fase 2 (LandingPage) + Fase 3 (Home) + Fase 4 (audit). Instrucciones específicas arriba.
+- **@Sara (QA)**: Valida post-Fase 3: 0 referencias visuales amarillo neon. Audio eliminado (no DevTools network para AudioContext). Botones CTA con color blanco visible sobre azul. Hover states sin glow amarillo.
+
+### Architecture Decisions
+1. **Token unificado**: `accent` = `blue` = `#1A6AFF`. No tener dos nombres para el mismo color. Los aliases `neon*` migran en paralelo a medida que los componentes se actualizan, se eliminan en cleanup posterior.
+2. **Audio eliminado sin reemplazo**: No sustituir por micro-interactions de audio más sutiles. Enterprise SaaS no tiene audio de UI. Framer Motion transitions son suficiente feedback.
+3. **Tiles mantienen imagen de fondo**: La estética FIFA viene de los glows y el audio, no de las imágenes. Las imágenes con overlay oscuro son enterprise-compatible. Se mantienen, se elimina el scale glow.
+4. **Manrope**: Mismo peso visual que Inter pero con un carácter más "tech editorial". Pesos 400/600/700/800 cubren todo el sistema tipográfico actual.
+5. **Color blanco en CTAs**: Los botones con background azul `#1A6AFF` usan color `white` — contraste WCAG AA garantizado (ratio ~4.8:1). En gaming usaban `#0a0a0a` sobre amarillo.
+
+### Validation Criteria
+- `grep -r "E8E847" src/` → 0 resultados
+- `grep -r "232,232,71" src/` → 0 resultados
+- `grep -r "neon" src/constants/palette.js` → solo aliases de compatibilidad apuntando a azul
+- `grep -r "playHover\|playSelect\|useGameAudio\|AudioContext\|WebAudio" src/components/Home.jsx` → 0 resultados
+- LandingPage: botones Demo + Register + Login todos en `#1A6AFF`
+- Home: métricas, tags, CTAs, nav active — todos en `#1A6AFF`
+- Fuente Manrope cargada y aplicada en body (DevTools → Computed → font-family)
+- 0 errores de consola relacionados con `PALETTE.purple` (era undefined)
+
+---
+
+## 2026-04-01 — Zero Elevate Brand Audit — Batch Completo
+**Directive from**: Julián
+**Status**: Complete
+
+### Plan
+Auditoria exhaustiva y ejecucion del rebrand completo de "Elevate Sports" a "ALTTEZ" en todo el codebase.
+Decisiones confirmadas: entidad legal ALTTEZ SAS, dominio alttez.com, feature name ALTTEZ Score (labels UI, no funciones JS).
+
+### Archivos Modificados
+
+**Configuracion y Meta:**
+- `index.html` — og:url, og:image, twitter:image actualizados a alttez.com
+- `public/sw.js` — header JSDoc + CACHE_NAME "elevate-v1" → "alttez-v1" (invalida cache viejo en usuarios existentes)
+
+**Legal / Compliance:**
+- `src/components/portal/PrivacyPolicy.jsx` — RESPONSIBLE_ENTITY "ALTTEZ SAS", CONTACT_EMAIL "privacidad@alttez.com", dominio "alttez.com", logo header, footer, 6 parrafos de cuerpo del documento
+
+**Portal — Textos Visibles:**
+- `src/components/portal/HeroSection.jsx` — subtitulo principal
+- `src/components/portal/EcosystemSection.jsx` — nombres productos: ALTTEZ Analytics, ALTTEZ Academy, ALTTEZ Connect + frase seccion
+- `src/components/portal/JournalPage.jsx` — subtitulo header
+- `src/components/portal/QuienesSomos.jsx` — timeline 2026, frase hero, Manifiesto, ultima cita del manifiesto
+- `src/components/portal/SportsCRMPage.jsx` — ALTTEZ Dashboard, ALTTEZ Tactical Board, Top ALTTEZ Score, description feature, URL decorativa alttez.com/crm, frase CTA final
+- `src/components/portal/Contacto.jsx` — email hola@alttez.com
+- `src/components/portal/ConfirmarAsistencia.jsx` — 2 comentarios internos + label seccion
+
+**App — Feature Name y URLs:**
+- `src/components/Calendario.jsx` — link RSVP WhatsApp alttez.com + JSDoc namespace
+- `src/components/MatchCenter.jsx` — 2 comentarios JSDoc + 2 comentarios JSX
+
+**Batch JSDoc @description/@author (31 archivos):**
+Administracion, DemoGate, Home, LandingPage, GestionPlantilla, portal/Contacto,
+portal/QuienesSomos, portal/SportsCRMPage, portal/EcosystemSection, portal/HeroSection,
+portal/JournalPage, portal/PortalHome, portal/PortalLayout, ui/WellnessCheckIn, ui/EmptyState,
+constants/formations, constants/palette, constants/roles, constants/schemas,
+lib/supabase, lib/registerSW, services/authService, services/backupService,
+services/supabaseService, services/storageService, types/wellnessTypes, utils/helpers,
+utils/elevateScore (5 ocurrencias en comentarios del algoritmo), utils/rpeEngine,
+constants/portalData
+
+### Residuos Intencionales NO Modificados
+- `src/services/backupService.js` L75: guardia `backup._meta.app !== "Elevate Sports"` — compatibilidad retroactiva con backups exportados antes del rebrand
+- `src/services/storageService.js` L215: idem — usuarios que importen backups viejos no pierden datos
+- `src/store/useStore.js` L13: SECURITY_SALT "elevate_secure_salt_89231" — pendiente migration plan separado (invalida tokens de rol)
+- `src/constants/roles.js` L127: "elevate_salt_2026" en checksum — idem
+- localStorage keys `elevate_*` en Calendario/MatchCenter/TacticalBoard — cubiertos por migrationService.js v2.0.0 (barrido generico elevate_* → alttez_*)
+- Funciones JS: calcElevateScore, ElevateScore, elevateScore — NO renombradas por decision de Julián
+
+### Architecture Decisions
+- CACHE_NAME bump en sw.js es operacion correcta en rebrand — invalida el cache viejo y fuerza re-descarga limpia
+- Las 2 guardas legacy en backup/storageService son necesarias: sin ellas, usuarios con backups de Elevate Sports no pueden importar datos. Se eliminan en v3 cuando el periodo de gracia expire.
+
+### Validation Criteria
+- 0 ocurrencias de "Elevate Sports" visibles al usuario en toda la app
+- 0 referencias de dominio elevatesports.co o elevate-sports.vercel.app en produccion
+- PrivacyPolicy es legalmente coherente con razon social ALTTEZ SAS
+- ALTTEZ Score aparece en labels de UI en MatchCenter y SportsCRMPage
 
 ---
 
