@@ -26,7 +26,7 @@ body {
   color: white;
   /* Fluid base font: 13px at 320px → 15px at 1200px */
   font-size: clamp(13px, 0.8125rem + 0.25vw, 15px);
-  /* 'Arial Narrow' is the design-system typeface for the entire Elevate Sports app shell.
+  /* 'Arial Narrow' is the design-system typeface for the entire ALTTEZ app shell.
      Barlow Condensed (portal pages) and monospace (timer/CSV) are the only permitted overrides. */
   font-family: 'Arial Narrow', Arial, sans-serif;
   min-height: 100vh;
