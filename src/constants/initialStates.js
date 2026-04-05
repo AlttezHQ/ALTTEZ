@@ -127,18 +127,18 @@ export function createEmptyClubInfo(form) {
 // ─────────────────────────────────────────────────────────────
 
 export const STORAGE_KEYS = [
-  "elevate_athletes",
-  "elevate_historial",
-  "elevate_clubInfo",
-  "elevate_matchStats",
-  "elevate_finanzas",
-  "elevate_mode",
-  // "elevate_roles" — DEPRECATED: usar elevate_roles_v2. Mantenida solo para limpieza en logout.
-  "elevate_roles_v2",
-  "elevate_instructions",
-  "elevate_tacticas",
-  "elevate_healthSnapshots",
-  "elevate_schema_version",
-  "elevate_session",
-  "elevate_club_id",
+  "alttez_athletes",
+  "alttez_historial",
+  "alttez_clubInfo",
+  "alttez_matchStats",
+  "alttez_finanzas",
+  "alttez_mode",
+  // "alttez_roles" — DEPRECATED: usar alttez_roles_v2. Mantenida solo para limpieza en logout.
+  "alttez_roles_v2",
+  "alttez_instructions",
+  "alttez_tacticas",
+  "alttez_healthSnapshots",
+  "alttez_schema_version",
+  "alttez_session",
+  "alttez_club_id",
 ];

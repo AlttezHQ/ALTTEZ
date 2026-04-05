@@ -1,7 +1,7 @@
 /**
  * @file schemas.js
  * @description Comprehensive data schema definitions, validators, and factory
- * functions for all Elevate Sports entities. This is the single source of truth
+ * functions for all ALTTEZ entities. This is the single source of truth
  * for data structure contracts across the application.
  *
  * @author @Data (Mateo-Data_Engine)
@@ -32,7 +32,7 @@ export const SCHEMA_VERSION = "1.0.0";
  */
 export const ENTITIES = {
   Athlete: {
-    storageKey: "elevate_athletes",
+    storageKey: "alttez_athletes",
     description: "Jugador registrado en el plantel. Unidad base del sistema.",
     fields: {
       id:        { type: "number",  required: true,  description: "Identificador unico autoincremental",        constraints: "integer > 0, unique" },
@@ -53,7 +53,7 @@ export const ENTITIES = {
   },
 
   Sesion: {
-    storageKey: "elevate_historial",
+    storageKey: "alttez_historial",
     description: "Registro historico de una sesion de entrenamiento.",
     fields: {
       num:       { type: "number", required: true,  description: "Numero secuencial de la sesion",              constraints: "integer > 0, unique, autoincrement" },
@@ -70,7 +70,7 @@ export const ENTITIES = {
   },
 
   Pago: {
-    storageKey: "elevate_finanzas (nested: finanzas.pagos)",
+    storageKey: "alttez_finanzas (nested: finanzas.pagos)",
     description: "Registro de pago mensual de un jugador.",
     fields: {
       athleteId: { type: "number", required: true,  description: "FK al jugador",                               constraints: "references Athlete.id" },
@@ -86,7 +86,7 @@ export const ENTITIES = {
   },
 
   Movimiento: {
-    storageKey: "elevate_finanzas (nested: finanzas.movimientos)",
+    storageKey: "alttez_finanzas (nested: finanzas.movimientos)",
     description: "Movimiento financiero de ingreso o egreso del club.",
     fields: {
       id:       { type: "number", required: true,  description: "Identificador unico autoincremental",         constraints: "integer > 0, unique" },
@@ -101,7 +101,7 @@ export const ENTITIES = {
   },
 
   ClubInfo: {
-    storageKey: "elevate_clubInfo",
+    storageKey: "alttez_clubInfo",
     description: "Configuracion general del club deportivo.",
     fields: {
       nombre:      { type: "string",   required: true,  description: "Nombre del club",                         constraints: "non-empty" },
@@ -119,7 +119,7 @@ export const ENTITIES = {
   },
 
   MatchStats: {
-    storageKey: "elevate_matchStats",
+    storageKey: "alttez_matchStats",
     description: "Estadisticas acumuladas de partidos del equipo.",
     fields: {
       played:       { type: "number", required: true, description: "Partidos jugados",    constraints: "integer >= 0" },
@@ -134,7 +134,7 @@ export const ENTITIES = {
   },
 
   Finanzas: {
-    storageKey: "elevate_finanzas",
+    storageKey: "alttez_finanzas",
     description: "Contenedor raiz de datos financieros. Agrupa pagos y movimientos.",
     fields: {
       pagos:       { type: "Pago[]",       required: true, description: "Lista de pagos mensuales por jugador", constraints: "array" },

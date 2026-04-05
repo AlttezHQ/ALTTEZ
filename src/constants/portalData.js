@@ -1,6 +1,6 @@
 /**
  * @file portalData.js
- * @description Datos demo para el Portal Corporativo Elevate.
+ * @description Datos demo para el Portal Corporativo ALTTEZ.
  * Servicios y noticias de la marca. Fuente local hasta migrar a Supabase.
  *
  * @author @Data (Mateo-Data_Engine)
@@ -8,13 +8,13 @@
  */
 
 // ─────────────────────────────────────────────────────────────
-// SERVICIOS — Proyectos del ecosistema Elevate
+// SERVICIOS — Proyectos del ecosistema ALTTEZ
 // ─────────────────────────────────────────────────────────────
 
 export const DEMO_SERVICES = [
   {
     id: "svc-001",
-    name: "Elevate Sports CRM",
+    name: "ALTTEZ CRM",
     slug: "sports-crm",
     description: "Gestion integral de clubes deportivos. Plantilla, entrenamiento, ciencia RPE, finanzas y pizarra tactica en una sola plataforma.",
     icon: "crm",
@@ -25,7 +25,7 @@ export const DEMO_SERVICES = [
   },
   {
     id: "svc-002",
-    name: "Elevate Analytics",
+    name: "ALTTEZ Analytics",
     slug: "analytics",
     description: "Inteligencia deportiva avanzada. Prediccion de lesiones con machine learning y analisis de rendimiento en tiempo real.",
     icon: "analytics",
@@ -36,7 +36,7 @@ export const DEMO_SERVICES = [
   },
   {
     id: "svc-003",
-    name: "Elevate Academy",
+    name: "ALTTEZ Academy",
     slug: "academy",
     description: "Plataforma de formacion para entrenadores. Cursos, certificaciones y comunidad de conocimiento deportivo.",
     icon: "academy",
@@ -47,7 +47,7 @@ export const DEMO_SERVICES = [
   },
   {
     id: "svc-004",
-    name: "Elevate Connect",
+    name: "ALTTEZ Connect",
     slug: "connect",
     description: "Red de conexion entre clubes, scouts y academias. Visibilidad para el talento emergente colombiano.",
     icon: "connect",
@@ -65,9 +65,9 @@ export const DEMO_SERVICES = [
 export const DEMO_JOURNAL = [
   {
     id: "jrn-001",
-    title: "Lanzamiento oficial de Elevate Sports CRM",
-    slug: "lanzamiento-elevate-sports-crm",
-    excerpt: "Despues de meses de desarrollo, Elevate Sports CRM esta disponible para clubes deportivos en Colombia. Gestion de plantilla, entrenamiento y finanzas en una sola plataforma.",
+    title: "Lanzamiento oficial de ALTTEZ CRM",
+    slug: "lanzamiento-alttez-crm",
+    excerpt: "Despues de meses de desarrollo, ALTTEZ CRM esta disponible para clubes deportivos en Colombia. Gestion de plantilla, entrenamiento y finanzas en una sola plataforma.",
     content: "",
     category: "announcement",
     image_url: null,
@@ -87,9 +87,9 @@ export const DEMO_JOURNAL = [
   },
   {
     id: "jrn-003",
-    title: "Elevate se asocia con clubes de Bogota y Medellin",
+    title: "ALTTEZ se asocia con clubes de Bogota y Medellin",
     slug: "alianzas-bogota-medellin",
-    excerpt: "Clubes de formacion Sub-17 en Bogota y Medellin adoptan Elevate Sports CRM como herramienta de gestion. El objetivo: estandarizar la operacion deportiva a nivel nacional.",
+    excerpt: "Clubes de formacion Sub-17 en Bogota y Medellin adoptan ALTTEZ CRM como herramienta de gestion. El objetivo: estandarizar la operacion deportiva a nivel nacional.",
     content: "",
     category: "news",
     image_url: null,
@@ -98,8 +98,8 @@ export const DEMO_JOURNAL = [
   },
   {
     id: "jrn-004",
-    title: "Proximamente: Elevate Analytics para analisis predictivo",
-    slug: "proximamente-elevate-analytics",
+    title: "Proximamente: ALTTEZ Analytics para analisis predictivo",
+    slug: "proximamente-alttez-analytics",
     excerpt: "Estamos desarrollando un modulo de inteligencia deportiva que usara machine learning para predecir riesgo de lesiones y optimizar cargas de entrenamiento.",
     content: "",
     category: "update",

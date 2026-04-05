@@ -1,6 +1,6 @@
 /**
  * @module roles
- * @description Sistema de roles y permisos para Elevate Sports.
+ * @description Sistema de roles y permisos para ALTTEZ.
  * Estructura RBAC (Role-Based Access Control) sobre localStorage.
  *
  * Roles:
@@ -68,7 +68,7 @@ export function getAccessibleModules(role) {
 }
 
 /** Session key en localStorage */
-export const SESSION_KEY = "elevate_session";
+export const SESSION_KEY = "alttez_session";
 
 /**
  * Crea una sesion de usuario con integridad basica.

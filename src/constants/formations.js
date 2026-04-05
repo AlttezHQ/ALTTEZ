@@ -1,12 +1,12 @@
 /**
  * @module formations
- * @description Formaciones tacticas para Elevate Sports.
+ * @description Formaciones tacticas para ALTTEZ.
  *
  * Formaciones verticales con posiciones como strings con "%" para GestionPlantilla.
  * TacticalBoardV9 define sus propias formaciones landscape inline (HORIZ_FORMATIONS).
  *
  * @version 1.0
- * @author Elevate Sports
+ * @author ALTTEZ
  */
 
 // ─────────────────────────────────────────────

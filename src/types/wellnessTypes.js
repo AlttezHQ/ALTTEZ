@@ -10,7 +10,7 @@
  *   exercise performance, and physiological and cognitive responses to exercise.
  *   Sports Medicine, 45(2), 161-186. https://doi.org/10.1007/s40279-014-0260-0
  *
- * @author Mateo-Data_Engine (Elevate Sports)
+ * @author Mateo-Data_Engine (ALTTEZ)
  */
 
 // ---------------------------------------------------------------------------
