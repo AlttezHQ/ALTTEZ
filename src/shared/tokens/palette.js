@@ -25,13 +25,13 @@ export const PALETTE = {
   dragDim:     "rgba(0,229,255,0.15)",
 
   // ── Fondos y superficies ───────────────────
-  bg:          "#050a14",
-  surface:     "rgba(0,0,0,0.88)",
-  surfaceHi:   "rgba(0,0,0,0.55)",
+  bg:          "#030408",
+  surface:     "rgba(0,0,0,0.92)",
+  surfaceHi:   "rgba(0,0,0,0.6)",
 
   // ── Bordes ─────────────────────────────────
-  border:      "rgba(255,255,255,0.08)",
-  borderHi:    "rgba(255,255,255,0.22)",
+  border:      "rgba(255,255,255,0.07)",
+  borderHi:    "rgba(255,255,255,0.2)",
 
   // ── Texto ──────────────────────────────────
   text:        "white",
