@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { calcSaludActual, calcSaludPlantel, saludColor, calcACWR, calcAthleteRisk } from "../shared/utils/rpeEngine";
+import { calcSaludActual, calcSaludPlantel, saludColor, calcACWR, calcAthleteRisk } from "../../shared/utils/rpeEngine";
 
 // Helper: genera savedAt dentro de los ultimos N dias
 function daysAgo(n) {

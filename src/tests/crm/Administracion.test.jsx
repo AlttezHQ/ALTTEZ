@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import Administracion from "../app/modules/Administracion";
-import { useStore } from "../shared/store/useStore";
+import Administracion from "../../app/finance/Administracion";
+import { useStore } from "../../shared/store/useStore";
 
 describe('Administracion Component', () => {
   beforeEach(() => {

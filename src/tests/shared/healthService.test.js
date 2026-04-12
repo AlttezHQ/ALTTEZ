@@ -4,7 +4,7 @@
  * @author @QA (Sara)
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { takeHealthSnapshot, getSnapshots, getAthleteHealthHistory, getLatestPlantelHealth, getAtRiskAthletes, clearSnapshots } from "../shared/services/healthService";
+import { takeHealthSnapshot, getSnapshots, getAthleteHealthHistory, getLatestPlantelHealth, getAtRiskAthletes, clearSnapshots } from "../../shared/services/healthService";
 
 // jsdom provides localStorage — just clear before each test
 beforeEach(() => {
@@ -122,25 +122,25 @@ describe("clearSnapshots", () => {
 describe("sanitize.js - sanitizeText via DOMPurify", () => {
   // Import here to also test sanitize
   it("strips HTML tags", async () => {
-    const { sanitizeText } = await import("../shared/utils/sanitize");
+    const { sanitizeText } = await import("../../shared/utils/sanitize");
     expect(sanitizeText("<script>alert(1)</script>")).toBe("");
     expect(sanitizeText("Hello <b>world</b>")).toBe("Hello world");
   });
 
   it("strips event handlers", async () => {
-    const { sanitizeText } = await import("../shared/utils/sanitize");
+    const { sanitizeText } = await import("../../shared/utils/sanitize");
     expect(sanitizeText('<img onerror="alert(1)">')).toBe("");
   });
 
   it("handles non-string input", async () => {
-    const { sanitizeText } = await import("../shared/utils/sanitize");
+    const { sanitizeText } = await import("../../shared/utils/sanitize");
     expect(sanitizeText(null)).toBe("");
     expect(sanitizeText(undefined)).toBe("");
     expect(sanitizeText(123)).toBe("");
   });
 
   it("sanitizePhone only allows digits and separators", async () => {
-    const { sanitizePhone } = await import("../shared/utils/sanitize");
+    const { sanitizePhone } = await import("../../shared/utils/sanitize");
     expect(sanitizePhone("300 <script>123")).toBe("300 123");
     expect(sanitizePhone("+57 (300) 123-4567")).toBe("+57 (300) 123-4567");
   });

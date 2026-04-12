@@ -23,11 +23,11 @@
 
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import imgEntrenamiento from "../../assets/entrenamiento.jpeg";
-import imgPlantilla     from "../../assets/Gestion_de_plantilla.jpeg";
-import imgPartido       from "../../assets/Partido.jpeg";
-import imgOficina       from "../../assets/Oficina.jpeg";
-import imgProximo       from "../../assets/Proximo_partido.jpeg";
+import imgEntrenamiento from "./assets/entrenamiento.jpeg";
+import imgPlantilla     from "./assets/Gestion_de_plantilla.jpeg";
+import imgPartido       from "./assets/Partido.jpeg";
+import imgOficina       from "./assets/Oficina.jpeg";
+import imgProximo       from "./assets/Proximo_partido.jpeg";
 import { PALETTE }      from "../../shared/tokens/palette";
 import EmptyState       from "../../shared/ui/EmptyState";
 import { useStore } from "../../shared/store/useStore";

@@ -32,15 +32,15 @@ import MiniTopbar from "./MiniTopbar";
 // ── React.lazy: code-splitting por modulo ──
 const LandingPage = lazy(() => import("../../shared/auth/LandingPage"));
 const Home = lazy(() => import("../dashboard/Home"));
-const Entrenamiento = lazy(() => import("../modules/Entrenamiento"));
-const GestionPlantilla = lazy(() => import("../modules/GestionPlantilla"));
-const MiClub = lazy(() => import("../modules/MiClub"));
-const Administracion = lazy(() => import("../modules/Administracion"));
-const Calendario = lazy(() => import("../modules/Calendario"));
-const MatchCenter = lazy(() => import("../modules/MatchCenter"));
+const Entrenamiento = lazy(() => import("../training/Entrenamiento"));
+const GestionPlantilla = lazy(() => import("../roster/GestionPlantilla"));
+const MiClub = lazy(() => import("../club/MiClub"));
+const Administracion = lazy(() => import("../finance/Administracion"));
+const Calendario = lazy(() => import("../scheduling/Calendario"));
+const MatchCenter = lazy(() => import("../competition/MatchCenter"));
 const DemoGate = lazy(() => import("./DemoGate"));
-const KioskMode = lazy(() => import("../modules/KioskMode"));
-const Reportes = lazy(() => import("../modules/Reportes"));
+const KioskMode = lazy(() => import("../experience/KioskMode"));
+const Reportes = lazy(() => import("../analytics/Reportes"));
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 

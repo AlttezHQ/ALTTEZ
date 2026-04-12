@@ -11,8 +11,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --config vite.config.js",
+    "test:watch": "vitest --config vite.config.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",

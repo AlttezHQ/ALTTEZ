@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
-import Home from "../app/dashboard/Home";
-import { useStore } from "../shared/store/useStore";
+import Home from "../../app/dashboard/Home";
+import { useStore } from "../../shared/store/useStore";
 
 describe('Home Component', () => {
   beforeEach(() => {
