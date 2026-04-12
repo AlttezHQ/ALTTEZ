@@ -51,3 +51,6 @@ skills-lock.json
 
 # PWA dev build
 dev-dist/
+
+# Temp exploration / extracted references
+.tmp/
