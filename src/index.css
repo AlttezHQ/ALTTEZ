@@ -1,10 +1,9 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   ELEVATE SPORTS — Global Stylesheet
+/* -----------------------------------------------------------------------------
+   ALTTEZ - Global Stylesheet
    Responsive-first: fluid typography, safe areas, touch targets
    Breakpoints: xs(0-479) | sm(480-767) | md(768-1023) | lg(1024+)
-───────────────────────────────────────────────────────────────────────────── */
+----------------------------------------------------------------------------- */
 
-/* ── Reset ───────────────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -13,25 +12,21 @@
   padding: 0;
 }
 
-/* ── Base ────────────────────────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
-  /* Prevent font size inflation on iOS */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 body {
-  background: #060d06;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(47, 107, 255, 0.08), transparent 25%),
+    linear-gradient(180deg, #05070b 0%, #0b1220 55%, #06080d 100%);
   color: white;
-  /* Fluid base font: 13px at 320px → 15px at 1200px */
   font-size: clamp(13px, 0.8125rem + 0.25vw, 15px);
-  /* 'Arial Narrow' is the design-system typeface for the entire ALTTEZ app shell.
-     Barlow Condensed (portal pages) and monospace (timer/CSV) are the only permitted overrides. */
-  font-family: 'Arial Narrow', Arial, sans-serif;
+  font-family: "Exo 2", Arial, sans-serif;
   min-height: 100vh;
-  min-height: 100dvh; /* Dynamic viewport on iOS Safari */
-  /* Smooth momentum scrolling on iOS */
+  min-height: 100dvh;
   -webkit-overflow-scrolling: touch;
   overflow-x: hidden;
 }
@@ -41,7 +36,6 @@ body {
   min-height: 100dvh;
 }
 
-/* ── Form elements ───────────────────────────────────────────────────────── */
 input,
 select,
 textarea,
@@ -55,26 +49,19 @@ textarea::placeholder {
 }
 
 select option {
-  background: #111;
+  background: #111827;
   color: white;
 }
 
-/* ── Focus management ────────────────────────────────────────────────────── */
-/* Remove browser outline on mouse/touch click — keep it for keyboard nav.
-   :focus-visible is the modern standard: browsers only apply it when the
-   element was focused via keyboard (Tab / arrow keys), never on mouse click. */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* Keyboard-only focus ring — neon green at low opacity, accessible contrast */
 :focus-visible {
-  outline: 2px solid rgba(57, 255, 20, 0.5);
+  outline: 2px solid rgba(47, 107, 255, 0.62);
   outline-offset: 2px;
 }
 
-/* Prevent text-selection cursor (I-beam) on non-text interactive elements.
-   Buttons, nav items, cards with onClick — none of them should show I-beam. */
 button,
 [role="button"],
 [role="tab"],
@@ -85,8 +72,6 @@ button,
   cursor: pointer;
 }
 
-/* ── Touch targets ───────────────────────────────────────────────────────── */
-/* Minimum 44px touch target on interactive elements (WCAG 2.5.5 / Apple HIG) */
 button,
 a,
 [role="button"],
@@ -97,74 +82,64 @@ a,
   justify-content: center;
 }
 
-/* Exception: elements that wrap other block content — override as needed */
 a:has(> div),
 a:has(> span) {
   display: inline-flex;
 }
 
-/* ── Fluid headings ──────────────────────────────────────────────────────── */
-h1 { font-size: clamp(28px, 5vw + 12px, 56px); }
-h2 { font-size: clamp(22px, 3.5vw + 8px,  38px); }
-h3 { font-size: clamp(18px, 2vw + 8px,    28px); }
-h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
-
-/* ── Fluid spacing utilities ─────────────────────────────────────────────── */
-:root {
-  --space-xs:  clamp(4px,  0.5vw, 8px);
-  --space-sm:  clamp(8px,  1vw,   16px);
-  --space-md:  clamp(12px, 1.5vw, 24px);
-  --space-lg:  clamp(16px, 2.5vw, 40px);
-  --space-xl:  clamp(24px, 4vw,   64px);
-
-  /* Safe area insets for notch devices (iPhone X+, Android notch) */
-  --safe-top:    env(safe-area-inset-top,    0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left:   env(safe-area-inset-left,   0px);
-  --safe-right:  env(safe-area-inset-right,  0px);
-
-  /* ── Typography scale (app shell) ─────────────────────────────────────────
-     Font family: 'Arial Narrow', Arial, sans-serif (set on body — do NOT override)
-     Permitted exceptions: monospace (timers/clocks), Courier New (raw CSV/code)
-     Portal pages (/portal/*) may use Barlow Condensed / Barlow (loaded in index.html)
-  ── */
-  /* Sizes */
-  --fs-badge:    7px;   /* status dots, inline mini-badges                    */
-  --fs-tag:      8px;   /* module tags, table headers, ALL-CAPS uppercase labels */
-  --fs-label:    9px;   /* form labels, panel section titles, KPI sub-labels   */
-  --fs-caption:  10px;  /* nav items, tab labels, secondary metadata           */
-  --fs-body:     11px;  /* list items, descriptions, standard body text        */
-  --fs-body-lg:  12px;  /* slightly elevated body, table cell data             */
-  --fs-subhead:  13px;  /* sub-section headings, drawer titles                 */
-  --fs-title-sm: 14px;  /* card titles, panel headings                         */
-  --fs-title:    18px;  /* section KPI values, mid-hierarchy titles            */
-  --fs-title-lg: 22px;  /* module-level KPIs and stat values                   */
-  --fs-hero:     32px;  /* hero KPIs (balance totals, big stats)               */
-  --fs-kpi:      42px;  /* flagship single-metric numbers (home splash)        */
-
-  /* Weights */
-  --fw-normal:   400;
-  --fw-medium:   500;
-  --fw-semibold: 600;
-  --fw-bold:     700;
-  --fw-black:    800;
-  --fw-ultra:    900;
-
-  /* Letter-spacing */
-  --ls-tight:   -1.5px; /* large display titles only                          */
-  --ls-normal:   0px;
-  --ls-wide:     0.5px;
-  --ls-caps-sm:  1px;   /* uppercase body / table header                       */
-  --ls-caps-md:  1.5px; /* nav items, buttons                                  */
-  --ls-caps-lg:  2px;   /* module section panel titles                         */
-  --ls-caps-xl:  3.5px; /* module tag / identity badges                        */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Orbitron", "Exo 2", Arial, sans-serif;
 }
 
-/* ── Safe area helpers ───────────────────────────────────────────────────── */
-.safe-top    { padding-top:    var(--safe-top);    }
+h1 { font-size: clamp(28px, 5vw + 12px, 56px); }
+h2 { font-size: clamp(22px, 3.5vw + 8px, 38px); }
+h3 { font-size: clamp(18px, 2vw + 8px, 28px); }
+h4 { font-size: clamp(14px, 1vw + 8px, 20px); }
+
+:root {
+  --space-xs: clamp(4px, 0.5vw, 8px);
+  --space-sm: clamp(8px, 1vw, 16px);
+  --space-md: clamp(12px, 1.5vw, 24px);
+  --space-lg: clamp(16px, 2.5vw, 40px);
+  --space-xl: clamp(24px, 4vw, 64px);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --fs-badge: 7px;
+  --fs-tag: 8px;
+  --fs-label: 9px;
+  --fs-caption: 10px;
+  --fs-body: 11px;
+  --fs-body-lg: 12px;
+  --fs-subhead: 13px;
+  --fs-title-sm: 14px;
+  --fs-title: 18px;
+  --fs-title-lg: 22px;
+  --fs-hero: 32px;
+  --fs-kpi: 42px;
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+  --fw-ultra: 900;
+
+  --ls-tight: -1.5px;
+  --ls-normal: 0px;
+  --ls-wide: 0.5px;
+  --ls-caps-sm: 1px;
+  --ls-caps-md: 1.5px;
+  --ls-caps-lg: 2px;
+  --ls-caps-xl: 3.5px;
+}
+
+.safe-top { padding-top: var(--safe-top); }
 .safe-bottom { padding-bottom: var(--safe-bottom); }
 
-/* ── Horizontal scroll containers (tables, nav on mobile) ───────────────── */
 .scroll-x {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -177,16 +152,16 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
-.scroll-x-snap::-webkit-scrollbar { display: none; }
+
+.scroll-x-snap::-webkit-scrollbar {
+  display: none;
+}
 
 .scroll-x-snap > * {
   scroll-snap-align: start;
   flex-shrink: 0;
 }
 
-/* ── Responsive breakpoints ──────────────────────────────────────────────── */
-
-/* Mobile portrait: hide extras, single-column */
 @media (max-width: 479px) {
   .hide-xs { display: none !important; }
   .stack-xs { flex-direction: column !important; }
@@ -194,24 +169,20 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
   .pad-xs { padding: 12px 14px !important; }
 }
 
-/* Mobile landscape / small tablet */
 @media (min-width: 480px) and (max-width: 767px) {
   .hide-sm { display: none !important; }
 }
 
-/* Tablet and below */
 @media (max-width: 767px) {
   .hide-mobile { display: none !important; }
   .show-mobile { display: flex !important; }
 }
 
-/* Desktop only */
 @media (min-width: 768px) {
   .hide-desktop { display: none !important; }
   .show-desktop { display: flex !important; }
 }
 
-/* ── Scrollbars ──────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -230,22 +201,20 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
 @keyframes elv-drawer-in {
   from { transform: translateX(-100%); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes elv-drawer-out {
-  from { transform: translateX(0);     opacity: 1; }
-  to   { transform: translateX(-100%); opacity: 0; }
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-100%); opacity: 0; }
 }
 
-/* ── Mobile nav drawer ───────────────────────────────────────────────────── */
 .elv-drawer {
   position: fixed;
   top: 0;
@@ -266,8 +235,7 @@ h4 { font-size: clamp(14px, 1vw + 8px,    20px); }
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* ── Pinch/touch handling ────────────────────────────────────────────────── */
-.touch-pan-x   { touch-action: pan-x; }
-.touch-pan-y   { touch-action: pan-y; }
-.touch-manip   { touch-action: manipulation; }
-.touch-pinch   { touch-action: pinch-zoom; }
+.touch-pan-x { touch-action: pan-x; }
+.touch-pan-y { touch-action: pan-y; }
+.touch-manip { touch-action: manipulation; }
+.touch-pinch { touch-action: pinch-zoom; }

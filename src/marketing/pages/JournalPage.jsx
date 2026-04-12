@@ -1,20 +1,13 @@
-/**
- * @component JournalPage
- * @description Pagina dedicada de noticias y actualizaciones de la marca ALTTEZ.
- * Ruta: /journal
- * Cada noticia es un destino, no un resumen.
- * @author @Desarrollador (Andres)
- */
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import { PALETTE as C } from "../../shared/tokens/palette";
+import { useRef, useEffect } from "react";
 import { DEMO_JOURNAL } from "../data/portalData";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
 
 const CATEGORY_COLORS = {
-  announcement: C.neon,
-  feature: "#7C3AED",
-  news: "#00e5ff",
-  update: C.amber,
+  announcement: B.primary,
+  feature: B.warning,
+  news: "#7BA4FF",
+  update: "#C6D6FF",
 };
 
 const CATEGORY_LABELS = {
@@ -25,143 +18,118 @@ const CATEGORY_LABELS = {
 };
 
 function FeaturedArticle({ entry }) {
-  const accent = CATEGORY_COLORS[entry.category] || C.neon;
+  const accent = CATEGORY_COLORS[entry.category] || B.primary;
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 26 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      whileHover={{ y: -4 }}
+      transition={{ duration: 0.55 }}
       style={{
-        padding: "40px 36px",
-        background: "rgba(255,255,255,0.03)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
-        border: `1px solid ${C.border}`,
-        borderRadius: 16,
-        boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
         position: "relative",
+        padding: "34px 32px",
+        borderRadius: 30,
+        background: G.panel,
+        border: `1px solid ${B.borderStrong}`,
+        boxShadow: "0 30px 80px rgba(0,0,0,0.38)",
         overflow: "hidden",
-        cursor: "pointer",
-        marginBottom: 32,
       }}
     >
-      {/* Accent line */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 3,
-        background: `linear-gradient(90deg, ${accent}, transparent)`,
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `radial-gradient(circle at 92% 14%, ${accent}22 0%, transparent 22%)`,
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <span
+            style={{
+              padding: "7px 12px",
+              borderRadius: 999,
+              background: `${accent}18`,
+              border: `1px solid ${accent}44`,
+              color: accent,
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.14em",
+            }}
+          >
+            {CATEGORY_LABELS[entry.category]}
+          </span>
+          <span style={{ fontSize: 13, color: B.textHint }}>{entry.published_at}</span>
+        </div>
 
-      <div style={{
-        display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
-        flexWrap: "wrap",
-      }}>
-        <span style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: "1.5px",
-          textTransform: "uppercase", color: accent,
-          background: `${accent}12`, padding: "4px 12px",
-          borderRadius: 4,
-        }}>
-          {CATEGORY_LABELS[entry.category]}
-        </span>
-        <span style={{ fontSize: 12, color: C.textMuted }}>{entry.published_at}</span>
+        <h2
+          style={{
+            margin: "18px 0 14px",
+            fontSize: "clamp(30px, 5vw, 48px)",
+            lineHeight: 1,
+            fontWeight: 800,
+            letterSpacing: "-0.05em",
+            fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+            maxWidth: 760,
+          }}
+        >
+          {entry.title}
+        </h2>
+
+        <p style={{ margin: 0, maxWidth: 760, color: B.textMuted, fontSize: 17, lineHeight: 1.85 }}>{entry.excerpt}</p>
+        {entry.content ? <p style={{ marginTop: 18, color: B.textHint, lineHeight: 1.8, maxWidth: 760 }}>{entry.content}</p> : null}
       </div>
-
-      <h2 style={{
-        fontSize: 26, fontWeight: 800, color: "white",
-        margin: "0 0 16px", lineHeight: 1.3,
-        fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-      }}>
-        {entry.title}
-      </h2>
-
-      <p style={{
-        fontSize: 15, color: C.textMuted, lineHeight: 1.8,
-        margin: "0 0 20px", maxWidth: 700,
-      }}>
-        {entry.excerpt}
-      </p>
-
-      {entry.content && (
-        <p style={{
-          fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.7,
-          margin: 0, maxWidth: 700,
-        }}>
-          {entry.content}
-        </p>
-      )}
     </motion.article>
   );
 }
 
 function ArticleCard({ entry, index }) {
-  const accent = CATEGORY_COLORS[entry.category] || C.neon;
+  const accent = CATEGORY_COLORS[entry.category] || B.primary;
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      whileHover={{ y: -4, borderColor: `${accent}44` }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.45, delay: index * 0.06 }}
+      whileHover={{ y: -4 }}
       style={{
-        padding: "28px 24px",
-        background: "rgba(255,255,255,0.03)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        border: `1px solid ${C.border}`,
-        borderRadius: 12,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-        transition: "border-color 0.3s",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
+        padding: 24,
+        borderRadius: 26,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
+        border: `1px solid ${B.border}`,
+        boxShadow: "0 16px 40px rgba(0,0,0,0.22)",
+        display: "grid",
+        gap: 14,
       }}
     >
-      <div>
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          marginBottom: 14, flexWrap: "wrap", gap: 8,
-        }}>
-          <span style={{
-            fontSize: 9, fontWeight: 600, letterSpacing: "1.5px",
-            textTransform: "uppercase", color: accent,
-            background: `${accent}12`, padding: "3px 10px",
-            borderRadius: 4,
-          }}>
-            {CATEGORY_LABELS[entry.category]}
-          </span>
-          <span style={{ fontSize: 11, color: C.textMuted }}>{entry.published_at}</span>
-        </div>
-
-        <h3 style={{
-          fontSize: 18, fontWeight: 700, color: "white",
-          margin: "0 0 10px", lineHeight: 1.3,
-          fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-        }}>
-          {entry.title}
-        </h3>
-
-        <p style={{
-          fontSize: 13, color: C.textMuted, lineHeight: 1.6,
-          margin: 0,
-        }}>
-          {entry.excerpt}
-        </p>
+      <div style={{ display: "flex", gap: 12, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+        <span
+          style={{
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: `${accent}18`,
+            border: `1px solid ${accent}40`,
+            color: accent,
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+          }}
+        >
+          {CATEGORY_LABELS[entry.category]}
+        </span>
+        <span style={{ color: B.textHint, fontSize: 12 }}>{entry.published_at}</span>
       </div>
 
-      <div style={{
-        marginTop: 20, fontSize: 11, fontWeight: 600,
-        color: accent, letterSpacing: "0.5px",
-        display: "flex", alignItems: "center", gap: 6,
-      }}>
-        Leer análisis completo
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+      <h3 style={{ margin: 0, fontSize: 28, lineHeight: 1.02, fontWeight: 700, letterSpacing: "-0.04em", fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+        {entry.title}
+      </h3>
+      <p style={{ margin: 0, color: B.textMuted, lineHeight: 1.8, fontSize: 15 }}>{entry.excerpt}</p>
+      <div style={{ color: accent, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 700 }}>
+        Leer desarrollo
       </div>
     </motion.article>
   );
@@ -171,70 +139,69 @@ export default function JournalPage() {
   const headerRef = useRef(null);
   const headerInView = useInView(headerRef, { once: true });
 
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      @media (max-width: 640px) {
+        .journal-page section {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   const featured = DEMO_JOURNAL[0];
   const rest = DEMO_JOURNAL.slice(1);
 
   return (
-    <div style={{ overflowX: "hidden" }}>
-      {/* ── Page Header ── */}
-      <section ref={headerRef} style={{
-        padding: "80px 32px 40px",
-        textAlign: "center",
-        position: "relative",
-      }}>
-        <div style={{
-          position: "absolute", top: "-10%", right: "10%",
-          width: 400, height: 400, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%)",
-          filter: "blur(60px)", pointerEvents: "none",
-        }} />
-
+    <div className="journal-page" style={{ minHeight: "100vh", background: G.hero, color: B.text }}>
+      <section
+        ref={headerRef}
+        style={{
+          maxWidth: 1240,
+          margin: "0 auto",
+          padding: "84px 32px 30px",
+          position: "relative",
+        }}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={headerInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          style={{ position: "relative", zIndex: 2 }}
+          style={{ maxWidth: 820 }}
         >
-          <div style={{
-            fontSize: 10, fontWeight: 600, letterSpacing: "3px",
-            textTransform: "uppercase", color: "#00e5ff", marginBottom: 16,
-          }}>
-            Journal
+          <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.24em", fontWeight: 700 }}>
+            ALTTEZ Journal
           </div>
-          <h1 style={{
-            fontSize: "clamp(32px, 5vw, 52px)",
-            fontWeight: 800, color: "white", margin: "0 0 16px",
-            fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-          }}>
-            Bitácora del ecosistema
+          <h1
+            style={{
+              margin: "18px 0 18px",
+              fontSize: "clamp(42px, 7vw, 84px)",
+              lineHeight: 0.96,
+              fontWeight: 800,
+              letterSpacing: "-0.06em",
+              fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+            }}
+          >
+            Ideas, decisiones y senales de hacia donde esta creciendo el producto.
           </h1>
-          <p style={{
-            fontSize: 15, color: C.textMuted, maxWidth: 550,
-            margin: "0 auto", lineHeight: 1.7,
-          }}>
-            Lo último del ecosistema ALTTEZ. Lanzamientos, decisiones de producto
-            y el futuro de la gestión deportiva en LATAM.
+          <p style={{ maxWidth: 700, color: B.textMuted, fontSize: 18, lineHeight: 1.82 }}>
+            Este espacio traduce producto y vision en mensajes mas editorializados. Sirve para reforzar autoridad, explicar cambios y darle al cliente razones para confiar en la evolucion del ecosistema.
           </p>
         </motion.div>
       </section>
 
-      {/* ── Featured Article ── */}
-      <section style={{ padding: "0 32px", maxWidth: 900, margin: "0 auto" }}>
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 26px" }}>
         <FeaturedArticle entry={featured} />
       </section>
 
-      {/* ── Article Grid ── */}
-      <section style={{
-        padding: "20px 32px 80px",
-        maxWidth: 1100, margin: "0 auto",
-      }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: 20,
-        }}>
-          {rest.map((entry, i) => (
-            <ArticleCard key={entry.slug} entry={entry} index={i} />
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "8px 32px 96px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 18 }}>
+          {rest.map((entry, index) => (
+            <ArticleCard key={entry.slug} entry={entry} index={index} />
           ))}
         </div>
       </section>

@@ -1,132 +1,540 @@
-/**
- * @component PortalLayout
- * @description Layout compartido del Portal Corporativo ALTTEZ.
- * Navbar sticky glassmorphism con 3 nodos principales:
- *   "Quiénes Somos" | "Servicios" (dropdown) | "Comunícate con nosotros"
- * Usa React Router <Outlet> para renderizar las sub-rutas.
- *
- * Mobile (<768px): Hamburger menu + Side Drawer con AnimatePresence
- * Desktop (>=768px): Navbar horizontal original sin cambios
- *
- * @author @Arquitecto (Carlos) v4.0 — mobile-first responsive
- */
-import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
-import { Suspense } from "react";
-import { PALETTE as C } from "../../shared/tokens/palette";
+import { AnimatePresence, motion } from "framer-motion";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useResponsive } from "../../shared/hooks/useResponsive";
 import OfflineBanner from "../../shared/ui/OfflineBanner";
 import UpdateToast from "../../shared/ui/UpdateToast";
 import InstallAppBanner from "../../shared/ui/InstallAppBanner";
 
-// ── Animation variants ──────────────────────────────────────────────────────
-const dropdownVariants = {
-  hidden: {
-    opacity: 0,
-    y: -8,
-    scale: 0.97,
-    transition: { type: "spring", stiffness: 400, damping: 35 },
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 28 },
-  },
+const BRAND = {
+  bg: "#05070B",
+  bgSoft: "#0B1220",
+  surface: "rgba(7, 11, 18, 0.92)",
+  surfaceSoft: "rgba(10, 16, 28, 0.8)",
+  primary: "#2F6BFF",
+  primarySoft: "rgba(47, 107, 255, 0.14)",
+  primaryGlow: "rgba(47, 107, 255, 0.3)",
+  text: "#F5F7FA",
+  textMuted: "rgba(226, 232, 240, 0.72)",
+  textHint: "rgba(148, 163, 184, 0.68)",
+  border: "rgba(148, 163, 184, 0.18)",
+  borderStrong: "rgba(148, 163, 184, 0.3)",
 };
 
-const dropdownItemVariants = {
-  hidden: { opacity: 0, x: -8 },
-  visible: (i) => ({
-    opacity: 1,
-    x: 0,
-    transition: { type: "spring", stiffness: 350, damping: 28, delay: i * 0.05 },
-  }),
-};
-
-const drawerVariants = {
-  hidden: {
-    x: "-100%",
-    transition: { type: "spring", stiffness: 380, damping: 38 },
-  },
-  visible: {
-    x: 0,
-    transition: { type: "spring", stiffness: 380, damping: 38 },
-  },
-};
-
-const backdropVariants = {
-  hidden:  { opacity: 0 },
-  visible: { opacity: 1 },
-};
-
-// ── Servicios dropdown data ──────────────────────────────────────────────────
 const SERVICES = [
   {
     to: "/servicios/sports-crm",
     label: "ALTTEZ CRM",
-    description: "Plataforma integral de gestión deportiva: plantilla, entrenamientos, finanzas y táctica.",
-    tag: "Producto principal",
-    tagColor: C.neon,
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="3" width="18" height="18" rx="3" stroke={C.neon} strokeWidth="1.5"/>
-        <path d="M7 12h10M7 8h6M7 16h4" stroke={C.neon} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    tag: "Core Platform",
+    description: "Plantilla, entrenamiento, calendario, operación y administración en una sola capa operativa.",
   },
   {
     to: "/journal",
     label: "Journal",
-    description: "Bitácora del ecosistema: decisiones de producto, lanzamientos y análisis técnico del deporte LATAM.",
-    tag: "Nuevo",
-    tagColor: C.purple,
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={C.purple} strokeWidth="1.5" strokeLinecap="round"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" stroke={C.purple} strokeWidth="1.5"/>
-        <path d="M9 7h6M9 11h4" stroke={C.purple} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
+    tag: "Insights",
+    description: "Decisiones de producto, visión del deporte y análisis sobre operación deportiva moderna.",
   },
 ];
 
-const LoadingFallback = () => (
-  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-    <div style={{ textAlign: "center" }}>
-      <div style={{
-        width: 24, height: 24,
-        border: `2px solid ${C.neon}`, borderTop: "2px solid transparent",
-        borderRadius: "50%", animation: "spin 0.8s linear infinite",
-        margin: "0 auto 12px",
-      }} />
-      <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
-        Inicializando
+const FOOTER_LINKS = [
+  { to: "/", label: "Home", exact: true },
+  { to: "/quienes-somos", label: "Quiénes somos", exact: false },
+  { to: "/servicios/sports-crm", label: "Plataforma", exact: false },
+  { to: "/journal", label: "Journal", exact: false },
+  { to: "/contacto", label: "Contacto", exact: false },
+  { to: "/privacidad", label: "Privacidad", exact: false },
+];
+
+const WA_NUMBER = "573000000000";
+const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Hola, quiero conocer ALTTEZ.")}`;
+
+function LoadingFallback() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 24,
+            height: 24,
+            border: `2px solid ${BRAND.primary}`,
+            borderTop: "2px solid transparent",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+            margin: "0 auto 12px",
+          }}
+        />
+        <div style={{ fontSize: 10, color: BRAND.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
+          Inicializando
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
-// ── WhatsApp CTA ──────────────────────────────────────────────────────────────
+function BrandMark() {
+  return (
+    <div
+      style={{
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        background: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 54%, #60A5FA 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: `0 0 20px ${BRAND.primaryGlow}`,
+        flexShrink: 0,
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src="/branding/alttez-symbol-transparent.png"
+        alt="ALTTEZ"
+        style={{
+          width: 18,
+          height: 18,
+          objectFit: "contain",
+          filter: "invert(1) brightness(1.45) contrast(1.1)",
+        }}
+      />
+    </div>
+  );
+}
 
-/** Número de WhatsApp del equipo comercial (Julián debe reemplazar con número real) */
-const WA_NUMBER = "573000000000";
-const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Hola, quiero saber más sobre ALTTEZ CRM.")}`;
+function NavItem({ to, label, exact, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      end={exact}
+      onClick={onClick}
+      style={({ isActive }) => ({
+        position: "relative",
+        color: isActive ? BRAND.text : BRAND.textMuted,
+        textDecoration: "none",
+        fontSize: 12,
+        fontWeight: isActive ? 700 : 500,
+        letterSpacing: "0.4px",
+        padding: "8px 0",
+      })}
+    >
+      {({ isActive }) => (
+        <>
+          {label}
+          {isActive && (
+            <motion.div
+              layoutId="portal-nav-indicator"
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: -1,
+                height: 2,
+                borderRadius: 999,
+                background: `linear-gradient(90deg, ${BRAND.primary}, #93B4FF)`,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+        </>
+      )}
+    </NavLink>
+  );
+}
 
-/**
- * @component WhatsAppCTA
- * @description Botón flotante circular de WhatsApp en esquina inferior derecha.
- * Visible solo en rutas del portal público. Tooltip "Habla con nosotros".
- * Ícono SVG propio — sin dependencias externas.
- */
+function ServicesDropdown() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const active = location.pathname.startsWith("/servicios") || location.pathname.startsWith("/journal");
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen((value) => !value)}
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "8px 0",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          color: open || active ? BRAND.text : BRAND.textMuted,
+          fontSize: 12,
+          fontWeight: active ? 700 : 500,
+          letterSpacing: "0.4px",
+        }}
+      >
+        Soluciones
+        <motion.svg
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+        >
+          <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </motion.svg>
+        {active && !open && (
+          <motion.div
+            layoutId="portal-nav-indicator"
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: -1,
+              height: 2,
+              borderRadius: 999,
+              background: `linear-gradient(90deg, ${BRAND.primary}, #93B4FF)`,
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          />
+        )}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 14px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: 410,
+              padding: 10,
+              borderRadius: 18,
+              background: "rgba(7, 11, 18, 0.97)",
+              border: `1px solid ${BRAND.border}`,
+              boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              zIndex: 120,
+            }}
+          >
+            <div style={{ padding: "12px 14px 10px", color: BRAND.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "2px" }}>
+              Ecosistema ALTTEZ
+            </div>
+            {SERVICES.map((service) => (
+              <button
+                key={service.to}
+                onClick={() => {
+                  navigate(service.to);
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  display: "grid",
+                  gridTemplateColumns: "44px 1fr",
+                  gap: 14,
+                  padding: "14px",
+                  borderRadius: 14,
+                  border: `1px solid ${BRAND.border}`,
+                  background: "rgba(255,255,255,0.02)",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    background: BRAND.primarySoft,
+                    border: `1px solid rgba(96,165,250,0.22)`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#C7D6FF",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  {service.label === "Journal" ? "J" : "A"}
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ color: BRAND.text, fontSize: 13, fontWeight: 700 }}>{service.label}</span>
+                    <span
+                      style={{
+                        padding: "2px 7px",
+                        borderRadius: 999,
+                        fontSize: 8,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "1.3px",
+                        color: "#C7D6FF",
+                        background: BRAND.primarySoft,
+                        border: "1px solid rgba(96,165,250,0.18)",
+                      }}
+                    >
+                      {service.tag}
+                    </span>
+                  </div>
+                  <div style={{ color: BRAND.textMuted, fontSize: 11, lineHeight: 1.55 }}>{service.description}</div>
+                </div>
+              </button>
+            ))}
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => {
+                navigate("/crm");
+                setOpen(false);
+              }}
+              style={{
+                width: "100%",
+                marginTop: 4,
+                padding: "11px 14px",
+                borderRadius: 12,
+                border: "1px solid rgba(96,165,250,0.22)",
+                background: BRAND.primarySoft,
+                color: "#C7D6FF",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                cursor: "pointer",
+              }}
+            >
+              Acceder al CRM
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function HamburgerIcon({ open }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+      <motion.line
+        x1="3"
+        y1="6"
+        x2="19"
+        y2="6"
+        stroke={BRAND.text}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        animate={open ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
+        style={{ originX: "50%", originY: "50%" }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      />
+      <motion.line
+        x1="3"
+        y1="11"
+        x2="19"
+        y2="11"
+        stroke={BRAND.text}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+        transition={{ duration: 0.18 }}
+      />
+      <motion.line
+        x1="3"
+        y1="16"
+        x2="19"
+        y2="16"
+        stroke={BRAND.text}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        animate={open ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
+        style={{ originX: "50%", originY: "50%" }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      />
+    </svg>
+  );
+}
+
+function MobileDrawer({ open, onClose, navigate, location }) {
+  const [servicesOpen, setServicesOpen] = useState(false);
+
+  useEffect(() => {
+    setServicesOpen(false);
+  }, [location.pathname]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 120 }}
+          />
+          <motion.nav
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 380, damping: 38 }}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: "min(360px, 88vw)",
+              zIndex: 121,
+              background: "rgba(7, 11, 18, 0.98)",
+              borderRight: `1px solid ${BRAND.border}`,
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              display: "flex",
+              flexDirection: "column",
+              paddingTop: 72,
+            }}
+          >
+            <div style={{ padding: "0 24px 24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <BrandMark />
+                <div>
+                  <div style={{ color: BRAND.text, fontSize: 15, fontWeight: 800, letterSpacing: "1.8px" }}>ALTTEZ</div>
+                  <div style={{ color: BRAND.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
+                    Sports Operating System
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              {[
+                { to: "/quienes-somos", label: "Quiénes somos" },
+                { to: "/contacto", label: "Contacto" },
+              ].map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={onClose}
+                  style={({ isActive }) => ({
+                    display: "block",
+                    padding: "14px 24px",
+                    textDecoration: "none",
+                    color: isActive ? BRAND.text : BRAND.textMuted,
+                    fontSize: 13,
+                    fontWeight: isActive ? 700 : 500,
+                    borderTop: `1px solid ${BRAND.border}`,
+                  })}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+
+              <button
+                onClick={() => setServicesOpen((value) => !value)}
+                style={{
+                  width: "100%",
+                  padding: "14px 24px",
+                  background: "none",
+                  border: "none",
+                  borderTop: `1px solid ${BRAND.border}`,
+                  color: BRAND.textMuted,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                Soluciones
+              </button>
+
+              <AnimatePresence>
+                {servicesOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 380, damping: 34 }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    {SERVICES.map((service) => (
+                      <button
+                        key={service.to}
+                        onClick={() => {
+                          navigate(service.to);
+                          onClose();
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: "14px 32px",
+                          background: "rgba(255,255,255,0.02)",
+                          border: "none",
+                          borderTop: `1px solid ${BRAND.border}`,
+                          color: BRAND.text,
+                          textAlign: "left",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>{service.label}</div>
+                        <div style={{ fontSize: 10, color: BRAND.textHint, lineHeight: 1.5 }}>{service.description}</div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div style={{ padding: 24, borderTop: `1px solid ${BRAND.border}` }}>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  navigate("/crm");
+                  onClose();
+                }}
+                style={{
+                  width: "100%",
+                  padding: "14px 0",
+                  borderRadius: 12,
+                  border: "1px solid rgba(96,165,250,0.3)",
+                  background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                  color: "white",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "1.6px",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                Acceder al CRM
+              </motion.button>
+            </div>
+          </motion.nav>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function WhatsAppCTA() {
   const [hovered, setHovered] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 1200);
-    return () => clearTimeout(t);
+    const timeoutId = setTimeout(() => setVisible(true), 1200);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   if (!visible) return null;
@@ -142,36 +550,36 @@ function WhatsAppCTA() {
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 360, damping: 28, delay: 0.1 }}
+        transition={{ type: "spring", stiffness: 360, damping: 28 }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
           position: "fixed",
-          bottom: 28, right: 28,
-          zIndex: 500,
-          width: 52, height: 52,
+          right: 28,
+          bottom: 28,
+          zIndex: 110,
+          width: 54,
+          height: 54,
           borderRadius: "50%",
-          background: "#25D366",
-          boxShadow: hovered
-            ? "0 8px 32px rgba(37,211,102,0.55), 0 0 0 4px rgba(37,211,102,0.15)"
-            : "0 4px 20px rgba(37,211,102,0.35)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)",
+          boxShadow: hovered ? `0 12px 32px ${BRAND.primaryGlow}` : "0 8px 22px rgba(15,23,42,0.38)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           textDecoration: "none",
-          cursor: "pointer",
-          transition: "box-shadow 0.2s",
         }}
-        whileHover={{ scale: 1.12, rotate: 10 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.08, rotate: 8 }}
+        whileTap={{ scale: 0.96 }}
       >
-        {/* WhatsApp SVG icon */}
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path fillRule="evenodd" clipRule="evenodd"
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
             d="M13 2C7.477 2 3 6.477 3 12c0 1.85.502 3.58 1.376 5.06L3 23l6.12-1.348A10 10 0 0013 22c5.523 0 10-4.477 10-10S18.523 2 13 2zm-3.09 5.5c.178 0 .373.003.543.007.234.005.464.018.679.5.247.551.835 2.028.909 2.177.074.148.123.322.025.518-.1.197-.148.32-.296.494-.148.172-.311.385-.444.517-.148.148-.302.309-.13.606.173.296.77 1.27 1.655 2.057.96.85 1.77 1.112 2.066 1.234.296.124.47.104.643-.062.172-.166.74-.863.937-1.159.198-.296.395-.247.667-.148.271.099 1.723.812 2.019.96.296.147.493.222.567.345.074.123.074.714-.173 1.404-.247.69-1.432 1.332-1.974 1.38-.518.046-1.005.23-3.39-.707-2.852-1.1-4.645-4.01-4.78-4.198-.134-.19-1.104-1.467-1.104-2.798 0-1.33.699-1.983.947-2.255.247-.271.543-.34.724-.34z"
             fill="white"
           />
         </svg>
 
-        {/* Tooltip */}
         <AnimatePresence>
           {hovered && (
             <motion.div
@@ -182,30 +590,21 @@ function WhatsAppCTA() {
               style={{
                 position: "absolute",
                 right: "calc(100% + 12px)",
-                top: "50%", transform: "translateY(-50%)",
-                background: "rgba(10,10,15,0.95)",
-                backdropFilter: "blur(12px)",
-                border: "1px solid rgba(37,211,102,0.25)",
-                borderRadius: 8,
+                top: "50%",
+                transform: "translateY(-50%)",
                 padding: "7px 12px",
+                borderRadius: 10,
                 whiteSpace: "nowrap",
-                fontSize: 11, fontWeight: 600,
-                color: "white",
-                letterSpacing: "0.5px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                background: "rgba(7,11,18,0.96)",
+                border: `1px solid ${BRAND.border}`,
+                color: BRAND.text,
+                fontSize: 11,
+                fontWeight: 600,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
                 pointerEvents: "none",
               }}
             >
               Habla con nosotros
-              <div style={{
-                position: "absolute",
-                right: -6, top: "50%",
-                transform: "translateY(-50%)",
-                width: 0, height: 0,
-                borderTop: "5px solid transparent",
-                borderBottom: "5px solid transparent",
-                borderLeft: "6px solid rgba(37,211,102,0.25)",
-              }} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -214,490 +613,20 @@ function WhatsAppCTA() {
   );
 }
 
-// Footer: lista plana de todas las rutas del portal
-const FOOTER_LINKS = [
-  { to: "/",                     label: "Home",             exact: true  },
-  { to: "/quienes-somos",        label: "Quiénes Somos",   exact: false },
-  { to: "/servicios/sports-crm", label: "Sports CRM",      exact: false },
-  { to: "/journal",              label: "Journal",          exact: false },
-  { to: "/contacto",             label: "Contacto",         exact: false },
-  { to: "/privacidad",           label: "Privacidad",        exact: false },
-];
-
-function NavItem({ to, label, exact, onClick }) {
-  return (
-    <NavLink
-      to={to}
-      end={exact}
-      onClick={onClick}
-      style={({ isActive }) => ({
-        position: "relative",
-        padding: "8px 0",
-        fontSize: 12,
-        fontWeight: isActive ? 600 : 400,
-        letterSpacing: "0.5px",
-        color: isActive ? "white" : C.textMuted,
-        textDecoration: "none",
-        cursor: "pointer",
-        transition: "color 0.2s",
-        minHeight: "auto",
-        display: "inline-flex",
-        alignItems: "center",
-      })}
-    >
-      {({ isActive }) => (
-        <>
-          {label}
-          {isActive && (
-            <motion.div
-              layoutId="nav-indicator"
-              style={{
-                position: "absolute",
-                bottom: -1,
-                left: 0,
-                right: 0,
-                height: 2,
-                background: `linear-gradient(90deg, ${C.neon}, #7C3AED)`,
-                borderRadius: 1,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-        </>
-      )}
-    </NavLink>
-  );
-}
-
-/**
- * @component ServicesDropdown
- * @description Trigger "Servicios" + panel desplegable glassmorphism (desktop only).
- */
-function ServicesDropdown() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  useEffect(() => {
-    const closeId = setTimeout(() => setOpen(false), 0);
-    return () => clearTimeout(closeId);
-  }, [location.pathname]);
-
-  const isServicesActive = location.pathname.startsWith("/servicios");
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          padding: "8px 0",
-          fontSize: 12,
-          fontWeight: isServicesActive ? 600 : 400,
-          letterSpacing: "0.5px",
-          color: open || isServicesActive ? "white" : C.textMuted,
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          fontFamily: "inherit",
-          transition: "color 0.2s",
-          minHeight: "auto",
-          height: "auto",
-        }}
-      >
-        Servicios
-        <motion.svg
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          width="12" height="12" viewBox="0 0 12 12" fill="none"
-          style={{ flexShrink: 0, marginTop: 1 }}
-        >
-          <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </motion.svg>
-        {isServicesActive && !open && (
-          <motion.div
-            layoutId="nav-indicator"
-            style={{
-              position: "absolute",
-              bottom: -1, left: 0, right: 0,
-              height: 2,
-              background: `linear-gradient(90deg, ${C.neon}, #7C3AED)`,
-              borderRadius: 1,
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            variants={dropdownVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            style={{
-              position: "absolute",
-              top: "calc(100% + 12px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 380,
-              background: "rgba(12,12,20,0.96)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 12,
-              boxShadow: "0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
-              overflow: "hidden",
-              zIndex: 200,
-            }}
-          >
-            <div style={{
-              padding: "14px 18px 10px",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-            }}>
-              <div style={{
-                fontSize: 9, textTransform: "uppercase", letterSpacing: "2.5px",
-                color: C.textHint, fontWeight: 600,
-              }}>
-                Nuestros productos
-              </div>
-            </div>
-
-            <div style={{ padding: "8px 10px 10px" }}>
-              {SERVICES.map((service, i) => (
-                <motion.div
-                  key={service.to}
-                  custom={i}
-                  variants={dropdownItemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  onClick={() => { navigate(service.to); setOpen(false); }}
-                  whileHover={{
-                    background: "rgba(255,255,255,0.05)",
-                    transition: { duration: 0.15 },
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 14,
-                    padding: "12px 10px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    minHeight: "auto",
-                  }}
-                >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    {service.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                      <span style={{
-                        fontSize: 13, fontWeight: 600, color: "white",
-                        letterSpacing: "-0.2px",
-                      }}>
-                        {service.label}
-                      </span>
-                      <span style={{
-                        fontSize: 8, fontWeight: 700, textTransform: "uppercase",
-                        letterSpacing: "1.5px", color: service.tagColor,
-                        background: `${service.tagColor}18`,
-                        border: `1px solid ${service.tagColor}40`,
-                        padding: "1px 6px", borderRadius: 4, flexShrink: 0,
-                      }}>
-                        {service.tag}
-                      </span>
-                    </div>
-                    <div style={{
-                      fontSize: 11, color: C.textMuted, lineHeight: 1.5,
-                      letterSpacing: "0.1px",
-                    }}>
-                      {service.description}
-                    </div>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginTop: 4, opacity: 0.35 }}>
-                    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </motion.div>
-              ))}
-            </div>
-
-            <div style={{
-              padding: "10px 18px 14px",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-            }}>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => { navigate("/crm"); setOpen(false); }}
-                style={{
-                  width: "100%",
-                  padding: "9px 0",
-                  fontSize: 11, fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: "1.5px",
-                  background: `linear-gradient(90deg, ${C.neon}22, rgba(124,58,237,0.2))`,
-                  color: C.neon,
-                  border: `1px solid ${C.neon}40`,
-                  borderRadius: 7,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  transition: "background 0.2s",
-                  minHeight: "auto",
-                }}
-              >
-                Acceder al CRM
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-/**
- * @component HamburgerIcon
- * @description Animated 3-line icon for mobile menu toggle.
- */
-function HamburgerIcon({ open }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-      <motion.line
-        x1="3" y1="6" x2="19" y2="6"
-        stroke="white" strokeWidth="1.8" strokeLinecap="round"
-        animate={open ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-        style={{ originX: "50%", originY: "50%" }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      />
-      <motion.line
-        x1="3" y1="11" x2="19" y2="11"
-        stroke="white" strokeWidth="1.8" strokeLinecap="round"
-        animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-        transition={{ duration: 0.18 }}
-      />
-      <motion.line
-        x1="3" y1="16" x2="19" y2="16"
-        stroke="white" strokeWidth="1.8" strokeLinecap="round"
-        animate={open ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
-        style={{ originX: "50%", originY: "50%" }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      />
-    </svg>
-  );
-}
-
-/**
- * @component MobileDrawer
- * @description Side drawer for mobile navigation.
- * Nav items stacked vertically. Servicios expands inline.
- * CTA "Acceder al CRM" pinned at bottom.
- */
-function MobileDrawer({ open, onClose, navigate, location }) {
-  const [servicesOpen, setServicesOpen] = useState(false);
-
-  useEffect(() => {
-    onClose();
-    setServicesOpen(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
-
-  const isServicesActive = location.pathname.startsWith("/servicios");
-
-  const drawerLinkStyle = (isActive) => ({
-    display: "flex",
-    alignItems: "center",
-    padding: "14px 24px",
-    fontSize: 13,
-    fontWeight: isActive ? 600 : 400,
-    letterSpacing: "0.5px",
-    color: isActive ? "white" : C.textMuted,
-    textDecoration: "none",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    minHeight: 44,
-    transition: "background 0.15s, color 0.15s",
-  });
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            key="drawer-backdrop"
-            className="elv-drawer-backdrop"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-          />
-
-          {/* Drawer panel */}
-          <motion.nav
-            key="drawer-panel"
-            className="elv-drawer"
-            variants={drawerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            style={{
-              background: "rgba(10,10,18,0.98)",
-              backdropFilter: "blur(32px)",
-              WebkitBackdropFilter: "blur(32px)",
-              borderRight: "1px solid rgba(255,255,255,0.1)",
-              display: "flex",
-              flexDirection: "column",
-              paddingTop: "calc(56px + var(--safe-top))",
-              paddingBottom: "var(--safe-bottom)",
-            }}
-          >
-            {/* Nav items — scrollable */}
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              {/* Quiénes Somos */}
-              <NavLink
-                to="/quienes-somos"
-                style={({ isActive }) => drawerLinkStyle(isActive)}
-                onClick={onClose}
-              >
-                Quiénes Somos
-              </NavLink>
-
-              {/* Servicios inline expansion */}
-              <div>
-                <button
-                  onClick={() => setServicesOpen((v) => !v)}
-                  style={{
-                    ...drawerLinkStyle(isServicesActive),
-                    width: "100%",
-                    justifyContent: "space-between",
-                    background: "none",
-                    border: "none",
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  <span>Servicios</span>
-                  <motion.svg
-                    animate={{ rotate: servicesOpen ? 180 : 0 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    width="14" height="14" viewBox="0 0 12 12" fill="none"
-                    style={{ flexShrink: 0, opacity: 0.6 }}
-                  >
-                    <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </motion.svg>
-                </button>
-
-                <AnimatePresence>
-                  {servicesOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                      style={{ overflow: "hidden", background: "rgba(255,255,255,0.02)" }}
-                    >
-                      {SERVICES.map((service) => (
-                        <div
-                          key={service.to}
-                          onClick={() => { navigate(service.to); onClose(); }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 14,
-                            padding: "14px 24px 14px 28px",
-                            cursor: "pointer",
-                            borderBottom: "1px solid rgba(255,255,255,0.04)",
-                            minHeight: 44,
-                          }}
-                        >
-                          <div style={{
-                            width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                          }}>
-                            {service.icon}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 500, color: "white", letterSpacing: "-0.1px" }}>
-                              {service.label}
-                            </div>
-                            <div style={{ fontSize: 10, color: service.tagColor, marginTop: 2 }}>
-                              {service.tag}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Comunícate */}
-              <NavLink
-                to="/contacto"
-                style={({ isActive }) => drawerLinkStyle(isActive)}
-                onClick={onClose}
-              >
-                Comunícate con nosotros
-              </NavLink>
-            </div>
-
-            {/* CTA pinned at bottom */}
-            <div style={{
-              padding: "16px 24px",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-            }}>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={() => { navigate("/crm"); onClose(); }}
-                style={{
-                  width: "100%",
-                  padding: "14px 0",
-                  fontSize: 12, fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: "2px",
-                  background: C.neon, color: "#0a0a0f",
-                  border: "none", borderRadius: 8,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  minHeight: 48,
-                }}
-              >
-                Acceder al CRM
-              </motion.button>
-            </div>
-          </motion.nav>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
 export default function PortalLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [scrolled, setScrolled]     = useState(false);
+  const { isMobile } = useResponsive();
+  const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isMobile }                = useResponsive();
+
+  const navLinks = useMemo(
+    () => [
+      { to: "/quienes-somos", label: "Quiénes somos", exact: false },
+      { to: "/contacto", label: "Contacto", exact: false },
+    ],
+    [],
+  );
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -709,118 +638,117 @@ export default function PortalLayout() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
       document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
+    };
   }, [drawerOpen]);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(180deg, #0a0a0f 0%, #0f0f1a 50%, #0a0a0f 100%)",
-      color: "white",
-      fontFamily: "'Barlow', 'Arial Narrow', Arial, sans-serif",
-    }}>
-      {/* ── PWA: Offline status + SW update + Install CTA ── */}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: `linear-gradient(180deg, ${BRAND.bg} 0%, ${BRAND.bgSoft} 46%, #06080d 100%)`,
+        color: BRAND.text,
+        fontFamily: "'Exo 2', Arial, sans-serif",
+      }}
+    >
       <OfflineBanner />
       <UpdateToast />
       <InstallAppBanner />
-      {/* ── Navbar Sticky Glassmorphism ── */}
+
       <motion.nav
         animate={{
-          backgroundColor: scrolled ? "rgba(10,10,15,0.92)" : "rgba(10,10,15,0.6)",
-          borderBottomColor: scrolled ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+          backgroundColor: scrolled ? "rgba(7,11,18,0.94)" : "rgba(7,11,18,0.72)",
+          borderBottomColor: scrolled ? "rgba(148,163,184,0.18)" : "rgba(148,163,184,0.08)",
         }}
         transition={{ duration: 0.3 }}
         style={{
           position: "fixed",
-          top: 0, left: 0, right: 0, zIndex: 100,
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
           height: 56,
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
           borderBottom: "1px solid",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           display: "flex",
           alignItems: "center",
           padding: isMobile ? "0 16px" : "0 32px",
         }}
       >
-        {/* Logo */}
         <NavLink
           to="/"
           style={{
-            textDecoration: "none",
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            marginRight: isMobile ? 0 : 40,
+            gap: 12,
+            textDecoration: "none",
+            marginRight: isMobile ? 0 : 42,
             flex: isMobile ? 1 : "none",
-            minHeight: "auto",
           }}
         >
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: `linear-gradient(135deg, ${C.neon}, #7C3AED)`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, fontWeight: 900, color: "#0a0a0f",
-            boxShadow: `0 0 20px ${C.neonGlow}`,
-            flexShrink: 0,
-          }}>
-            E
-          </div>
+          <BrandMark />
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{
-              fontSize: 15, fontWeight: 800, letterSpacing: "2px", color: "white",
-              fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-              lineHeight: 1,
-            }}>
-              ELEVATE
+            <span
+              style={{
+                color: BRAND.text,
+                fontSize: 15,
+                fontWeight: 800,
+                letterSpacing: "2px",
+                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                lineHeight: 1,
+              }}
+            >
+              ALTTEZ
             </span>
             {!isMobile && (
-              <span style={{
-                fontSize: 8, fontWeight: 500, letterSpacing: "3px",
-                color: C.textMuted, textTransform: "uppercase", lineHeight: 1,
-                marginTop: 2,
-              }}>
-                Sports Technology
+              <span
+                style={{
+                  color: BRAND.textMuted,
+                  fontSize: 8,
+                  fontWeight: 600,
+                  letterSpacing: "2.8px",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                  marginTop: 2,
+                }}
+              >
+                Sports Operating System
               </span>
             )}
           </div>
         </NavLink>
 
-        {/* Desktop nav links */}
         {!isMobile && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 28,
-            flex: 1,
-          }}>
-            <NavItem to="/quienes-somos" label="Quiénes Somos" />
+          <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1 }}>
+            {navLinks.map((item) => (
+              <NavItem key={item.to} to={item.to} label={item.label} exact={item.exact} />
+            ))}
             <ServicesDropdown />
-            <NavItem to="/contacto" label="Comunícate con nosotros" />
           </div>
         )}
 
-        {/* Desktop CTA + Install pill */}
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <InstallAppBanner compact />
             <motion.button
-              whileHover={{ scale: 1.05, boxShadow: `0 0 20px ${C.neonGlow}` }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03, boxShadow: `0 12px 28px ${BRAND.primaryGlow}` }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate("/crm")}
               style={{
-                padding: "8px 24px",
-                fontSize: 11, fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "1.5px",
-                background: C.neon, color: "#0a0a0f",
-                border: "none", borderRadius: 6,
+                padding: "9px 22px",
+                borderRadius: 10,
+                border: "1px solid rgba(96,165,250,0.3)",
+                background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                color: "white",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "1.4px",
+                textTransform: "uppercase",
                 cursor: "pointer",
-                fontFamily: "'Barlow', Arial, sans-serif",
-                minHeight: "auto",
               }}
             >
               Acceder
@@ -828,39 +756,25 @@ export default function PortalLayout() {
           </div>
         )}
 
-        {/* Mobile hamburger button */}
         {isMobile && (
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setDrawerOpen((v) => !v)}
+          <button
+            onClick={() => setDrawerOpen((value) => !value)}
             aria-label={drawerOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={drawerOpen}
             style={{
               background: "none",
               border: "none",
+              padding: 8,
               cursor: "pointer",
-              padding: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: "auto",
-              borderRadius: 6,
+              borderRadius: 8,
             }}
           >
             <HamburgerIcon open={drawerOpen} />
-          </motion.button>
+          </button>
         )}
       </motion.nav>
 
-      {/* ── Mobile Side Drawer ── */}
-      <MobileDrawer
-        open={drawerOpen && isMobile}
-        onClose={() => setDrawerOpen(false)}
-        navigate={navigate}
-        location={location}
-      />
+      <MobileDrawer open={drawerOpen && isMobile} onClose={() => setDrawerOpen(false)} navigate={navigate} location={location} />
 
-      {/* ── Content Area ── */}
       <main style={{ paddingTop: 56 }}>
         <Suspense fallback={<LoadingFallback />}>
           <AnimatePresence mode="wait">
@@ -869,7 +783,7 @@ export default function PortalLayout() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
               <Outlet />
             </motion.div>
@@ -877,42 +791,37 @@ export default function PortalLayout() {
         </Suspense>
       </main>
 
-      {/* ── WhatsApp CTA flotante — solo en portal público ── */}
       <WhatsAppCTA />
 
-      {/* ── Footer ── */}
-      <footer style={{
-        padding: isMobile ? "32px 20px 24px" : "48px 32px 32px",
-        borderTop: `1px solid ${C.border}`,
-        display: "flex",
-        flexDirection: isMobile ? "column" : "row",
-        justifyContent: "space-between",
-        alignItems: isMobile ? "flex-start" : "center",
-        flexWrap: "wrap",
-        gap: isMobile ? 20 : 16,
-      }}>
-        <div>
-          <div style={{ fontSize: 13, color: C.textMuted, marginBottom: 4 }}>
-            ALTTEZ &mdash; Inteligencia operativa para el deporte de alto rendimiento
-          </div>
-          <div style={{ fontSize: 10, color: C.textHint }}>
-            &copy; 2026 ALTTEZ. Todos los derechos reservados.
-          </div>
-        </div>
-        <div style={{
+      <footer
+        style={{
+          padding: isMobile ? "32px 20px 24px" : "48px 32px 32px",
+          borderTop: `1px solid ${BRAND.border}`,
           display: "flex",
-          gap: isMobile ? 16 : 20,
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: 20,
           flexWrap: "wrap",
-        }}>
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 4 }}>
+            ALTTEZ &mdash; infraestructura operativa para clubes de alto rendimiento
+          </div>
+          <div style={{ fontSize: 10, color: BRAND.textHint }}>&copy; 2026 ALTTEZ. Todos los derechos reservados.</div>
+        </div>
+        <div style={{ display: "flex", gap: isMobile ? 16 : 20, flexWrap: "wrap" }}>
           {FOOTER_LINKS.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               end={link.exact}
               style={{
-                fontSize: 11, color: C.textMuted,
-                textDecoration: "none", letterSpacing: "0.5px",
-                minHeight: "auto",
+                color: BRAND.textMuted,
+                textDecoration: "none",
+                fontSize: 11,
+                letterSpacing: "0.45px",
               }}
             >
               {link.label}

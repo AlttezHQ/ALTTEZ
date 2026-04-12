@@ -1,149 +1,101 @@
-/**
- * @component Contacto
- * @description Pagina de contacto y soporte para ALTTEZ.
- * Formulario validado con sanitizacion + canales de contacto directo.
- * Disenio: glassmorphism, Framer Motion, paleta charcoal/neon.
- *
- * @route /contacto
- * @author @Arquitecto (Carlos) — Portal Corporativo
- * @version 1.0.0
- */
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PALETTE as C } from "../../shared/tokens/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeNote } from "../../shared/utils/sanitize";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
 
-// ── Animation variants ──────────────────────────────────────────────────────
-const fadeUp = {
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0 },
-};
-
-const stagger = {
-  animate: { transition: { staggerChildren: 0.1 } },
-};
-
-// ── Canales de contacto ────────────────────────────────────────────────────
 const CHANNELS = [
   {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke={C.neon} strokeWidth="1.5"/>
-        <polyline points="22,6 12,13 2,6" stroke={C.neon} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    label: "Email",
-    value: "hola.co",
-    sub: "Respondemos en menos de 24h",
-    color: C.neon,
+    title: "Agenda comercial",
+    value: "Descubrimiento y demo",
+    detail: "Ideal para clubes, ligas e instituciones que quieren evaluar el ecosistema completo.",
   },
   {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.42 2 2 0 0 1 3.58 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" stroke={C.purple} strokeWidth="1.5"/>
-      </svg>
-    ),
-    label: "WhatsApp",
-    value: "+57 300 000 0000",
-    sub: "Lunes a viernes, 8am - 6pm",
-    color: C.purple,
+    title: "Soporte de producto",
+    value: "Acompanamiento operativo",
+    detail: "Para equipos que necesitan resolver dudas de uso, activacion o configuracion.",
   },
   {
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={C.amber} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    label: "Chat en vivo",
-    value: "Desde el CRM",
-    sub: "Disponible dentro de la plataforma",
-    color: C.amber,
+    title: "Alianzas estrategicas",
+    value: "Integraciones y partnerships",
+    detail: "Cuando la conversacion requiere una propuesta conjunta, tecnica o institucional.",
   },
 ];
 
 const MOTIVOS = [
-  "Solicitar demo del ecosistema",
-  "Soporte tecnico",
-  "Planes y condiciones comerciales",
-  "Partnership o integracion tecnologica",
-  "Prensa y medios",
+  "Solicitar demo ejecutiva",
+  "Conocer planes y capacidades",
+  "Soporte tecnico o activacion",
+  "Explorar integracion",
+  "Propuesta institucional",
   "Otro",
 ];
 
-// ── Componentes auxiliares ─────────────────────────────────────────────────
-function SectionLabel({ text }) {
+function Field({ label, error, children }) {
   return (
-    <div style={{
-      display: "inline-flex", alignItems: "center", gap: 8,
-      fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-      letterSpacing: "3px", color: C.neon, marginBottom: 20,
-    }}>
-      <div style={{ width: 24, height: 1, background: C.neon }} />
-      {text}
-      <div style={{ width: 24, height: 1, background: C.neon }} />
-    </div>
-  );
-}
-
-function FormField({ label, error, children }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={{
-        fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px",
-        color: error ? C.danger : C.textHint, fontWeight: 600,
-      }}>
+    <div style={{ display: "grid", gap: 8 }}>
+      <label
+        style={{
+          fontSize: 11,
+          textTransform: "uppercase",
+          letterSpacing: "0.18em",
+          color: error ? B.danger : B.textHint,
+          fontWeight: 700,
+        }}
+      >
         {label}
       </label>
       {children}
       <AnimatePresence>
-        {error && (
-          <motion.div
+        {error ? (
+          <motion.span
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            style={{ fontSize: 10, color: C.danger }}
+            style={{ fontSize: 12, color: B.danger }}
           >
             {error}
-          </motion.div>
-        )}
+          </motion.span>
+        ) : null}
       </AnimatePresence>
     </div>
   );
 }
 
-const buildInputStyle = (hasError) => ({
-  background: "rgba(255,255,255,0.04)",
-  border: `1px solid ${hasError ? C.danger : "rgba(255,255,255,0.1)"}`,
-  borderRadius: 6,
-  padding: "10px 14px",
-  fontSize: 13,
-  color: "white",
-  fontFamily: "'Barlow', Arial, sans-serif",
-  outline: "none",
-  width: "100%",
-  boxSizing: "border-box",
-  transition: "border-color 200ms",
-});
+function inputStyle(hasError) {
+  return {
+    width: "100%",
+    padding: "15px 16px",
+    borderRadius: 18,
+    background: "rgba(255,255,255,0.03)",
+    border: `1px solid ${hasError ? B.danger : B.border}`,
+    color: B.text,
+    outline: "none",
+    fontSize: 15,
+    transition: "border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
+    boxSizing: "border-box",
+  };
+}
 
-// ── Componente principal ───────────────────────────────────────────────────
 export default function Contacto() {
   usePageTitle("Contacto");
 
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
-      @media (max-width: 767px) {
-        .ct-hero { padding: 48px 20px 36px !important; }
-        .ct-main-grid {
+      @media (max-width: 980px) {
+        .contact-grid {
           grid-template-columns: 1fr !important;
-          padding: 0 20px 64px !important;
-          gap: 32px !important;
         }
-        .ct-form-inner { padding: 24px 20px !important; }
-        .ct-form-name-email { grid-template-columns: 1fr !important; }
-        .ct-success-panel { padding: 40px 24px !important; }
+      }
+      @media (max-width: 640px) {
+        .contact-page section {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+        .contact-row {
+          grid-template-columns: 1fr !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -151,418 +103,312 @@ export default function Contacto() {
   }, []);
 
   const [form, setForm] = useState({
-    nombre: "", email: "", club: "", motivo: "", mensaje: "",
+    nombre: "",
+    email: "",
+    club: "",
+    motivo: "",
+    mensaje: "",
   });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const handleChange = (field) => (e) => {
-    const raw = e.target.value;
-    let value;
-    if (field === "email") {
-      value = raw;
-    } else if (field === "mensaje") {
-      value = sanitizeNote(raw);
-    } else {
-      value = sanitizeText(raw);
-    }
+  const handleChange = (field) => (event) => {
+    const raw = event.target.value;
+    let value = raw;
+
+    if (field === "mensaje") value = sanitizeNote(raw);
+    if (field !== "mensaje" && field !== "email") value = sanitizeText(raw);
+
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validate = () => {
-    const errs = {};
-    const nombre  = sanitizeTextFinal(form.nombre);
-    const email   = sanitizeTextFinal(form.email);
-    const motivo  = form.motivo;
+    const next = {};
+    const nombre = sanitizeTextFinal(form.nombre);
+    const email = sanitizeTextFinal(form.email);
     const mensaje = sanitizeTextFinal(form.mensaje);
 
-    if (!nombre || nombre.length < 2) errs.nombre = "Ingresa tu nombre completo";
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Email invalido";
-    if (!motivo) errs.motivo = "Selecciona el motivo de contacto";
-    if (!mensaje || mensaje.length < 20) errs.mensaje = "El mensaje debe tener al menos 20 caracteres";
+    if (!nombre || nombre.length < 2) next.nombre = "Ingresa un nombre valido";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = "Ingresa un email valido";
+    if (!form.motivo) next.motivo = "Selecciona el objetivo de la conversacion";
+    if (!mensaje || mensaje.length < 20) next.mensaje = "Cuentanos un poco mas sobre tu necesidad";
 
-    return errs;
+    return next;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const nextErrors = validate();
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
       return;
     }
 
     setSending(true);
-    // Simulacion de envio — reemplazar con endpoint real cuando exista
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
     setSending(false);
     setSubmitted(true);
   };
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      color: "white",
-      fontFamily: "'Barlow', 'Arial Narrow', Arial, sans-serif",
-    }}>
-
-      {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section className="ct-hero" style={{
-        padding: "80px 32px 60px",
-        textAlign: "center",
-        maxWidth: 700,
-        margin: "0 auto",
-        position: "relative",
-      }}>
-        <div style={{
-          position: "absolute",
-          top: "30%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 500, height: 400,
-          background: `radial-gradient(ellipse, ${C.neon}08 0%, transparent 65%)`,
-          pointerEvents: "none",
-        }} />
+    <div className="contact-page" style={{ minHeight: "100vh", background: G.hero, color: B.text }}>
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "84px 32px 40px" }}>
         <motion.div
-          variants={stagger}
-          initial="initial"
-          animate="animate"
-          style={{ position: "relative" }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65 }}
+          style={{ maxWidth: 820 }}
         >
-          <motion.div variants={fadeUp} transition={{ duration: 0.5 }}>
-            <SectionLabel text="Contacto" />
-          </motion.div>
-          <motion.h1
-            variants={fadeUp}
-            transition={{ duration: 0.6 }}
+          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.24em", color: B.warning, fontWeight: 700 }}>
+            Contacto ALTTEZ
+          </div>
+          <h1
             style={{
-              fontSize: "clamp(32px, 5vw, 52px)",
-              fontWeight: 900, letterSpacing: "-1.5px",
-              lineHeight: 1.1,
-              fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-              margin: "0 0 20px",
+              margin: "18px 0 18px",
+              fontSize: "clamp(42px, 7vw, 84px)",
+              lineHeight: 0.96,
+              fontWeight: 800,
+              letterSpacing: "-0.06em",
+              fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
             }}
           >
-            Hablemos de tu{" "}
-            <span style={{
-              background: `linear-gradient(90deg, ${C.neon}, #7C3AED)`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}>
-              club
-            </span>
-          </motion.h1>
-          <motion.p
-            variants={fadeUp}
-            transition={{ duration: 0.6 }}
-            style={{
-              fontSize: 15, color: "rgba(255,255,255,0.5)",
-              lineHeight: 1.7, margin: 0,
-            }}
-          >
-            Cuentanos el desafio operativo de tu club. Te respondemos con una solucion
-            concreta, no con un discurso de ventas.
-          </motion.p>
+            Disenemos una experiencia que si le hable al cliente correcto.
+          </h1>
+          <p style={{ maxWidth: 680, fontSize: 18, lineHeight: 1.82, color: B.textMuted }}>
+            Si tu organizacion quiere una plataforma con presencia institucional, claridad operativa y mejores momentos de conversion, este es el punto de partida.
+          </p>
         </motion.div>
       </section>
 
-      {/* ── CONTENIDO PRINCIPAL ───────────────────────────────────────── */}
-      <section className="ct-main-grid" style={{
-        padding: "0 32px 100px",
-        maxWidth: 1100,
-        margin: "0 auto",
-        display: "grid",
-        gridTemplateColumns: "1fr 360px",
-        gap: 48,
-        alignItems: "start",
-      }}>
-
-        {/* ── FORMULARIO ── */}
-        <AnimatePresence mode="wait">
-          {submitted ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="ct-success-panel"
-              style={{
-                background: "rgba(57,255,20,0.06)",
-                border: `1px solid ${C.neon}40`,
-                borderRadius: 12,
-                padding: "60px 40px",
-                textAlign: "center",
-              }}
-            >
-              <div style={{
-                width: 64, height: 64, borderRadius: "50%",
-                background: `${C.neon}18`,
-                border: `2px solid ${C.neon}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 24px",
-              }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 6L9 17l-5-5" stroke={C.neon} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <h3 style={{
-                fontSize: 22, fontWeight: 800, color: "white",
-                margin: "0 0 12px", letterSpacing: "-0.3px",
-              }}>
-                Recibido. Estamos en ello.
-              </h3>
-              <p style={{
-                fontSize: 14, color: "rgba(255,255,255,0.5)",
-                lineHeight: 1.7, margin: "0 0 32px",
-              }}>
-                Tu mensaje llego a nuestro equipo. Te contactaremos en menos de 24 horas
-                con una respuesta directa al email que nos indicaste.
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  setSubmitted(false);
-                  setForm({ nombre: "", email: "", club: "", motivo: "", mensaje: "" });
-                }}
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 96px" }}>
+        <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1.08fr 0.92fr", gap: 24, alignItems: "start" }}>
+          <AnimatePresence mode="wait">
+            {submitted ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
                 style={{
-                  padding: "10px 28px",
-                  fontSize: 11, fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: "1.5px",
-                  background: "transparent", color: C.neon,
-                  border: `1px solid ${C.neon}50`, borderRadius: 6,
-                  cursor: "pointer", fontFamily: "inherit",
+                  padding: 34,
+                  borderRadius: 30,
+                  background: G.panel,
+                  border: `1px solid ${B.borderStrong}`,
+                  boxShadow: "0 28px 80px rgba(0,0,0,0.34)",
                 }}
               >
-                Nueva consulta
-              </motion.button>
-            </motion.div>
-          ) : (
-            <motion.form
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              onSubmit={handleSubmit}
-              className="ct-form-inner"
-              style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 12,
-                padding: 40,
-                display: "flex", flexDirection: "column", gap: 24,
-              }}
-            >
-              <div style={{
-                fontSize: 10, textTransform: "uppercase",
-                letterSpacing: "2px", color: C.textHint,
-              }}>
-                Formulario de contacto
-              </div>
-
-              <div className="ct-form-name-email" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                <FormField label="Nombre completo *" error={errors.nombre}>
-                  <input
-                    type="text"
-                    placeholder="Julian Perez"
-                    value={form.nombre}
-                    onChange={handleChange("nombre")}
-                    style={buildInputStyle(!!errors.nombre)}
-                  />
-                </FormField>
-
-                <FormField label="Email *" error={errors.email}>
-                  <input
-                    type="email"
-                    placeholder="julian@miclub.co"
-                    value={form.email}
-                    onChange={handleChange("email")}
-                    style={buildInputStyle(!!errors.email)}
-                  />
-                </FormField>
-              </div>
-
-              <FormField label="Club u organizacion" error={errors.club}>
-                <input
-                  type="text"
-                  placeholder="Club Deportivo Ejemplo"
-                  value={form.club}
-                  onChange={handleChange("club")}
-                  style={buildInputStyle(!!errors.club)}
-                />
-              </FormField>
-
-              <FormField label="Motivo de contacto *" error={errors.motivo}>
-                <select
-                  value={form.motivo}
-                  onChange={handleChange("motivo")}
+                <div
                   style={{
-                    ...buildInputStyle(!!errors.motivo),
-                    background: "rgba(20,20,32,0.95)",
-                    cursor: "pointer",
+                    width: 74,
+                    height: 74,
+                    borderRadius: 24,
+                    background: "rgba(47,107,255,0.14)",
+                    border: `1px solid ${B.borderStrong}`,
+                    display: "grid",
+                    placeItems: "center",
+                    color: B.primary,
+                    fontSize: 30,
+                    fontWeight: 800,
                   }}
                 >
-                  <option value="">Selecciona un motivo...</option>
-                  {MOTIVOS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              </FormField>
-
-              <FormField label="Mensaje *" error={errors.mensaje}>
-                <textarea
-                  placeholder="Cuentanos sobre tu club: cuantos deportistas tienen, cuales son los desafios operativos que quieres resolver y que esperas de ALTTEZ..."
-                  value={form.mensaje}
-                  onChange={handleChange("mensaje")}
-                  rows={5}
-                  style={{
-                    ...buildInputStyle(!!errors.mensaje),
-                    resize: "vertical",
-                    lineHeight: 1.7,
-                    minHeight: 120,
-                  }}
-                />
-                <div style={{
-                  fontSize: 9, color: C.textHint, textAlign: "right", marginTop: -2,
-                }}>
-                  {form.mensaje.length} / 1000 caracteres
+                  ✓
                 </div>
-              </FormField>
-
-              <motion.button
-                type="submit"
-                disabled={sending}
-                whileHover={sending ? {} : { scale: 1.02, boxShadow: `0 0 20px ${C.neonGlow}` }}
-                whileTap={sending ? {} : { scale: 0.98 }}
+                <h2 style={{ margin: "22px 0 10px", fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+                  Tu mensaje ya esta en la mesa.
+                </h2>
+                <p style={{ fontSize: 16, color: B.textMuted, lineHeight: 1.8, maxWidth: 560 }}>
+                  Nuestro equipo revisara el contexto y volvera con una respuesta enfocada, no con un correo generico. Queremos entender que necesitas y como ALTTEZ puede aportar valor real.
+                </p>
+                <button
+                  onClick={() => {
+                    setSubmitted(false);
+                    setForm({ nombre: "", email: "", club: "", motivo: "", mensaje: "" });
+                  }}
+                  style={{
+                    marginTop: 24,
+                    padding: "14px 22px",
+                    borderRadius: 999,
+                    border: `1px solid ${B.borderStrong}`,
+                    background: "transparent",
+                    color: B.text,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Enviar otra consulta
+                </button>
+              </motion.div>
+            ) : (
+              <motion.form
+                key="form"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65 }}
+                onSubmit={handleSubmit}
                 style={{
-                  width: "100%", padding: "14px 0",
-                  fontSize: 12, fontWeight: 700,
-                  textTransform: "uppercase", letterSpacing: "2px",
-                  background: sending ? "rgba(57,255,20,0.3)" : C.neon,
-                  color: "#0a0a0f",
-                  border: "none", borderRadius: 8,
-                  cursor: sending ? "not-allowed" : "pointer",
-                  fontFamily: "inherit",
-                  transition: "background 200ms",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  padding: 30,
+                  borderRadius: 30,
+                  background: G.panel,
+                  border: `1px solid ${B.border}`,
+                  boxShadow: "0 28px 80px rgba(0,0,0,0.34)",
+                  display: "grid",
+                  gap: 22,
                 }}
               >
-                {sending ? (
-                  <>
-                    <div style={{
-                      width: 14, height: 14,
-                      border: "2px solid #0a0a0f",
-                      borderTop: "2px solid transparent",
-                      borderRadius: "50%",
-                      animation: "spin 0.8s linear infinite",
-                    }} />
-                    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-                    Enviando...
-                  </>
-                ) : (
-                  "Enviar consulta"
-                )}
-              </motion.button>
+                <div>
+                  <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.22em", fontWeight: 700 }}>
+                    Formulario
+                  </div>
+                  <h2 style={{ marginTop: 12, fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+                    Cuentanos que quieres transformar.
+                  </h2>
+                </div>
 
-              <div style={{ fontSize: 10, color: C.textHint, textAlign: "center" }}>
-                Tus datos son confidenciales y no los compartimos con terceros.
-              </div>
-            </motion.form>
-          )}
-        </AnimatePresence>
+                <div className="contact-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <Field label="Nombre completo" error={errors.nombre}>
+                    <input value={form.nombre} onChange={handleChange("nombre")} placeholder="Camila Rodriguez" style={inputStyle(!!errors.nombre)} />
+                  </Field>
+                  <Field label="Correo" error={errors.email}>
+                    <input value={form.email} onChange={handleChange("email")} placeholder="camila@club.co" style={inputStyle(!!errors.email)} />
+                  </Field>
+                </div>
 
-        {/* ── SIDEBAR: canales directos ── */}
-        <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.7, delay: 0.2 }}
-          style={{ display: "flex", flexDirection: "column", gap: 20 }}
-        >
-          <div style={{
-            fontSize: 10, textTransform: "uppercase",
-            letterSpacing: "2px", color: C.textHint,
-          }}>
-            Contacto directo
-          </div>
+                <Field label="Club u organizacion">
+                  <input value={form.club} onChange={handleChange("club")} placeholder="Academia, liga o institucion" style={inputStyle(false)} />
+                </Field>
 
-          {CHANNELS.map((ch) => (
-            <motion.div
-              key={ch.label}
-              whileHover={{ x: 4, transition: { duration: 0.2 } }}
+                <Field label="Motivo principal" error={errors.motivo}>
+                  <select value={form.motivo} onChange={handleChange("motivo")} style={inputStyle(!!errors.motivo)}>
+                    <option value="">Selecciona una opcion</option>
+                    {MOTIVOS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Contexto" error={errors.mensaje}>
+                  <textarea
+                    rows={6}
+                    value={form.mensaje}
+                    onChange={handleChange("mensaje")}
+                    placeholder="Describe el reto actual, el tipo de cliente o equipo, y lo que esperas mejorar en producto, operacion o imagen."
+                    style={{ ...inputStyle(!!errors.mensaje), resize: "vertical", minHeight: 150, lineHeight: 1.7 }}
+                  />
+                </Field>
+
+                <div
+                  style={{
+                    padding: "16px 18px",
+                    borderRadius: 20,
+                    background: "rgba(255,255,255,0.025)",
+                    border: `1px solid ${B.border}`,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    color: B.textHint,
+                    fontSize: 13,
+                  }}
+                >
+                  <span>Respuesta estimada: menos de 24 horas habiles</span>
+                  <span>{form.mensaje.length}/1000</span>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={sending}
+                  style={{
+                    padding: "16px 22px",
+                    borderRadius: 999,
+                    border: "none",
+                    background: G.button,
+                    color: "white",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.09em",
+                    boxShadow: `0 18px 40px ${B.primaryGlow}`,
+                    opacity: sending ? 0.75 : 1,
+                  }}
+                >
+                  {sending ? "Enviando..." : "Solicitar conversacion"}
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+
+          <motion.div
+            initial={{ opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.72, delay: 0.12 }}
+            style={{ display: "grid", gap: 18 }}
+          >
+            <div
               style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderLeft: `3px solid ${ch.color}`,
-                borderRadius: 10,
-                padding: "20px 22px",
-                display: "flex", alignItems: "center", gap: 16,
+                padding: 28,
+                borderRadius: 28,
+                background: "rgba(255,255,255,0.025)",
+                border: `1px solid ${B.border}`,
               }}
             >
-              <div style={{
-                width: 44, height: 44, borderRadius: 10,
-                background: `${ch.color}10`,
-                border: `1px solid ${ch.color}25`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                {ch.icon}
+              <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.22em", fontWeight: 700 }}>
+                Canales
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 9, textTransform: "uppercase",
-                  letterSpacing: "1.5px", color: ch.color,
-                  marginBottom: 4, fontWeight: 700,
-                }}>
-                  {ch.label}
-                </div>
-                <div style={{
-                  fontSize: 13, color: "white",
-                  fontWeight: 600, marginBottom: 3,
-                  whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                }}>
-                  {ch.value}
-                </div>
-                <div style={{ fontSize: 10, color: C.textMuted }}>
-                  {ch.sub}
-                </div>
+              <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
+                {CHANNELS.map((channel, index) => (
+                  <motion.div
+                    key={channel.title}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45, delay: 0.14 + index * 0.08 }}
+                    style={{
+                      padding: 18,
+                      borderRadius: 22,
+                      background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
+                      border: `1px solid ${B.border}`,
+                    }}
+                  >
+                    <div style={{ fontSize: 13, color: B.warning, textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 700 }}>
+                      {channel.title}
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>{channel.value}</div>
+                    <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.7, color: B.textMuted }}>{channel.detail}</p>
+                  </motion.div>
+                ))}
               </div>
-            </motion.div>
-          ))}
-
-          {/* Horario */}
-          <div style={{
-            background: `${C.purple}08`,
-            border: `1px solid ${C.purple}20`,
-            borderRadius: 10,
-            padding: "20px 22px",
-            marginTop: 8,
-          }}>
-            <div style={{
-              fontSize: 9, textTransform: "uppercase",
-              letterSpacing: "2px", color: C.purple,
-              marginBottom: 12, fontWeight: 700,
-            }}>
-              Horario de atencion
             </div>
-            {[
-              { day: "Lunes a Viernes", time: "8:00 am - 6:00 pm" },
-              { day: "Sabados", time: "9:00 am - 1:00 pm" },
-              { day: "Domingos", time: "Cerrado" },
-            ].map((h) => (
-              <div
-                key={h.day}
-                style={{
-                  display: "flex", justifyContent: "space-between",
-                  fontSize: 11, marginBottom: 8,
-                }}
-              >
-                <span style={{ color: "rgba(255,255,255,0.5)" }}>{h.day}</span>
-                <span style={{ color: "white", fontWeight: 600 }}>{h.time}</span>
+
+            <div
+              style={{
+                padding: 28,
+                borderRadius: 28,
+                background: "linear-gradient(135deg, rgba(11,18,32,0.98) 0%, rgba(8,14,24,0.88) 100%)",
+                border: `1px solid ${B.borderStrong}`,
+              }}
+            >
+              <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.22em", fontWeight: 700 }}>
+                Lo que puedes esperar
               </div>
-            ))}
-          </div>
-        </motion.div>
+              <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+                {[
+                  "Una conversacion enfocada en negocio, no solo en pantallas.",
+                  "Recomendaciones sobre imagen, experiencia y jerarquia visual del portal.",
+                  "Siguiente paso claro para demo, propuesta o implementacion.",
+                ].map((item) => (
+                  <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start", color: B.textMuted, lineHeight: 1.7 }}>
+                    <span style={{ color: B.primary, fontWeight: 800 }}>•</span>
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </section>
     </div>
   );

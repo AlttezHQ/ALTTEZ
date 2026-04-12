@@ -1,128 +1,95 @@
-/**
- * @component QuienesSomos
- * @description Pagina de storytelling de marca para ALTTEZ.
- * Secciones: hero con manifiesto, origen, equipo, valores, CTA final.
- * Disenio: glassmorphism panels, gradientes charcoal/neon, Framer Motion.
- *
- * @route /quienes-somos
- * @author @Arquitecto (Carlos) — Portal Corporativo
- * @version 1.0.0
- */
-
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { PALETTE as C } from "../../shared/tokens/palette";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
 
-// ── Animation variants ──────────────────────────────────────────────────────
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
-  animate: { opacity: 1, y: 0 },
+  whileInView: { opacity: 1, y: 0 },
 };
 
-const stagger = {
-  animate: { transition: { staggerChildren: 0.12 } },
-};
-
-// ── Data ────────────────────────────────────────────────────────────────────
-const VALUES = [
+const STORY_PILLARS = [
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L2 7l10 5 10-5-10-5z" stroke={C.neon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke={C.neon} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    ),
-    title: "Datos con proposito",
-    body: "No acumulamos numeros. Convertimos metricas en decisiones que cambian resultados reales sobre el campo.",
-    color: C.neon,
+    title: "Operacion conectada",
+    body: "Unificamos la coordinacion entre direccion deportiva, cuerpo tecnico, staff medico y administracion en una sola vista.",
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" stroke={C.purple} strokeWidth="1.5"/>
-        <path d="M12 6v6l4 2" stroke={C.purple} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: "Velocidad de respuesta",
-    body: "El cuerpo tecnico no puede esperar reportes lentos. Nuestra plataforma opera en tiempo real, decision a decision.",
-    color: C.purple,
+    title: "Decision con contexto",
+    body: "Cada modulo traduce datos en prioridad, urgencia y accion para evitar ruido y acelerar respuestas.",
   },
   {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={C.amber} strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="9" cy="7" r="4" stroke={C.amber} strokeWidth="1.5"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={C.amber} strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    ),
-    title: "Para el deporte colombiano",
-    body: "Construido desde adentro. Nuestro equipo son deportistas, entrenadores y tecnologos que entienden la cancha.",
-    color: C.amber,
+    title: "Identidad competitiva",
+    body: "ALTTEZ nace para organizaciones que quieren verse, sentirse y operar como proyectos serios de alto rendimiento.",
   },
 ];
 
-const MILESTONES = [
-  { year: "2023", event: "Primer prototipo con un club de futbol sala en Bogota. 12 jugadores. 1 entrenador. Mucho aprendizaje." },
-  { year: "2024", event: "Version 1 lanzada con 8 clubes piloto a lo largo de Colombia. Validacion de modelo de negocio." },
-  { year: "2025", event: "Expansion a tres disciplinas: futbol, baloncesto y voleibol. Primer contrato institucional." },
-  { year: "2026", event: "ALTTEZ CRM v8. Auth en la nube, sincronizacion offline-first y modulo tactico completo." },
+const PRINCIPLES = [
+  ["Claridad", "Interfaces que priorizan lo importante y eliminan friccion operativa."],
+  ["Ritmo", "Movimiento visual sutil para guiar la lectura, reforzar jerarquia y dar sensacion de producto vivo."],
+  ["Confianza", "Mensajes, datos y CTAs con tono ejecutivo para compradores institucionales y clubes serios."],
 ];
 
-// ── Sub-componentes ─────────────────────────────────────────────────────────
-function SectionLabel({ text }) {
+function SectionEyebrow({ children }) {
   return (
-    <div style={{
-      display: "inline-flex", alignItems: "center", gap: 8,
-      fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-      letterSpacing: "3px", color: C.neon, marginBottom: 20,
-    }}>
-      <div style={{ width: 24, height: 1, background: C.neon }} />
-      {text}
-      <div style={{ width: 24, height: 1, background: C.neon }} />
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        fontSize: 11,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.24em",
+        color: B.warning,
+      }}
+    >
+      <span style={{ width: 28, height: 1, background: B.warning, opacity: 0.7 }} />
+      {children}
     </div>
   );
 }
 
-function GlassCard({ children, style = {} }) {
+function MetricCard({ value, label }) {
   return (
-    <div style={{
-      background: "rgba(255,255,255,0.03)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 12,
-      ...style,
-    }}>
-      {children}
+    <div
+      style={{
+        padding: "22px 20px",
+        borderRadius: 24,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+        border: `1px solid ${B.border}`,
+        boxShadow: "0 18px 50px rgba(0,0,0,0.24)",
+      }}
+    >
+      <div style={{ fontSize: 34, fontWeight: 800, color: B.text }}>{value}</div>
+      <div style={{ fontSize: 13, color: B.textHint, lineHeight: 1.6 }}>{label}</div>
     </div>
   );
 }
 
 export default function QuienesSomos() {
   const navigate = useNavigate();
-  usePageTitle("Quiénes Somos");
+  usePageTitle("Quienes Somos");
 
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
-      .qs-hero { padding: 64px 20px 48px !important; }
-      .qs-stats-row { gap: 20px !important; }
-      .qs-origen-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
-      .qs-valores-grid { grid-template-columns: 1fr !important; }
-      .qs-cta-section { padding: 64px 20px !important; }
-      .qs-cta-btns { flex-direction: column !important; align-items: stretch !important; }
-      .qs-cta-btns button { text-align: center !important; }
-      @media (max-width: 767px) {
-        .qs-hero { padding: 64px 20px 48px !important; }
-        .qs-stats-row { gap: 20px !important; justify-content: space-around !important; }
-        .qs-origen-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
-        .qs-valores-grid { grid-template-columns: 1fr !important; }
-        .qs-cta-section { padding: 64px 20px !important; }
-        .qs-cta-btns { flex-direction: column !important; align-items: stretch !important; }
-        .qs-origen-section { padding: 48px 20px !important; }
-        .qs-valores-section { padding: 48px 20px !important; }
+      @media (max-width: 900px) {
+        .about-hero-grid,
+        .about-story-grid,
+        .about-principles-grid,
+        .about-cta-grid {
+          grid-template-columns: 1fr !important;
+        }
+      }
+      @media (max-width: 640px) {
+        .about-page section {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+        .about-stats-grid {
+          grid-template-columns: 1fr 1fr !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -130,361 +97,334 @@ export default function QuienesSomos() {
   }, []);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      color: "white",
-      fontFamily: "'Barlow', 'Arial Narrow', Arial, sans-serif",
-    }}>
-
-      {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section className="qs-hero" style={{
+    <div
+      className="about-page"
+      style={{
+        minHeight: "100vh",
+        color: B.text,
+        background: G.hero,
         position: "relative",
-        padding: "100px 32px 80px",
-        maxWidth: 900,
-        margin: "0 auto",
-        textAlign: "center",
         overflow: "hidden",
-      }}>
-        {/* Gradient glow background */}
-        <div style={{
+      }}
+    >
+      <div
+        style={{
           position: "absolute",
-          top: "20%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 600, height: 600,
-          background: `radial-gradient(ellipse at center, ${C.neon}10 0%, transparent 70%)`,
+          inset: 0,
+          background:
+            "radial-gradient(circle at 18% 20%, rgba(47,107,255,0.2), transparent 24%), radial-gradient(circle at 82% 78%, rgba(147,180,255,0.1), transparent 22%)",
           pointerEvents: "none",
-        }} />
+        }}
+      />
 
-        <motion.div
-          variants={stagger}
-          initial="initial"
-          animate="animate"
-          style={{ position: "relative" }}
+      <section
+        style={{
+          position: "relative",
+          zIndex: 1,
+          maxWidth: 1240,
+          margin: "0 auto",
+          padding: "84px 32px 40px",
+        }}
+      >
+        <div
+          className="about-hero-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.2fr 0.8fr",
+            gap: 32,
+            alignItems: "stretch",
+          }}
         >
-          <motion.div variants={fadeUp} transition={{ duration: 0.6 }}>
-            <SectionLabel text="Nuestra historia" />
-          </motion.div>
-
-          <motion.h1
-            variants={fadeUp}
-            transition={{ duration: 0.7 }}
-            style={{
-              fontSize: "clamp(36px, 6vw, 64px)",
-              fontWeight: 900,
-              lineHeight: 1.08,
-              letterSpacing: "-1.5px",
-              fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-              margin: "0 0 28px",
-              background: `linear-gradient(135deg, #ffffff 0%, ${C.neon} 60%, #7C3AED 100%)`,
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Elevamos el deporte<br />colombiano con datos
-          </motion.h1>
-
-          <motion.p
-            variants={fadeUp}
-            transition={{ duration: 0.7 }}
-            style={{
-              fontSize: "clamp(15px, 2vw, 18px)",
-              color: "rgba(255,255,255,0.6)",
-              lineHeight: 1.8,
-              maxWidth: 620,
-              margin: "0 auto 40px",
-              letterSpacing: "0.2px",
-            }}
-          >
-            Empezamos con una frustracion sencilla: los entrenadores colombianos tomaban
-            decisiones criticas sin datos. Construimos ALTTEZ para cambiar eso.
-          </motion.p>
-
-          {/* Stats row */}
           <motion.div
-            variants={stagger}
-            className="qs-stats-row"
-            style={{
-              display: "flex", justifyContent: "center", gap: 40, flexWrap: "wrap",
-            }}
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            style={{ padding: "40px 0 28px" }}
           >
-            {[
-              { val: "80+", label: "Clubes activos" },
-              { val: "3", label: "Disciplinas" },
-              { val: "2K+", label: "Deportistas registrados" },
-              { val: "1", label: "Mision" },
-            ].map((s) => (
-              <motion.div
-                key={s.label}
-                variants={fadeUp}
-                transition={{ duration: 0.5 }}
-                style={{ textAlign: "center" }}
+            <SectionEyebrow>Quienes somos</SectionEyebrow>
+            <h1
+              style={{
+                margin: "20px 0 20px",
+                fontSize: "clamp(44px, 8vw, 86px)",
+                lineHeight: 0.96,
+                fontWeight: 800,
+                letterSpacing: "-0.06em",
+                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                maxWidth: 760,
+              }}
+            >
+              Construimos una operacion deportiva que se siente a la altura del proyecto.
+            </h1>
+            <p
+              style={{
+                maxWidth: 620,
+                fontSize: 18,
+                lineHeight: 1.8,
+                color: B.textMuted,
+              }}
+            >
+              ALTTEZ no nace para decorar dashboards. Nace para ordenar decisiones, profesionalizar el dia a dia del club y darle al cliente una experiencia que inspire confianza desde el primer clic.
+            </p>
+
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 28 }}>
+              <button
+                onClick={() => navigate("/contacto")}
+                style={{
+                  padding: "15px 24px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: G.button,
+                  color: "white",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  boxShadow: `0 16px 40px ${B.primaryGlow}`,
+                }}
               >
-                <div style={{
-                  fontSize: "clamp(28px, 4vw, 42px)",
-                  fontWeight: 900,
-                  color: C.neon,
-                  fontFamily: "'Barlow Condensed', Arial, sans-serif",
-                  lineHeight: 1,
-                }}>
-                  {s.val}
-                </div>
-                <div style={{
-                  fontSize: 10, textTransform: "uppercase",
-                  letterSpacing: "2px", color: "rgba(255,255,255,0.4)",
-                  marginTop: 6,
-                }}>
-                  {s.label}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* ── ORIGEN ────────────────────────────────────────────────────── */}
-      <section className="qs-origen-section" style={{
-        padding: "80px 32px",
-        maxWidth: 1100,
-        margin: "0 auto",
-      }}>
-        <div className="qs-origen-grid" style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 48,
-          alignItems: "center",
-        }}>
-          {/* Timeline */}
-          <motion.div
-            initial={{ opacity: 0, x: -32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <SectionLabel text="Origen" />
-            <h2 style={{
-              fontSize: "clamp(24px, 3.5vw, 36px)",
-              fontWeight: 800,
-              letterSpacing: "-0.5px",
-              lineHeight: 1.2,
-              color: "white",
-              margin: "0 0 32px",
-            }}>
-              De la cancha al codigo
-            </h2>
-            <div style={{ position: "relative", paddingLeft: 24 }}>
-              {/* Vertical line */}
-              <div style={{
-                position: "absolute", left: 6, top: 8, bottom: 8,
-                width: 1, background: `linear-gradient(to bottom, ${C.neon}, transparent)`,
-              }} />
-              {MILESTONES.map((m, i) => (
-                <motion.div
-                  key={m.year}
-                  initial={{ opacity: 0, x: -16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1, duration: 0.5 }}
-                  style={{ marginBottom: 28, position: "relative" }}
-                >
-                  {/* Dot */}
-                  <div style={{
-                    position: "absolute", left: -21, top: 5,
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: i === MILESTONES.length - 1 ? C.neon : "rgba(255,255,255,0.2)",
-                    border: `1px solid ${i === MILESTONES.length - 1 ? C.neon : "rgba(255,255,255,0.15)"}`,
-                    boxShadow: i === MILESTONES.length - 1 ? `0 0 12px ${C.neonGlow}` : "none",
-                  }} />
-                  <div style={{
-                    fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: "2px", color: C.neon, marginBottom: 5,
-                  }}>
-                    {m.year}
-                  </div>
-                  <div style={{
-                    fontSize: 13, color: "rgba(255,255,255,0.55)",
-                    lineHeight: 1.6,
-                  }}>
-                    {m.event}
-                  </div>
-                </motion.div>
-              ))}
+                Hablar con ALTTEZ
+              </button>
+              <button
+                onClick={() => navigate("/sports-crm")}
+                style={{
+                  padding: "15px 24px",
+                  borderRadius: 999,
+                  border: `1px solid ${B.borderStrong}`,
+                  background: "rgba(255,255,255,0.02)",
+                  color: B.text,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Ver ecosistema
+              </button>
             </div>
           </motion.div>
 
-          {/* Visual panel */}
           <motion.div
-            initial={{ opacity: 0, x: 32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            style={{
+              position: "relative",
+              padding: 28,
+              borderRadius: 32,
+              background: G.panel,
+              border: `1px solid ${B.border}`,
+              boxShadow: "0 28px 90px rgba(0,0,0,0.45)",
+              overflow: "hidden",
+            }}
           >
-            <GlassCard style={{ padding: 40 }}>
-              <div style={{
-                fontSize: 10, textTransform: "uppercase", letterSpacing: "2px",
-                color: C.textHint, marginBottom: 20,
-              }}>
-                Manifiesto ALTTEZ
-              </div>
-              {[
-                "El talento latinoamericano no necesita mas intuicion. Necesita informacion.",
-                "Cada lesion prevenida es una carrera salvada. Cada dato es un argumento para el cuerpo tecnico.",
-                "Construimos herramientas para entrenadores que quieren ganar con evidencia, no con suerte.",
-                "ALTTEZ no es un software. Es el sistema nervioso del deporte colombiano moderno.",
-              ].map((quote, i) => (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(135deg, rgba(47,107,255,0.18) 0%, transparent 45%), radial-gradient(circle at 88% 18%, rgba(147,180,255,0.18), transparent 22%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                <div>
+                  <div style={{ fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: B.warning }}>
+                    Brand brief
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 800, marginTop: 8 }}>ALTTEZ</div>
+                </div>
                 <div
-                  key={i}
                   style={{
-                    fontSize: 13, color: "rgba(255,255,255,0.7)",
-                    lineHeight: 1.8, marginBottom: 18,
-                    paddingLeft: 14,
-                    borderLeft: `2px solid ${i === 0 ? C.neon : i === 1 ? C.purple : "rgba(255,255,255,0.1)"}`,
+                    width: 58,
+                    height: 58,
+                    borderRadius: 18,
+                    background: "rgba(47,107,255,0.14)",
+                    border: `1px solid ${B.borderStrong}`,
+                    display: "grid",
+                    placeItems: "center",
+                    color: B.primary,
+                    fontSize: 22,
+                    fontWeight: 800,
                   }}
                 >
-                  {quote}
+                  A
                 </div>
-              ))}
-            </GlassCard>
+              </div>
+
+              <div style={{ display: "grid", gap: 14 }}>
+                {[
+                  "Producto con presencia ejecutiva.",
+                  "Movimiento preciso para dirigir la atencion.",
+                  "Mensajes orientados a compra institucional.",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: 18,
+                      background: "rgba(255,255,255,0.03)",
+                      border: `1px solid ${B.border}`,
+                      color: B.textMuted,
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="about-stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 20 }}>
+                <MetricCard value="360°" label="Vision del ecosistema completo del club" />
+                <MetricCard value="24/7" label="Disponibilidad para operaciones y seguimiento continuo" />
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* ── VALORES ───────────────────────────────────────────────────── */}
-      <section className="qs-valores-section" style={{
-        padding: "80px 32px",
-        background: "rgba(255,255,255,0.015)",
-        borderTop: "1px solid rgba(255,255,255,0.05)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
-      }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <section style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "32px 32px 48px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 18 }}>
+          {STORY_PILLARS.map((pillar, index) => (
+            <motion.div
+              key={pillar.title}
+              {...fadeUp}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.55, delay: index * 0.08 }}
+              style={{
+                padding: 24,
+                borderRadius: 24,
+                background: "rgba(255,255,255,0.028)",
+                border: `1px solid ${B.border}`,
+                boxShadow: "0 20px 50px rgba(0,0,0,0.18)",
+              }}
+            >
+              <div style={{ fontSize: 13, color: B.warning, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+                Pilar {String(index + 1).padStart(2, "0")}
+              </div>
+              <div style={{ marginTop: 14, fontSize: 24, fontWeight: 700, lineHeight: 1.15 }}>{pillar.title}</div>
+              <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.75, color: B.textMuted }}>{pillar.body}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "48px 32px 72px" }}>
+        <div className="about-story-grid" style={{ display: "grid", gridTemplateColumns: "0.9fr 1.1fr", gap: 28 }}>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            style={{ textAlign: "center", marginBottom: 56 }}
+            {...fadeUp}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              padding: 30,
+              borderRadius: 28,
+              background: "rgba(255,255,255,0.025)",
+              border: `1px solid ${B.border}`,
+            }}
           >
-            <SectionLabel text="Valores" />
-            <h2 style={{
-              fontSize: "clamp(24px, 3.5vw, 36px)",
-              fontWeight: 800, letterSpacing: "-0.5px",
-              color: "white", margin: 0,
-            }}>
-              Lo que nos mueve
+            <SectionEyebrow>Principios</SectionEyebrow>
+            <h2
+              style={{
+                margin: "18px 0 14px",
+                fontSize: "clamp(28px, 5vw, 48px)",
+                lineHeight: 1,
+                letterSpacing: "-0.04em",
+                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+              }}
+            >
+              La marca ahora tiene que verse como el producto que promete.
             </h2>
+            <p style={{ color: B.textMuted, lineHeight: 1.8, fontSize: 16 }}>
+              El rebranding a ALTTEZ no es solo un cambio de nombre. Es una correccion de posicionamiento para hablarle mejor a clubes, ligas, instituciones y proyectos que compran con criterio.
+            </p>
           </motion.div>
 
-          <div className="qs-valores-grid" style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 24,
-          }}>
-            {VALUES.map((v, i) => (
+          <div className="about-principles-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
+            {PRINCIPLES.map(([title, body], index) => (
               <motion.div
-                key={v.title}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.6 }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                key={title}
+                {...fadeUp}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.55, delay: index * 0.08 }}
+                style={{
+                  padding: 22,
+                  borderRadius: 22,
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
+                  border: `1px solid ${B.border}`,
+                }}
               >
-                <GlassCard style={{
-                  padding: 32,
-                  height: "100%",
-                  borderTop: `2px solid ${v.color}`,
-                  boxShadow: `0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)`,
-                }}>
-                  <div style={{
-                    width: 48, height: 48, borderRadius: 10,
-                    background: `${v.color}12`,
-                    border: `1px solid ${v.color}30`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    marginBottom: 20,
-                  }}>
-                    {v.icon}
-                  </div>
-                  <h3 style={{
-                    fontSize: 15, fontWeight: 700, color: "white",
-                    margin: "0 0 10px", letterSpacing: "-0.2px",
-                  }}>
-                    {v.title}
-                  </h3>
-                  <p style={{
-                    fontSize: 13, color: "rgba(255,255,255,0.5)",
-                    lineHeight: 1.7, margin: 0,
-                  }}>
-                    {v.body}
-                  </p>
-                </GlassCard>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{title}</div>
+                <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.7, color: B.textMuted }}>{body}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA FINAL ─────────────────────────────────────────────────── */}
-      <section className="qs-cta-section" style={{
-        padding: "100px 32px",
-        textAlign: "center",
-        maxWidth: 700,
-        margin: "0 auto",
-      }}>
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
+      <section style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "0 32px 96px" }}>
+        <div
+          className="about-cta-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "0.95fr 1.05fr",
+            gap: 20,
+            padding: 28,
+            borderRadius: 30,
+            background: "linear-gradient(135deg, rgba(11,18,32,0.96) 0%, rgba(8,14,24,0.88) 100%)",
+            border: `1px solid ${B.borderStrong}`,
+            boxShadow: "0 30px 90px rgba(0,0,0,0.38)",
+          }}
         >
-          <SectionLabel text="Proximo paso" />
-          <h2 style={{
-            fontSize: "clamp(28px, 4vw, 44px)",
-            fontWeight: 900, letterSpacing: "-1px",
-            lineHeight: 1.15,
-            color: "white",
-            margin: "0 0 20px",
-          }}>
-            Tu club merece tomar<br />
-            <span style={{ color: C.neon }}>decisiones inteligentes</span>
-          </h2>
-          <p style={{
-            fontSize: 15, color: "rgba(255,255,255,0.5)",
-            lineHeight: 1.7, marginBottom: 40,
-          }}>
-            Empieza gratis hoy. Sin tarjeta de credito. Sin configuracion compleja.
-            Solo tu plantel y los datos que necesitas.
-          </p>
-          <div className="qs-cta-btns" style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: `0 0 24px ${C.neonGlow}` }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/crm")}
+          <div>
+            <SectionEyebrow>Siguiente paso</SectionEyebrow>
+            <h3
               style={{
-                padding: "14px 36px",
-                fontSize: 12, fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "2px",
-                background: C.neon, color: "#0a0a0f",
-                border: "none", borderRadius: 8,
-                cursor: "pointer", fontFamily: "inherit",
+                margin: "18px 0 12px",
+                fontSize: "clamp(30px, 5vw, 52px)",
+                lineHeight: 0.98,
+                fontWeight: 800,
+                letterSpacing: "-0.05em",
+                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
               }}
             >
-              Comenzar gratis
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate("/contacto")}
-              style={{
-                padding: "14px 36px",
-                fontSize: 12, fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "2px",
-                background: "transparent", color: "rgba(255,255,255,0.7)",
-                border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8,
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              Hablar con el equipo
-            </motion.button>
+              Si tu proyecto quiere verse serio, tambien tiene que operar serio.
+            </h3>
           </div>
-        </motion.div>
+          <div style={{ display: "grid", gap: 16, alignContent: "center" }}>
+            <p style={{ fontSize: 16, lineHeight: 1.85, color: B.textMuted, margin: 0 }}>
+              Podemos ayudarte a ordenar la experiencia de tus equipos, transformar la percepcion del cliente y construir una plataforma que comunique valor real desde la primera pantalla.
+            </p>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <button
+                onClick={() => navigate("/contacto")}
+                style={{
+                  padding: "15px 24px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: G.button,
+                  color: "white",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                Solicitar reunion
+              </button>
+              <button
+                onClick={() => navigate("/journal")}
+                style={{
+                  padding: "15px 24px",
+                  borderRadius: 999,
+                  border: `1px solid ${B.borderStrong}`,
+                  background: "transparent",
+                  color: B.text,
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                Leer journal
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );

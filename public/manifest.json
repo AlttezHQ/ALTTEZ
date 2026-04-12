@@ -1,13 +1,13 @@
 {
   "name": "ALTTEZ",
   "short_name": "ALTTEZ",
-  "description": "CRM Deportivo Inteligente — Gestiona tu club con rendimiento profesional",
+  "description": "CRM Deportivo Inteligente - Gestiona tu club con rendimiento profesional",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#060d06",
-  "theme_color": "#7c3aed",
+  "background_color": "#05070B",
+  "theme_color": "#0B1220",
   "lang": "es",
   "dir": "ltr",
   "categories": ["sports", "business", "productivity"],
@@ -54,7 +54,7 @@
     {
       "name": "Plantilla",
       "short_name": "Plantilla",
-      "description": "Gestión de atletas",
+      "description": "Gestion de atletas",
       "url": "/?view=plantilla",
       "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     },
