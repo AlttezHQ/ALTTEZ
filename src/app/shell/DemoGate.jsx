@@ -110,7 +110,7 @@ function ConversionModal({ onClose, onRegister }) {
         {/* Icono */}
         <div style={{
           width: 64, height: 64, borderRadius: 16,
-          background: `linear-gradient(135deg, ${C.neon}18, rgba(124,58,237,0.15))`,
+          background: `linear-gradient(135deg, ${C.neon}18, ${C.violetDim})`,
           border: `1px solid ${C.neon}30`,
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 24px",

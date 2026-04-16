@@ -26,53 +26,7 @@ import {
   DEMO_MATCH_REPORTS,
 } from "../../shared/utils/alttezScore";
 
-// ── Inyectar responsive CSS una sola vez ──────────────────────────────────────
-if (typeof document !== "undefined" && !document.getElementById("mc-responsive")) {
-  const s = document.createElement("style");
-  s.id = "mc-responsive";
-  s.textContent = `
-    @media (max-width: 767px) {
-      .mc-layout { flex-direction: column !important; }
-      .mc-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.06) !important; max-height: 260px !important; }
-      .mc-main { padding: 14px !important; }
-      .mc-player-grid { grid-template-columns: 1fr !important; }
-      .mc-analytics-grid { grid-template-columns: 1fr !important; }
-    }
-    @media (max-width: 479px) {
-      .mc-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-      .mc-stats-row { grid-template-columns: repeat(3, 1fr) !important; }
-    }
-    /* ── FIFA Stepper touch targets ── */
-    .mc-stepper-btn {
-      min-width: 36px !important;
-      min-height: 36px !important;
-    }
-    @media (max-width: 767px) {
-      .mc-stepper-btn {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        font-size: 20px !important;
-      }
-      .mc-tarjeta-btn {
-        min-width: 44px !important;
-        min-height: 44px !important;
-        font-size: 13px !important;
-      }
-    }
-    /* ── Alert animations ── */
-    @keyframes mc-pulse-warn {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(239,159,39,0.4); }
-      50% { box-shadow: 0 0 0 4px rgba(239,159,39,0); }
-    }
-    @keyframes mc-pulse-crit {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(226,75,74,0.5); }
-      50% { box-shadow: 0 0 0 4px rgba(226,75,74,0); }
-    }
-    .mc-alert-warn { animation: mc-pulse-warn 2s ease-in-out infinite; }
-    .mc-alert-crit { animation: mc-pulse-crit 1.5s ease-in-out infinite; }
-  `;
-  document.head.appendChild(s);
-}
+// Responsive CSS y animaciones movidas a index.css
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const EMPTY_STATS = {
@@ -202,7 +156,7 @@ function TarjetaSelector({ value, onChange }) {
                   ? (isNone ? "rgba(255,255,255,0.1)" : opt.color)
                   : "rgba(255,255,255,0.03)",
                 color: isSelected
-                  ? (isNone ? "rgba(255,255,255,0.7)" : "#0a0a0a")
+                  ? (isNone ? "rgba(255,255,255,0.7)" : C.bgDark)
                   : C.textHint,
                 fontSize: isNone ? 14 : 11, fontWeight: 900, cursor: "pointer",
                 transition: "all 120ms",
@@ -811,7 +765,7 @@ export default function MatchCenter({ clubId }) {
                 padding: "6px 16px", fontSize: 9, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "1.5px",
                 background: view === tab.key ? C.neon : "transparent",
-                color: view === tab.key ? "#0a0a0a" : C.textMuted,
+                color: view === tab.key ? C.bgDark : C.textMuted,
                 border: `1px solid ${view === tab.key ? C.neon : C.border}`,
                 cursor: "pointer", transition: "all 150ms",
               }}
@@ -1028,7 +982,7 @@ export default function MatchCenter({ clubId }) {
                     style={{
                       padding: "10px 28px", fontSize: 10, fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "1.5px",
-                      background: C.neon, color: "#0a0a0a", border: "none", cursor: "pointer",
+                      background: C.neon, color: C.bgDark, border: "none", cursor: "pointer",
                     }}
                   >
                     Confirmar reporte

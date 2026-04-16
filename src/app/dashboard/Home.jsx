@@ -33,50 +33,6 @@ import EmptyState       from "../../shared/ui/EmptyState";
 import { useStore } from "../../shared/store/useStore";
 import { calcStats } from "../../shared/services/storageService";
 
-// ── Inject responsive media queries once ────────────────────────────────────
-if (typeof document !== "undefined" && !document.getElementById("home-responsive")) {
-  const s = document.createElement("style");
-  s.id = "home-responsive";
-  s.textContent = `
-    /* Home topbar nav: horizontal scroll on mobile */
-    .home-topbar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-
-    /* Home grid: single column on mobile, 2-col on tablet */
-    @media (max-width: 479px) {
-      .home-grid {
-        grid-template-columns: 1fr !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-        padding: 3px 8px 10px !important;
-      }
-      .home-grid > * {
-        grid-column: auto !important;
-        grid-row: auto !important;
-      }
-      .home-tile-big { font-size: clamp(28px, 8vw, 44px) !important; }
-      .home-tile-mid { font-size: clamp(18px, 5.5vw, 24px) !important; }
-    }
-    @media (min-width: 480px) and (max-width: 767px) {
-      .home-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        grid-auto-rows: minmax(160px, auto) !important;
-      }
-      .home-stat-row {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-    /* KPI metrics: 2-col on mobile */
-    @media (max-width: 767px) {
-      .home-metrics { grid-template-columns: repeat(2, 1fr) !important; }
-      .home-brand-full { display: none !important; }
-    }
-    /* Club badge: hide name on xs */
-    @media (max-width: 479px) {
-      .home-club-name { display: none !important; }
-    }
-  `;
-  document.head.appendChild(s);
-}
-
 // ─────────────────────────────────────────────
 // ANIMATION VARIANTS
 // ─────────────────────────────────────────────
@@ -428,7 +384,7 @@ export default function Home({ onNavigate, onLogout }) {
     titleBig: { fontSize:42, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-1.5px", lineHeight:0.92, textShadow:"0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.4)", marginBottom:18 },
     titleMid: { fontSize:22, fontWeight:800, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1.05, textShadow:"0 2px 12px rgba(0,0,0,0.85)", marginBottom:14 },
     // Botón CTA: recibe isHovered para cambiar color
-    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.neon, color:"#0a0a0a", border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px ${PALETTE.neonGlow}` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
+    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.neon, color:PALETTE.bgDark, border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px ${PALETTE.neonGlow}` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
     ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon, cursor:"pointer" },
     statRow: { display:"flex", alignItems:"center", height:"100%", position:"relative", zIndex:2, padding:"0 12px", gap:0 },
     statBlock: (last) => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"10px 8px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
@@ -522,8 +478,8 @@ export default function Home({ onNavigate, onLogout }) {
           transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
           style={{
             margin: "0 12px",
-            background: "rgba(139,92,246,0.06)",
-            border: "1px solid rgba(139,92,246,0.2)",
+            background: PALETTE.purpleVibrantDim,
+            border: `1px solid ${PALETTE.purpleVibrantBorder}`,
             borderRadius: 8,
             overflow: "hidden",
           }}
@@ -531,9 +487,9 @@ export default function Home({ onNavigate, onLogout }) {
           <EmptyState
             icon={
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke="#8B5CF6" strokeWidth="1.8"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke={PALETTE.purpleVibrant} strokeWidth="1.8"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             }
             title="Tu plantilla esta vacia"
@@ -777,7 +733,7 @@ export default function Home({ onNavigate, onLogout }) {
       {/* FOOTER */}
       <div style={css.footer}>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ background:PALETTE.neon, color:"#0a0a0a", fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:1 }}>ES</div>
+          <div style={{ background:PALETTE.neon, color:PALETTE.bgDark, fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:1 }}>ES</div>
           <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", letterSpacing:"1.5px", fontWeight:600, textTransform:"uppercase" }}>ALTTEZ</div>
           <div style={{ fontSize:9, color:"rgba(255,255,255,0.15)", letterSpacing:"1px" }}>v2.0</div>
         </div>

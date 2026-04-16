@@ -13,6 +13,7 @@
  */
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { PALETTE as C } from "../tokens/palette";
 
 // ── Animation variants ───────────────────────────────────────────────────────
 
@@ -152,7 +153,7 @@ export default function OfflineBanner() {
   const shouldRender = showOffline || showOnline;
 
   const AMBER = "#EF9F27";
-  const GREEN = "#00ff88";
+  const GREEN = C.greenBright;
 
   const config = showOnline
     ? {

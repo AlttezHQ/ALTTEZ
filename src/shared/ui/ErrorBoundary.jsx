@@ -1,4 +1,5 @@
 import { Component } from "react";
+import { PALETTE as C } from "../tokens/palette";
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -24,7 +25,7 @@ export default class ErrorBoundary extends Component {
         <div
           style={{
             minHeight: "100vh",
-            background: "#0a0a0a",
+            background: C.bgDark,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -73,7 +74,7 @@ export default class ErrorBoundary extends Component {
               onClick={this.handleRetry}
               style={{
                 background: "#c8ff00",
-                color: "#0a0a0a",
+                color: C.bgDark,
                 border: "none",
                 padding: "10px 28px",
                 fontSize: 12,

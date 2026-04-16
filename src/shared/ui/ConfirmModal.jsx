@@ -22,12 +22,12 @@ export default function ConfirmModal({ title, message, confirmLabel = "Confirmar
         <div style={{ fontSize:14, fontWeight:900, color:"white", textTransform:"uppercase", letterSpacing:"1px", marginBottom:8 }}>{title}</div>
         <div style={{ fontSize:12, color:"rgba(255,255,255,0.55)", lineHeight:1.6, marginBottom:24 }}>{message}</div>
         <div style={{ display:"flex", gap:10 }}>
-          <div onClick={onCancel} style={{ flex:1, padding:"10px 16px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", cursor:"pointer", border:`1px solid ${C.border}`, color:C.textMuted }}>
+          <button onClick={onCancel} style={{ flex:1, padding:"10px 16px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", cursor:"pointer", border:`1px solid ${C.border}`, color:C.textMuted, background:"transparent", fontFamily:"inherit", borderRadius:"var(--radius-md)", minHeight:"unset" }}>
             {cancelLabel}
-          </div>
-          <div onClick={onConfirm} style={{ flex:1, padding:"10px 16px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", cursor:"pointer", background:accentColor, color:"#0a0a0a" }}>
+          </button>
+          <button onClick={onConfirm} style={{ flex:1, padding:"10px 16px", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", cursor:"pointer", background:accentColor, color:C.bgDark, border:"none", fontFamily:"inherit", borderRadius:"var(--radius-md)", minHeight:"unset" }}>
             {confirmLabel}
-          </div>
+          </button>
         </div>
       </motion.div>
     </motion.div>

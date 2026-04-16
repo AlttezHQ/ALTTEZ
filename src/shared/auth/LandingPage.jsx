@@ -282,7 +282,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               Accede con datos simulados de un club de alto rendimiento. Sin configuración. Con toda la funcionalidad activa.
             </p>
 
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", padding: "11px 20px", background: PALETTE.neon, color: "#0a0a0a", borderRadius: 8, boxShadow: `0 0 18px rgba(200,255,0,0.22)`, width: "fit-content" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", padding: "11px 20px", background: PALETTE.neon, color: PALETTE.bgDark, borderRadius: 8, boxShadow: `0 0 18px rgba(200,255,0,0.22)`, width: "fit-content" }}>
               Acceder al demo →
             </div>
           </motion.div>
@@ -500,7 +500,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               textTransform: "uppercase", letterSpacing: "2px", borderRadius: 11,
               background: (!consentData || !consentGuardian) ? "rgba(127,119,221,0.15)"
                 : loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
-              color: (!consentData || !consentGuardian) ? "rgba(255,255,255,0.28)" : "#0a0a0a",
+              color: (!consentData || !consentGuardian) ? "rgba(255,255,255,0.28)" : PALETTE.bgDark,
               border: (!consentData || !consentGuardian) ? "1px solid rgba(127,119,221,0.22)" : "none",
               cursor: loading ? "wait" : (!consentData || !consentGuardian) ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
@@ -597,7 +597,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
             width: "100%", marginTop: 8, padding: "13px 24px", fontSize: 12, fontWeight: 700,
             textTransform: "uppercase", letterSpacing: "2px", borderRadius: 11,
             background: loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
-            color: "#0a0a0a", border: "none",
+            color: PALETTE.bgDark, border: "none",
             cursor: loading ? "wait" : "pointer",
             opacity: loading ? 0.7 : 1,
           }}

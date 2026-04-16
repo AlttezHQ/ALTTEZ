@@ -13,29 +13,10 @@ import useSupabaseSync from "../../shared/hooks/useSupabaseSync";
 import WellnessCheckIn from "../../shared/ui/WellnessCheckIn";
 import { calcSaludActual } from "../../shared/utils/rpeEngine";
 import { getWellnessStatus } from "../../shared/types/wellnessTypes";
+import GlassPanel  from "../../shared/ui/GlassPanel";
+import SectionLabel from "../../shared/ui/SectionLabel";
 
-// ── Inject responsive media queries once ────────────────────────────────────
-if (typeof document !== "undefined" && !document.getElementById("entrenamiento-responsive")) {
-  const s = document.createElement("style");
-  s.id = "entrenamiento-responsive";
-  s.textContent = `
-    @media (max-width: 767px) {
-      .entrenamiento-grid { grid-template-columns: 1fr !important; }
-      .entrenamiento-controls { flex-direction: column !important; align-items: stretch !important; }
-      .entrenamiento-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; }
-      .entrenamiento-tabs > * { flex-shrink: 0; }
-    }
-    @media (max-width: 479px) {
-      .entrenamiento-rpe-bar { height: 3px !important; }
-    }
-    .ent-kpi-card { transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important; }
-    .ent-kpi-card:hover { transform: translateY(-3px) scale(1.02) !important; box-shadow: 0 12px 36px rgba(0,0,0,0.6) !important; border-color: rgba(255,255,255,0.18) !important; }
-    .ent-session-header:hover { background: rgba(255,255,255,0.06) !important; }
-    .ent-athlete-rpe-row { transition: background 0.12s ease; }
-    .ent-athlete-rpe-row:hover { background: rgba(255,255,255,0.04) !important; }
-  `;
-  document.head.appendChild(s);
-}
+// Responsive CSS y keyframes movidos a index.css
 const RPE_COLOR = (v) => v <= 3 ? PALETTE.green : v <= 8 ? PALETTE.amber : PALETTE.danger;
 
 /* ── Helper: agrupa sesiones del historial por semana ISO ── */
@@ -69,13 +50,7 @@ function groupByWeek(sessions) {
   return weeks;
 }
 
-/* ── Keyframe CSS inyectada una sola vez para el pulso verde ── */
-if (typeof document !== "undefined" && !document.getElementById("alttez-pulse-kf")) {
-  const style = document.createElement("style");
-  style.id = "alttez-pulse-kf";
-  style.textContent = "@keyframes elv_pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.45)}}";
-  document.head.appendChild(style);
-}
+// @keyframes elv_pulse movido a index.css
 
 /* ── Colores por tipo de tarea (Feature C) ── */
 const TIPO_COLORS = {
@@ -233,7 +208,7 @@ export default function Entrenamiento({ clubId = "" }) {
     setWellnessTarget(null);
   };
 
-  const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"6px 8px", fontSize:11, color:"white", fontFamily:"inherit", width:"100%", outline:"none" };
+  // inp → usar className="field-input" directamente
 
   return (
     <div>
@@ -314,7 +289,7 @@ export default function Entrenamiento({ clubId = "" }) {
             <div style={{ fontSize:10, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1px" }}>
               {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
             </div>
-            <select value={tipo} onChange={e=>setTipo(e.target.value)} style={{ ...inp, width:"auto", fontSize:10, padding:"3px 8px" }}>
+            <select value={tipo} onChange={e=>setTipo(e.target.value)} className="field-input" style={{ width:"auto", fontSize:"var(--fs-caption)", padding:"3px 8px" }}>
               {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
             </select>
             <div onClick={() => handleGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"#08080E", fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
@@ -331,8 +306,8 @@ export default function Entrenamiento({ clubId = "" }) {
             <EmptyState
               icon={
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               }
               title="Plantilla lista para el registro"
@@ -376,7 +351,7 @@ export default function Entrenamiento({ clubId = "" }) {
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
-                            background: "rgba(124,58,237,0.85)",
+                            background: PALETTE.violetAccent,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -425,7 +400,7 @@ export default function Entrenamiento({ clubId = "" }) {
             })}
           </div>
           <div style={{ background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px", boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Observaciones tecnicas: objetivos trabajados, incidencias o directivas para el cuerpo tecnico..." rows={2} style={{ ...inp, background:"transparent", border:"none", resize:"none", lineHeight:1.6 }} maxLength={500}/>
+            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Observaciones tecnicas: objetivos trabajados, incidencias o directivas para el cuerpo tecnico..." rows={2} className="field-input" style={{ background:"transparent", border:"none", resize:"none", lineHeight:1.6, boxShadow:"none" }} maxLength={500}/>
           </div>
           </>
           )}
@@ -443,10 +418,10 @@ export default function Entrenamiento({ clubId = "" }) {
             <EmptyState
               icon={
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="#8B5CF6" strokeWidth="1.8"/>
-                  <line x1="16" y1="2" x2="16" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-                  <line x1="8" y1="2" x2="8" y2="6" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
-                  <line x1="3" y1="10" x2="21" y2="10" stroke="#8B5CF6" strokeWidth="1.8" strokeLinecap="round"/>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke={PALETTE.purpleVibrant} strokeWidth="1.8"/>
+                  <line x1="16" y1="2" x2="16" y2="6" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="8" y1="2" x2="8" y2="6" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
                 </svg>
               }
               title="Sin microciclos registrados"
@@ -464,7 +439,7 @@ export default function Entrenamiento({ clubId = "" }) {
                 {/* Week header */}
                 <div
                   onClick={() => toggleWeek(week.key)}
-                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:"linear-gradient(135deg,rgba(124,58,237,0.12),rgba(124,58,237,0.04))", borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2, boxShadow:"0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)", borderRadius:"0 6px 6px 0" }}
+                  style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:`linear-gradient(135deg,${PALETTE.violetDim},rgba(124,58,237,0.04))`, borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2, boxShadow:"0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)", borderRadius:"0 6px 6px 0" }}
                 >
                   <div>
                     <div style={{ fontSize:11, fontWeight:600, color:PALETTE.purple, textTransform:"uppercase", letterSpacing:"1.5px" }}>
@@ -708,10 +683,8 @@ export default function Entrenamiento({ clubId = "" }) {
 
             {/* Grafico de barras verticales: Tecnico vs Fisico vs Competitivo vs Recuperacion */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-              <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
-                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:16 }}>
-                  Distribucion por categoria
-                </div>
+              <GlassPanel padding="md">
+                <SectionLabel style={{ marginBottom:16 }}>Distribucion por categoria</SectionLabel>
                 <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
                   {Object.entries(categorias).map(([cat, cfg]) => {
                     const h = maxCount > 0 ? Math.max((cfg.count / maxCount) * 100, cfg.count > 0 ? 8 : 0) : 0;
@@ -724,13 +697,11 @@ export default function Entrenamiento({ clubId = "" }) {
                     );
                   })}
                 </div>
-              </div>
+              </GlassPanel>
 
               {/* RPE promedio por categoria */}
-              <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
-                <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:16 }}>
-                  RPE promedio por categoria
-                </div>
+              <GlassPanel padding="md">
+                <SectionLabel style={{ marginBottom:16 }}>RPE promedio por categoria</SectionLabel>
                 <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
                   {Object.entries(categorias).map(([cat, cfg]) => {
                     const avg = cfg.rpeN > 0 ? (cfg.rpeSum / cfg.rpeN) : 0;
@@ -745,14 +716,12 @@ export default function Entrenamiento({ clubId = "" }) {
                     );
                   })}
                 </div>
-              </div>
+              </GlassPanel>
             </div>
 
             {/* Barras horizontales por tipo detallado */}
-            <div style={{ background:"rgba(255,255,255,0.03)", backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)", border:`1px solid ${PALETTE.border}`, borderRadius:12, padding:16, boxShadow:"0 8px 32px rgba(0,0,0,0.4)" }}>
-              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.textMuted, marginBottom:14 }}>
-                Detalle por tipo de tarea
-              </div>
+            <GlassPanel padding="md">
+              <SectionLabel style={{ marginBottom:14 }}>Detalle por tipo de tarea</SectionLabel>
               {tipoStats.length === 0 && (
                 <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:16 }}>Sin datos</div>
               )}
@@ -772,7 +741,7 @@ export default function Entrenamiento({ clubId = "" }) {
                   </div>
                 );
               })}
-            </div>
+            </GlassPanel>
           </div>
         );
       })()}

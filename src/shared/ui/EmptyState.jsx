@@ -18,6 +18,7 @@
  */
 
 import { motion } from "framer-motion";
+import { PALETTE as C } from "../tokens/palette";
 
 // ── Animation variants ───────────────────────────────────────────────────────
 const containerVariant = {
@@ -82,9 +83,9 @@ export default function EmptyState({
             width: compact ? 56 : 72,
             height: compact ? 56 : 72,
             borderRadius: "50%",
-            background: "rgba(139,92,246,0.10)",
-            border: "1px solid rgba(139,92,246,0.28)",
-            boxShadow: "0 0 28px rgba(139,92,246,0.22), 0 0 8px rgba(139,92,246,0.12)",
+            background: C.purpleVibrantDim,
+            border: `1px solid ${C.purpleVibrantBorder}`,
+            boxShadow: `0 0 28px ${C.purpleVibrantGlow}, 0 0 8px rgba(139,92,246,0.12)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -144,17 +145,17 @@ export default function EmptyState({
           {actionLabel && onAction && (
             <motion.button
               onClick={onAction}
-              whileHover={{ scale: 1.04, boxShadow: "0 0 18px rgba(139,92,246,0.45)" }}
+              whileHover={{ scale: 1.04, boxShadow: `0 0 18px ${C.purpleVibrantGlow}` }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               style={{
                 padding: compact ? "8px 18px" : "10px 22px",
-                background: "linear-gradient(135deg, #c8ff00 0%, #8B5CF6 100%)",
+                background: `linear-gradient(135deg, ${C.neon} 0%, ${C.purpleVibrant} 100%)`,
                 border: "none",
                 borderRadius: 6,
                 fontSize: compact ? 10 : 11,
                 fontWeight: 700,
-                color: "#0a0a0a",
+                color: C.bgDark,
                 textTransform: "uppercase",
                 letterSpacing: "1.2px",
                 cursor: "pointer",
@@ -178,11 +179,11 @@ export default function EmptyState({
               style={{
                 padding: compact ? "8px 18px" : "10px 22px",
                 background: "transparent",
-                border: "1px solid rgba(139,92,246,0.35)",
+                border: `1px solid ${C.purpleVibrantBorder}`,
                 borderRadius: 6,
                 fontSize: compact ? 10 : 11,
                 fontWeight: 600,
-                color: "rgba(139,92,246,0.85)",
+                color: `rgba(139,92,246,0.85)`,
                 textTransform: "uppercase",
                 letterSpacing: "1.2px",
                 cursor: "pointer",
