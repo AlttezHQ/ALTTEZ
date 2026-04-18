@@ -44,14 +44,57 @@ const Reportes = lazy(() => import("../analytics/Reportes"));
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
-// ── Loading fallback ──
+// ── Loading fallback — ALTTEZ splash broadcast ──
 const LoadingFallback = () => (
-  <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh" }}>
-    <div style={{ textAlign:"center" }}>
-      <div style={{ width:24, height:24, border:`2px solid ${C.neon}`, borderTop:"2px solid transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }} />
-      <div style={{ fontSize:10, color:C.textMuted, textTransform:"uppercase", letterSpacing:"2px" }}>Inicializando</div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  <div style={{
+    display:"flex", alignItems:"center", justifyContent:"center",
+    height:"60vh", position:"relative",
+  }}>
+    <div style={{ textAlign:"center", position:"relative" }}>
+      {/* Logo + sweep overlay */}
+      <div style={{
+        position:"relative",
+        width: 80, height: 80,
+        margin:"0 auto 18px",
+        display:"flex", alignItems:"center", justifyContent:"center",
+      }}>
+        <img
+          src="/branding/alttez-symbol-transparent.png"
+          alt="ALTTEZ"
+          style={{
+            width: 64, height: 64, objectFit:"contain",
+            filter:`drop-shadow(0 0 16px ${C.blueGlow})`,
+            animation: "alttez-pulse 1.8s ease-in-out infinite",
+          }}
+          onError={e => { e.currentTarget.style.display = "none"; }}
+        />
+        {/* Ring progress */}
+        <span style={{
+          position:"absolute", inset:0,
+          border:`2px solid ${C.blueBorder}`,
+          borderTopColor: C.blue,
+          borderRightColor: C.blueHi,
+          borderRadius:"50%",
+          animation:"spin 1.1s cubic-bezier(0.4,0,0.2,1) infinite",
+        }} />
+      </div>
+      <div style={{
+        fontSize:10,
+        color:C.textMuted,
+        textTransform:"uppercase",
+        letterSpacing:"3px",
+        fontWeight:700,
+        fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+      }}>
+        Cargando ALTTEZ
+      </div>
     </div>
+    <style>{`
+      @keyframes alttez-pulse {
+        0%,100% { opacity: 1; transform: scale(1); }
+        50%     { opacity: 0.75; transform: scale(0.94); }
+      }
+    `}</style>
   </div>
 );
 

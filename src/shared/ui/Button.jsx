@@ -1,24 +1,27 @@
 /**
  * @component Button
- * @description Botón reutilizable con variantes. Reemplaza 20+ estilos inline
- * de botón distribuidos en todos los módulos.
+ * @description Botón broadcast de ALTTEZ con bisel superior, acentos angulares
+ * y feedback snappy. Variantes: primary / ghost / capsule / icon.
  *
  * Props:
  *  variant  {"primary"|"ghost"|"capsule"|"icon"}
- *    primary  — fondo neon/accent, texto oscuro, glow en hover
- *    ghost    — transparente, borde+texto colored
- *    capsule  — pill pequeño uppercase (ACTUALIZAR, EDITAR…)
- *    icon     — sin texto, cuadrado compacto (botones X, close)
- *  accent   {string}  Color override (default: PALETTE.neon)
+ *    primary  — fondo azul ALTTEZ con bisel + sombra azul; texto blanco
+ *    ghost    — transparente con borde azul y hairline interior; texto accent
+ *    capsule  — pill uppercase compacto (acciones secundarias)
+ *    icon     — cuadrado compacto (X, close, iconos breves)
+ *  accent   {string}  Color override (default: PALETTE.blue)
  *  size     {"sm"|"md"|"lg"}
- *  loading  {boolean}  Muestra spinner, deshabilita interacción
+ *  loading  {boolean} Spinner + deshabilita interacción
  *  as       {React.ElementType}  Para usar con motion.button etc.
+ *
+ * @version 2.0 — Broadcast Arena
  */
 import { motion } from "framer-motion";
 import { cva } from "class-variance-authority";
 import { PALETTE as C } from "../tokens/palette";
+import { SPRING as SPRINGS } from "../tokens/motion";
 
-const SPRING = { type: "spring", stiffness: 320, damping: 28 };
+const SPRING = SPRINGS.snappy;
 
 const btnBase = cva(
   "inline-flex items-center justify-center font-bold cursor-pointer select-none touch-manip transition-colors",
@@ -30,11 +33,7 @@ const btnBase = cva(
         capsule: "uppercase",
         icon:    "",
       },
-      size: {
-        sm: "",
-        md: "",
-        lg: "",
-      },
+      size: { sm: "", md: "", lg: "" },
     },
     defaultVariants: { variant: "primary", size: "md" },
   }
@@ -50,7 +49,7 @@ const SIZES = {
 
 export default function Button({
   variant = "primary",
-  accent = C.neon,
+  accent = C.blue,
   size = "md",
   loading = false,
   disabled = false,
@@ -69,16 +68,18 @@ export default function Button({
     switch (variant) {
       case "primary":
         return {
-          background: accent,
-          color: C.bgDark,
-          border: "none",
-          boxShadow: `0 4px 16px ${accent}44`,
+          background: `linear-gradient(180deg, ${accent} 0%, ${accent} 60%, ${C.blueDeep} 100%)`,
+          color: "#FFFFFF",
+          border: `1px solid ${accent}`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.18), 0 6px 18px ${accent}3D, 0 0 0 1px rgba(255,255,255,0.04)`,
+          textShadow: "0 1px 0 rgba(0,0,0,0.18)",
         };
       case "ghost":
         return {
-          background: "transparent",
+          background: "linear-gradient(180deg, rgba(47,107,255,0.06) 0%, rgba(47,107,255,0.02) 100%)",
           color: accent,
           border: `1px solid ${accent}55`,
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
         };
       case "capsule":
         return {
@@ -87,13 +88,15 @@ export default function Button({
           border: `1px solid ${accent}44`,
           borderRadius: "var(--radius-pill)",
           letterSpacing: "var(--ls-caps-sm)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
         };
       case "icon":
         return {
           background: "rgba(255,255,255,0.06)",
-          color: "rgba(255,255,255,0.6)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          color: "rgba(255,255,255,0.7)",
+          border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: "var(--radius-md)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
         };
       default:
         return {};
@@ -102,8 +105,14 @@ export default function Button({
 
   const motionProps = Tag === motion.button || Tag?.toString?.().includes("motion")
     ? {
-        whileHover: isDisabled ? {} : { scale: 1.04, boxShadow: variant === "primary" ? `0 0 18px ${accent}55` : undefined },
-        whileTap:   isDisabled ? {} : { scale: 0.97 },
+        whileHover: isDisabled ? {} : (
+          variant === "primary"
+            ? { y: -1, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(0,0,0,0.20), 0 10px 28px ${accent}66, 0 0 0 1px rgba(255,255,255,0.06)` }
+            : variant === "ghost"
+              ? { y: -1, borderColor: `${accent}88`, backgroundColor: "rgba(47,107,255,0.10)" }
+              : { scale: 1.03 }
+        ),
+        whileTap:   isDisabled ? {} : { scale: 0.97, y: 0 },
         transition: SPRING,
       }
     : {};
@@ -114,6 +123,7 @@ export default function Button({
       disabled={isDisabled}
       onClick={isDisabled ? undefined : onClick}
       style={{
+        position: "relative",
         padding: p,
         fontSize: fs,
         fontWeight: "var(--fw-bold)",
@@ -123,6 +133,8 @@ export default function Button({
         gap: "var(--sp-2)",
         outline: "none",
         fontFamily: "inherit",
+        letterSpacing: variant === "primary" || variant === "ghost" ? "0.6px" : undefined,
+        textTransform: variant === "primary" || variant === "ghost" ? "uppercase" : undefined,
         ...variantStyle,
         ...style,
       }}
@@ -140,8 +152,8 @@ function Spinner() {
       style={{
         width: 14,
         height: 14,
-        border: "2px solid rgba(0,0,0,0.2)",
-        borderTopColor: C.bgDark,
+        border: "2px solid rgba(255,255,255,0.25)",
+        borderTopColor: "#FFFFFF",
         borderRadius: "50%",
         animation: "spin 0.7s linear infinite",
         display: "inline-block",

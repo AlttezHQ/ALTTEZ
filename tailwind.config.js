@@ -7,18 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Neon
-        neon:          "var(--color-neon)",
-        "neon-glow":   "var(--color-neon-glow)",
-        "neon-dim":    "var(--color-neon-dim)",
+        // ALTTEZ Blue
+        blue:          "var(--color-blue)",
+        "blue-hi":     "var(--color-blue-hi)",
+        "blue-deep":   "var(--color-blue-deep)",
+        "blue-dim":    "var(--color-blue-dim)",
+        "blue-ice":    "var(--color-blue-ice)",
         // Semantic
+        success:       "var(--color-success)",
         amber:         "var(--color-amber)",
-        green:         "var(--color-green)",
-        "green-bright":"var(--color-green-bright)",
-        violet:        "var(--color-violet)",
         danger:        "var(--color-danger)",
         // Surfaces
         bg:            "var(--color-bg)",
+        "bg-panel":    "var(--color-bg-panel)",
+        "bg-elevated": "var(--color-bg-elevated)",
         surface:       "var(--color-surface)",
         // Text
         muted:         "var(--color-text-muted)",
@@ -30,16 +32,17 @@ export default {
         md:   "var(--radius-md)",
         lg:   "var(--radius-lg)",
         xl:   "var(--radius-xl)",
+        "2xl":"var(--radius-2xl)",
         pill: "var(--radius-pill)",
       },
       boxShadow: {
-        subtle: "var(--shadow-subtle)",
-        sm:     "var(--shadow-sm)",
-        card:   "var(--shadow-card)",
-        panel:  "var(--shadow-panel)",
-        modal:  "var(--shadow-modal)",
-        neon:   "var(--shadow-neon)",
-        violet: "var(--shadow-violet)",
+        subtle:      "var(--shadow-subtle)",
+        sm:          "var(--shadow-sm)",
+        card:        "var(--shadow-card)",
+        panel:       "var(--shadow-panel)",
+        modal:       "var(--shadow-modal)",
+        blue:        "var(--shadow-blue)",
+        "blue-glow": "var(--shadow-blue-glow)",
       },
       spacing: {
         1: "var(--sp-1)",

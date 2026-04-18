@@ -6,7 +6,7 @@
  *
  * @usage
  * import { UploadIcon, FileIcon, ValidationIcon, SpinnerIcon, SuccessIcon, ErrorIcon, ClearIcon } from "./ui/ImportIcons";
- * <UploadIcon size={24} color={PALETTE.neon} />
+ * <UploadIcon size={24} color={PALETTE.blue} />
  *
  * @author @Desarrollador (Andres)
  * @version 1.0
@@ -20,7 +20,7 @@ import { PALETTE } from "../../constants/palette";
 /**
  * @typedef {Object} IconProps
  * @property {number}  [size=20]  - Tamaño en px
- * @property {string}  [color]    - Color del trazo (default: PALETTE.neon)
+ * @property {string}  [color]    - Color del trazo (default: PALETTE.blue)
  * @property {number}  [opacity=1]
  */
 
@@ -28,7 +28,7 @@ import { PALETTE } from "../../constants/palette";
 // UPLOAD ICON — flecha hacia arriba sobre bandeja de recepción
 // Usado en: zona de drop, botón principal de carga
 // ─────────────────────────────────────────────────────────────────────────────
-export function UploadIcon({ size = 20, color = PALETTE.neon, opacity = 1 }) {
+export function UploadIcon({ size = 20, color = PALETTE.blue, opacity = 1 }) {
   return (
     <svg
       width={size}
@@ -128,7 +128,7 @@ export function ValidationPendingIcon({ size = 20, color = PALETTE.amber, opacit
 // VALIDATION SUCCESS — check dentro de escudo/círculo
 // Usado en: filas válidas en la preview, confirmación de importación exitosa
 // ─────────────────────────────────────────────────────────────────────────────
-export function SuccessIcon({ size = 20, color = PALETTE.green, opacity = 1 }) {
+export function SuccessIcon({ size = 20, color = PALETTE.success, opacity = 1 }) {
   return (
     <svg
       width={size}
@@ -212,7 +212,7 @@ export function WarningIcon({ size = 20, color = PALETTE.amber, opacity = 1 }) {
 // SPINNER — ícono de carga animado con Framer Motion
 // Usado en: procesamiento, validación en curso, subida al servidor
 // ─────────────────────────────────────────────────────────────────────────────
-export function SpinnerIcon({ size = 20, color = PALETTE.neon }) {
+export function SpinnerIcon({ size = 20, color = PALETTE.blue }) {
   return (
     <motion.svg
       width={size}
@@ -266,7 +266,7 @@ export function ClearIcon({ size = 16, color = PALETTE.textMuted, opacity = 1 })
 // IMPORT BATCH — múltiples flechas hacia base de datos
 // Usado en: encabezado del módulo de carga masiva
 // ─────────────────────────────────────────────────────────────────────────────
-export function ImportBatchIcon({ size = 24, color = PALETTE.neon, opacity = 1 }) {
+export function ImportBatchIcon({ size = 24, color = PALETTE.blue, opacity = 1 }) {
   return (
     <svg
       width={size}
@@ -291,7 +291,7 @@ export function ImportBatchIcon({ size = 24, color = PALETTE.neon, opacity = 1 }
 // TEMPLATE DOWNLOAD — documento con flecha hacia abajo
 // Usado en: descargar plantilla CSV modelo
 // ─────────────────────────────────────────────────────────────────────────────
-export function TemplateDownloadIcon({ size = 20, color = PALETTE.purple, opacity = 1 }) {
+export function TemplateDownloadIcon({ size = 20, color = PALETTE.blueDeep, opacity = 1 }) {
   return (
     <svg
       width={size}
@@ -338,7 +338,7 @@ export function TemplateDownloadIcon({ size = 20, color = PALETTE.purple, opacit
 // DRAG DROP ZONE ICON — ícono principal de la zona de arrastre
 // Combina nube + flecha para indicar "arrastra aquí"
 // ─────────────────────────────────────────────────────────────────────────────
-export function DragDropIcon({ size = 40, color = PALETTE.neon, opacity = 0.6 }) {
+export function DragDropIcon({ size = 40, color = PALETTE.blue, opacity = 0.6 }) {
   return (
     <svg
       width={size}

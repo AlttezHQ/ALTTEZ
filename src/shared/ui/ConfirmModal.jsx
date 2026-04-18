@@ -6,7 +6,7 @@
 import { motion } from "framer-motion";
 import { PALETTE as C } from "../tokens/palette";
 
-export default function ConfirmModal({ title, message, confirmLabel = "Confirmar", cancelLabel = "Cancelar", accentColor = C.neon, onConfirm, onCancel }) {
+export default function ConfirmModal({ title, message, confirmLabel = "Confirmar", cancelLabel = "Cancelar", accentColor = C.blue, onConfirm, onCancel }) {
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

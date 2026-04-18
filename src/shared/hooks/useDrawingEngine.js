@@ -201,6 +201,13 @@ export default function useDrawingEngine(clubId) {
     setInProgress(null);
   }, [storageKey]);
 
+  const replaceDrawings = useCallback((next) => {
+    const safe = Array.isArray(next) ? next : [];
+    setDrawings(safe);
+    saveDrawings(storageKey, safe);
+    setInProgress(null);
+  }, [storageKey]);
+
   return {
     drawings,
     inProgress,
@@ -214,5 +221,6 @@ export default function useDrawingEngine(clubId) {
     handleDrawPointerUp,
     handleEraseDrawing,
     clearAllDrawings,
+    replaceDrawings,
   };
 }

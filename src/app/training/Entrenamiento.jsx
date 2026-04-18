@@ -5,6 +5,8 @@ import { getAvatarUrl as PHOTO } from "../../shared/utils/helpers";
 import { PALETTE } from "../../shared/tokens/palette";
 import { sanitizeNote } from "../../shared/utils/sanitize";
 import EmptyState from "../../shared/ui/EmptyState";
+import SessionLiveHeader from "../../shared/ui/SessionLiveHeader";
+import TabBar from "../../shared/ui/TabBar";
 import { showToast } from "../../shared/ui/Toast";
 import { useStore } from "../../shared/store/useStore";
 import { calcStats, buildSesion } from "../../shared/services/storageService";
@@ -212,7 +214,7 @@ export default function Entrenamiento({ clubId = "" }) {
 
   return (
     <div>
-      {/* ── Feature B: SESIÓN ACTIVA — banner prominente ── */}
+      {/* ── SESIÓN ACTIVA — Broadcast Live Header ── */}
       {sessionActive && (() => {
         const presentes = athletes.filter(a => a.status === "P");
         const conRpe = presentes.filter(a => a.rpe != null).length;
@@ -221,82 +223,150 @@ export default function Entrenamiento({ clubId = "" }) {
           ? (presentes.filter(a => a.rpe != null).reduce((s, a) => s + a.rpe, 0) / conRpe).toFixed(1)
           : "—";
         return (
-          <div style={{ background:"linear-gradient(135deg, rgba(29,158,117,0.15) 0%, rgba(29,158,117,0.05) 100%)", borderBottom:`2px solid ${PALETTE.green}`, padding:"12px 20px" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ position:"relative", width:14, height:14 }}>
-                  <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:PALETTE.green, animation:"elv_pulse 1.4s ease-in-out infinite" }} />
-                  <div style={{ position:"absolute", inset:2, borderRadius:"50%", background:PALETTE.green }} />
-                </div>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:700, textTransform:"uppercase", letterSpacing:"2px", color:PALETTE.green }}>
-                    Sesion en curso
-                  </div>
-                  <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:2 }}>
-                    {tipo} · {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:20 }}>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:18, fontWeight:700, fontFamily:"monospace", color:"white" }}>{fmtElapsed(elapsed)}</div>
-                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>Tiempo</div>
-                </div>
-                <div style={{ width:1, height:28, background:"rgba(255,255,255,0.1)" }} />
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:18, fontWeight:700, color:PALETTE.green }}>{conRpe}/{presentes.length}</div>
-                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE reg.</div>
-                </div>
-                <div style={{ textAlign:"center" }}>
-                  <div style={{ fontSize:18, fontWeight:700, color: rpeAvg === "—" ? "rgba(255,255,255,0.3)" : PALETTE.amber }}>{rpeAvg}</div>
-                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)" }}>RPE prom</div>
-                </div>
-                {sinRpe > 0 && (
-                  <div style={{ padding:"4px 10px", background:"rgba(239,159,39,0.15)", border:`1px solid ${PALETTE.amber}`, fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.amber }}>
-                    {sinRpe} sin RPE
-                  </div>
-                )}
-              </div>
-            </div>
+          <div style={{ padding: "14px 20px 0" }}>
+            <SessionLiveHeader
+              isLive
+              title="Sesión en curso"
+              subtitle={`${tipo} · ${new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}`}
+              kpis={[
+                { label: "Tiempo", value: fmtElapsed(elapsed), accent: "white" },
+                { label: "RPE reg.", value: `${conRpe}/${presentes.length}`, accent: PALETTE.success },
+                { label: "RPE prom", value: rpeAvg, accent: rpeAvg === "—" ? PALETTE.textMuted : PALETTE.amber },
+                { label: "Sin RPE", value: sinRpe, accent: sinRpe > 0 ? PALETTE.amber : PALETTE.textMuted },
+              ]}
+            />
           </div>
         );
       })()}
 
-      {/* MÉTRICAS */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:2 }}>
+      {/* MÉTRICAS — Broadcast stat strip */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+        gap: 10,
+        padding: "14px 20px",
+      }}>
         {[
-          { label:"Presentes", value:stats.presentes, color:PALETTE.green, border:PALETTE.green },
-          { label:"Ausentes", value:stats.ausentes, color:PALETTE.danger, border:PALETTE.danger },
-          { label:"RPE promedio", value:stats.rpeAvg, color:PALETTE.amber, border:PALETTE.amber },
-          { label:"Sesión", value:`#${(historial[0]?.num || 0) + 1}`, color:PALETTE.purple, border:PALETTE.purple },
+          { label:"Presentes",     value: stats.presentes, color: PALETTE.success },
+          { label:"Ausentes",      value: stats.ausentes,  color: PALETTE.danger  },
+          { label:"RPE promedio",  value: stats.rpeAvg,    color: PALETTE.amber   },
+          { label:"Sesión",        value: `#${(historial[0]?.num || 0) + 1}`, color: PALETTE.blueHi },
         ].map((m,i) => (
-          <div key={i} style={{ padding:"12px 16px", background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`3px solid ${m.border}`, border:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"default" }}>
-            <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1 }}>{m.value}</div>
-            <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)" }}>{m.label}</div>
+          <div
+            key={i}
+            style={{
+              position: "relative",
+              padding: "14px 16px",
+              background: "linear-gradient(135deg, rgba(47,107,255,0.08) 0%, rgba(10,15,26,0.96) 55%, rgba(4,6,16,1) 100%)",
+              border: `1px solid ${PALETTE.borderHi}`,
+              borderRadius: 10,
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 24px rgba(0,0,0,0.45)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Top sweep */}
+            <span style={{
+              position: "absolute", top: 0, left: 0, right: 0, height: 2,
+              background: `linear-gradient(90deg, ${m.color}00 0%, ${m.color} 25%, ${m.color} 75%, ${m.color}00 100%)`,
+              boxShadow: `0 0 10px ${m.color}88`,
+            }} />
+            {/* Corner accent */}
+            <span style={{
+              position: "absolute", top: 7, left: 7, width: 5, height: 5,
+              borderTop: `1.5px solid ${m.color}`, borderLeft: `1.5px solid ${m.color}`, opacity: 0.8,
+            }} />
+
+            <div style={{
+              fontSize: 8.5, fontWeight: 800,
+              color: PALETTE.textMuted,
+              textTransform: "uppercase",
+              letterSpacing: "2.2px",
+              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+              marginBottom: 6,
+              paddingLeft: 10,
+            }}>
+              {m.label}
+            </div>
+            <div style={{
+              fontSize: 26, fontWeight: 900,
+              color: "white",
+              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+              lineHeight: 1,
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: "-0.5px",
+              textShadow: `0 0 16px ${m.color}66`,
+            }}>
+              {m.value}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* SUBTABS */}
-      <div className="entrenamiento-tabs" style={{ display:"flex", alignItems:"stretch", height:36, background:"rgba(8,8,14,0.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, padding:"0 16px", boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
-        {[["sesion","Sesión de hoy"],["planificacion","Planificación"],["historial","Historial"],["analisis","Análisis"]].map(([k,l]) => (
-          <div key={k} onClick={() => setTab(k)} style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", color: tab===k ? PALETTE.green : PALETTE.textMuted, display:"flex", alignItems:"center", padding:"0 14px", cursor:"pointer", borderBottom: tab===k ? `2px solid ${PALETTE.green}` : "2px solid transparent", background: tab===k ? "rgba(29,158,117,0.06)" : "transparent", boxShadow: tab===k ? `inset 0 -2px 8px rgba(29,158,117,0.15)` : "none", transition:"color 0.15s,background 0.15s" }}>
-            {l}
-          </div>
-        ))}
-        {tab === "sesion" && (
-          <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8, padding:"0 8px" }}>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1px" }}>
-              {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
-            </div>
-            <select value={tipo} onChange={e=>setTipo(e.target.value)} className="field-input" style={{ width:"auto", fontSize:"var(--fs-caption)", padding:"3px 8px" }}>
-              {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
-            </select>
-            <div onClick={() => handleGuardar(nota, tipo)} style={{ background:PALETTE.green, color:"#08080E", fontSize:11, fontWeight:900, textTransform:"uppercase", letterSpacing:"1px", padding:"5px 14px", cursor:"pointer", whiteSpace:"nowrap", borderRadius:6 }}>
-              Cerrar sesion →
-            </div>
-          </div>
-        )}
+      {/* SUBTABS — Broadcast beam */}
+      <div className="entrenamiento-tabs" style={{ padding: "0 16px", background: "rgba(8,8,14,0.92)" }}>
+        {(() => {
+          const TAB_MAP = [
+            ["sesion", "Sesión de hoy"],
+            ["planificacion", "Planificación"],
+            ["historial", "Historial"],
+            ["analisis", "Análisis"],
+          ];
+          const labels = TAB_MAP.map(([, l]) => l);
+          const activeLabel = TAB_MAP.find(([k]) => k === tab)?.[1];
+          return (
+            <TabBar
+              tabs={labels}
+              active={activeLabel}
+              onChange={(label) => {
+                const entry = TAB_MAP.find(([, l]) => l === label);
+                if (entry) setTab(entry[0]);
+              }}
+              rightSlot={tab === "sesion" ? (
+                <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 4px" }}>
+                  <div style={{
+                    fontSize: 9,
+                    color: PALETTE.textMuted,
+                    textTransform: "uppercase",
+                    letterSpacing: "1.5px",
+                    fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                    fontWeight: 700,
+                  }}>
+                    {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
+                  </div>
+                  <select
+                    value={tipo}
+                    onChange={e=>setTipo(e.target.value)}
+                    className="field-input"
+                    style={{ width:"auto", fontSize:"var(--fs-caption)", padding:"4px 10px" }}
+                  >
+                    {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
+                  </select>
+                  <button
+                    onClick={() => handleGuardar(nota, tipo)}
+                    style={{
+                      background: `linear-gradient(180deg, ${PALETTE.blue} 0%, ${PALETTE.blue} 60%, ${PALETTE.blueDeep} 100%)`,
+                      color: "white",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "1.6px",
+                      padding: "7px 16px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      borderRadius: 6,
+                      border: `1px solid ${PALETTE.blue}`,
+                      fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px ${PALETTE.blueGlow}`,
+                      textShadow: "0 1px 0 rgba(0,0,0,0.25)",
+                    }}
+                  >
+                    Cerrar sesión →
+                  </button>
+                </div>
+              ) : null}
+            />
+          );
+        })()}
       </div>
 
       {/* SESIÓN DE HOY — CARTAS */}

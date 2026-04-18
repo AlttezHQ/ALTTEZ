@@ -48,7 +48,7 @@ const metricItemVariant = {
 // ─────────────────────────────────────────────
 // PRÓXIMO EVENTO — busca en datos reales del calendario
 // ─────────────────────────────────────────────
-const EVENT_COLORS = { match: "#c8ff00", training: "#7F77DD", club: "#EF9F27" };
+const EVENT_COLORS = { match: "#2F6BFF", training: "#5B9DFF", club: "#F59E0B" };
 const EVENT_LABELS = { match: "Partido", training: "Entrenamiento", club: "Evento" };
 
 /**
@@ -140,10 +140,10 @@ const NAV_ITEMS = [
 // ICONOS SVG
 // ─────────────────────────────────────────────
 const Icon = {
-  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={PALETTE.neon} strokeWidth="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round"/></svg>,
-  Ball:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={PALETTE.neon} strokeWidth="2"/><path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.neon} strokeWidth="1.5"/></svg>,
-  Train: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  Chart: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={PALETTE.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={PALETTE.blue} strokeWidth="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round"/></svg>,
+  Ball:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={PALETTE.blue} strokeWidth="2"/><path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.blue} strokeWidth="1.5"/></svg>,
+  Train: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  Chart: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 };
 
 // ─────────────────────────────────────────────
@@ -260,7 +260,7 @@ function useGameAudio() {
 function InteractiveTile({
   gridColumn, gridRow,
   image, overlayType = "bottom",
-  borderTopColor = PALETTE.neon, borderTopWidth = 4,
+  borderTopColor = PALETTE.blue, borderTopWidth = 4,
   onClick, playHover, playSelect,
   children,
 }) {
@@ -299,7 +299,7 @@ function InteractiveTile({
         borderTop:   `${borderTopWidth}px solid ${borderTopColor}`,
         // ── Glow effect ──
         boxShadow: hovered
-          ? `0 0 0 1px ${PALETTE.neon}88, 0 0 20px 2px ${PALETTE.neonGlow}, inset 0 0 30px rgba(200,255,0,0.04), 0 12px 40px rgba(0,0,0,0.7)`
+          ? `0 0 0 1px rgba(47,107,255,0.5), 0 0 24px rgba(47,107,255,0.3), inset 0 0 30px rgba(47,107,255,0.03), 0 12px 40px rgba(0,0,0,0.7)`
           : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
         // ── Scale + lift ──
         transform:  hovered ? "scale(1.018) translateY(-2px)" : "scale(1) translateY(0)",
@@ -372,20 +372,20 @@ export default function Home({ onNavigate, onLogout }) {
   // ── Estilos estáticos ────────────────────
   const css = {
     app: { minHeight:"100vh", background:PALETTE.bg, display:"flex", flexDirection:"column" },
-    topbar: { height:44, background:"rgba(6,8,14,0.88)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", borderBottom:`1px solid rgba(200,255,0,0.12)`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto", boxShadow:"0 1px 0 rgba(255,255,255,0.02), 0 4px 16px rgba(0,0,0,0.4)" },
+    topbar: { height:44, background:"rgba(6,8,14,0.88)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", borderBottom:`1px solid rgba(47,107,255,0.12)`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto", boxShadow:"0 1px 0 rgba(255,255,255,0.02), 0 4px 16px rgba(0,0,0,0.4)" },
     brandBlock: { padding:"0 22px", display:"flex", alignItems:"center", background:"rgba(0,0,0,0.6)", borderRight:`1px solid ${PALETTE.border}` },
-    navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.neon}` : "2px solid transparent", background: active ? "rgba(200,255,0,0.05)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
+    navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.blue}` : "2px solid transparent", background: active ? "rgba(47,107,255,0.06)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
     clubBadge: { marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px", borderLeft:`1px solid ${PALETTE.border}` },
-    clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(200,255,0,0.12)", border:`2px solid ${PALETTE.neon}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.neon, flexShrink:0 },
+    clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(47,107,255,0.12)", border:`2px solid ${PALETTE.blue}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.blue, flexShrink:0 },
     metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid rgba(255,255,255,0.06)` },
-    metricBlock: (i) => ({ padding:"14px 20px", display:"flex", alignItems:"center", gap:14, background: i===0 ? "linear-gradient(135deg,rgba(200,255,0,0.08),rgba(200,255,0,0.02))" : "linear-gradient(135deg,rgba(16,16,28,0.92),rgba(8,8,18,0.96))", backdropFilter:"blur(24px)", WebkitBackdropFilter:"blur(24px)", borderBottom:`2px solid ${i===0 ? PALETTE.neon : "rgba(200,255,0,0.3)"}`, borderRight:`1px solid rgba(255,255,255,0.05)`, boxShadow:"0 4px 20px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.04)" }),
+    metricBlock: (i) => ({ position:"relative", padding:"16px 22px", display:"flex", alignItems:"center", gap:14, background: i===0 ? "linear-gradient(135deg,rgba(47,107,255,0.14) 0%,rgba(10,15,26,0.96) 55%,rgba(4,6,16,1) 100%)" : "linear-gradient(135deg,rgba(47,107,255,0.06) 0%,rgba(10,15,26,0.98) 60%,rgba(4,6,16,1) 100%)", backdropFilter:"blur(24px) saturate(140%)", WebkitBackdropFilter:"blur(24px) saturate(140%)", borderRight:`1px solid rgba(255,255,255,0.06)`, boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.30), 0 4px 20px rgba(0,0,0,0.35)", overflow:"hidden" }),
     grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))", gridAutoRows:"minmax(180px,1fr)", gap:4, padding:"4px 12px 12px", minHeight:0 },
-    tag: { fontSize:8, textTransform:"uppercase", letterSpacing:"3.5px", fontWeight:600, color:PALETTE.neon, marginBottom:10, opacity:0.85 },
+    tag: { fontSize:8, textTransform:"uppercase", letterSpacing:"3.5px", fontWeight:600, color:PALETTE.blueHi, marginBottom:10, opacity:0.85 },
     titleBig: { fontSize:42, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-1.5px", lineHeight:0.92, textShadow:"0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.4)", marginBottom:18 },
     titleMid: { fontSize:22, fontWeight:800, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1.05, textShadow:"0 2px 12px rgba(0,0,0,0.85)", marginBottom:14 },
     // Botón CTA: recibe isHovered para cambiar color
-    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.neon, color:PALETTE.bgDark, border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px ${PALETTE.neonGlow}` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
-    ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon, cursor:"pointer" },
+    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.blue, color: hov ? PALETTE.bgDark : "#F0F4F8", border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px rgba(47,107,255,0.4)` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
+    ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi, cursor:"pointer" },
     statRow: { display:"flex", alignItems:"center", height:"100%", position:"relative", zIndex:2, padding:"0 12px", gap:0 },
     statBlock: (last) => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"10px 8px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
     footer: { display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"4px 18px 8px", flexShrink:0 },
@@ -399,9 +399,9 @@ export default function Home({ onNavigate, onLogout }) {
   ];
 
   const STATS = [
-    { val:matchStats.won,         lbl:"Ganados",   color:PALETTE.green },
+    { val:matchStats.won,         lbl:"Ganados",   color:PALETTE.success },
     { val:matchStats.lost,        lbl:"Perdidos",  color:PALETTE.danger },
-    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.neon },
+    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.blue },
     { val:`${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl:"Goles F/C", color:"white" },
   ];
 
@@ -411,7 +411,21 @@ export default function Home({ onNavigate, onLogout }) {
       {/* TOPBAR */}
       <div className="home-topbar" style={css.topbar}>
         <div style={css.brandBlock}>
-          <span className="home-brand-full" style={{ fontSize:17, fontWeight:700, color:PALETTE.text, letterSpacing:"-0.3px", whiteSpace:"nowrap" }}>
+          <img
+            src="/branding/alttez-symbol-transparent.png"
+            alt="ALTTEZ"
+            style={{
+              height:22, width:"auto", display:"block", marginRight:10,
+              filter:`drop-shadow(0 0 10px ${PALETTE.blueGlow})`,
+            }}
+            onError={e => { e.currentTarget.style.display = "none"; }}
+          />
+          <span className="home-brand-full" style={{
+            fontSize:14, fontWeight:800, color:PALETTE.text,
+            letterSpacing:"3px", whiteSpace:"nowrap",
+            fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+            textTransform:"uppercase",
+          }}>
             ALTTEZ
           </span>
         </div>
@@ -457,14 +471,47 @@ export default function Home({ onNavigate, onLogout }) {
         {METRICS.map((m, i) => (
           <motion.div key={m.label} variants={metricItemVariant}
             onClick={() => { playSelect(); onNavigate(m.route); }}
-            style={{ ...css.metricBlock(i), cursor:"pointer", transition:"background 200ms ease-out" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(200,255,0,0.08)"; playHover(); }}
-            onMouseLeave={e => { e.currentTarget.style.background = css.metricBlock(i).background; }}
+            style={{ ...css.metricBlock(i), cursor:"pointer", transition:"border-color 200ms ease-out, box-shadow 200ms ease-out" }}
+            onMouseEnter={e => {
+              e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.30), 0 8px 32px rgba(47,107,255,0.25), 0 0 0 1px rgba(47,107,255,0.28)";
+              playHover();
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.30), 0 4px 20px rgba(0,0,0,0.35)";
+            }}
           >
+            {/* Top sweep bar */}
+            <span style={{
+              position:"absolute", top:0, left:0, right:0, height:2,
+              background:`linear-gradient(90deg, rgba(47,107,255,0) 0%, ${PALETTE.blue} 25%, ${PALETTE.blueHi} 50%, ${PALETTE.blue} 75%, rgba(47,107,255,0) 100%)`,
+              boxShadow:`0 0 8px ${PALETTE.blueGlow}`,
+              opacity: i===0 ? 1 : 0.5,
+            }} />
+            {/* Corner accent */}
+            <span style={{
+              position:"absolute", top:6, left:8,
+              width:5, height:5,
+              borderTop:`1px solid ${PALETTE.blue}`,
+              borderLeft:`1px solid ${PALETTE.blue}`,
+              opacity:0.7,
+            }} />
             {m.icon}
-            <div>
-              <div style={{ fontSize:22, fontWeight:700, color:PALETTE.neon, lineHeight:1 }}>{m.value}</div>
-              <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:PALETTE.textMuted, marginTop:2 }}>{m.label}</div>
+            <div style={{ position:"relative", zIndex:2 }}>
+              <div style={{
+                fontSize:26, fontWeight:900, color:"white", lineHeight:1,
+                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+                letterSpacing:"-0.8px",
+                textShadow:`0 0 18px ${PALETTE.blueGlow}`,
+              }}>
+                {m.value}
+              </div>
+              <div style={{
+                fontSize:8.5, textTransform:"uppercase", letterSpacing:"2.4px",
+                color:PALETTE.textMuted, marginTop:5, fontWeight:700,
+                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+              }}>
+                {m.label}
+              </div>
             </div>
           </motion.div>
         ))}
@@ -478,8 +525,8 @@ export default function Home({ onNavigate, onLogout }) {
           transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
           style={{
             margin: "0 12px",
-            background: PALETTE.purpleVibrantDim,
-            border: `1px solid ${PALETTE.purpleVibrantBorder}`,
+            background: PALETTE.blueDim,
+            border: `1px solid ${PALETTE.blueBorder}`,
             borderRadius: 8,
             overflow: "hidden",
           }}
@@ -487,9 +534,9 @@ export default function Home({ onNavigate, onLogout }) {
           <EmptyState
             icon={
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke={PALETTE.purpleVibrant} strokeWidth="1.8"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.blueHi} strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="9" cy="7" r="4" stroke={PALETTE.blueHi} strokeWidth="1.8"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.blueHi} strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             }
             title="Tu plantilla esta vacia"
@@ -566,7 +613,7 @@ export default function Home({ onNavigate, onLogout }) {
                 <div style={{ ...css.btn(hov), marginTop:12 }}>Programar evento →</div>
               </>
             );
-            const evColor = EVENT_COLORS[nextEv.type] || "#c8ff00";
+            const evColor = EVENT_COLORS[nextEv.type] || "#2F6BFF";
             return (
               <>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
@@ -595,7 +642,7 @@ export default function Home({ onNavigate, onLogout }) {
         <div
           onClick={() => { playSelect(); onNavigate("partidos"); }}
           onMouseEnter={() => playHover()}
-          style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.neonBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"pointer" }}
+          style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.blueBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"pointer" }}
         >
           <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
           <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
@@ -616,7 +663,7 @@ export default function Home({ onNavigate, onLogout }) {
           image={imgOficina}
           overlayType="bottom"
           borderTopWidth={2}
-          borderTopColor={PALETTE.neonBorder}
+          borderTopColor={PALETTE.blueBorder}
           onClick={() => onNavigate("admin")}
           playHover={playHover}
           playSelect={playSelect}
@@ -627,7 +674,7 @@ export default function Home({ onNavigate, onLogout }) {
                 <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Finanzas</div>
                 <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Salud financiera del club</div>
               </div>
-              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.purple : "rgba(127,119,221,0.4)", color: hov ? "white" : PALETTE.purple, transition:"color 200ms, border-color 200ms" }}>
+              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.blue : "rgba(47,107,255,0.3)", color: hov ? "white" : PALETTE.blueHi, transition:"color 200ms, border-color 200ms" }}>
                 Entrar →
               </div>
             </div>
@@ -637,14 +684,14 @@ export default function Home({ onNavigate, onLogout }) {
         {/* TILE 6 — MATCH CENTER */}
         <div
           onClick={() => onNavigate("partidos")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.blue; playHover(); }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(47,107,255,0.15)"; }}
           style={{
             position:"relative", overflow:"hidden",
             gridColumn:"1/4", gridRow:"3",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(127,119,221,0.06),rgba(10,10,18,0.96))",
+            borderTop:`2px solid rgba(47,107,255,0.25)`,
+            border:`1px solid rgba(47,107,255,0.15)`,
+            background:"linear-gradient(135deg,rgba(47,107,255,0.05),rgba(10,15,26,0.96))",
             cursor:"pointer",
             minHeight:64,
             display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -654,10 +701,10 @@ export default function Home({ onNavigate, onLogout }) {
           }}
         >
           <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(127,119,221,0.35)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(127,119,221,0.08)" }}>
+            <div style={{ width:36, height:36, border:`1px solid rgba(47,107,255,0.25)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(47,107,255,0.08)" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke={PALETTE.purple} strokeWidth="1.5"/>
-                <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.purple} strokeWidth="1.2"/>
+                <circle cx="12" cy="12" r="10" stroke={PALETTE.blueHi} strokeWidth="1.5"/>
+                <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.blueHi} strokeWidth="1.2"/>
               </svg>
             </div>
             <div>
@@ -672,7 +719,7 @@ export default function Home({ onNavigate, onLogout }) {
                 Rendimiento · Player Cards · Analítica post-partido
               </div>
             </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(127,119,221,0.4)`, color:PALETTE.purple }}>
+            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi }}>
               Abrir →
             </div>
           </div>
@@ -681,14 +728,14 @@ export default function Home({ onNavigate, onLogout }) {
         {/* TILE 7 — CALENDARIO (fila 4, ancho completo) */}
         <div
           onClick={() => onNavigate("calendario")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.neon; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,255,0,0.15)"; }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.blue; playHover(); }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(47,107,255,0.15)"; }}
           style={{
             position:"relative", overflow:"hidden",
             gridColumn:"1/4", gridRow:"4",
-            borderTop:`2px solid rgba(200,255,0,0.35)`,
-            border:`1px solid rgba(200,255,0,0.15)`,
-            background:"linear-gradient(135deg,rgba(200,255,0,0.04),rgba(10,10,18,0.96))",
+            borderTop:`2px solid rgba(47,107,255,0.25)`,
+            border:`1px solid rgba(47,107,255,0.15)`,
+            background:"linear-gradient(135deg,rgba(47,107,255,0.04),rgba(10,15,26,0.96))",
             cursor:"pointer",
             minHeight:64,
             display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -699,13 +746,13 @@ export default function Home({ onNavigate, onLogout }) {
         >
           {/* Icono calendario */}
           <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(200,255,0,0.3)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(200,255,0,0.06)" }}>
+            <div style={{ width:36, height:36, border:`1px solid rgba(47,107,255,0.25)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(47,107,255,0.06)" }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="18" rx="1" stroke={PALETTE.neon} strokeWidth="1.5"/>
-                <path d="M3 10h18M8 2v4M16 2v4" stroke={PALETTE.neon} strokeWidth="1.5" strokeLinecap="round"/>
-                <rect x="7" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.7"/>
-                <rect x="10.5" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.4"/>
-                <rect x="14" y="14" width="3" height="3" rx="0.5" fill={PALETTE.neon} opacity="0.2"/>
+                <rect x="3" y="4" width="18" height="18" rx="1" stroke={PALETTE.blueHi} strokeWidth="1.5"/>
+                <path d="M3 10h18M8 2v4M16 2v4" stroke={PALETTE.blueHi} strokeWidth="1.5" strokeLinecap="round"/>
+                <rect x="7" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.7"/>
+                <rect x="10.5" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.4"/>
+                <rect x="14" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.2"/>
               </svg>
             </div>
             <div>
@@ -722,7 +769,7 @@ export default function Home({ onNavigate, onLogout }) {
                 Partidos · Entrenamiento · RSVP en tiempo real
               </div>
             </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(200,255,0,0.4)`, color:PALETTE.neon }}>
+            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi }}>
               Abrir →
             </div>
           </div>
@@ -732,10 +779,20 @@ export default function Home({ onNavigate, onLogout }) {
 
       {/* FOOTER */}
       <div style={css.footer}>
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ background:PALETTE.neon, color:PALETTE.bgDark, fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:1 }}>ES</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", letterSpacing:"1.5px", fontWeight:600, textTransform:"uppercase" }}>ALTTEZ</div>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.15)", letterSpacing:"1px" }}>v2.0</div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <img
+            src="/branding/alttez-symbol-transparent.png"
+            alt=""
+            style={{ height:14, width:"auto", opacity:0.55, filter:`drop-shadow(0 0 6px ${PALETTE.blueGlow})` }}
+            onError={e => { e.currentTarget.style.display = "none"; }}
+          />
+          <div style={{
+            fontSize:10, color:"rgba(255,255,255,0.45)",
+            letterSpacing:"3px", fontWeight:700, textTransform:"uppercase",
+            fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+          }}>ALTTEZ</div>
+          <div style={{ width:1, height:10, background:"rgba(255,255,255,0.12)" }} />
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"1.2px", fontWeight:600 }}>v2.0</div>
         </div>
       </div>
 

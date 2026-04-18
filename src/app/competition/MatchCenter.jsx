@@ -15,8 +15,10 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PALETTE as C } from "../../shared/tokens/palette";
+import { PALETTE as C, ELEVATION, BROADCAST_GRADIENT } from "../../shared/tokens/palette";
 import { useStore } from "../../shared/store/useStore";
+import Scoreboard from "../../shared/ui/Scoreboard";
+import TabBar from "../../shared/ui/TabBar";
 import {
   calcALTTEZScore,
   calcOVR,
@@ -726,53 +728,75 @@ export default function MatchCenter({ clubId }) {
   return (
     <div style={{ minHeight: "calc(100vh - 38px)", background: C.bg }}>
 
-      {/* ── HEADER ── */}
+      {/* ── HEADER — Broadcast Arena ── */}
       <div style={{
-        background: "rgba(10,10,20,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-        borderBottom: `1px solid ${C.border}`, padding: "0 24px",
-        display: "flex", alignItems: "center", gap: 20, height: 54, flexShrink: 0,
+        position: "relative",
+        background: BROADCAST_GRADIENT.topbar,
+        borderBottom: `1px solid ${C.borderHi}`,
+        padding: "0 24px",
+        display: "flex", alignItems: "center", gap: 20,
+        height: 64, flexShrink: 0,
+        boxShadow: ELEVATION.flat,
       }}>
-        {/* Icono */}
+        {/* Top sweep */}
+        <span style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 2,
+          background: `linear-gradient(90deg, ${C.blue}00 0%, ${C.blue} 25%, ${C.blueHi} 50%, ${C.blue} 75%, ${C.blue}00 100%)`,
+          boxShadow: `0 0 12px ${C.blueGlow}`,
+        }} />
+
+        {/* Icono broadcast */}
         <div style={{
-          width: 34, height: 34, border: `1px solid ${C.neonBorder}`,
-          background: C.neonDim, display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative",
+          width: 40, height: 40, borderRadius: 8,
+          border: `1px solid ${C.blueBorder}`,
+          background: `linear-gradient(135deg, rgba(47,107,255,0.18) 0%, rgba(10,15,26,0.95) 100%)`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px ${C.blueGlow}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke={C.neon} strokeWidth="1.8"/>
-            <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={C.neon} strokeWidth="1.2"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke={C.blueHi} strokeWidth="1.8"/>
+            <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={C.blueHi} strokeWidth="1.2"/>
           </svg>
+          <span style={{
+            position: "absolute", top: 3, left: 3, width: 4, height: 4,
+            borderTop: `1px solid ${C.blue}`, borderLeft: `1px solid ${C.blue}`, opacity: 0.8,
+          }} />
+          <span style={{
+            position: "absolute", bottom: 3, right: 3, width: 4, height: 4,
+            borderBottom: `1px solid ${C.blue}`, borderRight: `1px solid ${C.blue}`, opacity: 0.8,
+          }} />
         </div>
 
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.3px", lineHeight: 1 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: 13, fontWeight: 900, color: "white",
+            textTransform: "uppercase", letterSpacing: "3px",
+            fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+            lineHeight: 1,
+            textShadow: `0 0 18px ${C.blueGlow}`,
+          }}>
             Match Center
           </div>
-          <div style={{ fontSize: 8, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
+          <div style={{
+            fontSize: 8.5, color: C.textMuted,
+            textTransform: "uppercase", letterSpacing: "2px",
+            fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+            fontWeight: 700,
+            marginTop: 4,
+          }}>
             Ingesta post-partido · Analítica de rendimiento
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 2 }}>
-          {[
-            { key: "ingesta",   label: "Registro" },
-            { key: "analytics", label: "Analítica" },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setView(tab.key)}
-              style={{
-                padding: "6px 16px", fontSize: 9, fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "1.5px",
-                background: view === tab.key ? C.neon : "transparent",
-                color: view === tab.key ? C.bgDark : C.textMuted,
-                border: `1px solid ${view === tab.key ? C.neon : C.border}`,
-                cursor: "pointer", transition: "all 150ms",
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Tabs broadcast */}
+        <div style={{ marginLeft: "auto", alignSelf: "stretch", display: "flex" }}>
+          <TabBar
+            tabs={["Registro", "Analítica"]}
+            active={view === "ingesta" ? "Registro" : "Analítica"}
+            onChange={(t) => setView(t === "Registro" ? "ingesta" : "analytics")}
+            style={{ borderBottom: "none" }}
+          />
         </div>
       </div>
 
@@ -785,39 +809,88 @@ export default function MatchCenter({ clubId }) {
           background: "rgba(0,0,0,0.6)", overflowY: "auto",
           display: "flex", flexDirection: "column",
         }}>
-          {/* Selector de partido */}
-          <div style={{ padding: "14px 14px 10px", borderBottom: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted, marginBottom: 8 }}>
+          {/* Selector de partido — broadcast tiles */}
+          <div style={{ padding: "14px 14px 10px", borderBottom: `1px solid ${C.borderHi}` }}>
+            <div style={{
+              fontSize: 8.5, fontWeight: 800,
+              textTransform: "uppercase", letterSpacing: "2.2px",
+              color: C.textMuted, marginBottom: 10,
+              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+            }}>
               Seleccionar partido
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {DEMO_MATCH_REPORTS.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => setSelectedMatchId(m.id)}
-                  style={{
-                    textAlign: "left", padding: "8px 10px",
-                    background: selectedMatchId === m.id ? "rgba(200,255,0,0.08)" : "transparent",
-                    border: `1px solid ${selectedMatchId === m.id ? C.neon : C.border}`,
-                    cursor: "pointer", transition: "all 150ms",
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "white", textTransform: "uppercase", letterSpacing: "-0.2px" }}>
-                      vs {m.rival}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {DEMO_MATCH_REPORTS.map(m => {
+                const isActive = selectedMatchId === m.id;
+                const [ha, hb] = String(m.resultado).split(/[-–:]/).map(s => Number(s.trim()) || 0);
+                const myScore = m.local ? ha : hb;
+                const theirScore = m.local ? hb : ha;
+                const resColor = myScore > theirScore ? C.success : myScore < theirScore ? C.danger : C.amber;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setSelectedMatchId(m.id)}
+                    style={{
+                      position: "relative",
+                      textAlign: "left", padding: "10px 12px",
+                      background: isActive
+                        ? "linear-gradient(135deg, rgba(47,107,255,0.12) 0%, rgba(10,15,26,0.9) 100%)"
+                        : "rgba(10,15,26,0.5)",
+                      border: `1px solid ${isActive ? C.blueBorder : C.border}`,
+                      borderRadius: 6,
+                      cursor: "pointer", transition: "all 150ms",
+                      display: "flex", justifyContent: "space-between", alignItems: "center",
+                      boxShadow: isActive
+                        ? `inset 0 1px 0 rgba(255,255,255,0.06), 0 2px 10px ${C.blueGlow}`
+                        : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {isActive && (
+                      <span style={{
+                        position: "absolute", top: 0, left: 0, bottom: 0,
+                        width: 2,
+                        background: `linear-gradient(180deg, ${C.blue}00, ${C.blueHi}, ${C.blue}00)`,
+                        boxShadow: `0 0 8px ${C.blueGlow}`,
+                      }} />
+                    )}
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 10, fontWeight: 800,
+                        color: "white",
+                        textTransform: "uppercase",
+                        letterSpacing: "1.2px",
+                        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}>
+                        vs {m.rival}
+                      </div>
+                      <div style={{
+                        fontSize: 8, color: C.textMuted, marginTop: 3,
+                        letterSpacing: "1.5px",
+                        textTransform: "uppercase",
+                        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                      }}>
+                        {m.fecha} · {m.local ? "Local" : "Visitante"}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 8, color: C.textMuted, marginTop: 1 }}>{m.fecha}</div>
-                  </div>
-                  <div style={{
-                    fontSize: 11, fontWeight: 900,
-                    color: m.resultado.startsWith("0") ? C.danger : C.neon,
-                    letterSpacing: "-0.5px",
-                  }}>
-                    {m.resultado}
-                  </div>
-                </button>
-              ))}
+                    <div style={{
+                      fontSize: 13, fontWeight: 900,
+                      color: resColor,
+                      letterSpacing: "-0.5px",
+                      fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                      textShadow: `0 0 10px ${resColor}55`,
+                      fontVariantNumeric: "tabular-nums",
+                      flexShrink: 0,
+                      marginLeft: 8,
+                    }}>
+                      {m.resultado}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -872,31 +945,39 @@ export default function MatchCenter({ clubId }) {
             {/* ── VISTA: INGESTA ── */}
             {view === "ingesta" && (
               <motion.div key="ingesta" {...fadeUp}>
-                {/* Info del partido */}
-                {selectedMatch && (
-                  <div style={{
-                    marginBottom: 20, padding: "14px 18px",
-                    background: "rgba(200,255,0,0.04)", border: `1px solid ${C.neonBorder}`,
-                    display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
-                  }}>
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>Rival</div>
-                      <div style={{ fontSize: 16, fontWeight: 900, color: "white", textTransform: "uppercase" }}>vs {selectedMatch.rival}</div>
+                {/* Scoreboard broadcast del partido */}
+                {selectedMatch && (() => {
+                  const [rawA, rawB] = String(selectedMatch.resultado).split(/[-–:]/).map(s => s.trim());
+                  const myScore = Number(rawA) || 0;
+                  const theirScore = Number(rawB) || 0;
+                  const isLocal = selectedMatch.local;
+                  const homeSide = isLocal
+                    ? { name: "ALTTEZ", score: myScore, tag: "HOME" }
+                    : { name: selectedMatch.rival, score: theirScore, tag: "HOME" };
+                  const awaySide = isLocal
+                    ? { name: selectedMatch.rival, score: theirScore, tag: "AWAY" }
+                    : { name: "ALTTEZ", score: myScore, tag: "AWAY" };
+                  const ourResult = myScore > theirScore ? "win" : myScore < theirScore ? "loss" : "draw";
+                  const result = isLocal
+                    ? ourResult
+                    : (ourResult === "win" ? "loss" : ourResult === "loss" ? "win" : "draw");
+                  return (
+                    <div style={{ marginBottom: 20 }}>
+                      <Scoreboard
+                        home={homeSide}
+                        away={awaySide}
+                        result={result}
+                        size="lg"
+                        meta={{
+                          date: selectedMatch.fecha,
+                          venue: selectedMatch.local ? "Local" : "Visitante",
+                          competition: "Liga",
+                          status: "final",
+                        }}
+                      />
                     </div>
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>Resultado</div>
-                      <div style={{ fontSize: 20, fontWeight: 900, color: C.neon }}>{selectedMatch.resultado}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>Fecha</div>
-                      <div style={{ fontSize: 12, color: "white" }}>{selectedMatch.fecha}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "1.5px", color: C.textMuted }}>Campo</div>
-                      <div style={{ fontSize: 12, color: "white" }}>{selectedMatch.local ? "Local" : "Visitante"}</div>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Formulario de stats por jugador */}
                 <div style={{ marginBottom: 14 }}>

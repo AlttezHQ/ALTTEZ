@@ -134,8 +134,8 @@ export default function UpdateToast() {
             background: "rgba(10,10,20,0.97)",
             backdropFilter: "blur(28px)",
             WebkitBackdropFilter: "blur(28px)",
-            border: `1px solid ${C.purple}44`,
-            borderLeft: `3px solid ${C.purple}`,
+            border: `1px solid ${C.blue}44`,
+            borderLeft: `3px solid ${C.blue}`,
             borderRadius: 12,
             boxShadow: `0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04), 0 0 24px rgba(127,119,221,0.12)`,
             overflow: "hidden",
@@ -149,7 +149,7 @@ export default function UpdateToast() {
               left: 3, // align with border-left offset
               right: 0,
               height: 1,
-              background: `linear-gradient(90deg, ${C.purple}88, transparent)`,
+              background: `linear-gradient(90deg, ${C.blue}88, transparent)`,
             }}
           />
 
@@ -167,12 +167,12 @@ export default function UpdateToast() {
                 width: 38,
                 height: 38,
                 borderRadius: 10,
-                background: `${C.purple}18`,
-                border: `1px solid ${C.purple}40`,
+                background: `${C.blue}18`,
+                border: `1px solid ${C.blue}40`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: C.purple,
+                color: C.blue,
                 flexShrink: 0,
               }}
             >
@@ -230,7 +230,7 @@ export default function UpdateToast() {
 
               {/* Update CTA */}
               <motion.button
-                whileHover={{ scale: 1.05, boxShadow: `0 0 18px ${C.purple}60` }}
+                whileHover={{ scale: 1.05, boxShadow: `0 0 18px ${C.blue}60` }}
                 whileTap={{ scale: 0.96 }}
                 onClick={handleUpdate}
                 disabled={updating}
@@ -242,8 +242,8 @@ export default function UpdateToast() {
                   textTransform: "uppercase",
                   letterSpacing: "1px",
                   background: updating
-                    ? `${C.purple}60`
-                    : `linear-gradient(135deg, ${C.purple}, #5b21b6)`,
+                    ? `${C.blue}60`
+                    : `linear-gradient(135deg, ${C.blue}, #5b21b6)`,
                   color: updating ? "rgba(255,255,255,0.5)" : "white",
                   border: "none",
                   borderRadius: 7,

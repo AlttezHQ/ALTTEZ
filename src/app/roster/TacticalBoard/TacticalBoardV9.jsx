@@ -23,7 +23,7 @@
 
 import { useState, useRef, useCallback, useMemo, useEffect, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PALETTE as C } from "../../../shared/tokens/palette";
+import { PALETTE as C, ELEVATION, BROADCAST_GRADIENT } from "../../../shared/tokens/palette";
 import { getAvatarUrl as avatar, getStatusStyle } from "../../../shared/utils/helpers";
 import { calcSaludActual, saludColor, calcAthleteRisk } from "../../../shared/utils/rpeEngine";
 import { useStore } from "../../../shared/store/useStore";
@@ -32,12 +32,21 @@ import useLocalStorage from "../../../shared/hooks/useLocalStorage";
 import useDragEngine from "../../../shared/hooks/useDragEngine";
 import useDrawingEngine from "../../../shared/hooks/useDrawingEngine";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
+import PlayLibraryOverlay from "../../../shared/ui/PlayLibraryOverlay";
+import TabBar from "../../../shared/ui/TabBar";
 import { showToast } from "../../../shared/ui/Toast";
 
 import FieldLayer from "./layers/FieldLayer";
 import DrawingLayer from "./layers/DrawingLayer";
+import PhaseTabs from "./layers/PhaseTabs";
+import CommandRail from "./layers/CommandRail";
+import IntelDock from "./layers/IntelDock";
+import BenchRibbon from "./layers/BenchRibbon";
 import GhostToken from "./tokens/GhostToken";
+import HexToken from "./tokens/HexToken";
 import DrawingToolbar from "./tools/DrawingToolbar";
+
+const PHASE_LABELS = { ofensiva: "Ofensiva", defensiva: "Defensiva", balonParado: "Balón parado" };
 
 /* ── Responsive CSS ─────────────────────────────────────────────────────────── */
 if (typeof document !== "undefined" && !document.getElementById("tbv9-responsive")) {
@@ -262,239 +271,7 @@ function HealthBar({ salud, width = 48 }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   PLAYER TOKEN — Circular photo token (Champions League broadcast style)
-   44px circle with athlete photo, health-color border, dorsal badge, name below.
-   No neon glow — clean, professional, broadcast-quality.
-═══════════════════════════════════════════════════════════════════════════════ */
-const PlayerToken = memo(function PlayerToken({
-  starter, salud, riskStatus = "unknown", viewLayer = "normal",
-  isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown
-}) {
-  const [hovered, setHovered] = useState(false);
-  const athlete = starter.athlete;
-
-  /* ── Slot vacío ── */
-  if (!athlete) {
-    return (
-      <div style={{
-        width: 44, height: 44, borderRadius: "50%",
-        border:`1.5px dashed ${isTarget ? "rgba(0,229,255,0.55)" : "rgba(255,255,255,0.15)"}`,
-        display:"flex", alignItems:"center", justifyContent:"center",
-        background: isTarget ? "rgba(0,229,255,0.06)" : "rgba(255,255,255,0.02)",
-        transition:"all 0.12s",
-      }}>
-        <div style={{ fontSize:16, color:"rgba(255,255,255,0.18)", lineHeight:1 }}>+</div>
-      </div>
-    );
-  }
-
-  const saludVal = salud?.salud ?? 100;
-  const dorsal = athlete.dorsal ?? athlete.number ?? null;
-  const apellido = athlete.name?.split(" ").pop() || "";
-  const isActive = isSelected || isActivating;
-  const isHover = hovered && !isDragged;
-
-  /* Border color: salud-based, no neon explosion. Selected = white ring. */
-  const borderColor = isActivating
-    ? "rgba(255,255,255,0.9)"
-    : isTarget ? "rgba(0,229,255,0.7)"
-    : isSelected ? "rgba(255,255,255,0.85)"
-    : saludColor(saludVal);
-
-  /* Neon glow color driven by riskStatus */
-  const riskGlowColor = riskStatus === "red" ? "226,75,74" : riskStatus === "yellow" ? "239,159,39" : riskStatus === "green" ? "57,255,20" : null;
-
-  const discShadow = isActivating
-    ? `0 0 0 3px rgba(255,255,255,0.25), 0 6px 20px rgba(0,0,0,0.8)`
-    : isTarget ? `0 0 0 2px rgba(0,229,255,0.4), 0 4px 16px rgba(0,0,0,0.7)`
-    : isSelected ? `0 0 0 3px rgba(255,255,255,0.2), 0 4px 16px rgba(0,0,0,0.75)`
-    : riskGlowColor ? `0 0 12px rgba(${riskGlowColor},0.45), 0 0 24px rgba(${riskGlowColor},0.2), 0 2px 8px rgba(0,0,0,0.7)`
-    : isHover ? `0 4px 14px rgba(0,0,0,0.8)`
-    : `0 2px 8px rgba(0,0,0,0.7)`;
-
-  const scale = isActivating ? 1.12 : isTarget ? 1.08 : isActive && !isDragged ? 1.05 : isHover ? 1.03 : 1;
-
-  return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2, userSelect:"none" }}>
-
-      {/* Circular photo disc */}
-      <div style={{ position:"relative", width:44, height:44 }}>
-        <motion.div
-          onClick={onSelect}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onPointerDown={onPointerDown}
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            border: `2px solid ${borderColor}`,
-            background: "rgba(10,15,10,0.9)",
-            cursor: isDragged ? "grabbing" : "grab",
-            touchAction: "none",
-            opacity: isDragged ? 0.15 : 1,
-            transform: `scale(${scale})`,
-            boxShadow: discShadow,
-            transition: isActivating
-              ? "transform 120ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 120ms ease, border-color 120ms ease"
-              : "transform 180ms ease, box-shadow 180ms ease, opacity 120ms, border-color 180ms",
-            position: "relative",
-            overflow: "hidden",
-            /* 44px is already the touch target */
-          }}
-        >
-          {/* Athlete photo — fills the circle */}
-          <img
-            src={avatar(athlete.photo)}
-            alt=""
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "top center",
-              display: "block",
-              borderRadius: "50%",
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* Status overlay (injury/absence) */}
-          {athlete.status !== "P" && (
-            <div style={{
-              position:"absolute", inset:0, borderRadius:"50%",
-              background:"rgba(0,0,0,0.62)",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              zIndex:2,
-            }}>
-              <div style={{ fontSize:7, fontWeight:900, color:getStatusStyle(athlete.status).color, letterSpacing:"0.5px" }}>
-                {athlete.status==="L"?"LES":"AUS"}
-              </div>
-            </div>
-          )}
-
-          {/* Layer Mode Overlay */}
-          {viewLayer !== "normal" && athlete.status === "P" && (
-            <div style={{
-              position:"absolute", inset:0, borderRadius:"50%",
-              background: viewLayer === "heatmap"
-                // Heatmap: overlay según riskStatus (carga ACWR)
-                ? riskStatus === "red"    ? "rgba(226,75,74,0.5)"
-                : riskStatus === "yellow" ? "rgba(239,159,39,0.35)"
-                : riskStatus === "green"  ? "rgba(29,158,117,0.2)"
-                : "rgba(255,255,255,0.05)"
-                // Recovery: overlay según salud (wellnessMap ya mezclado en riskStatus)
-                : riskStatus === "red"    ? "rgba(226,75,74,0.45)"
-                : riskStatus === "yellow" ? "rgba(239,159,39,0.3)"
-                : riskStatus === "green"  ? "rgba(57,255,20,0.2)"
-                : "rgba(255,255,255,0.05)",
-              zIndex:1,
-              pointerEvents:"none",
-              transition:"background 300ms ease",
-            }}/>
-          )}
-        </motion.div>
-
-        {/* Dorsal badge — bottom-right corner of the circle */}
-        <div style={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
-          minWidth: 14,
-          height: 14,
-          borderRadius: 7,
-          background: "rgba(10,10,16,0.92)",
-          border: `1px solid rgba(255,255,255,0.25)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 3px",
-          zIndex: 3,
-        }}>
-          <div style={{
-            fontSize: 8,
-            fontWeight: 800,
-            color: "rgba(255,255,255,0.9)",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}>
-            {dorsal !== null ? (typeof dorsal === "number" ? dorsal : dorsal) : starter.posCode?.slice(0,2)}
-          </div>
-        </div>
-
-        {/* ── Neon Vitality Ring ── */}
-        {athlete && riskStatus !== "unknown" && riskStatus !== "green" && (
-          <div style={{
-            position:"absolute", inset:-5, borderRadius:"50%",
-            border:`1.5px solid ${riskStatus==="red" ? "rgba(226,75,74,0.7)" : "rgba(239,159,39,0.6)"}`,
-            boxShadow: riskStatus==="red"
-              ? `0 0 8px rgba(226,75,74,0.5), inset 0 0 6px rgba(226,75,74,0.1)`
-              : `0 0 6px rgba(239,159,39,0.4)`,
-            pointerEvents:"none", zIndex:0,
-          }}/>
-        )}
-
-        {/* ── Pulse animation: solo rojo (Engine Alert) ── */}
-        {athlete && riskStatus === "red" && (
-          <motion.div
-            style={{
-              position:"absolute", inset:-8, borderRadius:"50%",
-              border:"1.5px solid rgba(226,75,74,0.4)",
-              boxShadow:"0 0 16px rgba(226,75,74,0.3)",
-              pointerEvents:"none", zIndex:0,
-            }}
-            animate={{
-              opacity: [0.8, 0, 0.8],
-              scale:   [1,   1.2, 1],
-            }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-          />
-        )}
-      </div>
-
-      {/* Apellido debajo del círculo */}
-      <div style={{
-        fontSize: 8,
-        fontWeight: 600,
-        color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
-        textTransform: "uppercase",
-        letterSpacing: "0.3px",
-        textShadow: "0 1px 4px rgba(0,0,0,0.95)",
-        whiteSpace: "nowrap",
-        maxWidth: 52,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        textAlign: "center",
-        transition: "color 0.15s",
-      }}>
-        {apellido.length > 7 ? apellido.slice(0, 7) : apellido}
-      </div>
-
-      {viewLayer === "heatmap" && riskStatus !== "unknown" && (
-        <div style={{ fontSize:7, color:
-          riskStatus==="red" ? "#E24B4A" : riskStatus==="yellow" ? "#EF9F27" : "#1D9E75",
-          letterSpacing:"0.5px", lineHeight:1, marginTop:1,
-          fontFamily:"'JetBrains Mono',monospace",
-        }}>
-          {riskStatus.toUpperCase()}
-        </div>
-      )}
-
-      {/* Barra de salud compacta — neon green ONLY here, by design */}
-      <HealthBar salud={saludVal} width={36} />
-    </div>
-  );
-}, (prev, next) =>
-  prev.starter?.athlete?.id === next.starter?.athlete?.id &&
-  prev.starter?.posCode === next.starter?.posCode &&
-  prev.salud?.salud === next.salud?.salud &&
-  prev.riskStatus === next.riskStatus &&
-  prev.viewLayer === next.viewLayer &&
-  prev.isSelected === next.isSelected &&
-  prev.isDragged === next.isDragged &&
-  prev.isTarget === next.isTarget &&
-  prev.isActivating === next.isActivating
-);
+/* PlayerToken removed — see ./tokens/HexToken.jsx (FUT-style hexagonal token). */
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    PLAYER DETAIL OVERLAY — Panel flotante en la esquina inferior derecha
@@ -608,40 +385,78 @@ function FormationsOverlay({ formationKey, onSelect, onClose }) {
       transition={{ type:"spring", stiffness:340, damping:26 }}
       style={{
         position: "absolute",
-        top: 50,
+        top: 60,
         left: 14,
-        width: 220,
-        background: "rgba(6,10,18,0.97)",
-        backdropFilter: "blur(28px)",
-        WebkitBackdropFilter: "blur(28px)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        width: 240,
+        background: BROADCAST_GRADIENT.stat,
+        border: `1px solid ${C.borderHi}`,
         borderRadius: 12,
         zIndex: 50,
-        boxShadow: "0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05)",
+        boxShadow: ELEVATION.panel,
         overflow: "hidden",
       }}
     >
-      <div style={{ padding:"12px 14px 6px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:C.textHint, borderLeft:`2px solid ${C.purple}`, paddingLeft:8 }}>Formacion</div>
+      {/* Top sweep */}
+      <span style={{
+        position:"absolute", top:0, left:0, right:0, height:2,
+        background:`linear-gradient(90deg, ${C.blue}00 0%, ${C.blue} 30%, ${C.blueHi} 50%, ${C.blue} 70%, ${C.blue}00 100%)`,
+        boxShadow:`0 0 12px ${C.blueGlow}`,
+      }} />
+      <span style={{
+        position:"absolute", top:6, left:6, width:6, height:6,
+        borderTop:`1.5px solid ${C.blue}`, borderLeft:`1.5px solid ${C.blue}`, opacity:0.8,
+      }} />
+
+      <div style={{
+        padding:"14px 14px 8px",
+        display:"flex", justifyContent:"space-between", alignItems:"center",
+        borderBottom:`1px solid ${C.border}`,
+      }}>
+        <div style={{
+          fontSize:10, fontWeight:900,
+          textTransform:"uppercase", letterSpacing:"2.5px",
+          color:"white",
+          fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+          paddingLeft:10,
+          textShadow:`0 0 10px ${C.blueGlow}`,
+        }}>
+          Formación
+        </div>
         <motion.div onClick={onClose} whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
-          style={{ cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:12, padding:"2px 6px" }}>✕</motion.div>
+          style={{ cursor:"pointer", color:"rgba(255,255,255,0.5)", fontSize:12, padding:"2px 6px" }}>✕</motion.div>
       </div>
-      <div style={{ padding:"6px 12px 12px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-        {Object.entries(HORIZ_FORMATIONS).map(([key, f]) => (
-          <div key={key} style={{ textAlign:"center", cursor:"pointer" }} onClick={()=>{ onSelect(key); onClose(); }}>
-            <MiniPitch positions={f.positions} isActive={formationKey===key} onClick={()=>{ onSelect(key); onClose(); }} />
-            <div style={{
-              fontSize:11, fontWeight:700, marginTop:4,
-              color: formationKey===key ? "rgba(255,255,255,0.95)" : C.textMuted,
-              padding:"2px 6px",
-              background: formationKey===key ? "rgba(139,92,246,0.14)" : "transparent",
-              border: formationKey===key ? `1px solid rgba(139,92,246,0.35)` : "1px solid transparent",
-              borderRadius:16, display:"inline-block",
-              transition:"all 0.15s",
-            }}>{key}</div>
-            <div style={{ fontSize:8, color:C.textHint, marginTop:2 }}>{f.label}</div>
-          </div>
-        ))}
+      <div style={{ padding:"10px 12px 14px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        {Object.entries(HORIZ_FORMATIONS).map(([key, f]) => {
+          const active = formationKey === key;
+          return (
+            <div key={key} style={{ textAlign:"center", cursor:"pointer" }} onClick={()=>{ onSelect(key); onClose(); }}>
+              <MiniPitch positions={f.positions} isActive={active} onClick={()=>{ onSelect(key); onClose(); }} />
+              <div style={{
+                fontSize:10.5, fontWeight:900, marginTop:6,
+                color: active ? "white" : C.textMuted,
+                padding:"3px 10px",
+                background: active
+                  ? `linear-gradient(180deg, ${C.blue} 0%, ${C.blueDeep} 100%)`
+                  : "rgba(47,107,255,0.06)",
+                border: `1px solid ${active ? C.blue : C.blueBorder}`,
+                borderRadius:6, display:"inline-block",
+                transition:"all 0.15s",
+                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+                letterSpacing:"1.2px",
+                boxShadow: active
+                  ? `inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 8px ${C.blueGlow}`
+                  : "none",
+                textShadow: active ? "0 1px 0 rgba(0,0,0,0.25)" : "none",
+              }}>{key}</div>
+              <div style={{
+                fontSize:8, color:C.textHint, marginTop:4,
+                letterSpacing:"1.5px", textTransform:"uppercase",
+                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+                fontWeight:700,
+              }}>{f.label}</div>
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -663,6 +478,10 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
   const [instructionsText, setInstructionsText] = useLocalStorage(`alttez_instructions${ns}`, "");
   const [tacticasText, setTacticasText] = useLocalStorage(`alttez_tacticas${ns}`, "");
   const [confirmAction, setConfirmAction] = useState(null);
+  const [plays, setPlays] = useLocalStorage(`alttez_plays_v1${ns}`, []);
+  const [showPlays, setShowPlays] = useState(false);
+  const [phase, setPhase] = useLocalStorage(`alttez_phase${ns}`, "ofensiva");
+  const [editMode, setEditMode] = useState(true);
 
   // Usa HORIZ_FORMATIONS como base — landscape correcto
 
@@ -748,6 +567,55 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     });
     setSelectedIdx(null);
   }, [formationKey]);
+
+  // ── PlayLibrary: captura y restauración ───────────────────────────────────
+  const capturePlay = useCallback((name) => {
+    const snap = {
+      id: `p_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      formationKey,
+      viewMode,
+      starters: starters.map(s => ({
+        posCode: s.posCode,
+        left: s.currentLeft,
+        top: s.currentTop,
+        athleteId: s.athlete?.id ?? null,
+      })),
+      drawings: drawingEngine?.drawings ?? [],
+      createdAt: Date.now(),
+    };
+    setPlays(prev => [snap, ...prev].slice(0, 40));
+    showToast(`Jugada "${name}" capturada`, "success");
+  }, [formationKey, viewMode, starters, drawingEngine, setPlays]);
+
+  const loadPlay = useCallback((play) => {
+    if (!play?.starters) return;
+    setFormationKey(play.formationKey || "4-3-3");
+    setStarters(prev => {
+      return play.starters.map((snap, i) => {
+        const athlete = snap.athleteId
+          ? athletes.find(a => a.id === snap.athleteId) || prev[i]?.athlete || null
+          : prev[i]?.athlete || null;
+        return {
+          posCode: snap.posCode,
+          left: snap.left, top: snap.top,
+          currentLeft: snap.left, currentTop: snap.top,
+          athlete,
+          id: `s${i}`,
+          stagger: i * 0.025,
+        };
+      });
+    });
+    if (drawingEngine?.replaceDrawings && Array.isArray(play.drawings)) {
+      drawingEngine.replaceDrawings(play.drawings);
+    }
+    setShowPlays(false);
+    showToast(`Jugada "${play.name}" cargada`, "success");
+  }, [athletes, drawingEngine]);
+
+  const deletePlay = useCallback((id) => {
+    setPlays(prev => prev.filter(p => p.id !== id));
+  }, [setPlays]);
 
   // ── Salud map ─────────────────────────────────────────────────────────────
   const saludMap = useMemo(() => {
@@ -840,262 +708,206 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
       overflow:"hidden",
     }}>
 
-      {/* ── TOPBAR: tabs + controles de campo ── */}
+      {/* ── TOPBAR BROADCAST — tabs + controles de campo ── */}
       <div style={{
-        display:"flex", alignItems:"stretch", height:40,
-        background:"rgba(5,6,12,0.98)",
-        backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)",
-        borderBottom:`1px solid rgba(255,255,255,0.06)`,
+        position: "relative",
+        display:"flex", alignItems:"stretch", minHeight: 52,
+        background: BROADCAST_GRADIENT.topbar,
+        borderBottom:`1px solid ${C.borderHi}`,
         flexShrink:0,
-        boxShadow:"0 2px 12px rgba(0,0,0,0.5)",
+        boxShadow: ELEVATION.flat,
+        paddingLeft: 14,
       }}>
-        {/* Tabs */}
-        <div className="tbv9-tabs" style={{ display:"flex", alignItems:"stretch", overflowX:"auto" }}>
-          {TABS.map(t => (
-            <div key={t.key} onClick={()=>setActiveTab(t.key)}
-              style={{
-                padding:"0 16px", fontSize:10, fontWeight:700,
-                textTransform:"uppercase", letterSpacing:"2px",
-                color:activeTab===t.key?"rgba(255,255,255,0.92)":C.textMuted,
-                display:"flex", alignItems:"center", cursor:"pointer",
-                borderBottom:activeTab===t.key?`2px solid rgba(255,255,255,0.7)`:"2px solid transparent",
-                background:activeTab===t.key?"rgba(255,255,255,0.04)":"transparent",
-                whiteSpace:"nowrap",
-                transition:"color 0.14s,background 0.14s",
-              }}>
-              {t.label}
-            </div>
-          ))}
+        {/* Top sweep */}
+        <span style={{
+          position:"absolute", top:0, left:0, right:0, height:2,
+          background:`linear-gradient(90deg, ${C.blue}00 0%, ${C.blue} 25%, ${C.blueHi} 50%, ${C.blue} 75%, ${C.blue}00 100%)`,
+          boxShadow:`0 0 12px ${C.blueGlow}`,
+        }} />
+
+        {/* Brand chip ALTTEZ */}
+        <div style={{
+          display:"flex", alignItems:"center", gap:8,
+          paddingRight: 14, marginRight: 12, alignSelf:"center",
+          borderRight:`1px solid ${C.border}`,
+          paddingBlock: 8,
+        }}>
+          <img
+            src="/branding/alttez-symbol-transparent.png"
+            alt="ALTTEZ"
+            style={{ height:20, width:"auto", filter:`drop-shadow(0 0 10px ${C.blueGlow})` }}
+            onError={e => { e.currentTarget.style.display = "none"; }}
+          />
+          <div style={{
+            fontSize:9, fontWeight:900, color:"white",
+            textTransform:"uppercase", letterSpacing:"2.5px",
+            fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+          }}>
+            Tactical
+          </div>
         </div>
 
-        {/* Separador */}
-        <div style={{ width:1, background:"rgba(255,255,255,0.06)", margin:"8px 0", flexShrink:0 }} />
-
-        {/* Controles de campo — formación + view toggle */}
-        <div style={{ display:"flex", alignItems:"center", padding:"0 12px", gap:8, marginLeft:"auto" }}>
-          {/* Indicador de formación — click abre overlay */}
-          <motion.div
-            onClick={() => setShowFormations(v => !v)}
-            whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-            style={{
-              display:"flex", alignItems:"center", gap:6,
-              padding:"4px 10px", borderRadius:6, cursor:"pointer",
-              background: showFormations ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.05)",
-              border: showFormations ? `1px solid ${C.purple}55` : "1px solid rgba(255,255,255,0.1)",
-              transition:"all 0.14s",
+        {/* Tabs — TabBar broadcast */}
+        <div className="tbv9-tabs" style={{ display:"flex", alignSelf:"stretch", flex:"0 1 auto" }}>
+          <TabBar
+            tabs={TABS.map(t => t.label)}
+            active={TABS.find(t => t.key === activeTab)?.label}
+            onChange={(label) => {
+              const entry = TABS.find(t => t.label === label);
+              if (entry) setActiveTab(entry.key);
             }}
-          >
-            <div style={{ fontSize:7, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"1px", padding:"1px 5px", border:`1px solid ${C.purple}55`, borderRadius:3 }}>V9</div>
-            <div style={{ fontSize:10, fontWeight:700, color: showFormations ? C.purple : "white", letterSpacing:"1px" }}>{formationKey}</div>
-            <div style={{ fontSize:8, color: showFormations ? C.purple : C.textMuted }}>▾</div>
-          </motion.div>
+            scrollable
+            style={{ borderBottom:"none" }}
+          />
+        </div>
 
-          {/* Toggle Full / Half */}
-          <motion.div
-            onClick={toggleViewMode}
-            whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-            style={{
-              display:"flex", alignItems:"center", gap:5,
-              padding:"4px 10px", borderRadius:6, cursor:"pointer",
-              background: viewMode==="half" ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.05)",
-              border: viewMode==="half" ? `1px solid rgba(139,92,246,0.4)` : "1px solid rgba(255,255,255,0.1)",
-              transition:"all 0.14s",
-            }}
-          >
-            {/* Mini campo icon */}
-            <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
-              <rect x="0.5" y="0.5" width="15" height="10" rx="0.5" stroke={viewMode==="half"?C.purple:"rgba(255,255,255,0.3)"} strokeWidth="0.8"/>
-              <line x1="8" y1="0.5" x2="8" y2="10.5" stroke={viewMode==="half"?C.purple:"rgba(255,255,255,0.25)"} strokeWidth="0.6"/>
-              {viewMode==="half" && <rect x="8" y="0.5" width="7.5" height="10" fill="rgba(139,92,246,0.1)"/>}
-            </svg>
-            <div style={{ fontSize:9, fontWeight:700, color: viewMode==="half" ? C.purple : C.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-              {viewMode==="half" ? "1/2" : "Full"}
-            </div>
-          </motion.div>
-
-          {/* Layer Mode Selector */}
-          <div style={{
-            display:"flex", gap:1,
-            background:"rgba(0,0,0,0.5)",
-            border:"1px solid rgba(255,255,255,0.08)",
-            borderRadius:6, padding:2, flexShrink:0,
-          }}>
-            {[
-              { key:"normal",   label:"Normal",  icon:"⬤" },
-              { key:"heatmap",  label:"Carga",   icon:"🔥" },
-              { key:"recovery", label:"Recup.",  icon:"💧" },
-            ].map(({ key, label, icon }) => (
-              <div
-                key={key}
-                onClick={() => setViewLayer(key)}
-                style={{
-                  padding:"3px 8px",
-                  fontSize:8,
-                  fontWeight: viewLayer===key ? 700 : 400,
-                  textTransform:"uppercase",
-                  letterSpacing:"0.5px",
-                  cursor:"pointer",
-                  borderRadius:4,
-                  background: viewLayer===key ? "rgba(124,58,237,0.3)" : "transparent",
-                  color: viewLayer===key ? "#7C3AED" : "rgba(255,255,255,0.35)",
-                  border: viewLayer===key ? "1px solid rgba(124,58,237,0.4)" : "1px solid transparent",
-                  transition:"all 150ms ease",
-                  whiteSpace:"nowrap",
-                }}
-              >
-                {icon} {label}
-              </div>
-            ))}
-          </div>
-
-          <motion.div
+        {/* Controles — solo acceso a Partido. Resto vive en CommandRail. */}
+        <div style={{
+          display:"flex", alignItems:"center",
+          padding:"0 14px 0 14px", gap:8,
+          marginLeft:"auto", flexShrink:0,
+        }}>
+          <motion.button
             onClick={() => showToast("Guarda la formación y accede desde Match Center", "info")}
-            whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-            style={{ padding:"4px 12px", fontSize:9, textTransform:"uppercase", letterSpacing:"1px", background:C.amber, color:"#1a0f00", cursor:"pointer", fontWeight:700, borderRadius:4 }}
+            whileHover={{ y:-1, boxShadow:`inset 0 1px 0 rgba(255,255,255,0.28), 0 10px 28px ${C.blueGlow}` }}
+            whileTap={{ scale:0.97 }}
+            style={{
+              padding:"8px 16px",
+              fontSize:9.5,
+              textTransform:"uppercase", letterSpacing:"1.8px",
+              background:`linear-gradient(180deg, ${C.blue} 0%, ${C.blue} 60%, ${C.blueDeep} 100%)`,
+              color:"white",
+              cursor:"pointer", fontWeight:900,
+              borderRadius:6,
+              border:`1px solid ${C.blue}`,
+              fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+              boxShadow:`inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px ${C.blueGlow}`,
+              textShadow:"0 1px 0 rgba(0,0,0,0.25)",
+              minHeight:"unset",
+            }}
           >
-            Partido
-          </motion.div>
+            Partido →
+          </motion.button>
         </div>
       </div>
 
       {/* ── CUERPO PRINCIPAL ── */}
       {(activeTab === "plantilla") && (
-        <div style={{ flex:1, display:"flex", flexDirection:"column", minHeight:0, overflow:"hidden", position:"relative" }}>
+        <div style={{ flex:1, display:"flex", minHeight:0, overflow:"hidden", position:"relative" }}>
 
-          {/* Campo + overlays */}
-          <div style={{ flex:1, position:"relative", minHeight:0, display:"flex", flexDirection:"column" }}>
-            <FieldLayer ref={fieldRef} viewMode={viewMode}>
+          {/* ── COMMAND RAIL (izq) ── */}
+          <CommandRail
+            formationKey={formationKey}
+            onToggleFormations={() => setShowFormations(v => !v)}
+            showFormations={showFormations}
+            viewMode={viewMode}
+            onToggleViewMode={toggleViewMode}
+            viewLayer={viewLayer}
+            onViewLayerChange={setViewLayer}
+            editMode={editMode}
+            onToggleEditMode={() => setEditMode(v => !v)}
+            playsCount={plays.length}
+            onOpenPlays={() => setShowPlays(true)}
+          />
 
-              {/* DrawingLayer: Capa 3 — vectores SVG */}
-              <DrawingLayer drawingEngine={drawingEngine} isActive={isDrawingActive} />
-
-              {/* PlayersLayer: Capa 2 — discos magnéticos */}
-              {starters.map((st, i) => (
-                <motion.div key={st.id}
-                  animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
-                  transition={{ type:"spring", stiffness:190, damping:16, mass:0.7, delay:st.stagger||0 }}
-                  style={{
-                    position:"absolute", transform:"translate(-50%,-50%)",
-                    zIndex: isDrag("starter",i)?1 : selectedIdx===i?15 : 5,
-                    pointerEvents: isDrawingActive ? "none" : "auto",
-                  }}>
-                  <PlayerToken
-                    starter={st}
-                    salud={st.athlete ? saludMap.get(st.athlete.id) : null}
-                    riskStatus={st.athlete ? worstStatus(
-                      riskMap.get(st.athlete.id)?.status ?? "unknown",
-                      wellnessMap.get(st.athlete.id) ?? "unknown"
-                    ) : "unknown"}
-                    viewLayer={viewLayer}
-                    isSelected={selectedIdx===i}
-                    isDragged={isDrag("starter",i)}
-                    isTarget={nearTarget===i}
-                    isActivating={dragActivating?.type==="starter"&&dragActivating?.index===i}
-                    onSelect={e=>{ e.stopPropagation(); setSelectedIdx(p=>p===i?null:i); }}
-                    onPointerDown={e=>handlePointerDown(e,"starter",i)}
-                  />
-                </motion.div>
-              ))}
-
-            </FieldLayer>
-
-            {/* DrawingToolbar como barra flotante en el borde inferior del campo */}
-            <DrawingToolbar
-              drawingEngine={drawingEngine}
-              onClearAll={() => setConfirmAction({
-                title: "Limpiar pizarra",
-                message: "Se eliminarán todos los trazados. Esta acción no se puede deshacer.",
-                onConfirm: () => { drawingEngine.clearAllDrawings(); setConfirmAction(null); },
-              })}
-            />
-
-            {/* Player detail overlay */}
-            <AnimatePresence>
-              {selStarter?.athlete && (
-                <PlayerDetailOverlay
-                  key="player-detail"
-                  starter={selStarter}
-                  allAthletes={athletes}
-                  historial={historial}
-                  onClose={() => setSelectedIdx(null)}
-                  onSwapSimilar={swapSimilar}
-                />
-              )}
-            </AnimatePresence>
-
-            {/* Formations overlay */}
-            <AnimatePresence>
-              {showFormations && (
-                <FormationsOverlay
-                  key="formations"
-                  formationKey={formationKey}
-                  onSelect={changeFormation}
-                  onClose={() => setShowFormations(false)}
-                />
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Suplentes */}
-          <div ref={benchAreaRef} style={{
-            flexShrink:0,
-            background:"linear-gradient(135deg,rgba(8,10,18,0.98),rgba(5,6,12,0.99))",
-            backdropFilter:"blur(16px)", WebkitBackdropFilter:"blur(16px)",
-            borderTop:`1px solid rgba(255,255,255,0.06)`,
-            padding:"8px 14px",
-            boxShadow:"0 -4px 20px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)",
+          {/* ── PITCH STAGE (centro) ── */}
+          <div style={{
+            flex:1, display:"flex", flexDirection:"column", minWidth:0, minHeight:0,
+            background:"radial-gradient(120% 80% at 50% 0%, rgba(47,107,255,0.05) 0%, transparent 70%), linear-gradient(180deg, rgba(6,10,18,1) 0%, rgba(2,4,10,1) 100%)",
           }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:7 }}>
-              <div style={{ fontSize:10, fontWeight:900, textTransform:"uppercase", letterSpacing:"2px", color:"white" }}>Suplentes</div>
-              <div style={{ fontSize:9, color:C.textMuted }}>({bench.length})</div>
+
+            {/* PhaseTabs */}
+            <PhaseTabs phase={phase} onChange={setPhase} />
+
+            {/* Pitch stage — FieldLayer ya trae su propio marco + corner brackets */}
+            <div style={{
+              flex:1, position:"relative", minHeight:0, minWidth:0,
+              display:"flex", flexDirection:"column",
+            }}>
+                <FieldLayer ref={fieldRef} viewMode={viewMode}>
+
+                  {/* DrawingLayer */}
+                  <DrawingLayer drawingEngine={drawingEngine} isActive={isDrawingActive} />
+
+                  {/* PlayersLayer */}
+                  {starters.map((st, i) => (
+                    <motion.div key={st.id}
+                      animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
+                      transition={{ type:"spring", stiffness:320, damping:30, mass:0.55, delay:st.stagger||0 }}
+                      style={{
+                        position:"absolute", transform:"translate(-50%,-50%)",
+                        zIndex: isDrag("starter",i)?1 : selectedIdx===i?15 : 5,
+                        pointerEvents: (isDrawingActive || !editMode) ? "none" : "auto",
+                        willChange: "left, top, transform",
+                      }}>
+                      <HexToken
+                        starter={st}
+                        salud={st.athlete ? saludMap.get(st.athlete.id) : null}
+                        riskStatus={st.athlete ? worstStatus(
+                          riskMap.get(st.athlete.id)?.status ?? "unknown",
+                          wellnessMap.get(st.athlete.id) ?? "unknown"
+                        ) : "unknown"}
+                        viewLayer={viewLayer}
+                        isSelected={selectedIdx===i}
+                        isDragged={isDrag("starter",i)}
+                        isTarget={nearTarget===i}
+                        isActivating={dragActivating?.type==="starter"&&dragActivating?.index===i}
+                        onSelect={e=>{ e.stopPropagation(); setSelectedIdx(p=>p===i?null:i); }}
+                        onPointerDown={e => editMode ? handlePointerDown(e,"starter",i) : e.stopPropagation()}
+                      />
+                    </motion.div>
+                  ))}
+
+                </FieldLayer>
+
+                {/* DrawingToolbar flotante en el borde inferior del pitch */}
+                {editMode && (
+                  <DrawingToolbar
+                    drawingEngine={drawingEngine}
+                    onClearAll={() => setConfirmAction({
+                      title: "Limpiar pizarra",
+                      message: "Se eliminarán todos los trazados. Esta acción no se puede deshacer.",
+                      onConfirm: () => { drawingEngine.clearAllDrawings(); setConfirmAction(null); },
+                    })}
+                  />
+                )}
+
+                {/* Formations overlay */}
+                <AnimatePresence>
+                  {showFormations && (
+                    <FormationsOverlay
+                      key="formations"
+                      formationKey={formationKey}
+                      onSelect={changeFormation}
+                      onClose={() => setShowFormations(false)}
+                    />
+                  )}
+                </AnimatePresence>
             </div>
-            <div className="tbv9-subs-bar" style={{ display:"flex", gap:10, overflowX:"auto", paddingBottom:3 }}>
-              {bench.map((b, i) => {
-                const bSalud = b.athlete ? saludMap.get(b.athlete.id) : null;
-                const bSaludVal = bSalud?.salud ?? 100;
-                const _bOvr = b.athlete?.rating || Math.floor(72+(b.athlete?.id%20||0));
-                const isActivatingBench = dragActivating?.type==="bench"&&dragActivating?.index===i;
-                return (
-                  <div key={b.id}
-                    onPointerDown={e=>handlePointerDown(e,"bench",i)}
-                    style={{
-                      display:"flex", alignItems:"center", gap:8,
-                      padding:"6px 10px",
-                      background:"linear-gradient(135deg,rgba(18,20,30,0.92),rgba(10,12,22,0.96))",
-                      border:`1px solid ${isActivatingBench ? "rgba(255,255,255,0.45)" : saludColor(bSaludVal)+"38"}`,
-                      cursor:isDrag("bench",i)?"grabbing":"grab",
-                      opacity:isDrag("bench",i)?0.25:1,
-                      touchAction:"none", flexShrink:0, borderRadius:8,
-                      minWidth:130, userSelect:"none",
-                      boxShadow:isActivatingBench
-                        ?`0 0 0 2px rgba(255,255,255,0.5), 0 4px 16px rgba(0,0,0,0.6)`
-                        :`0 3px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)`,
-                      transform:isActivatingBench?"scale(1.05)":"scale(1)",
-                      transition:"box-shadow 120ms ease, transform 120ms cubic-bezier(0.34,1.56,0.64,1), border-color 120ms ease",
-                    }}>
-                    {/* Photo */}
-                    <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", border:`2px solid ${saludColor(bSaludVal)}`, flexShrink:0 }}>
-                      <img src={avatar(b.athlete?.photo)} alt="" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"top center" }} />
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:2 }}>
-                        <div style={{ fontSize:8, fontWeight:700, color:C.textMuted, textTransform:"uppercase" }}>{b.athlete?.posCode}</div>
-                        <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.85)", textTransform:"uppercase", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                          {b.athlete?.name?.split(" ").pop() || "—"}
-                        </div>
-                      </div>
-                      {bSalud && <HealthBar salud={bSalud.salud} width={44} />}
-                    </div>
-                  </div>
-                );
-              })}
-              {bench.length === 0 && (
-                <div style={{ fontSize:10, color:C.textHint, padding:"8px 0" }}>
-                  Arrastra titulares aqui para suplirlos
-                </div>
-              )}
-            </div>
+
+            {/* BenchRibbon */}
+            <BenchRibbon
+              bench={bench}
+              saludMap={saludMap}
+              isDrag={isDrag}
+              dragActivating={dragActivating}
+              benchAreaRef={benchAreaRef}
+              onPointerDown={handlePointerDown}
+            />
           </div>
+
+          {/* ── INTEL DOCK (der) ── */}
+          <IntelDock
+            selectedStarter={selStarter}
+            historial={historial}
+            phase={phase}
+            phaseLabel={PHASE_LABELS[phase]}
+            instructions={instructionsText}
+            onInstructions={setInstructionsText}
+            tacticas={tacticasText}
+            onTacticas={setTacticasText}
+            onSeeFullDetail={selStarter?.athlete ? () => setActiveTab("roles") : undefined}
+          />
         </div>
       )}
 
@@ -1155,6 +967,16 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
           onCancel={() => setConfirmAction(null)}
         />
       )}
+
+      {/* Play Library overlay — captura y restauración */}
+      <PlayLibraryOverlay
+        open={showPlays}
+        onClose={() => setShowPlays(false)}
+        plays={plays}
+        onCapture={capturePlay}
+        onLoad={loadPlay}
+        onDelete={deletePlay}
+      />
     </div>
   );
 }

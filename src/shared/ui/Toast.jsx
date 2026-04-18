@@ -26,10 +26,10 @@ export default function ToastContainer() {
   useEffect(() => { globalShow = show; return () => { globalShow = null; }; }, [show]);
 
   const colors = {
-    success: C.green,
+    success: C.success,
     error: C.danger,
     warning: C.amber,
-    info: C.purple,
+    info: C.blue,
   };
 
   if (toasts.length === 0) return null;
@@ -39,8 +39,8 @@ export default function ToastContainer() {
       {toasts.map(t => (
         <div key={t.id} role="alert" aria-live="assertive" style={{
           padding:"10px 20px", background:"rgba(10,16,32,0.95)",
-          borderLeft:`3px solid ${colors[t.type] || C.neon}`,
-          border:`1px solid ${colors[t.type] || C.neon}33`,
+          borderLeft:`3px solid ${colors[t.type] || C.blue}`,
+          border:`1px solid ${colors[t.type] || C.blue}33`,
           color:"white", fontSize:12,
           pointerEvents:"auto", minWidth:220, maxWidth:360,
           animation:"toast_in 0.3s ease-out",

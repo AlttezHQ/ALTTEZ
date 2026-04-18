@@ -21,9 +21,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
 /** Umbral de movimiento en px antes de cancelar long-press */
-const MOVE_CANCEL_THRESHOLD = 5;
-/** Duración del long-press en ms antes de activar el drag */
-const LONG_PRESS_DURATION = 150;
+const MOVE_CANCEL_THRESHOLD = 7;
+/** Duración del long-press — más corto para mouse, más largo para touch */
+const LONG_PRESS_DURATION_MOUSE = 90;
+const LONG_PRESS_DURATION_TOUCH = 140;
 /** Radio de snap: distancia en % del campo para snap al token más cercano */
 const SNAP_RADIUS = 10;
 
@@ -98,6 +99,10 @@ export default function useDragEngine({
     document.addEventListener("pointermove", cancelOnMove, { passive: true });
     document.addEventListener("pointerup", cancelOnUp, { once: true });
 
+    const duration = e.pointerType === "touch"
+      ? LONG_PRESS_DURATION_TOUCH
+      : LONG_PRESS_DURATION_MOUSE;
+
     longPressTimerRef.current = setTimeout(() => {
       document.removeEventListener("pointermove", cancelOnMove);
       document.removeEventListener("pointerup", cancelOnUp);
@@ -107,7 +112,7 @@ export default function useDragEngine({
       const info = { type, index, x: e.clientX, y: e.clientY };
       setDragInfo(info);
       dragInfoRef.current = info;
-    }, LONG_PRESS_DURATION);
+    }, duration);
   }, []);
 
   // ── Pointer Move + Up: activo solo cuando hay dragInfo ──────────────────────

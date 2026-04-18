@@ -1,20 +1,20 @@
 /**
  * @component EmptyState
- * @description Reusable empty state panel with glow icon, title, subtitle, and optional CTA(s).
- * Designed for ALTTEZ dark UI — charcoal bg, neon-to-violet gradient CTA.
+ * @description Estado vacío como momento de marca ALTTEZ:
+ * anillo broadcast con corner-accents alrededor del icono, tipografía Orbitron,
+ * CTAs primary/ghost con bisel. Convierte pantallas vacías en presencia de marca.
  *
  * @props
- * - icon        {ReactNode}          SVG or emoji icon (rendered at 48-64px visual scale)
- * - title       {string}             Primary heading (white)
- * - subtitle    {string}             Secondary copy (muted gray)
- * - actionLabel {string}             Label for the primary CTA button (optional)
- * - onAction    {() => void}         Primary CTA handler (optional)
- * - secondaryLabel {string}          Label for a secondary CTA button (optional)
- * - onSecondary {() => void}         Secondary CTA handler (optional)
- * - compact     {boolean}            Reduced padding for tight containers
+ * - icon            {ReactNode}   SVG o emoji (escala 48-64px)
+ * - title           {string}      Heading primario (blanco, Orbitron)
+ * - subtitle        {string}      Copy secundario (muted)
+ * - actionLabel     {string}      Label del CTA principal (opcional)
+ * - onAction        {() => void}  Handler del CTA principal (opcional)
+ * - secondaryLabel  {string}      Label del CTA secundario (opcional)
+ * - onSecondary     {() => void}  Handler del CTA secundario (opcional)
+ * - compact         {boolean}     Padding reducido
  *
- * @palette  Charcoal bg, #8B5CF6 violet glow, neon→violet gradient CTA
- * @version  1.0
+ * @version  2.0 — Broadcast Arena
  */
 
 import { motion } from "framer-motion";
@@ -22,26 +22,26 @@ import { PALETTE as C } from "../tokens/palette";
 
 // ── Animation variants ───────────────────────────────────────────────────────
 const containerVariant = {
-  initial: { opacity: 0, y: 24 },
+  initial: { opacity: 0, y: 20 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 280, damping: 26, staggerChildren: 0.08 },
+    transition: { type: "spring", stiffness: 300, damping: 28, staggerChildren: 0.08 },
   },
 };
 
 const childVariant = {
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 14 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 28 },
+    transition: { type: "spring", stiffness: 320, damping: 28 },
   },
 };
 
 const iconPulse = {
   animate: {
-    scale: [1, 1.04, 1],
+    scale: [1, 1.03, 1],
     transition: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
   },
 };
@@ -58,6 +58,7 @@ export default function EmptyState({
   compact = false,
 }) {
   const py = compact ? "32px" : "56px";
+  const ringSize = compact ? 68 : 88;
 
   return (
     <motion.div
@@ -72,43 +73,61 @@ export default function EmptyState({
         padding: `${py} 24px`,
         textAlign: "center",
         width: "100%",
+        position: "relative",
       }}
     >
-      {/* Icon with violet glow ring */}
+      {/* Icon broadcast — anillo con corner-accents */}
       {icon && (
         <motion.div
           variants={childVariant}
-          {...iconPulse}
           style={{
-            width: compact ? 56 : 72,
-            height: compact ? 56 : 72,
-            borderRadius: "50%",
-            background: C.purpleVibrantDim,
-            border: `1px solid ${C.purpleVibrantBorder}`,
-            boxShadow: `0 0 28px ${C.purpleVibrantGlow}, 0 0 8px rgba(139,92,246,0.12)`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: compact ? 16 : 22,
-            fontSize: compact ? 26 : 32,
+            position: "relative",
+            width: ringSize,
+            height: ringSize,
+            marginBottom: compact ? 18 : 26,
             flexShrink: 0,
           }}
         >
-          {icon}
+          {/* Corner-accents alrededor del anillo */}
+          <CornerAccent pos="tl" color={C.blue} />
+          <CornerAccent pos="tr" color={C.blue} />
+          <CornerAccent pos="bl" color={C.blue} />
+          <CornerAccent pos="br" color={C.blue} />
+
+          <motion.div
+            {...iconPulse}
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: "50%",
+              background: `radial-gradient(circle at 30% 30%, ${C.blueDim} 0%, rgba(6,8,14,0.8) 70%)`,
+              border: `1px solid ${C.blueBorder}`,
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 32px ${C.blueGlow}, 0 0 0 1px rgba(47,107,255,0.10)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: compact ? 28 : 34,
+            }}
+          >
+            {icon}
+          </motion.div>
         </motion.div>
       )}
 
-      {/* Title */}
+      {/* Title — Orbitron */}
       <motion.div
         variants={childVariant}
         style={{
-          fontSize: compact ? 14 : 16,
-          fontWeight: 700,
+          fontSize: compact ? 14 : 17,
+          fontWeight: 900,
           color: "white",
-          letterSpacing: "-0.3px",
-          marginBottom: 8,
-          lineHeight: 1.3,
-          maxWidth: 320,
+          letterSpacing: "1.5px",
+          textTransform: "uppercase",
+          fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+          marginBottom: 10,
+          lineHeight: 1.2,
+          maxWidth: 360,
+          textShadow: `0 0 20px ${C.blueGlow}`,
         }}
       >
         {title}
@@ -119,10 +138,11 @@ export default function EmptyState({
         <motion.div
           variants={childVariant}
           style={{
-            fontSize: compact ? 11 : 12,
-            color: "rgba(255,255,255,0.42)",
-            lineHeight: 1.6,
-            maxWidth: 300,
+            fontSize: compact ? 11 : 12.5,
+            color: C.textMuted,
+            lineHeight: 1.65,
+            maxWidth: 320,
+            letterSpacing: "0.2px",
             marginBottom: (actionLabel || secondaryLabel) ? (compact ? 20 : 28) : 0,
           }}
         >
@@ -130,7 +150,7 @@ export default function EmptyState({
         </motion.div>
       )}
 
-      {/* CTA buttons */}
+      {/* CTAs */}
       {(actionLabel || secondaryLabel) && (
         <motion.div
           variants={childVariant}
@@ -141,57 +161,59 @@ export default function EmptyState({
             justifyContent: "center",
           }}
         >
-          {/* Primary CTA — neon→violet gradient */}
+          {/* Primary — broadcast bevel */}
           {actionLabel && onAction && (
             <motion.button
               onClick={onAction}
-              whileHover={{ scale: 1.04, boxShadow: `0 0 18px ${C.purpleVibrantGlow}` }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              whileHover={{ y: -1, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.28), 0 10px 28px ${C.blueGlow}` }}
+              whileTap={{ scale: 0.97, y: 0 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
               style={{
-                padding: compact ? "8px 18px" : "10px 22px",
-                background: `linear-gradient(135deg, ${C.neon} 0%, ${C.purpleVibrant} 100%)`,
-                border: "none",
+                padding: compact ? "10px 20px" : "12px 26px",
+                background: `linear-gradient(180deg, ${C.blue} 0%, ${C.blue} 60%, ${C.blueDeep} 100%)`,
+                border: `1px solid ${C.blue}`,
                 borderRadius: 6,
                 fontSize: compact ? 10 : 11,
-                fontWeight: 700,
-                color: C.bgDark,
+                fontWeight: 800,
+                color: "white",
                 textTransform: "uppercase",
-                letterSpacing: "1.2px",
+                letterSpacing: "1.4px",
                 cursor: "pointer",
-                fontFamily: "inherit",
+                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
                 minHeight: 44,
                 display: "flex",
                 alignItems: "center",
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.18), 0 6px 18px ${C.blueGlow}`,
+                textShadow: "0 1px 0 rgba(0,0,0,0.2)",
               }}
             >
               {actionLabel}
             </motion.button>
           )}
 
-          {/* Secondary CTA — ghost outline with violet tint */}
+          {/* Secondary — ghost */}
           {secondaryLabel && onSecondary && (
             <motion.button
               onClick={onSecondary}
-              whileHover={{ scale: 1.03, borderColor: "rgba(139,92,246,0.6)", color: "white" }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              whileHover={{ y: -1, borderColor: `${C.blue}88`, backgroundColor: "rgba(47,107,255,0.08)" }}
+              whileTap={{ scale: 0.97, y: 0 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
               style={{
-                padding: compact ? "8px 18px" : "10px 22px",
+                padding: compact ? "10px 20px" : "12px 26px",
                 background: "transparent",
-                border: `1px solid ${C.purpleVibrantBorder}`,
+                border: `1px solid ${C.blueBorder}`,
                 borderRadius: 6,
                 fontSize: compact ? 10 : 11,
-                fontWeight: 600,
-                color: `rgba(139,92,246,0.85)`,
+                fontWeight: 700,
+                color: C.blueHi,
                 textTransform: "uppercase",
-                letterSpacing: "1.2px",
+                letterSpacing: "1.4px",
                 cursor: "pointer",
-                fontFamily: "inherit",
+                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
                 minHeight: 44,
                 display: "flex",
                 alignItems: "center",
-                transition: "border-color 180ms, color 180ms",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
               }}
             >
               {secondaryLabel}
@@ -201,4 +223,15 @@ export default function EmptyState({
       )}
     </motion.div>
   );
+}
+
+function CornerAccent({ pos, color }) {
+  const base = { position: "absolute", width: 10, height: 10, opacity: 0.85 };
+  const map = {
+    tl: { top: -6,    left: -6,   borderTop: `2px solid ${color}`, borderLeft: `2px solid ${color}` },
+    tr: { top: -6,    right: -6,  borderTop: `2px solid ${color}`, borderRight:`2px solid ${color}` },
+    bl: { bottom: -6, left: -6,   borderBottom:`2px solid ${color}`, borderLeft: `2px solid ${color}` },
+    br: { bottom: -6, right: -6,  borderBottom:`2px solid ${color}`, borderRight:`2px solid ${color}` },
+  };
+  return <span style={{ ...base, ...map[pos] }} />;
 }

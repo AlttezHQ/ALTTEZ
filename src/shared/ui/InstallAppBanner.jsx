@@ -73,7 +73,7 @@ const IOS_STEPS = [
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <path
           d="M8.684 4.684A4.5 4.5 0 0 1 12 3a4.5 4.5 0 0 1 3.316 1.684M12 3v9m0 0-3-3m3 3 3-3"
-          stroke={C.greenBright}
+          stroke={C.blueIce}
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -88,8 +88,8 @@ const IOS_STEPS = [
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <rect x="4" y="4" width="16" height="16" rx="3" stroke={C.violetAccent} strokeWidth="1.5" />
-        <path d="M12 8v8M8 12h8" stroke={C.violetAccent} strokeWidth="1.8" strokeLinecap="round" />
+        <rect x="4" y="4" width="16" height="16" rx="3" stroke={C.blueDeep} strokeWidth="1.5" />
+        <path d="M12 8v8M8 12h8" stroke={C.blueDeep} strokeWidth="1.8" strokeLinecap="round" />
       </svg>
     ),
     label: "Selecciona \"Agregar a pantalla de inicio\"",
@@ -173,7 +173,7 @@ function IOSInstructionsModal({ onClose }) {
                   width: 40,
                   height: 40,
                   borderRadius: 10,
-                  background: `linear-gradient(135deg, ${C.greenBright}, ${C.violetAccent})`,
+                  background: `linear-gradient(135deg, ${C.blueIce}, ${C.blueDeep})`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -421,7 +421,7 @@ export default function InstallAppBanner({ compact = false }) {
               fontWeight: 700,
               letterSpacing: "0.8px",
               background: `linear-gradient(135deg, rgba(0,255,136,0.12), ${C.violetDim})`,
-              color: C.greenBright,
+              color: C.blueIce,
               border: "1px solid rgba(0,255,136,0.3)",
               borderRadius: 8,
               cursor: "pointer",
@@ -474,7 +474,7 @@ export default function InstallAppBanner({ compact = false }) {
           <div
             style={{
               height: 2,
-              background: `linear-gradient(90deg, ${C.greenBright}, ${C.violetAccent})`,
+              background: `linear-gradient(90deg, ${C.blueIce}, ${C.blueDeep})`,
               position: "absolute",
               top: 0,
               left: 0,
@@ -499,7 +499,7 @@ export default function InstallAppBanner({ compact = false }) {
                     width: 44,
                     height: 44,
                     borderRadius: 12,
-                    background: `linear-gradient(135deg, ${C.greenBright}, ${C.violetAccent})`,
+                    background: `linear-gradient(135deg, ${C.blueIce}, ${C.blueDeep})`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -601,7 +601,7 @@ export default function InstallAppBanner({ compact = false }) {
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "1.5px",
-                background: `linear-gradient(135deg, ${C.greenBright}, ${C.violetAccent})`,
+                background: `linear-gradient(135deg, ${C.blueIce}, ${C.blueDeep})`,
                 color: "#0a0a0f",
                 border: "none",
                 borderRadius: 10,

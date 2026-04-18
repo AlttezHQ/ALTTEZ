@@ -1,15 +1,17 @@
 /**
  * @component TabBar
- * @description Barra de navegación por tabs. Reemplaza el patrón
- * css.tab()/tabStyle() + TABS.map() en Administracion, Entrenamiento y GestionPlantilla.
+ * @description Barra de tabs broadcast: beam de luz en activo, corner-accent,
+ * tracking ancho uppercase. Lenguaje visual alineado con MiniTopbar.
  *
  * Props:
- *  tabs       {string[]}           Array de etiquetas
- *  active     {string}             Tab activo
+ *  tabs       {string[]}
+ *  active     {string}
  *  onChange   {(tab: string)=>void}
- *  accent     {string}             Color del indicador activo (default: PALETTE.neon)
- *  scrollable {boolean}            overflow-x:auto en mobile
- *  rightSlot  {React.ReactNode}    Contenido alineado a la derecha (ej: selector de mes)
+ *  accent     {string}             (default: PALETTE.blue)
+ *  scrollable {boolean}
+ *  rightSlot  {React.ReactNode}
+ *
+ * @version 2.0 — Broadcast Arena
  */
 import { PALETTE as C } from "../tokens/palette";
 
@@ -17,7 +19,7 @@ export default function TabBar({
   tabs = [],
   active,
   onChange,
-  accent = C.neon,
+  accent = C.blue,
   scrollable = false,
   rightSlot,
   className = "",
@@ -29,13 +31,14 @@ export default function TabBar({
       style={{
         display: "flex",
         alignItems: "stretch",
-        borderBottom: `1px solid ${C.border}`,
+        borderBottom: `1px solid ${C.borderHi}`,
+        position: "relative",
         gap: 0,
         ...(rightSlot ? { justifyContent: "space-between" } : {}),
         ...style,
       }}
     >
-      {/* Tabs scrollables */}
+      {/* Tabs */}
       <div
         style={{
           display: "flex",
@@ -50,24 +53,52 @@ export default function TabBar({
             <button
               key={tab}
               onClick={() => onChange?.(tab)}
+              onMouseEnter={e => {
+                if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+              }}
+              onMouseLeave={e => {
+                if (!isActive) e.currentTarget.style.color = C.textMuted;
+              }}
               style={{
-                padding: "10px 18px",
-                fontSize: "var(--fs-label)",
-                fontWeight: "var(--fw-bold)",
+                position: "relative",
+                padding: "12px 20px",
+                fontSize: 10,
+                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: "var(--ls-caps-sm)",
-                background: "transparent",
-                color: isActive ? accent : C.textMuted,
+                letterSpacing: "2px",
+                background: isActive
+                  ? "linear-gradient(180deg, rgba(47,107,255,0.12) 0%, rgba(47,107,255,0) 100%)"
+                  : "transparent",
+                color: isActive ? "white" : C.textMuted,
                 border: "none",
-                borderBottom: isActive ? `2px solid ${accent}` : "2px solid transparent",
                 cursor: "pointer",
                 whiteSpace: "nowrap",
                 minHeight: "unset",
-                transition: "color var(--t-base), border-color var(--t-base)",
+                outline: "none",
                 flexShrink: 0,
+                transition: "color 0.18s ease, background 0.18s ease",
               }}
             >
+              {/* Corner-accent superior izquierdo (solo activo) */}
+              {isActive && (
+                <span style={{
+                  position: "absolute", top: 6, left: 8,
+                  width: 5, height: 5,
+                  borderTop: `1.5px solid ${accent}`,
+                  borderLeft: `1.5px solid ${accent}`,
+                }} />
+              )}
               {tab}
+              {/* Beam inferior activo */}
+              {isActive && (
+                <span style={{
+                  position: "absolute", bottom: -1, left: 12, right: 12,
+                  height: 2,
+                  background: `linear-gradient(90deg, ${accent}00 0%, ${accent} 25%, ${C.blueHi} 50%, ${accent} 75%, ${accent}00 100%)`,
+                  boxShadow: `0 0 10px ${accent}88`,
+                }} />
+              )}
             </button>
           );
         })}

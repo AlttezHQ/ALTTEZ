@@ -153,7 +153,7 @@ export default function OfflineBanner() {
   const shouldRender = showOffline || showOnline;
 
   const AMBER = "#EF9F27";
-  const GREEN = C.greenBright;
+  const GREEN = C.success;
 
   const config = showOnline
     ? {
