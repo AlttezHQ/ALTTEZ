@@ -70,6 +70,7 @@ function EmptyHex({ isTarget, posCode }) {
 const HexToken = memo(function HexToken({
   starter, salud, riskStatus = "unknown", viewLayer = "normal",
   isSelected, isDragged, isTarget, isActivating, onSelect, onPointerDown,
+  dimmed = false, linemate = false,
 }) {
   const [hovered, setHovered] = useState(false);
   const athlete = starter.athlete;
@@ -139,13 +140,15 @@ const HexToken = memo(function HexToken({
           width: TOKEN_W, height: TOKEN_H,
           cursor: isDragged ? "grabbing" : "grab",
           touchAction: "none",
-          opacity: isDragged ? 0.18 : 1,
+          opacity: isDragged ? 0.18 : dimmed ? 0.32 : 1,
           filter: isActive
             ? `drop-shadow(0 0 12px ${C.blueGlow}) drop-shadow(0 4px 10px rgba(0,0,0,0.7))`
-            : riskRgb && riskStatus !== "green"
-              ? `drop-shadow(0 0 8px rgba(${riskRgb},0.55)) drop-shadow(0 3px 8px rgba(0,0,0,0.6))`
-              : "drop-shadow(0 3px 8px rgba(0,0,0,0.65))",
-          transition: "filter 160ms ease, opacity 120ms",
+            : linemate
+              ? `drop-shadow(0 0 7px rgba(91,157,255,0.65)) drop-shadow(0 3px 8px rgba(0,0,0,0.65))`
+              : riskRgb && riskStatus !== "green"
+                ? `drop-shadow(0 0 8px rgba(${riskRgb},0.55)) drop-shadow(0 3px 8px rgba(0,0,0,0.6))`
+                : "drop-shadow(0 3px 8px rgba(0,0,0,0.65))",
+          transition: "filter 220ms ease, opacity 200ms ease",
         }}
       >
         {/* Risk pulse ring (solo rojo) */}
@@ -373,7 +376,9 @@ const HexToken = memo(function HexToken({
   prev.isSelected === next.isSelected &&
   prev.isDragged === next.isDragged &&
   prev.isTarget === next.isTarget &&
-  prev.isActivating === next.isActivating
+  prev.isActivating === next.isActivating &&
+  prev.dimmed === next.dimmed &&
+  prev.linemate === next.linemate
 );
 
 export default HexToken;

@@ -824,39 +824,82 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
               flex:1, position:"relative", minHeight:0, minWidth:0,
               display:"flex", flexDirection:"column",
             }}>
-                <FieldLayer ref={fieldRef} viewMode={viewMode}>
+                <FieldLayer ref={fieldRef} viewMode={viewMode} phase={phase}>
 
                   {/* DrawingLayer */}
                   <DrawingLayer drawingEngine={drawingEngine} isActive={isDrawingActive} />
 
-                  {/* PlayersLayer */}
-                  {starters.map((st, i) => (
-                    <motion.div key={st.id}
-                      animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
-                      transition={{ type:"spring", stiffness:320, damping:30, mass:0.55, delay:st.stagger||0 }}
+                  {/* Line-mate connector SVG — solo cuando hay selección */}
+                  {selectedIdx !== null && selStarter?.posCode && (
+                    <svg
                       style={{
-                        position:"absolute", transform:"translate(-50%,-50%)",
-                        zIndex: isDrag("starter",i)?1 : selectedIdx===i?15 : 5,
-                        pointerEvents: (isDrawingActive || !editMode) ? "none" : "auto",
-                        willChange: "left, top, transform",
-                      }}>
-                      <HexToken
-                        starter={st}
-                        salud={st.athlete ? saludMap.get(st.athlete.id) : null}
-                        riskStatus={st.athlete ? worstStatus(
-                          riskMap.get(st.athlete.id)?.status ?? "unknown",
-                          wellnessMap.get(st.athlete.id) ?? "unknown"
-                        ) : "unknown"}
-                        viewLayer={viewLayer}
-                        isSelected={selectedIdx===i}
-                        isDragged={isDrag("starter",i)}
-                        isTarget={nearTarget===i}
-                        isActivating={dragActivating?.type==="starter"&&dragActivating?.index===i}
-                        onSelect={e=>{ e.stopPropagation(); setSelectedIdx(p=>p===i?null:i); }}
-                        onPointerDown={e => editMode ? handlePointerDown(e,"starter",i) : e.stopPropagation()}
-                      />
-                    </motion.div>
-                  ))}
+                        position:"absolute", inset:0, width:"100%", height:"100%",
+                        pointerEvents:"none", zIndex:2,
+                      }}
+                      viewBox="0 0 100 100" preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <linearGradient id="linemate-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%"  stopColor={C.blueHi} stopOpacity="0.85"/>
+                          <stop offset="100%" stopColor={C.blueHi} stopOpacity="0.35"/>
+                        </linearGradient>
+                      </defs>
+                      {starters.map((st, i) => {
+                        if (i === selectedIdx) return null;
+                        if (getGroup(st.posCode) !== getGroup(selStarter.posCode)) return null;
+                        return (
+                          <line key={st.id}
+                            x1={selStarter.currentLeft} y1={selStarter.currentTop}
+                            x2={st.currentLeft} y2={st.currentTop}
+                            stroke="url(#linemate-grad)"
+                            strokeWidth="0.35"
+                            strokeDasharray="1.2 0.8"
+                            strokeLinecap="round"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        );
+                      })}
+                    </svg>
+                  )}
+
+                  {/* PlayersLayer */}
+                  {starters.map((st, i) => {
+                    const hasSelection = selectedIdx !== null;
+                    const sameGroup = hasSelection && selStarter?.posCode &&
+                      getGroup(st.posCode) === getGroup(selStarter.posCode);
+                    const isSelectedToken = selectedIdx === i;
+                    const isLinemate = hasSelection && !isSelectedToken && sameGroup;
+                    const isDimmed = hasSelection && !isSelectedToken && !sameGroup;
+                    return (
+                      <motion.div key={st.id}
+                        animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
+                        transition={{ type:"spring", stiffness:320, damping:30, mass:0.55, delay:st.stagger||0 }}
+                        style={{
+                          position:"absolute", transform:"translate(-50%,-50%)",
+                          zIndex: isDrag("starter",i)?1 : isSelectedToken?15 : isLinemate?8 : 5,
+                          pointerEvents: (isDrawingActive || !editMode) ? "none" : "auto",
+                          willChange: "left, top, transform",
+                        }}>
+                        <HexToken
+                          starter={st}
+                          salud={st.athlete ? saludMap.get(st.athlete.id) : null}
+                          riskStatus={st.athlete ? worstStatus(
+                            riskMap.get(st.athlete.id)?.status ?? "unknown",
+                            wellnessMap.get(st.athlete.id) ?? "unknown"
+                          ) : "unknown"}
+                          viewLayer={viewLayer}
+                          isSelected={isSelectedToken}
+                          isDragged={isDrag("starter",i)}
+                          isTarget={nearTarget===i}
+                          isActivating={dragActivating?.type==="starter"&&dragActivating?.index===i}
+                          dimmed={isDimmed}
+                          linemate={isLinemate}
+                          onSelect={e=>{ e.stopPropagation(); setSelectedIdx(p=>p===i?null:i); }}
+                          onPointerDown={e => editMode ? handlePointerDown(e,"starter",i) : e.stopPropagation()}
+                        />
+                      </motion.div>
+                    );
+                  })}
 
                 </FieldLayer>
 

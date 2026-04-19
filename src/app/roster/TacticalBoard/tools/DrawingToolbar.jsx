@@ -1,10 +1,8 @@
 /**
  * @component DrawingToolbar
- * @description Barra de herramientas de dibujo — v9.1 BOTTOM BAR.
- * Posicionada en el borde inferior del campo (como TacticalPad).
- * No roba ancho lateral al campo — centrada horizontalmente.
- * Herramientas en fila horizontal, colores en fila horizontal.
- * Panel expandible hacia arriba con AnimatePresence.
+ * @description Rail vertical de herramientas de dibujo — v9.2 LEFT RAIL.
+ * Anclada al borde izquierdo del pitch stage, tools apilados en columna,
+ * panel de colores que se despliega hacia la derecha.
  *
  * @prop {object}   drawingEngine - Retorno de useDrawingEngine()
  * @prop {Function} onClearAll    - Callback para "Limpiar todo"
@@ -14,7 +12,6 @@
 
 import { useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PALETTE as C } from "../../../../shared/tokens/palette";
 import { DRAW_COLORS } from "../../../../shared/hooks/useDrawingEngine";
 
 /** Definiciones de herramientas */
@@ -82,7 +79,6 @@ const TOOLS = [
   },
 ];
 
-/** Icono de papelera */
 const TrashIcon = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
     <path d="M5 3 L6 1 L10 1 L11 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -102,115 +98,25 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
     if (!isExpanded) setIsExpanded(true);
   };
 
-
   return (
-    /* Posicionado en el borde inferior del campo, centrado horizontalmente */
     <div style={{
       position: "absolute",
-      bottom: 8,
-      left: "50%",
-      transform: "translateX(-50%)",
+      top: "50%",
+      left: 10,
+      transform: "translateY(-50%)",
       zIndex: 20,
       display: "flex",
-      flexDirection: "column",
+      flexDirection: "row",
       alignItems: "center",
-      gap: 4,
-      pointerEvents: "none", // el contenedor no intercepta clicks
+      gap: 6,
+      pointerEvents: "none",
     }}>
 
-      {/* Panel expandido — aparece encima de la barra al abrir */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
-            style={{
-              pointerEvents: "auto",
-              background: "rgba(5,8,16,0.96)",
-              backdropFilter: "blur(24px)",
-              WebkitBackdropFilter: "blur(24px)",
-              border: "1px solid rgba(255,255,255,0.09)",
-              borderRadius: 10,
-              padding: "6px 8px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 5,
-              boxShadow: "0 -8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)",
-            }}
-          >
-            {/* Colores neón — fila horizontal */}
-            <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
-              {DRAW_COLORS.map((c) => {
-                const isSelected = activeColor === c.hex;
-                return (
-                  <motion.div
-                    key={c.id}
-                    onClick={() => setActiveColor(c.hex)}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.88 }}
-                    title={c.label}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      borderRadius: 6,
-                      background: isSelected ? `${c.hex}14` : "transparent",
-                    }}
-                  >
-                    <div style={{
-                      width: isSelected ? 18 : 14,
-                      height: isSelected ? 18 : 14,
-                      borderRadius: "50%",
-                      background: c.hex,
-                      border: isSelected ? `2px solid rgba(255,255,255,0.75)` : "1.5px solid transparent",
-                      boxShadow: isSelected
-                        ? `0 0 6px ${c.hex}88`
-                        : "none",
-                      transition: "all 0.12s",
-                    }} />
-                  </motion.div>
-                );
-              })}
-
-              {/* Separador vertical */}
-              <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)", margin: "0 2px" }} />
-
-              {/* Botón limpiar todo */}
-              <motion.div
-                onClick={onClearAll}
-                whileHover={{ scale: 1.12, background: "rgba(226,75,74,0.18)" }}
-                whileTap={{ scale: 0.9 }}
-                title="Limpiar todos los trazados"
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 6,
-                  background: "rgba(226,75,74,0.08)",
-                  border: "1px solid rgba(226,75,74,0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: "#E24B4A",
-                  transition: "background 0.14s",
-                }}
-              >
-                <TrashIcon />
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Barra principal — herramientas + toggle */}
+      {/* Rail vertical principal */}
       <div style={{
         pointerEvents: "auto",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         gap: 3,
         background: "rgba(5,8,16,0.96)",
@@ -218,11 +124,9 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
         WebkitBackdropFilter: "blur(24px)",
         border: "1px solid rgba(255,255,255,0.09)",
         borderRadius: 28,
-        padding: "5px 8px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04)",
-        transition: "border-color 0.2s, box-shadow 0.2s",
+        padding: "8px 5px",
+        boxShadow: "6px 0 22px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
       }}>
-        {/* Herramientas en fila */}
         {TOOLS.map((tool) => {
           const isActive = activeTool === tool.id;
           return (
@@ -233,8 +137,7 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
               whileTap={{ scale: 0.9 }}
               title={tool.label}
               style={{
-                width: 36,
-                height: 36,
+                width: 36, height: 36,
                 borderRadius: "50%",
                 background: isActive
                   ? `linear-gradient(135deg, ${activeColor}28, ${activeColor}0e)`
@@ -247,8 +150,7 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
                 justifyContent: "center",
                 cursor: "pointer",
                 color: isActive ? activeColor : "rgba(255,255,255,0.45)",
-                boxShadow: "none",
-                transition: "background 0.12s, border 0.12s, color 0.12s, box-shadow 0.12s",
+                transition: "background 0.12s, border 0.12s, color 0.12s",
                 flexShrink: 0,
               }}
             >
@@ -257,8 +159,8 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
           );
         })}
 
-        {/* Separador */}
-        <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.1)", margin: "0 3px", flexShrink: 0 }} />
+        {/* Separador horizontal */}
+        <div style={{ width: 20, height: 1, background: "rgba(255,255,255,0.1)", margin: "3px 0", flexShrink: 0 }} />
 
         {/* Botón toggle paleta de colores */}
         <motion.div
@@ -267,15 +169,10 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
           whileTap={{ scale: 0.9 }}
           title={isExpanded ? "Cerrar colores" : "Colores"}
           style={{
-            width: 36,
-            height: 36,
+            width: 36, height: 36,
             borderRadius: "50%",
-            background: isExpanded
-              ? `${activeColor}18`
-              : "transparent",
-            border: isExpanded
-              ? `1.5px solid ${activeColor}66`
-              : "1px solid rgba(255,255,255,0.12)",
+            background: isExpanded ? `${activeColor}18` : "transparent",
+            border: isExpanded ? `1.5px solid ${activeColor}66` : "1px solid rgba(255,255,255,0.12)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -284,17 +181,94 @@ const DrawingToolbar = memo(function DrawingToolbar({ drawingEngine, onClearAll 
             flexShrink: 0,
           }}
         >
-          {/* Círculo de color activo */}
           <div style={{
-            width: 14,
-            height: 14,
+            width: 14, height: 14,
             borderRadius: "50%",
             background: activeColor,
-            boxShadow: "none",
             border: "1.5px solid rgba(255,255,255,0.55)",
           }} />
         </motion.div>
       </div>
+
+      {/* Panel de colores expandido — a la derecha */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, x: -8, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -8, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 380, damping: 28 }}
+            style={{
+              pointerEvents: "auto",
+              background: "rgba(5,8,16,0.96)",
+              backdropFilter: "blur(24px)",
+              WebkitBackdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.09)",
+              borderRadius: 10,
+              padding: "6px 6px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              boxShadow: "6px 0 28px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.04)",
+            }}
+          >
+            {DRAW_COLORS.map((c) => {
+              const isSelected = activeColor === c.hex;
+              return (
+                <motion.div
+                  key={c.id}
+                  onClick={() => setActiveColor(c.hex)}
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.88 }}
+                  title={c.label}
+                  style={{
+                    width: 30, height: 30,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer",
+                    borderRadius: 6,
+                    background: isSelected ? `${c.hex}14` : "transparent",
+                  }}
+                >
+                  <div style={{
+                    width: isSelected ? 18 : 14,
+                    height: isSelected ? 18 : 14,
+                    borderRadius: "50%",
+                    background: c.hex,
+                    border: isSelected ? `2px solid rgba(255,255,255,0.75)` : "1.5px solid transparent",
+                    boxShadow: isSelected ? `0 0 6px ${c.hex}88` : "none",
+                    transition: "all 0.12s",
+                  }} />
+                </motion.div>
+              );
+            })}
+
+            {/* Separador horizontal */}
+            <div style={{ width: 22, height: 1, background: "rgba(255,255,255,0.1)", margin: "2px auto", flexShrink: 0 }} />
+
+            {/* Limpiar todo */}
+            <motion.div
+              onClick={onClearAll}
+              whileHover={{ scale: 1.12, background: "rgba(226,75,74,0.18)" }}
+              whileTap={{ scale: 0.9 }}
+              title="Limpiar todos los trazados"
+              style={{
+                width: 30, height: 30,
+                borderRadius: 6,
+                background: "rgba(226,75,74,0.08)",
+                border: "1px solid rgba(226,75,74,0.25)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#E24B4A",
+                transition: "background 0.14s",
+              }}
+            >
+              <TrashIcon />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

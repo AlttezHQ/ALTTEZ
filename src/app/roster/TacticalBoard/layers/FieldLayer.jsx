@@ -209,9 +209,86 @@ function AttackDirectionTag() {
 }
 
 /**
+ * Phase overlay — shading sutil por fase (ofensiva/defensiva/balón parado).
+ * Usa el mismo viewBox que FieldLines (105x68 ó 52.5x68 en half).
+ * NO bloquea clicks (pointer-events none), opacidad muy baja — broadcast-only.
+ */
+const PhaseOverlay = memo(function PhaseOverlay({ phase, viewMode }) {
+  const isHalf = viewMode === "half";
+  if (!phase || phase === "neutral") return null;
+
+  return (
+    <svg
+      style={{
+        position: "absolute", inset: 0,
+        width: "100%", height: "100%",
+        pointerEvents: "none",
+      }}
+      viewBox={isHalf ? "52.5 0 52.5 68" : "0 0 105 68"}
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <linearGradient id="phase-off" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%"  stopColor="rgba(47,107,255,0)" />
+          <stop offset="65%" stopColor="rgba(47,107,255,0.06)" />
+          <stop offset="100%" stopColor="rgba(47,107,255,0.18)" />
+        </linearGradient>
+        <linearGradient id="phase-def" x1="100%" y1="50%" x2="0%" y2="50%">
+          <stop offset="0%"  stopColor="rgba(226,75,74,0)" />
+          <stop offset="65%" stopColor="rgba(226,75,74,0.07)" />
+          <stop offset="100%" stopColor="rgba(226,75,74,0.18)" />
+        </linearGradient>
+        <radialGradient id="phase-bp" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="rgba(239,159,39,0.12)" />
+          <stop offset="70%" stopColor="rgba(239,159,39,0.04)" />
+          <stop offset="100%" stopColor="rgba(239,159,39,0)" />
+        </radialGradient>
+      </defs>
+
+      {phase === "ofensiva" && (
+        <>
+          {/* Tercio ofensivo — rectángulo + banda de gol */}
+          <rect x="70" y="2" width="33" height="64" fill="url(#phase-off)" opacity="0.9" />
+          <rect x="86.5" y="13.84" width="16.5" height="40.32" fill="rgba(47,107,255,0.08)" />
+        </>
+      )}
+
+      {phase === "defensiva" && !isHalf && (
+        <>
+          {/* Tercio defensivo — propio — rectángulo + área */}
+          <rect x="2" y="2" width="33" height="64" fill="url(#phase-def)" opacity="0.9" />
+          <rect x="2" y="13.84" width="16.5" height="40.32" fill="rgba(226,75,74,0.08)" />
+        </>
+      )}
+
+      {phase === "balonParado" && (
+        <>
+          {/* Markers en las cuatro esquinas + semicírculo central */}
+          <circle cx="52.5" cy="34" r="14" fill="url(#phase-bp)" />
+          {!isHalf && (
+            <>
+              <circle cx="3.5"  cy="3.5"   r="2.6" fill="rgba(239,159,39,0.35)" />
+              <circle cx="101.5" cy="3.5"  r="2.6" fill="rgba(239,159,39,0.35)" />
+              <circle cx="3.5"  cy="64.5"  r="2.6" fill="rgba(239,159,39,0.35)" />
+              <circle cx="101.5" cy="64.5" r="2.6" fill="rgba(239,159,39,0.35)" />
+            </>
+          )}
+          {isHalf && (
+            <>
+              <circle cx="101.5" cy="3.5"  r="2.6" fill="rgba(239,159,39,0.35)" />
+              <circle cx="101.5" cy="64.5" r="2.6" fill="rgba(239,159,39,0.35)" />
+            </>
+          )}
+        </>
+      )}
+    </svg>
+  );
+});
+
+/**
  * @component FieldLayer — premium broadcast pitch
  */
-const FieldLayer = forwardRef(function FieldLayer({ children, viewMode = "full" }, ref) {
+const FieldLayer = forwardRef(function FieldLayer({ children, viewMode = "full", phase = null }, ref) {
   const aspect = viewMode === "half" ? "52.5 / 68" : "105 / 68";
   return (
     <div
@@ -319,6 +396,7 @@ const FieldLayer = forwardRef(function FieldLayer({ children, viewMode = "full" 
           }} />
 
           <FieldLines viewMode={viewMode} />
+          <PhaseOverlay phase={phase} viewMode={viewMode} />
           {children}
         </div>
       </div>
