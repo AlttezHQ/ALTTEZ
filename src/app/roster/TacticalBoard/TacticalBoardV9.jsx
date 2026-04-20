@@ -375,7 +375,7 @@ function PlayerDetailOverlay({ starter, allAthletes, historial, onClose, onSwapS
 /* ═══════════════════════════════════════════════════════════════════════════════
    FORMATIONS OVERLAY — Panel flotante en la esquina superior izquierda
 ═══════════════════════════════════════════════════════════════════════════════ */
-function FormationsOverlay({ formationKey, onSelect, onClose }) {
+function FormationsOverlay({ formationKey, onSelect, onClose, onHover }) {
   return (
     <motion.div
       className="tbv9-formation-overlay"
@@ -429,7 +429,12 @@ function FormationsOverlay({ formationKey, onSelect, onClose }) {
         {Object.entries(HORIZ_FORMATIONS).map(([key, f]) => {
           const active = formationKey === key;
           return (
-            <div key={key} style={{ textAlign:"center", cursor:"pointer" }} onClick={()=>{ onSelect(key); onClose(); }}>
+            <div key={key}
+              style={{ textAlign:"center", cursor:"pointer" }}
+              onClick={()=>{ onSelect(key); onClose(); onHover?.(null); }}
+              onMouseEnter={() => onHover?.(key)}
+              onMouseLeave={() => onHover?.(null)}
+            >
               <MiniPitch positions={f.positions} isActive={active} onClick={()=>{ onSelect(key); onClose(); }} />
               <div style={{
                 fontSize:10.5, fontWeight:900, marginTop:6,
@@ -482,6 +487,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
   const [showPlays, setShowPlays] = useState(false);
   const [phase, setPhase] = useLocalStorage(`alttez_phase${ns}`, "ofensiva");
   const [editMode, setEditMode] = useState(true);
+  const [hoveredFormation, setHoveredFormation] = useState(null);
 
   // Usa HORIZ_FORMATIONS como base — landscape correcto
 
@@ -529,6 +535,13 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     const top = Math.min(Math.max(pctY, 3), 97);
     setStarters(p => p.map((s, i) => i === fieldIdx ? { ...s, currentLeft: left, currentTop: top } : s));
   }, []);
+
+  const resetStarterPos = useCallback((idx) => {
+    const src = viewMode === "half" ? HALF_FORMATIONS : HORIZ_FORMATIONS;
+    const home = src[formationKey]?.positions?.[idx] ?? HORIZ_FORMATIONS[formationKey].positions[idx];
+    if (!home) return;
+    setStarters(prev => prev.map((s, i) => i === idx ? { ...s, currentLeft: home.left, currentTop: home.top } : s));
+  }, [formationKey, viewMode]);
 
   const { dragInfo, dragActivating, nearTarget, ghostRef, handlePointerDown, isDrag } = useDragEngine({
     fieldRef, startersRef, benchRef,
@@ -995,10 +1008,16 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                     const isSelectedToken = selectedIdx === i;
                     const isLinemate = hasSelection && !isSelectedToken && sameGroup;
                     const isDimmed = hasSelection && !isSelectedToken && !sameGroup;
+                    const previewSrc = hoveredFormation
+                      ? (viewMode === "half" ? HALF_FORMATIONS : HORIZ_FORMATIONS)[hoveredFormation]?.positions
+                      : null;
+                    const previewPos = previewSrc?.[i];
+                    const displayLeft = previewPos ? previewPos.left : st.currentLeft;
+                    const displayTop  = previewPos ? previewPos.top  : st.currentTop;
                     return (
                       <motion.div key={st.id}
-                        animate={{ left:`${st.currentLeft}%`, top:`${st.currentTop}%` }}
-                        transition={{ type:"spring", stiffness:320, damping:30, mass:0.55, delay:st.stagger||0 }}
+                        animate={{ left:`${displayLeft}%`, top:`${displayTop}%` }}
+                        transition={{ type:"spring", stiffness: hoveredFormation ? 260 : 320, damping: hoveredFormation ? 28 : 30, mass:0.55, delay: hoveredFormation ? 0 : (st.stagger||0) }}
                         style={{
                           position:"absolute", transform:"translate(-50%,-50%)",
                           zIndex: isDrag("starter",i)?1 : isSelectedToken?15 : isLinemate?8 : 5,
@@ -1026,6 +1045,67 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                     );
                   })}
 
+                  {/* Inline quick-action pill — sobre el token seleccionado */}
+                  {selStarter?.athlete && !isDrag("starter", selectedIdx) && !isDrawingActive && editMode && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.92 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.92 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                      style={{
+                        position: "absolute",
+                        left: `${selStarter.currentLeft}%`,
+                        top: `${Math.max(selStarter.currentTop - 11, 3)}%`,
+                        transform: "translate(-50%, -100%)",
+                        zIndex: 18,
+                        display: "flex", alignItems: "center", gap: 2,
+                        padding: "3px 5px",
+                        background: "rgba(4,6,16,0.96)",
+                        border: `1px solid ${C.blueBorder}`,
+                        borderRadius: 999,
+                        boxShadow: `0 6px 18px rgba(0,0,0,0.6), 0 0 14px ${C.blueGlow}, inset 0 1px 0 rgba(255,255,255,0.06)`,
+                        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <motion.button
+                        onClick={(e) => { e.stopPropagation(); resetStarterPos(selectedIdx); }}
+                        whileHover={{ y: -1 }} whileTap={{ scale: 0.94 }}
+                        title="Volver a posición de formación"
+                        style={{
+                          padding: "4px 9px",
+                          fontSize: 8.5, fontWeight: 900,
+                          color: "white",
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          letterSpacing: "1.4px",
+                          textTransform: "uppercase",
+                          borderRadius: 999,
+                        }}
+                      >↺ Reset</motion.button>
+
+                      <span style={{ width: 1, height: 10, background: "rgba(255,255,255,0.14)" }} />
+
+                      <motion.button
+                        onClick={(e) => { e.stopPropagation(); setActiveTab("roles"); }}
+                        whileHover={{ y: -1 }} whileTap={{ scale: 0.94 }}
+                        title="Ir a la ficha táctica"
+                        style={{
+                          padding: "4px 9px",
+                          fontSize: 8.5, fontWeight: 900,
+                          color: C.blueHi,
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          letterSpacing: "1.4px",
+                          textTransform: "uppercase",
+                          borderRadius: 999,
+                        }}
+                      >⟶ Ficha</motion.button>
+                    </motion.div>
+                  )}
+
                 </FieldLayer>
 
                 {/* DrawingToolbar flotante en el borde inferior del pitch */}
@@ -1047,7 +1127,8 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
                       key="formations"
                       formationKey={formationKey}
                       onSelect={changeFormation}
-                      onClose={() => setShowFormations(false)}
+                      onClose={() => { setShowFormations(false); setHoveredFormation(null); }}
+                      onHover={setHoveredFormation}
                     />
                   )}
                 </AnimatePresence>
