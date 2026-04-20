@@ -21,22 +21,22 @@ const PARTICLES = [
 ];
 
 const TRUST_ITEMS = [
-  "Seguridad y control operativo",
-  "Analítica clara para decidir",
-  "Experiencia premium para clientes serios",
+  "Menos coordinación, más entrenamiento",
+  "Decisiones con datos, no con intuición",
+  "Imagen profesional para tu club",
 ];
 
 const DASHBOARD_KPIS = [
-  { label: "Plantilla", value: "32", note: "Primer equipo" },
-  { label: "Sesiones", value: "14", note: "Semana actual" },
-  { label: "Asistencia", value: "96%", note: "Staff conectado" },
-  { label: "Control", value: "8", note: "Frentes sincronizados" },
+  { label: "Plantilla", value: "32", note: "Jugadores activos" },
+  { label: "Sesiones", value: "14", note: "Esta semana" },
+  { label: "Asistencia", value: "96%", note: "Últimas 4 semanas" },
+  { label: "Módulos", value: "9", note: "Un solo entorno" },
 ];
 
 const FLOW = [
-  ["Dirección deportiva", "Prioridades, seguimiento y lectura ejecutiva en una sola capa."],
-  ["Cuerpo técnico", "Sesiones, disponibilidad y coordinación diaria sin fricción."],
-  ["Administración", "Control, calendario y trazabilidad en el mismo entorno."],
+  ["Dirección deportiva", "Visión ejecutiva del club: KPIs, riesgos y decisiones sin cruzar planillas."],
+  ["Cuerpo técnico", "Sesiones, cargas y disponibilidad del plantel en tiempo real."],
+  ["Administración", "Pagos, calendario y trazabilidad del club bajo un mismo sistema."],
 ];
 
 function BrandGlyph({ size = 22, glow = false }) {
@@ -252,7 +252,7 @@ export default function HeroSection() {
               ALTTEZ
             </span>
             <span style={{ color: B.textMuted, fontSize: 13 }}>
-              Sistema operativo para clubes que necesitan orden, control y una presencia digital más seria.
+              Sistema operativo para clubes de alto rendimiento — orden, datos y presencia profesional en un solo entorno.
             </span>
           </div>
         </motion.div>
@@ -337,7 +337,7 @@ export default function HeroSection() {
             style={{ display: "grid", gap: 26 }}
           >
             <p style={{ margin: 0, color: B.textMuted, fontSize: "clamp(18px, 1.8vw, 22px)", lineHeight: 1.8 }}>
-              ALTTEZ unifica plantilla, entrenamiento, staff, calendario, administración y analítica en una sola experiencia para organizaciones deportivas que quieren trabajar con más claridad y verse a la altura del proyecto que lideran.
+              Un solo entorno para plantilla, entrenamiento, staff, calendario y analítica. Diseñado para clubes que ya no encajan en planillas dispersas y quieren operar con la precisión de una organización profesional.
             </p>
 
             <div className="alttez-hero-actions" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>

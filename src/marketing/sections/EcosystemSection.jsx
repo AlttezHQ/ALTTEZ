@@ -6,22 +6,22 @@ const SOLUTIONS = [
   {
     title: "ALTTEZ CRM",
     status: "Disponible",
-    description: "La capa central para operación diaria, control de plantilla, planificación, calendario y seguimiento ejecutivo del club.",
-    points: ["Gestión integral", "Vista operativa clara", "Módulos conectados"],
+    description: "El sistema operativo del club. Plantilla, entrenamiento, calendario, pagos y analítica en un entorno diseñado para decidir, no para administrar.",
+    points: ["9 módulos conectados", "Dashboard ejecutivo en vivo", "Tablero táctico broadcast-grade"],
     to: "/servicios/sports-crm",
   },
   {
     title: "ALTTEZ Journal",
     status: "Activo",
-    description: "Una capa editorial para visión de producto, decisiones del ecosistema y análisis sobre deporte y gestión moderna.",
-    points: ["Actualizaciones", "Visión estratégica", "Lanzamientos"],
+    description: "Capa editorial del ecosistema. Visión de producto, lecturas sobre gestión deportiva moderna y decisiones que dan forma al futuro de ALTTEZ.",
+    points: ["Notas de producto", "Tesis de industria", "Historial de releases"],
     to: "/journal",
   },
   {
     title: "ALTTEZ Advisory",
     status: "Próximamente",
-    description: "Acompañamiento para clubes que necesitan ordenar procesos, definir operación y profesionalizar su estructura interna.",
-    points: ["Operación", "Procesos", "Diagnóstico"],
+    description: "Consultoría para clubes que quieren dejar el caos operativo atrás. Diagnóstico, rediseño de procesos y profesionalización estructurada.",
+    points: ["Auditoría operativa", "Rediseño de procesos", "Implementación acompañada"],
     to: "/contacto",
   },
 ];
@@ -94,7 +94,7 @@ export default function EcosystemSection() {
         </h2>
 
         <p style={{ maxWidth: 680, margin: "0 auto", color: B.textMuted, fontSize: 16, lineHeight: 1.8 }}>
-          ALTTEZ no es una colección de herramientas separadas. Es una dirección operativa clara para clubes que quieren trabajar con más estructura, mejor comunicación y mayor control.
+          ALTTEZ no es un software con features. Es una dirección operativa para clubes que dejaron de resolver con planillas, WhatsApp y decisiones por intuición.
         </p>
       </motion.div>
 
