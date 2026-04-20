@@ -28,6 +28,7 @@ function BenchCard({ bench, idx, saludVal, isDragged, isActivating, onPointerDow
   return (
     <div
       onPointerDown={onPointerDown}
+      className="tbv9-bench-card-min"
       style={{
         position: "relative",
         display: "flex", alignItems: "center", gap: 9,
@@ -148,6 +149,7 @@ export default function BenchRibbon({
   return (
     <div
       ref={benchAreaRef}
+      className="tbv9-bench-ribbon"
       style={{
         position: "relative", flexShrink: 0,
         height: 92,

@@ -53,14 +53,43 @@ if (typeof document !== "undefined" && !document.getElementById("tbv9-responsive
   const s = document.createElement("style");
   s.id = "tbv9-responsive";
   s.textContent = `
+    .tbv9-mobile-btn { display: none; }
+
+    @media(max-width:1100px){
+      .tbv9-cmd-wrap, .tbv9-intel-wrap {
+        position: absolute !important;
+        top: 0; bottom: 92px; z-index: 40;
+        transition: transform 240ms cubic-bezier(0.33,1,0.68,1);
+        max-width: 86vw;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+      }
+      .tbv9-cmd-wrap { left: 0; transform: translateX(-110%); }
+      .tbv9-intel-wrap { right: 0; transform: translateX(110%); }
+      .tbv9-cmd-wrap[data-open="true"],
+      .tbv9-intel-wrap[data-open="true"] { transform: translateX(0); }
+      .tbv9-mobile-btn { display: inline-flex !important; }
+      .tbv9-mobile-backdrop {
+        position: absolute; inset: 0; z-index: 35;
+        background: rgba(4,6,14,0.55);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+    }
+    @media(max-width:900px){
+      .tbv9-topbar-tabs { flex: 1 1 auto !important; min-width: 0; overflow: hidden; }
+      .tbv9-topbar-brand-text { display: none !important; }
+      .tbv9-topbar-partido-text { display: none !important; }
+    }
     @media(max-width:768px){
-      .tbv9-detail-overlay{bottom:80px!important;right:8px!important;width:220px!important}
       .tbv9-formation-overlay{top:44px!important;left:8px!important;width:200px!important}
       .tbv9-tabs>div{padding:0 10px!important;font-size:9px!important}
-      .tbv9-subs-bar{flex-wrap:nowrap;overflow-x:auto}
+      .tbv9-bench-card-min { min-width: 132px !important; }
+      .tbv9-topbar { min-height: 44px !important; padding-left: 8px !important; }
+      .tbv9-topbar-partido { padding: 6px 10px !important; font-size: 8.5px !important; }
+      .tbv9-bench-ribbon { height: 78px !important; padding: 6px 10px !important; }
     }
     @media(max-width:480px){
-      .tbv9-detail-overlay{width:180px!important}
+      .tbv9-bench-card-min { min-width: 118px !important; }
     }
   `;
   document.head.appendChild(s);
@@ -488,6 +517,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
   const [phase, setPhase] = useLocalStorage(`alttez_phase${ns}`, "ofensiva");
   const [editMode, setEditMode] = useState(true);
   const [hoveredFormation, setHoveredFormation] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(null); // null | "commands" | "intel"
 
   // Usa HORIZ_FORMATIONS como base — landscape correcto
 
@@ -741,7 +771,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     }}>
 
       {/* ── TOPBAR BROADCAST — tabs + controles de campo ── */}
-      <div style={{
+      <div className="tbv9-topbar" style={{
         position: "relative",
         display:"flex", alignItems:"stretch", minHeight: 52,
         background: BROADCAST_GRADIENT.topbar,
@@ -770,7 +800,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
             style={{ height:20, width:"auto", filter:`drop-shadow(0 0 10px ${C.blueGlow})` }}
             onError={e => { e.currentTarget.style.display = "none"; }}
           />
-          <div style={{
+          <div className="tbv9-topbar-brand-text" style={{
             fontSize:9, fontWeight:900, color:"white",
             textTransform:"uppercase", letterSpacing:"2.5px",
             fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
@@ -780,7 +810,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
         </div>
 
         {/* Tabs — TabBar broadcast */}
-        <div className="tbv9-tabs" style={{ display:"flex", alignSelf:"stretch", flex:"0 1 auto" }}>
+        <div className="tbv9-tabs tbv9-topbar-tabs" style={{ display:"flex", alignSelf:"stretch", flex:"0 1 auto" }}>
           <TabBar
             tabs={TABS.map(t => t.label)}
             active={TABS.find(t => t.key === activeTab)?.label}
@@ -793,13 +823,63 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
           />
         </div>
 
-        {/* Controles — solo acceso a Partido. Resto vive en CommandRail. */}
+        {/* Controles — Partido + toggles mobile. Controles completos viven en CommandRail. */}
         <div style={{
           display:"flex", alignItems:"center",
-          padding:"0 14px 0 14px", gap:8,
+          padding:"0 10px 0 8px", gap:6,
           marginLeft:"auto", flexShrink:0,
         }}>
+          {/* Mobile: abrir CommandRail */}
           <motion.button
+            className="tbv9-mobile-btn"
+            onClick={() => setMobileNavOpen(v => v === "commands" ? null : "commands")}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Controles"
+            title="Controles"
+            style={{
+              width: 34, height: 34, padding: 0,
+              background: "rgba(10,15,26,0.6)",
+              border: `1px solid ${C.blueBorder}`,
+              color: C.blueHi,
+              borderRadius: 8, cursor: "pointer",
+              alignItems: "center", justifyContent: "center",
+              minHeight: "unset",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <line x1="4" y1="6"  x2="20" y2="6"  stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </motion.button>
+
+          {/* Mobile: abrir IntelDock */}
+          <motion.button
+            className="tbv9-mobile-btn"
+            onClick={() => setMobileNavOpen(v => v === "intel" ? null : "intel")}
+            whileTap={{ scale: 0.94 }}
+            aria-label="Ficha"
+            title="Ficha"
+            style={{
+              width: 34, height: 34, padding: 0,
+              background: "rgba(10,15,26,0.6)",
+              border: `1px solid ${C.blueBorder}`,
+              color: C.blueHi,
+              borderRadius: 8, cursor: "pointer",
+              alignItems: "center", justifyContent: "center",
+              minHeight: "unset",
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8"/>
+              <line x1="8" y1="9"  x2="16" y2="9"  stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              <line x1="8" y1="17" x2="12" y2="17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </motion.button>
+
+          <motion.button
+            className="tbv9-topbar-partido"
             onClick={() => showToast("Guarda la formación y accede desde Match Center", "info")}
             whileHover={{ y:-1, boxShadow:`inset 0 1px 0 rgba(255,255,255,0.28), 0 10px 28px ${C.blueGlow}` }}
             whileTap={{ scale:0.97 }}
@@ -818,7 +898,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
               minHeight:"unset",
             }}
           >
-            Partido →
+            <span className="tbv9-topbar-partido-text">Partido </span>→
           </motion.button>
         </div>
       </div>
@@ -828,19 +908,21 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
         <div style={{ flex:1, display:"flex", minHeight:0, overflow:"hidden", position:"relative" }}>
 
           {/* ── COMMAND RAIL (izq) ── */}
-          <CommandRail
-            formationKey={formationKey}
-            onToggleFormations={() => setShowFormations(v => !v)}
-            showFormations={showFormations}
-            viewMode={viewMode}
-            onToggleViewMode={toggleViewMode}
-            viewLayer={viewLayer}
-            onViewLayerChange={setViewLayer}
-            editMode={editMode}
-            onToggleEditMode={() => setEditMode(v => !v)}
-            playsCount={plays.length}
-            onOpenPlays={() => setShowPlays(true)}
-          />
+          <div className="tbv9-cmd-wrap" data-open={mobileNavOpen === "commands" ? "true" : "false"}>
+            <CommandRail
+              formationKey={formationKey}
+              onToggleFormations={() => setShowFormations(v => !v)}
+              showFormations={showFormations}
+              viewMode={viewMode}
+              onToggleViewMode={toggleViewMode}
+              viewLayer={viewLayer}
+              onViewLayerChange={setViewLayer}
+              editMode={editMode}
+              onToggleEditMode={() => setEditMode(v => !v)}
+              playsCount={plays.length}
+              onOpenPlays={() => setShowPlays(true)}
+            />
+          </div>
 
           {/* ── PITCH STAGE (centro) ── */}
           <div style={{
@@ -1146,17 +1228,24 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
           </div>
 
           {/* ── INTEL DOCK (der) ── */}
-          <IntelDock
-            selectedStarter={selStarter}
-            historial={historial}
-            phase={phase}
-            phaseLabel={PHASE_LABELS[phase]}
-            instructions={instructionsText}
-            onInstructions={setInstructionsText}
-            tacticas={tacticasText}
-            onTacticas={setTacticasText}
-            onSeeFullDetail={selStarter?.athlete ? () => setActiveTab("roles") : undefined}
-          />
+          <div className="tbv9-intel-wrap" data-open={mobileNavOpen === "intel" ? "true" : "false"}>
+            <IntelDock
+              selectedStarter={selStarter}
+              historial={historial}
+              phase={phase}
+              phaseLabel={PHASE_LABELS[phase]}
+              instructions={instructionsText}
+              onInstructions={setInstructionsText}
+              tacticas={tacticasText}
+              onTacticas={setTacticasText}
+              onSeeFullDetail={selStarter?.athlete ? () => setActiveTab("roles") : undefined}
+            />
+          </div>
+
+          {/* Mobile backdrop — cierra los paneles deslizables */}
+          {mobileNavOpen && (
+            <div className="tbv9-mobile-backdrop" onClick={() => setMobileNavOpen(null)} />
+          )}
         </div>
       )}
 
