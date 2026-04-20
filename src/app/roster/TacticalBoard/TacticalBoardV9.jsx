@@ -657,6 +657,25 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     return m;
   }, [athletes, wellnessLogs]);
 
+  // ── Team stats (HUD chip) ─────────────────────────────────────────────────
+  const teamStats = useMemo(() => {
+    const active = starters.filter(s => s.athlete);
+    if (!active.length) return null;
+    const ovrSum = active.reduce((sum, s) => {
+      const a = s.athlete;
+      const ovr = a.rating || Math.round(((a.speed||78)+(a.shooting||72)+(a.passing||80)+(a.dribble||75)+(a.defense||65)+(a.physical||77))/6);
+      return sum + ovr;
+    }, 0);
+    const saludSum = active.reduce((sum, s) => sum + (saludMap.get(s.athlete.id)?.salud ?? 100), 0);
+    const redCount = active.filter(s => riskMap.get(s.athlete.id)?.status === "red").length;
+    return {
+      count: active.length,
+      ovrAvg: Math.round(ovrSum / active.length),
+      saludAvg: Math.round(saludSum / active.length),
+      redCount,
+    };
+  }, [starters, saludMap, riskMap]);
+
   // ── Swap similar ──────────────────────────────────────────────────────────
   const doSwap = useCallback((na) => {
     if (selectedIdx === null) return;
@@ -828,6 +847,112 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
 
                   {/* DrawingLayer */}
                   <DrawingLayer drawingEngine={drawingEngine} isActive={isDrawingActive} />
+
+                  {/* Layer overlay — heatmap (riesgo) / recovery (salud) */}
+                  {viewLayer !== "normal" && (
+                    <svg
+                      style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", zIndex:1 }}
+                      viewBox="0 0 100 100" preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <radialGradient id="blob-red" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%"  stopColor="rgba(226,75,74,0.55)"/>
+                          <stop offset="60%" stopColor="rgba(226,75,74,0.18)"/>
+                          <stop offset="100%" stopColor="rgba(226,75,74,0)"/>
+                        </radialGradient>
+                        <radialGradient id="blob-yellow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%"  stopColor="rgba(239,159,39,0.45)"/>
+                          <stop offset="60%" stopColor="rgba(239,159,39,0.14)"/>
+                          <stop offset="100%" stopColor="rgba(239,159,39,0)"/>
+                        </radialGradient>
+                        <radialGradient id="blob-green" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%"  stopColor="rgba(29,158,117,0.38)"/>
+                          <stop offset="60%" stopColor="rgba(29,158,117,0.12)"/>
+                          <stop offset="100%" stopColor="rgba(29,158,117,0)"/>
+                        </radialGradient>
+                      </defs>
+                      {starters.map((st) => {
+                        if (!st.athlete) return null;
+                        const r = riskMap.get(st.athlete.id)?.status ?? "unknown";
+                        const s = saludMap.get(st.athlete.id)?.salud ?? 100;
+                        let fill = null;
+                        if (viewLayer === "heatmap") {
+                          if (r === "red") fill = "url(#blob-red)";
+                          else if (r === "yellow") fill = "url(#blob-yellow)";
+                        } else if (viewLayer === "recovery") {
+                          if (s < 55) fill = "url(#blob-red)";
+                          else if (s < 75) fill = "url(#blob-yellow)";
+                          else fill = "url(#blob-green)";
+                        }
+                        if (!fill) return null;
+                        return (
+                          <ellipse key={st.id}
+                            cx={st.currentLeft} cy={st.currentTop}
+                            rx="14" ry="10" fill={fill}
+                          />
+                        );
+                      })}
+                    </svg>
+                  )}
+
+                  {/* Team shape guides — solo en "normal" sin selección */}
+                  {viewLayer === "normal" && selectedIdx === null && (
+                    <svg
+                      style={{ position:"absolute", inset:0, width:"100%", height:"100%", pointerEvents:"none", zIndex:1 }}
+                      viewBox="0 0 100 100" preserveAspectRatio="none"
+                    >
+                      {["DEF","MID","FWD"].map(group => {
+                        const members = starters.filter(s => s.athlete && getGroup(s.posCode) === group);
+                        if (members.length < 2) return null;
+                        const avgY = members.reduce((sum,m)=>sum+m.currentTop,0)/members.length;
+                        const minX = Math.min(...members.map(m=>m.currentLeft));
+                        const maxX = Math.max(...members.map(m=>m.currentLeft));
+                        return (
+                          <line key={group}
+                            x1={minX} y1={avgY} x2={maxX} y2={avgY}
+                            stroke="rgba(91,157,255,0.26)" strokeWidth="0.16"
+                            strokeDasharray="0.9 1.1"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        );
+                      })}
+                    </svg>
+                  )}
+
+                  {/* Team HUD chip — XI telemetry (top-left del pitch) */}
+                  {teamStats && (
+                    <div style={{
+                      position:"absolute", top:16, left:32,
+                      display:"flex", alignItems:"center", gap:10,
+                      padding:"5px 11px",
+                      background:"rgba(4,6,16,0.72)",
+                      border:`1px solid ${C.blueBorder}`,
+                      borderRadius:999,
+                      pointerEvents:"none",
+                      zIndex:3,
+                      boxShadow:`inset 0 1px 0 rgba(255,255,255,0.05), 0 0 14px ${C.blueGlow}`,
+                      fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
+                    }}>
+                      <span style={{ fontSize:8, fontWeight:900, color:C.blueHi, letterSpacing:"2px", textTransform:"uppercase" }}>
+                        XI · {teamStats.count}
+                      </span>
+                      <span style={{ width:1, height:10, background:"rgba(255,255,255,0.14)" }} />
+                      <span style={{ fontSize:9, fontWeight:900, color:"white", letterSpacing:"0.8px" }}>
+                        OVR <span style={{ color:C.blueHi }}>{teamStats.ovrAvg}</span>
+                      </span>
+                      <span style={{ fontSize:9, fontWeight:900, color:"white", letterSpacing:"0.8px" }}>
+                        SAL <span style={{ color: teamStats.saludAvg >= 75 ? "#1D9E75" : teamStats.saludAvg >= 55 ? "#EF9F27" : "#E24B4A" }}>{teamStats.saludAvg}</span>
+                      </span>
+                      {teamStats.redCount > 0 && (
+                        <>
+                          <span style={{ width:1, height:10, background:"rgba(255,255,255,0.14)" }} />
+                          <span style={{ fontSize:9, fontWeight:900, color:"#E24B4A", letterSpacing:"0.8px" }}>
+                            ⚠ {teamStats.redCount}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
 
                   {/* Line-mate connector SVG — solo cuando hay selección */}
                   {selectedIdx !== null && selStarter?.posCode && (
