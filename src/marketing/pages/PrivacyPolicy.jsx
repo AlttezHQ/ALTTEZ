@@ -9,6 +9,8 @@
  * @version 1.0.0
  */
 
+import { PRIVACY_EMAIL } from "../data/contactConfig";
+
 const PALETTE = {
   bg: "#050a14",
   surface: "rgba(255,255,255,0.03)",
@@ -20,10 +22,10 @@ const PALETTE = {
   danger: "#FF4444",
 };
 
-const LAST_UPDATED = "2026-03-28";
+const LAST_UPDATED = "2026-04-21";
 const VERSION = "1.0";
 const RESPONSIBLE_ENTITY = "ALTTEZ S.A.S.";
-const CONTACT_EMAIL = "privacidad.co";
+const CONTACT_EMAIL = PRIVACY_EMAIL;
 
 /** @type {Array<{id: string, title: string, content: string|string[]}>} */
 const SECTIONS = [

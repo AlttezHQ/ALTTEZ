@@ -5,6 +5,7 @@ import { useResponsive } from "../../shared/hooks/useResponsive";
 import OfflineBanner from "../../shared/ui/OfflineBanner";
 import UpdateToast from "../../shared/ui/UpdateToast";
 import InstallAppBanner from "../../shared/ui/InstallAppBanner";
+import { buildWhatsAppUrl } from "../data/contactConfig";
 
 const BRAND = {
   bg: "#05070B",
@@ -44,9 +45,6 @@ const FOOTER_LINKS = [
   { to: "/contacto", label: "Contacto", exact: false },
   { to: "/privacidad", label: "Privacidad", exact: false },
 ];
-
-const WA_NUMBER = "573000000000";
-const WA_URL = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent("Hola, quiero conocer ALTTEZ.")}`;
 
 function LoadingFallback() {
   return (
@@ -155,10 +153,6 @@ function ServicesDropdown() {
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
@@ -368,12 +362,8 @@ function HamburgerIcon({ open }) {
   );
 }
 
-function MobileDrawer({ open, onClose, navigate, location }) {
+function MobileDrawer({ open, onClose, navigate }) {
   const [servicesOpen, setServicesOpen] = useState(false);
-
-  useEffect(() => {
-    setServicesOpen(false);
-  }, [location.pathname]);
 
   return (
     <AnimatePresence>
@@ -531,19 +521,20 @@ function MobileDrawer({ open, onClose, navigate, location }) {
 function WhatsAppCTA() {
   const [hovered, setHovered] = useState(false);
   const [visible, setVisible] = useState(false);
+  const waUrl = buildWhatsAppUrl();
 
   useEffect(() => {
     const timeoutId = setTimeout(() => setVisible(true), 1200);
     return () => clearTimeout(timeoutId);
   }, []);
 
-  if (!visible) return null;
+  if (!visible || !waUrl) return null;
 
   return (
     <AnimatePresence>
       <motion.a
         key="wa-cta"
-        href={WA_URL}
+        href={waUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Habla con nosotros por WhatsApp"

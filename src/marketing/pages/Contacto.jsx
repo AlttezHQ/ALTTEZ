@@ -3,22 +3,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import { sanitizeText, sanitizeTextFinal, sanitizeNote } from "../../shared/utils/sanitize";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
 import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { buildMailtoUrl, buildWhatsAppUrl, CALENDAR_URL, COMMERCIAL_EMAIL } from "../data/contactConfig";
 
 const CHANNELS = [
   {
+    title: "Correo directo",
+    value: COMMERCIAL_EMAIL,
+    detail: "Canal principal para demos, activacion inicial y conversaciones comerciales.",
+  },
+  {
+    title: "WhatsApp comercial",
+    value: buildWhatsAppUrl() ? "Disponible" : "Configurar numero",
+    detail: buildWhatsAppUrl()
+      ? "Ideal para una primera conversacion rapida con clubes y responsables deportivos."
+      : "Agrega `VITE_MARKETING_WA_NUMBER` para habilitar este canal en produccion.",
+  },
+  {
     title: "Agenda comercial",
-    value: "Descubrimiento y demo",
-    detail: "Ideal para clubes, ligas e instituciones que quieren evaluar el ecosistema completo.",
-  },
-  {
-    title: "Soporte de producto",
-    value: "Acompanamiento operativo",
-    detail: "Para equipos que necesitan resolver dudas de uso, activacion o configuracion.",
-  },
-  {
-    title: "Alianzas estrategicas",
-    value: "Integraciones y partnerships",
-    detail: "Cuando la conversacion requiere una propuesta conjunta, tecnica o institucional.",
+    value: CALENDAR_URL ? "Demo agendada" : "Configurar agenda",
+    detail: CALENDAR_URL
+      ? "Permite reservar una llamada de descubrimiento con el equipo."
+      : "Agrega `VITE_MARKETING_CALENDAR_URL` para habilitar agendamiento directo.",
   },
 ];
 
@@ -112,6 +117,7 @@ export default function Contacto() {
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const whatsappUrl = buildWhatsAppUrl("Hola, quiero una demo de ALTTEZ para mi club.");
 
   const handleChange = (field) => (event) => {
     const raw = event.target.value;
@@ -148,7 +154,7 @@ export default function Contacto() {
     }
 
     setSending(true);
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+    window.location.href = buildMailtoUrl(form);
     setSending(false);
     setSubmitted(true);
   };
@@ -175,10 +181,10 @@ export default function Contacto() {
               fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
             }}
           >
-            Disenemos una experiencia que si le hable al cliente correcto.
+            Hablemos de como ordenar la operacion real de tu club.
           </h1>
           <p style={{ maxWidth: 680, fontSize: 18, lineHeight: 1.82, color: B.textMuted }}>
-            Si tu organizacion quiere una plataforma con presencia institucional, claridad operativa y mejores momentos de conversion, este es el punto de partida.
+            Si hoy coordinan entre chats, planillas y seguimiento manual, esta conversacion es para aterrizar un piloto claro, una demo util y el camino mas corto para activar ALTTEZ con tu equipo.
           </p>
         </motion.div>
       </section>
@@ -214,13 +220,13 @@ export default function Contacto() {
                     fontWeight: 800,
                   }}
                 >
-                  ✓
+                  OK
                 </div>
                 <h2 style={{ margin: "22px 0 10px", fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
-                  Tu mensaje ya esta en la mesa.
+                  Tu correo ya quedo listo para enviar.
                 </h2>
                 <p style={{ fontSize: 16, color: B.textMuted, lineHeight: 1.8, maxWidth: 560 }}>
-                  Nuestro equipo revisara el contexto y volvera con una respuesta enfocada, no con un correo generico. Queremos entender que necesitas y como ALTTEZ puede aportar valor real.
+                  Abrimos tu cliente de correo con el contexto precargado para que la solicitud salga completa. Si prefieres una respuesta mas rapida, tambien puedes usar los canales directos de esta pagina.
                 </p>
                 <button
                   onClick={() => {
@@ -239,7 +245,7 @@ export default function Contacto() {
                     letterSpacing: "0.08em",
                   }}
                 >
-                  Enviar otra consulta
+                  Preparar otro mensaje
                 </button>
               </motion.div>
             ) : (
@@ -264,7 +270,7 @@ export default function Contacto() {
                     Formulario
                   </div>
                   <h2 style={{ marginTop: 12, fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
-                    Cuentanos que quieres transformar.
+                    Cuentanos como funciona hoy tu operacion.
                   </h2>
                 </div>
 
@@ -297,7 +303,7 @@ export default function Contacto() {
                     rows={6}
                     value={form.mensaje}
                     onChange={handleChange("mensaje")}
-                    placeholder="Describe el reto actual, el tipo de cliente o equipo, y lo que esperas mejorar en producto, operacion o imagen."
+                    placeholder="Describe como coordinan hoy plantilla, entrenamientos, pagos, confirmaciones o seguimiento del equipo y que quieren resolver primero."
                     style={{ ...inputStyle(!!errors.mensaje), resize: "vertical", minHeight: 150, lineHeight: 1.7 }}
                   />
                 </Field>
@@ -320,24 +326,66 @@ export default function Contacto() {
                   <span>{form.mensaje.length}/1000</span>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={sending}
-                  style={{
-                    padding: "16px 22px",
-                    borderRadius: 999,
-                    border: "none",
-                    background: G.button,
-                    color: "white",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.09em",
-                    boxShadow: `0 18px 40px ${B.primaryGlow}`,
-                    opacity: sending ? 0.75 : 1,
-                  }}
-                >
-                  {sending ? "Enviando..." : "Solicitar conversacion"}
-                </button>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    style={{
+                      padding: "16px 22px",
+                      borderRadius: 999,
+                      border: "none",
+                      background: G.button,
+                      color: "white",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.09em",
+                      boxShadow: `0 18px 40px ${B.primaryGlow}`,
+                      opacity: sending ? 0.75 : 1,
+                    }}
+                  >
+                    {sending ? "Abriendo correo..." : "Enviar por correo"}
+                  </button>
+                  {whatsappUrl ? (
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: "16px 22px",
+                        borderRadius: 999,
+                        border: `1px solid ${B.borderStrong}`,
+                        background: "rgba(255,255,255,0.03)",
+                        color: B.text,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.09em",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Escribir por WhatsApp
+                    </a>
+                  ) : null}
+                  {CALENDAR_URL ? (
+                    <a
+                      href={CALENDAR_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: "16px 22px",
+                        borderRadius: 999,
+                        border: `1px solid ${B.borderStrong}`,
+                        background: "transparent",
+                        color: B.textMuted,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.09em",
+                        textDecoration: "none",
+                      }}
+                    >
+                      Agendar demo
+                    </a>
+                  ) : null}
+                </div>
               </motion.form>
             )}
           </AnimatePresence>
@@ -396,12 +444,12 @@ export default function Contacto() {
               </div>
               <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
                 {[
-                  "Una conversacion enfocada en negocio, no solo en pantallas.",
-                  "Recomendaciones sobre imagen, experiencia y jerarquia visual del portal.",
-                  "Siguiente paso claro para demo, propuesta o implementacion.",
+                  "Una demo enfocada en operacion diaria del club, no en humo.",
+                  "Ruta clara para piloto, activacion inicial y primer equipo dentro del sistema.",
+                  "Siguiente paso concreto para propuesta, onboarding o implementacion guiada.",
                 ].map((item) => (
                   <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start", color: B.textMuted, lineHeight: 1.7 }}>
-                    <span style={{ color: B.primary, fontWeight: 800 }}>•</span>
+                    <span style={{ color: B.primary, fontWeight: 800 }}>-</span>
                     <span>{item}</span>
                   </div>
                 ))}
