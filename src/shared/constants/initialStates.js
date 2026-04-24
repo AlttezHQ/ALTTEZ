@@ -139,6 +139,5 @@ export const STORAGE_KEYS = [
   "alttez_tacticas",
   "alttez_healthSnapshots",
   "alttez_schema_version",
-  "alttez_session",
   "alttez_club_id",
 ];

@@ -14,7 +14,6 @@ import {
   createEmptyClubInfo, STORAGE_KEYS,
 } from "../constants/initialStates";
 import { validateSesion } from "../constants/schemas";
-import { SESSION_KEY, createSession, validateSession } from "../constants/roles";
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
@@ -69,9 +68,6 @@ export function loadDemoState() {
   write("alttez_matchStats", DEMO_MATCH_STATS);
   write("alttez_finanzas", DEMO_FINANZAS);
   write("alttez_mode", "demo");
-  // Sesion RBAC: demo siempre es admin
-  const session = createSession("admin", "Demo User");
-  write(SESSION_KEY, session);
 }
 
 /** Carga estado produccion: limpia + escribe esquema vacio + sesion admin */
@@ -83,9 +79,6 @@ export function loadProductionState(form) {
   write("alttez_matchStats", EMPTY_MATCH_STATS);
   write("alttez_finanzas", EMPTY_FINANZAS);
   write("alttez_mode", "production");
-  // Sesion RBAC: creador del club es admin
-  const session = createSession("admin", form.entrenador || "Entrenador");
-  write(SESSION_KEY, session);
 }
 
 /** Cierra sesion: limpia todo y vuelve a landing */
@@ -154,33 +147,6 @@ export function buildSesion(athletes, historial, nota, tipo) {
   return sesion;
 }
 
-// ── Sesion de usuario (RBAC) ──
-
-/** Crea y persiste sesion de usuario al login */
-export function loginSession(role, userName) {
-  const session = createSession(role, userName);
-  write(SESSION_KEY, session);
-  return session;
-}
-
-/** Lee y valida la sesion actual — detecta manipulacion via DevTools */
-export function getSession() {
-  const session = read(SESSION_KEY, null);
-  if (!session) return null;
-  if (!validateSession(session)) {
-    remove(SESSION_KEY);
-    if (_onStorageError) _onStorageError("Sesion corrupta detectada. Iniciando de nuevo.");
-    return null;
-  }
-  return session;
-}
-
-/** Rol actual del usuario */
-export function getCurrentRole() {
-  const session = getSession();
-  return session?.role || null;
-}
-
 // ── Backup / Export ──
 
 /** Exporta todos los datos de ALTTEZ como JSON descargable */
@@ -225,6 +191,5 @@ export function importBackup(jsonString) {
 
 export default {
   getMode, clearAll, loadDemoState, loadProductionState, logout,
-  calcStats, buildSesion, loginSession, getSession, getCurrentRole,
-  exportBackup, importBackup, setStorageErrorHandler,
+  calcStats, buildSesion, exportBackup, importBackup, setStorageErrorHandler,
 };

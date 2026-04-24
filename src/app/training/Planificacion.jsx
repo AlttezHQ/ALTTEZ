@@ -677,7 +677,13 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
                     ) : t.svgRec ? (
                       <div>
                         <div style={{ fontSize:7, color:"#1D9E75", textTransform:"uppercase", letterSpacing:"1px", marginBottom:4, textAlign:"center" }}>Recreado por IA</div>
-                        <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(t.svgRec.replace(/width="[^"]*"/, 'width="94"').replace(/height="[^"]*"/, 'height="100"'), { USE_PROFILES: { svg: true }, FORBID_TAGS: ["script", "use"], FORBID_ATTR: ["onload", "onerror", "onmouseover", "href", "xlink:href"] }) }}/>
+                        <img
+                          src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(DOMPurify.sanitize(t.svgRec.replace(/width="[^"]*"/, 'width="94"').replace(/height="[^"]*"/, 'height="100"'), { ALLOWED_TAGS: ["svg","g","rect","circle","line","path","polyline","polygon","defs","marker","text"], ALLOWED_ATTR: ["width","height","viewBox","fill","stroke","stroke-width","x","y","x1","y1","x2","y2","cx","cy","r","d","points","transform","opacity","id","marker-end","marker-start","refX","refY","markerWidth","markerHeight","orient"] }))}`}
+                          width={94}
+                          height={100}
+                          alt="Diagrama tactico"
+                          style={{ display: "block" }}
+                        />
                         <div onClick={()=>fileRefs.current[i]?.click()} style={{ fontSize:7, color:"rgba(255,255,255,0.3)", textAlign:"center", cursor:"pointer", marginTop:4 }}>cambiar imagen</div>
                       </div>
                     ) : t.imagenPreview ? (

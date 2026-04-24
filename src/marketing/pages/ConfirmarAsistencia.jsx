@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseReady } from "../../shared/lib/supabase";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";
 
 const STATUS = {
   IDLE: "idle",
@@ -17,8 +17,8 @@ const RSVP_OPTIONS = [
     label: "Confirmo asistencia",
     short: "Confirmado",
     color: B.primary,
-    soft: "rgba(47,107,255,0.14)",
-    border: "rgba(47,107,255,0.34)",
+    soft: B.primarySoft,
+    border: B.primaryGlow,
   },
   {
     value: "absent",
@@ -33,8 +33,8 @@ const RSVP_OPTIONS = [
     label: "Tengo dudas",
     short: "Por confirmar",
     color: B.warning,
-    soft: "rgba(147,180,255,0.14)",
-    border: "rgba(147,180,255,0.28)",
+    soft: B.primarySoft,
+    border: B.border,
   },
 ];
 
@@ -63,7 +63,7 @@ function BrandLockup() {
           width: 52,
           height: 52,
           borderRadius: 18,
-          background: "linear-gradient(135deg, rgba(47,107,255,0.22) 0%, rgba(147,180,255,0.12) 100%)",
+          background: `linear-gradient(135deg, ${B.primarySoft} 0%, ${B.primaryGlow} 100%)`,
           border: `1px solid ${B.borderStrong}`,
           display: "grid",
           placeItems: "center",
@@ -110,7 +110,7 @@ function SuccessScreen({ selectedOption, athleteName }) {
       <div style={{ marginTop: 22, fontSize: 13, color: B.warning, textTransform: "uppercase", letterSpacing: "0.22em", fontWeight: 700 }}>
         Respuesta registrada
       </div>
-      <h2 style={{ margin: "14px 0 12px", fontSize: 32, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+      <h2 style={{ margin: "14px 0 12px", fontSize: 32, lineHeight: 1.02, fontFamily: F.display }}>
         {athleteName ? athleteName : "Tu respuesta"} quedo como {option.short.toLowerCase()}.
       </h2>
       <p style={{ color: B.textMuted, lineHeight: 1.75, margin: 0 }}>
@@ -170,19 +170,12 @@ export default function ConfirmarAsistencia() {
       }
 
       try {
-        const { error } = await supabase.from("event_rsvp").upsert(
-          {
-            club_id: clubId,
-            event_id: eventId,
-            athlete_name: trimmedName,
-            status: rsvpStatus,
-            responded_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "club_id,event_id,athlete_name",
-            ignoreDuplicates: false,
-          },
-        );
+        const { error } = await supabase.rpc("submit_rsvp", {
+          p_club_id:  clubId,
+          p_event_id: eventId,
+          p_name:     trimmedName,
+          p_status:   rsvpStatus,
+        });
 
         if (error) throw error;
 
@@ -214,7 +207,7 @@ export default function ConfirmarAsistencia() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 12%, rgba(47,107,255,0.18) 0%, transparent 34%), radial-gradient(circle at 80% 82%, rgba(147,180,255,0.12) 0%, transparent 22%)",
+            `radial-gradient(circle at 50% 12%, ${B.primaryGlow} 0%, transparent 34%), radial-gradient(circle at 80% 82%, ${B.primarySoft} 0%, transparent 22%)`,
           pointerEvents: "none",
         }}
       />
@@ -252,7 +245,7 @@ export default function ConfirmarAsistencia() {
                   margin: "14px 0 14px",
                   fontSize: 34,
                   lineHeight: 1.02,
-                  fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                  fontFamily: F.display,
                   wordBreak: "break-word",
                 }}
               >

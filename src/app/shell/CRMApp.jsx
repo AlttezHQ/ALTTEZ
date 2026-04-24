@@ -19,7 +19,7 @@ import {
 } from "../../shared/services/storageService";
 import { clearSnapshots, setHealthClubId } from "../../shared/services/healthService";
 import { PALETTE as C } from "../../shared/tokens/palette";
-import { SESSION_KEY, createSession, validateSession, canAccessModule } from "../../shared/constants/roles";
+import { canAccessModule } from "../../shared/constants/roles";
 
 import { isSupabaseReady } from "../../shared/lib/supabase";
 import { createClub as sbCreateClub, setClubId, migrateLocalToSupabase, loadClubIdFromProfile } from "../../shared/services/supabaseService";
@@ -103,7 +103,6 @@ export function CRMApp() {
   const location = useLocation();
   const mode = useStore(state => state.mode);
   const setMode = useStore(state => state.setMode);
-  const session = useStore(state => state.session);
   const setSession = useStore(state => state.setSession);
   const activeModule = useStore(state => state.activeModule);
   const setActiveModule = useStore(state => state.setActiveModule);
@@ -148,9 +147,8 @@ export function CRMApp() {
     return () => sub.unsubscribe();
   }, []);
 
-  // Role: prioridad auth profile > localStorage session > null
-  const userRole = authProfile?.role
-    || ((session && validateSession(session)) ? session.role : null);
+  // Role: exclusivamente desde Supabase authProfile; demo siempre admin aislado
+  const userRole = mode === "demo" ? "admin" : (authProfile?.role ?? null);
 
   // Navegacion con control de acceso por rol
   const navigateTo = useCallback((mod) => {
@@ -163,8 +161,6 @@ export function CRMApp() {
 
   const handleDemo = useCallback(() => {
     loadDemoState();
-    const demoSession = createSession("admin", "Demo User");
-    setSession(demoSession);
     const demoAthletes = JSON.parse(localStorage.getItem("alttez_athletes"));
     const demoHistorial = JSON.parse(localStorage.getItem("alttez_historial"));
     const demoClubInfo = JSON.parse(localStorage.getItem("alttez_clubInfo"));
@@ -206,8 +202,6 @@ export function CRMApp() {
 
     // 2. Configurar estado local (offline-first)
     loadProductionState(form);
-    const newSession = createSession(form.role || "admin", form.entrenador);
-    setSession(newSession);
     setAthletes(EMPTY_ATHLETES);
     setHistorial(EMPTY_HISTORIAL);
     const newClubInfo = JSON.parse(localStorage.getItem("alttez_clubInfo"));
@@ -248,9 +242,6 @@ export function CRMApp() {
     setClubId(profile.club_id);
     setHealthClubId(profile.club_id);
 
-    // Configurar sesion local (compatibilidad)
-    const localSession = createSession(profile.role || "admin", profile.full_name || user.email);
-    setSession(localSession);
     setMode("production");
     setActiveModule("home");
     showToast(`Bienvenido, ${profile.full_name || user.email}`, "success");
