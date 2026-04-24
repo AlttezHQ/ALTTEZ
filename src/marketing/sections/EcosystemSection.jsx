@@ -6,22 +6,22 @@ const SOLUTIONS = [
   {
     title: "ALTTEZ CRM",
     status: "Disponible",
-    description: "El sistema operativo del club. Plantilla, entrenamiento, calendario, pagos y analítica en un entorno diseñado para decidir, no para administrar.",
-    points: ["9 módulos conectados", "Dashboard ejecutivo en vivo", "Tablero táctico broadcast-grade"],
+    description: "La plataforma central del club. Operacion deportiva, coordinacion diaria y control administrativo en una sola capa de trabajo.",
+    points: ["Modulos conectados", "Vista ejecutiva del club", "Flujo operativo unificado"],
     to: "/servicios/sports-crm",
   },
   {
     title: "ALTTEZ Journal",
     status: "Activo",
-    description: "Capa editorial del ecosistema. Visión de producto, lecturas sobre gestión deportiva moderna y decisiones que dan forma al futuro de ALTTEZ.",
-    points: ["Notas de producto", "Tesis de industria", "Historial de releases"],
+    description: "La capa editorial de la marca. Ideas, criterio y perspectiva sobre gestion deportiva, producto y profesionalizacion institucional.",
+    points: ["Punto de vista de marca", "Lecturas de industria", "Narrativa de producto"],
     to: "/journal",
   },
   {
     title: "ALTTEZ Advisory",
-    status: "Próximamente",
-    description: "Consultoría para clubes que quieren dejar el caos operativo atrás. Diagnóstico, rediseño de procesos y profesionalización estructurada.",
-    points: ["Auditoría operativa", "Rediseño de procesos", "Implementación acompañada"],
+    status: "Proximamente",
+    description: "Acompanamiento para organizaciones que necesitan ordenar procesos, elevar su operacion y ejecutar una transformacion con mas disciplina.",
+    points: ["Diagnostico operativo", "Rediseño de procesos", "Implementacion guiada"],
     to: "/contacto",
   },
 ];
@@ -31,8 +31,6 @@ export default function EcosystemSection() {
 
   return (
     <section style={{ padding: "100px 24px", maxWidth: 1180, margin: "0 auto" }}>
-
-      {/* Section header — viewport entrance */}
       <motion.div
         initial={{ opacity: 0, y: 36 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -89,16 +87,15 @@ export default function EcosystemSection() {
               backgroundClip: "text",
             }}
           >
-            Múltiples frentes conectados.
+            Un ecosistema con criterio.
           </span>
         </h2>
 
-        <p style={{ maxWidth: 680, margin: "0 auto", color: B.textMuted, fontSize: 16, lineHeight: 1.8 }}>
-          ALTTEZ no es un software con features. Es una dirección operativa para clubes que dejaron de resolver con planillas, WhatsApp y decisiones por intuición.
+        <p style={{ maxWidth: 700, margin: "0 auto", color: B.textMuted, fontSize: 16, lineHeight: 1.8 }}>
+          ALTTEZ no compite por acumular funcionalidades. Compite por ofrecer una operacion mas clara, una mejor lectura del club y una presencia digital coherente con proyectos serios.
         </p>
       </motion.div>
 
-      {/* Cards grid */}
       <div
         style={{
           display: "grid",
@@ -127,7 +124,6 @@ export default function EcosystemSection() {
               flexDirection: "column",
             }}
           >
-            {/* Status badge */}
             <div
               style={{
                 display: "inline-flex",
@@ -208,7 +204,7 @@ export default function EcosystemSection() {
                 cursor: "pointer",
               }}
             >
-              Ver más
+              Conocer mas
             </motion.button>
           </motion.div>
         ))}

@@ -5,34 +5,34 @@ import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
 
 const MODULES = [
   {
-    title: "Plantilla y operación diaria",
-    body: "Un entorno claro para organizar deportistas, disponibilidad, seguimiento y responsabilidades del club.",
+    title: "Plantilla y estructura operativa",
+    body: "Informacion del deportista, disponibilidad y seguimiento en una vista que ordena el trabajo diario del club.",
   },
   {
-    title: "Entrenamiento y planificación",
-    body: "Sesiones, control de carga, planificación táctica y contexto operativo en una sola vista de trabajo.",
+    title: "Entrenamiento y control de carga",
+    body: "Sesiones, seguimiento fisico y contexto deportivo en una sola capa de trabajo para el cuerpo tecnico.",
   },
   {
-    title: "Calendario y coordinación",
-    body: "Partidos, sesiones y agenda del club centralizados para reducir fricción entre staff y administración.",
+    title: "Calendario y coordinacion",
+    body: "Partidos, sesiones, agenda y confirmaciones centralizadas para reducir friccion operativa.",
   },
   {
-    title: "Administración y control",
-    body: "Mensualidades, movimientos, reportes y trazabilidad financiera con una capa ejecutiva simple.",
+    title: "Administracion y visibilidad financiera",
+    body: "Mensualidades, movimientos y trazabilidad del mes en un lenguaje claro para la direccion del club.",
   },
 ];
 
 const BENEFITS = [
-  "Menos herramientas sueltas y menos retrabajo",
-  "Mayor claridad para cuerpo técnico y dirección",
-  "Una estructura profesional desde el día a día",
+  "Menos dispersion operativa y menos retrabajo",
+  "Mas claridad para cuerpo tecnico, direccion y administracion",
+  "Una experiencia consistente con proyectos deportivos serios",
 ];
 
 const SNAPSHOTS = [
-  { label: "Operación diaria", value: "Centralizada" },
-  { label: "Módulos activos", value: "6" },
+  { label: "Operacion diaria", value: "Centralizada" },
+  { label: "Frentes clave", value: "6" },
   { label: "Visibilidad", value: "Tiempo real" },
-  { label: "Fricción", value: "Mínima" },
+  { label: "Coordinacion", value: "Mas clara" },
 ];
 
 function ProductPanel() {
@@ -252,7 +252,7 @@ export default function SportsCRMPage() {
             </h1>
 
             <p style={{ margin: "0 0 28px", maxWidth: 560, color: B.textMuted, fontSize: 16, lineHeight: 1.8 }}>
-              ALTTEZ CRM reúne plantilla, entrenamiento, calendario, control administrativo y reportes en un sistema diseñado para organizaciones deportivas que quieren trabajar con estándar profesional.
+              ALTTEZ CRM reune plantilla, entrenamiento, calendario, control administrativo y reportes en una plataforma pensada para clubes que necesitan orden operativo, visibilidad ejecutiva y una experiencia mas solida hacia adentro y hacia afuera.
             </p>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24 }}>
@@ -292,7 +292,7 @@ export default function SportsCRMPage() {
                   cursor: "pointer",
                 }}
               >
-                Ver entorno demo
+                Ver entorno piloto
               </motion.button>
             </div>
 
@@ -308,8 +308,8 @@ export default function SportsCRMPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, maxWidth: 520 }}>
               {[
                 { value: "6", label: "frentes conectados" },
-                { value: "1", label: "fuente operativa" },
-                { value: "24/7", label: "visibilidad del club" },
+                { value: "1", label: "sistema de referencia" },
+                { value: "24/7", label: "lectura del club" },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -338,7 +338,7 @@ export default function SportsCRMPage() {
       <section style={{ padding: "80px 24px", maxWidth: 1180, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 42 }}>
           <div style={{ color: "#C7D6FF", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.6px", marginBottom: 16 }}>
-            Qué resuelve ALTTEZ
+            Que resuelve ALTTEZ
           </div>
           <h2
             style={{
@@ -352,10 +352,10 @@ export default function SportsCRMPage() {
               textTransform: "uppercase",
             }}
           >
-            La operación deja de estar fragmentada.
+            La operacion deja de estar fragmentada.
           </h2>
           <p style={{ maxWidth: 720, margin: "0 auto", color: B.textMuted, fontSize: 15, lineHeight: 1.75 }}>
-            Pensado para clientes que necesitan orden, visibilidad y mejor ejecución, no una interfaz vistosa sin profundidad operativa.
+            Pensado para organizaciones que necesitan ordenar la ejecucion, mejorar coordinacion y profesionalizar la gestion cotidiana del equipo.
           </p>
         </div>
 

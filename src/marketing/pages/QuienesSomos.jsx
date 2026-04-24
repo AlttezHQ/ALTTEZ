@@ -11,23 +11,23 @@ const fadeUp = {
 
 const STORY_PILLARS = [
   {
-    title: "Operacion conectada",
-    body: "Unificamos la coordinacion entre direccion deportiva, cuerpo tecnico, staff medico y administracion en una sola vista.",
+    title: "Operacion con estructura",
+    body: "Unificamos la coordinacion entre direccion deportiva, cuerpo tecnico, staff y administracion en una sola lectura del club.",
   },
   {
-    title: "Decision con contexto",
-    body: "Cada modulo traduce datos en prioridad, urgencia y accion para evitar ruido y acelerar respuestas.",
+    title: "Decisiones con contexto",
+    body: "Cada modulo traduce informacion en prioridad y criterio para reducir ruido y acelerar la toma de decisiones.",
   },
   {
-    title: "Identidad competitiva",
-    body: "ALTTEZ nace para organizaciones que quieren verse, sentirse y operar como proyectos serios de alto rendimiento.",
+    title: "Presencia institucional",
+    body: "ALTTEZ nace para organizaciones que entienden que la percepcion del proyecto tambien se construye desde su operacion.",
   },
 ];
 
 const PRINCIPLES = [
-  ["Claridad", "Interfaces que priorizan lo importante y eliminan friccion operativa."],
-  ["Ritmo", "Movimiento visual sutil para guiar la lectura, reforzar jerarquia y dar sensacion de producto vivo."],
-  ["Confianza", "Mensajes, datos y CTAs con tono ejecutivo para compradores institucionales y clubes serios."],
+  ["Claridad", "Interfaces que priorizan lo esencial y vuelven mas legible la operacion diaria."],
+  ["Criterio", "Cada detalle visual y verbal debe reforzar jerarquia, foco y percepcion de control."],
+  ["Confianza", "Mensajes, decisiones y experiencias alineadas con compradores institucionales y proyectos serios."],
 ];
 
 function SectionEyebrow({ children }) {
@@ -153,7 +153,7 @@ export default function QuienesSomos() {
                 maxWidth: 760,
               }}
             >
-              Construimos una operacion deportiva que se siente a la altura del proyecto.
+              Diseñamos tecnologia deportiva para proyectos que quieren ser tomados en serio.
             </h1>
             <p
               style={{
@@ -163,7 +163,7 @@ export default function QuienesSomos() {
                 color: B.textMuted,
               }}
             >
-              ALTTEZ no nace para decorar dashboards. Nace para ordenar decisiones, profesionalizar el dia a dia del club y darle al cliente una experiencia que inspire confianza desde el primer clic.
+              ALTTEZ no nace para decorar dashboards. Nace para darle estructura al dia a dia del club, elevar la forma en que se coordina el trabajo y proyectar una imagen institucional acorde con la ambicion del proyecto.
             </p>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 28 }}>
@@ -184,7 +184,7 @@ export default function QuienesSomos() {
                 Hablar con ALTTEZ
               </button>
               <button
-                onClick={() => navigate("/sports-crm")}
+                onClick={() => navigate("/servicios/sports-crm")}
                 style={{
                   padding: "15px 24px",
                   borderRadius: 999,
@@ -196,7 +196,7 @@ export default function QuienesSomos() {
                   textTransform: "uppercase",
                 }}
               >
-                Ver ecosistema
+                Ver plataforma
               </button>
             </div>
           </motion.div>
@@ -252,9 +252,9 @@ export default function QuienesSomos() {
 
               <div style={{ display: "grid", gap: 14 }}>
                 {[
-                  "Producto con presencia ejecutiva.",
-                  "Movimiento preciso para dirigir la atencion.",
-                  "Mensajes orientados a compra institucional.",
+                  "Lenguaje claro para compradores institucionales.",
+                  "Jerarquia visual pensada para dirigir la lectura.",
+                  "Una marca que comunica estructura, no improvisacion.",
                 ].map((item) => (
                   <div
                     key={item}
@@ -272,8 +272,8 @@ export default function QuienesSomos() {
               </div>
 
               <div className="about-stats-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 20 }}>
-                <MetricCard value="360°" label="Vision del ecosistema completo del club" />
-                <MetricCard value="24/7" label="Disponibilidad para operaciones y seguimiento continuo" />
+                <MetricCard value="360°" label="Lectura integral del club y su operacion" />
+                <MetricCard value="24/7" label="Visibilidad continua para decisiones y seguimiento" />
               </div>
             </div>
           </motion.div>
@@ -319,7 +319,7 @@ export default function QuienesSomos() {
               border: `1px solid ${B.border}`,
             }}
           >
-            <SectionEyebrow>Principios</SectionEyebrow>
+            <SectionEyebrow>Posicionamiento</SectionEyebrow>
             <h2
               style={{
                 margin: "18px 0 14px",
@@ -329,10 +329,10 @@ export default function QuienesSomos() {
                 fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
               }}
             >
-              La marca ahora tiene que verse como el producto que promete.
+              La marca tiene que sostener la promesa del producto.
             </h2>
             <p style={{ color: B.textMuted, lineHeight: 1.8, fontSize: 16 }}>
-              El rebranding a ALTTEZ no es solo un cambio de nombre. Es una correccion de posicionamiento para hablarle mejor a clubes, ligas, instituciones y proyectos que compran con criterio.
+              El paso a ALTTEZ no es solo un cambio de nombre. Es una definicion de posicionamiento para hablarle con mas precision a clubes, ligas e instituciones que compran con criterio y esperan estructura.
             </p>
           </motion.div>
 
@@ -384,12 +384,12 @@ export default function QuienesSomos() {
                 fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
               }}
             >
-              Si tu proyecto quiere verse serio, tambien tiene que operar serio.
+              Si el proyecto aspira a jugar en otra liga, su operacion tambien tiene que dar esa señal.
             </h3>
           </div>
           <div style={{ display: "grid", gap: 16, alignContent: "center" }}>
             <p style={{ fontSize: 16, lineHeight: 1.85, color: B.textMuted, margin: 0 }}>
-              Podemos ayudarte a ordenar la experiencia de tus equipos, transformar la percepcion del cliente y construir una plataforma que comunique valor real desde la primera pantalla.
+              Podemos ayudarte a ordenar la experiencia del club, fortalecer la percepcion institucional del proyecto y construir una plataforma que respalde con hechos la ambicion que comunicas.
             </p>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <button
