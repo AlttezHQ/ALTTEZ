@@ -17,6 +17,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
     "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dompurify": "^3.4.1",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
@@ -25,6 +26,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",
+    "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -44,6 +46,7 @@
     "globals": "^17.4.0",
     "jsdom": "^29.0.1",
     "postcss": "^8.5.8",
+    "shadcn": "^4.4.0",
     "tailwindcss": "^4.2.2",
     "vite": "^8.0.0",
     "vite-plugin-pwa": "^1.2.0",
