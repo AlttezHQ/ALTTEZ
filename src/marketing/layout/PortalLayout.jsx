@@ -369,9 +369,6 @@ function MobileDrawer({ open, onClose, navigate }) {
                 <BrandMark />
                 <div>
                   <div style={{ color: B.text, fontSize: 15, fontWeight: 800, letterSpacing: "1.8px" }}>ALTTEZ</div>
-                  <div style={{ color: B.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
-                    Rise Above
-                  </div>
                 </div>
               </div>
             </div>
@@ -674,21 +671,6 @@ export default function PortalLayout() {
             >
               ALTTEZ
             </span>
-            {!isMobile && (
-              <span
-                style={{
-                  color: B.textMuted,
-                  fontSize: 8,
-                  fontWeight: 600,
-                  letterSpacing: "2.8px",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                  marginTop: 2,
-                }}
-              >
-                Rise Above
-              </span>
-            )}
           </div>
         </NavLink>
 
