@@ -678,8 +678,10 @@ export default function PortalLayout() {
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <InstallAppBanner compact />
-            <button
+            <motion.button
               onClick={() => navigate("/crm")}
+              whileHover={{ color: B.text, x: 1 }}
+              whileTap={{ scale: 0.97 }}
               style={{
                 background: "none",
                 border: "none",
@@ -692,7 +694,7 @@ export default function PortalLayout() {
               }}
             >
               Iniciar sesión
-            </button>
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.03, boxShadow: `0 12px 28px ${B.primaryGlow}` }}
               whileTap={{ scale: 0.98 }}
