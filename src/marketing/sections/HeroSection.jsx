@@ -49,12 +49,12 @@ export default function HeroSection() {
         line-height: 0.95;
         letter-spacing: -0.06em;
         margin: 0 0 24px;
-        color: #171a1c;
+        color: #FFFFFF;
       }
       .hz-desc {
         font-size: clamp(17px, 1.6vw, 22px);
         line-height: 1.55;
-        color: #5f6368;
+        color: rgba(255,255,255,0.75);
         max-width: 450px;
         margin: 0;
       }
@@ -96,11 +96,11 @@ export default function HeroSection() {
         gap: 8px;
         padding: 14px 32px;
         border-radius: 12px;
-        border: 1.5px solid rgba(0,0,0,0.14);
-        background: rgba(255,255,255,0.80);
+        border: 1.5px solid rgba(255,255,255,0.28);
+        background: rgba(255,255,255,0.10);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        color: #171a1c;
+        color: #FFFFFF;
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
@@ -109,9 +109,9 @@ export default function HeroSection() {
         text-transform: uppercase;
       }
       .hz-btn-secondary:hover {
-        border-color: rgba(201,151,58,0.45);
-        background: white;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        border-color: rgba(201,151,58,0.65);
+        background: rgba(255,255,255,0.16);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.20);
       }
       .hz-trust {
         display: flex;
@@ -120,7 +120,7 @@ export default function HeroSection() {
         flex-wrap: wrap;
         margin-top: 32px;
         padding-top: 28px;
-        border-top: 1px solid rgba(0,0,0,0.08);
+        border-top: 1px solid rgba(255,255,255,0.15);
       }
       .hz-trust-item {
         display: flex;
@@ -128,7 +128,7 @@ export default function HeroSection() {
         gap: 8px;
         font-size: 13px;
         font-weight: 600;
-        color: #3d3d3d;
+        color: rgba(255,255,255,0.80);
       }
       .hz-rise {
         display: flex;
@@ -245,30 +245,22 @@ export default function HeroSection() {
       className="hz-section"
       style={{
         position: "relative",
-        background: B.bg,
+        backgroundImage: "url('/brand/hero-stadium-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center center",
         padding: "72px 56px 100px",
         overflow: "hidden",
         fontFamily: F.body,
       }}
     >
-      {/* Stadium / pitch background — matches mockup bottom-right faint image */}
-      {/* Replace /brand/hero-stadium-bg.png with real asset when available */}
+      {/* Dark overlay for text readability */}
       <div
         aria-hidden="true"
         style={{
           position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          height: "68%",
-          backgroundImage: "url('/brand/hero-stadium-bg.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center 55%",
-          opacity: 0.55,
+          inset: 0,
+          background: "linear-gradient(135deg, rgba(10,10,10,0.78) 0%, rgba(15,15,15,0.62) 100%)",
           pointerEvents: "none",
-          maskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.85) 100%)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.85) 100%)",
         }}
       />
       {/* Warm accent glow — top right */}
@@ -279,7 +271,7 @@ export default function HeroSection() {
         width: 500,
         height: 500,
         borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(201,151,58,0.06) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(201,151,58,0.14) 0%, transparent 70%)",
         pointerEvents: "none",
       }} />
 
@@ -300,7 +292,7 @@ export default function HeroSection() {
                 fontWeight: 700,
                 textTransform: "uppercase",
                 letterSpacing: "0.42em",
-                color: B.textMuted,
+                color: "rgba(255,255,255,0.60)",
               }}>
                 Software deportivo todo en uno
               </span>
