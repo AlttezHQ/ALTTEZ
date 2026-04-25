@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";
 
 const fadeUp = {
   initial: { opacity: 0, y: 28 },
@@ -22,6 +22,13 @@ const STORY_PILLARS = [
     title: "Presencia institucional",
     body: "ALTTEZ nace para organizaciones que entienden que la percepcion del proyecto tambien se construye desde su operacion.",
   },
+];
+
+const PROMISE_CARDS = [
+  { value: "360°", label: "Visión integral del club y su operación" },
+  { value: "24/7", label: "Visibilidad continua para decisiones y seguimiento" },
+  { value: "Operación clara", label: "Estructura que alinea personas, procesos y objetivos" },
+  { value: "Criterio", label: "Decisiones con contexto, prioridad y foco en lo que realmente importa" },
 ];
 
 const PRINCIPLES = [
@@ -112,7 +119,7 @@ export default function QuienesSomos() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 18% 20%, rgba(47,107,255,0.2), transparent 24%), radial-gradient(circle at 82% 78%, rgba(147,180,255,0.1), transparent 22%)",
+            `radial-gradient(circle at 18% 20%, ${B.primaryGlow}, transparent 24%), radial-gradient(circle at 82% 78%, ${B.primarySoft}, transparent 22%)`,
           pointerEvents: "none",
         }}
       />
@@ -149,7 +156,7 @@ export default function QuienesSomos() {
                 lineHeight: 0.96,
                 fontWeight: 800,
                 letterSpacing: "-0.06em",
-                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                fontFamily: F.display,
                 maxWidth: 760,
               }}
             >
@@ -163,7 +170,7 @@ export default function QuienesSomos() {
                 color: B.textMuted,
               }}
             >
-              ALTTEZ no nace para decorar dashboards. Nace para darle estructura al dia a dia del club, elevar la forma en que se coordina el trabajo y proyectar una imagen institucional acorde con la ambicion del proyecto.
+              ALTTEZ nace para ordenar la operación del club y elevar su presencia institucional. Un sistema que combina estructura, criterio y tecnología para que cada decisión tenga impacto dentro y fuera de la cancha.
             </p>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 28 }}>
@@ -220,7 +227,7 @@ export default function QuienesSomos() {
                 position: "absolute",
                 inset: 0,
                 background:
-                  "linear-gradient(135deg, rgba(47,107,255,0.18) 0%, transparent 45%), radial-gradient(circle at 88% 18%, rgba(147,180,255,0.18), transparent 22%)",
+                  `linear-gradient(135deg, ${B.primarySoft} 0%, transparent 45%), radial-gradient(circle at 88% 18%, ${B.primarySoft}, transparent 22%)`,
                 pointerEvents: "none",
               }}
             />
@@ -237,7 +244,7 @@ export default function QuienesSomos() {
                     width: 58,
                     height: 58,
                     borderRadius: 18,
-                    background: "rgba(47,107,255,0.14)",
+                    background: B.primarySoft,
                     border: `1px solid ${B.borderStrong}`,
                     display: "grid",
                     placeItems: "center",
@@ -277,6 +284,30 @@ export default function QuienesSomos() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      <section style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", padding: "0 32px 32px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+          {PROMISE_CARDS.map((card, index) => (
+            <motion.div
+              key={card.value}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.5, delay: index * 0.07 }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+                border: `1px solid ${B.border}`,
+                boxShadow: "0 18px 50px rgba(0,0,0,0.24)",
+              }}
+            >
+              <div style={{ fontSize: 30, fontWeight: 800, color: B.text, lineHeight: 1.1, marginBottom: 10 }}>{card.value}</div>
+              <div style={{ fontSize: 13, color: B.textHint, lineHeight: 1.6 }}>{card.label}</div>
+            </motion.div>
+          ))}
         </div>
       </section>
 
@@ -326,7 +357,7 @@ export default function QuienesSomos() {
                 fontSize: "clamp(28px, 5vw, 48px)",
                 lineHeight: 1,
                 letterSpacing: "-0.04em",
-                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                fontFamily: F.display,
               }}
             >
               La marca tiene que sostener la promesa del producto.
@@ -381,7 +412,7 @@ export default function QuienesSomos() {
                 lineHeight: 0.98,
                 fontWeight: 800,
                 letterSpacing: "-0.05em",
-                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                fontFamily: F.display,
               }}
             >
               Si el proyecto aspira a jugar en otra liga, su operacion tambien tiene que dar esa señal.

@@ -54,3 +54,5 @@ dev-dist/
 
 # Temp exploration / extracted references
 .tmp/
+# Added by code-review-graph
+.code-review-graph/

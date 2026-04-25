@@ -107,4 +107,15 @@ export const DEMO_JOURNAL = [
     is_published: true,
     published_at: "2026-03-28",
   },
+  {
+    id: "jrn-005",
+    title: "Calendario inteligente y automatizaciones",
+    slug: "calendario-inteligente-automatizaciones",
+    excerpt: "Nuevas automatizaciones para generar microciclos personalizados, notificaciones personalizadas y reportes semanales programados para el cuerpo tecnico.",
+    content: "",
+    category: "update",
+    image_url: null,
+    is_published: true,
+    published_at: "2026-04-12",
+  },
 ];

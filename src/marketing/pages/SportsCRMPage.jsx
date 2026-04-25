@@ -1,24 +1,28 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";
 
 const MODULES = [
   {
     title: "Plantilla y estructura operativa",
     body: "Informacion del deportista, disponibilidad y seguimiento en una vista que ordena el trabajo diario del club.",
+    bullets: ["Perfiles y roles del plantel", "Estructura por categoría y niveles", "Disponibilidad y estado de cada jugador"],
   },
   {
     title: "Entrenamiento y control de carga",
     body: "Sesiones, seguimiento fisico y contexto deportivo en una sola capa de trabajo para el cuerpo tecnico.",
+    bullets: ["Planificación de entrenamientos", "Control de carga y series", "Evaluaciones y test físicos"],
   },
   {
-    title: "Calendario y coordinacion",
+    title: "Calendario y coordinación",
     body: "Partidos, sesiones, agenda y confirmaciones centralizadas para reducir friccion operativa.",
+    bullets: ["Calendario unificado del club", "Confirmaciones y comunicaciones", "Logística de viaje y eventos"],
   },
   {
-    title: "Administracion y visibilidad financiera",
+    title: "Administración y visibilidad financiera",
     body: "Mensualidades, movimientos y trazabilidad del mes en un lenguaje claro para la direccion del club.",
+    bullets: ["Estado financiero en tiempo real", "Cobranzas y cuotas", "Reportes y exportación de datos"],
   },
 ];
 
@@ -26,6 +30,13 @@ const BENEFITS = [
   "Menos dispersion operativa y menos retrabajo",
   "Mas claridad para cuerpo tecnico, direccion y administracion",
   "Una experiencia consistente con proyectos deportivos serios",
+];
+
+const TRUST_BADGES = [
+  { icon: "⊙", label: "Centralizado", body: "Toda la información del club en un solo lugar accesible para todos los equipos" },
+  { icon: "⚡", label: "Tiempo real", body: "Actualizaciones continuas del contexto para decisiones más rápidas y acertadas" },
+  { icon: "◎", label: "Más claro", body: "Interfaces simplificadas y visuales que muestran lo que realmente importa" },
+  { icon: "✓", label: "Más seguro", body: "Datos protegidos con altos estándares de seguridad y privacidad" },
 ];
 
 const SNAPSHOTS = [
@@ -58,11 +69,11 @@ function ProductPanel() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {[0, 1, 2].map((item) => (
-            <span key={item} style={{ width: 8, height: 8, borderRadius: "50%", background: item === 0 ? "#93B4FF" : "rgba(255,255,255,0.18)" }} />
+            <span key={item} style={{ width: 8, height: 8, borderRadius: "50%", background: item === 0 ? B.primary : "rgba(255,255,255,0.18)" }} />
           ))}
           <span style={{ color: B.textHint, fontSize: 10, textTransform: "uppercase", letterSpacing: "1.5px" }}>ALTTEZ CRM</span>
         </div>
-        <span style={{ color: "#C7D6FF", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.3px" }}>Executive View</span>
+        <span style={{ color: B.text, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.3px" }}>Executive View</span>
       </div>
 
       <div style={{ padding: 20, display: "grid", gap: 18 }}>
@@ -96,7 +107,7 @@ function ProductPanel() {
                     padding: "10px 12px",
                     borderRadius: 14,
                     background: index === 0 ? B.primarySoft : "rgba(255,255,255,0.02)",
-                    border: `1px solid ${index === 0 ? "rgba(96,165,250,0.18)" : B.border}`,
+                    border: `1px solid ${B.border}`,
                   }}
                 >
                   <div
@@ -104,8 +115,8 @@ function ProductPanel() {
                       width: 34,
                       height: 34,
                       borderRadius: 10,
-                      background: index === 0 ? "rgba(47,107,255,0.18)" : "rgba(255,255,255,0.03)",
-                      color: "#DCE7FF",
+                      background: index === 0 ? B.primarySoft : "rgba(255,255,255,0.03)",
+                      color: B.text,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -149,10 +160,10 @@ function ProductPanel() {
                 <div
                   style={{
                     marginTop: 7,
-                    color: item.value === "6" ? "#C7D6FF" : B.text,
+                    color: item.value === "6" ? B.text : B.text,
                     fontSize: 23,
                     fontWeight: 800,
-                    fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                    fontFamily: F.display,
                   }}
                 >
                   {item.value}
@@ -221,7 +232,7 @@ export default function SportsCRMPage() {
                 borderRadius: 999,
                 background: B.primarySoft,
                 border: `1px solid ${B.border}`,
-                color: "#C7D6FF",
+                color: B.text,
                 fontSize: 10,
                 fontWeight: 700,
                 textTransform: "uppercase",
@@ -229,7 +240,7 @@ export default function SportsCRMPage() {
                 marginBottom: 22,
               }}
             >
-              Plataforma principal
+              Soluciones ALTTEZ
             </div>
 
             <h1
@@ -240,7 +251,7 @@ export default function SportsCRMPage() {
                 lineHeight: 0.98,
                 letterSpacing: "-0.045em",
                 fontWeight: 800,
-                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                fontFamily: F.display,
                 textTransform: "uppercase",
               }}
             >
@@ -252,7 +263,7 @@ export default function SportsCRMPage() {
             </h1>
 
             <p style={{ margin: "0 0 28px", maxWidth: 560, color: B.textMuted, fontSize: 16, lineHeight: 1.8 }}>
-              ALTTEZ CRM reune plantilla, entrenamiento, calendario, control administrativo y reportes en una plataforma pensada para clubes que necesitan orden operativo, visibilidad ejecutiva y una experiencia mas solida hacia adentro y hacia afuera.
+              ALTTEZ centraliza plantilla, entrenamientos, calendario, control administrativo y reportes en un solo lugar para que tu club opere con orden, visibilidad y máximo rendimiento.
             </p>
 
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24 }}>
@@ -263,7 +274,7 @@ export default function SportsCRMPage() {
                 style={{
                   padding: "15px 22px",
                   borderRadius: 12,
-                  border: "1px solid rgba(96,165,250,0.28)",
+                  border: `1px solid ${B.borderStrong}`,
                   background: G.button,
                   color: "white",
                   fontSize: 12,
@@ -320,7 +331,7 @@ export default function SportsCRMPage() {
                     border: `1px solid ${B.border}`,
                   }}
                 >
-                  <div style={{ color: "#C7D6FF", fontSize: 24, fontWeight: 800, lineHeight: 1, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+                  <div style={{ color: B.text, fontSize: 24, fontWeight: 800, lineHeight: 1, fontFamily: F.display }}>
                     {item.value}
                   </div>
                   <div style={{ marginTop: 6, color: B.textHint, fontSize: 10, lineHeight: 1.5 }}>{item.label}</div>
@@ -337,8 +348,8 @@ export default function SportsCRMPage() {
 
       <section style={{ padding: "80px 24px", maxWidth: 1180, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 42 }}>
-          <div style={{ color: "#C7D6FF", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.6px", marginBottom: 16 }}>
-            Que resuelve ALTTEZ
+          <div style={{ color: B.text, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.6px", marginBottom: 16 }}>
+            Módulos ALTTEZ
           </div>
           <h2
             style={{
@@ -348,14 +359,14 @@ export default function SportsCRMPage() {
               lineHeight: 1.02,
               letterSpacing: "-0.04em",
               fontWeight: 800,
-              fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+              fontFamily: F.display,
               textTransform: "uppercase",
             }}
           >
-            La operacion deja de estar fragmentada.
+            Módulos pensados para que tu club funcione al máximo.
           </h2>
           <p style={{ maxWidth: 720, margin: "0 auto", color: B.textMuted, fontSize: 15, lineHeight: 1.75 }}>
-            Pensado para organizaciones que necesitan ordenar la ejecucion, mejorar coordinacion y profesionalizar la gestion cotidiana del equipo.
+            Todo lo que tu club necesita para operar con excelencia, en una sola plataforma integrada y pensada para el deporte.
           </p>
         </div>
 
@@ -382,11 +393,11 @@ export default function SportsCRMPage() {
                   height: 42,
                   borderRadius: 14,
                   background: B.primarySoft,
-                  border: "1px solid rgba(96,165,250,0.2)",
+                  border: `1px solid ${B.border}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#DCE7FF",
+                  color: B.text,
                   fontSize: 13,
                   fontWeight: 800,
                   marginBottom: 16,
@@ -394,11 +405,42 @@ export default function SportsCRMPage() {
               >
                 0{index + 1}
               </div>
-              <h3 style={{ margin: "0 0 10px", color: B.text, fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+              <h3 style={{ margin: "0 0 10px", color: B.text, fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", fontFamily: F.display }}>
                 {module.title}
               </h3>
-              <p style={{ margin: 0, color: B.textMuted, fontSize: 13, lineHeight: 1.7 }}>{module.body}</p>
+              <p style={{ margin: "0 0 12px", color: B.textMuted, fontSize: 13, lineHeight: 1.7 }}>{module.body}</p>
+              {module.bullets && (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 6 }}>
+                  {module.bullets.map((b) => (
+                    <li key={b} style={{ display: "flex", alignItems: "center", gap: 8, color: B.textHint, fontSize: 11 }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: B.primary, flexShrink: 0 }} />
+                      {b}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: "0 24px 96px", maxWidth: 1180, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+          {TRUST_BADGES.map((badge) => (
+            <div
+              key={badge.label}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 20,
+                background: G.panel,
+                border: `1px solid ${B.border}`,
+                boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+              }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 10 }}>{badge.icon}</div>
+              <div style={{ color: B.text, fontSize: 15, fontWeight: 800, marginBottom: 6 }}>{badge.label}</div>
+              <div style={{ color: B.textMuted, fontSize: 13, lineHeight: 1.65 }}>{badge.body}</div>
+            </div>
           ))}
         </div>
       </section>

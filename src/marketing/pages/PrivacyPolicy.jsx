@@ -10,17 +10,7 @@
  */
 
 import { PRIVACY_EMAIL } from "../data/contactConfig";
-
-const PALETTE = {
-  bg: "#050a14",
-  surface: "rgba(255,255,255,0.03)",
-  border: "rgba(255,255,255,0.08)",
-  neon: "rgb(200,255,0)",
-  purple: "#8B5CF6",
-  textMuted: "rgba(255,255,255,0.45)",
-  textHint: "rgba(255,255,255,0.25)",
-  danger: "#FF4444",
-};
+import { MARKETING_BRAND as B } from "../theme/brand.js";
 
 const LAST_UPDATED = "2026-04-21";
 const VERSION = "1.0";
@@ -133,13 +123,13 @@ export default function PrivacyPolicy() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: `radial-gradient(ellipse at 50% 10%, rgba(139,92,246,0.06) 0%, ${PALETTE.bg} 60%)`,
-      color: "white",
+      background: B.bg,
+      color: B.text,
     }}>
       {/* Header */}
       <div style={{
-        borderBottom: `1px solid ${PALETTE.border}`,
-        background: "rgba(10,10,20,0.9)",
+        borderBottom: `1px solid ${B.border}`,
+        background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         padding: "20px 24px",
@@ -151,30 +141,30 @@ export default function PrivacyPolicy() {
         zIndex: 10,
       }}>
         <a
-          href="/crm"
+          href="/"
           style={{
             fontSize: 10, textTransform: "uppercase", letterSpacing: "1.5px",
-            color: PALETTE.textMuted, textDecoration: "none",
+            color: B.textMuted, textDecoration: "none",
             transition: "color 0.2s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.color = "white"; }}
-          onMouseLeave={e => { e.currentTarget.style.color = PALETTE.textMuted; }}
+          onMouseEnter={e => { e.currentTarget.style.color = B.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = B.textMuted; }}
         >
           ← Volver
         </a>
-        <div style={{ width: 1, height: 20, background: PALETTE.border }} />
+        <div style={{ width: 1, height: 20, background: B.border }} />
         <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
           ALTTEZ
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
             fontSize: 9, textTransform: "uppercase", letterSpacing: "2px",
-            padding: "3px 8px", background: `${PALETTE.purple}22`,
-            border: `1px solid ${PALETTE.purple}44`, color: PALETTE.purple,
+            padding: "3px 8px", background: B.primarySoft,
+            border: `1px solid ${B.primaryGlow}`, color: B.primary,
           }}>
             v{VERSION}
           </div>
-          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.textHint }}>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: B.textHint }}>
             {LAST_UPDATED}
           </div>
         </div>
@@ -191,19 +181,20 @@ export default function PrivacyPolicy() {
         <div style={{ marginBottom: 48, textAlign: "center" }}>
           <div style={{
             fontSize: 9, textTransform: "uppercase", letterSpacing: "4px",
-            color: PALETTE.purple, marginBottom: 12, fontWeight: 700,
+            color: B.primary, marginBottom: 12, fontWeight: 700,
           }}>
             Ley 1581 de 2012 · Colombia
           </div>
           <h1 style={{
             fontSize: 36, fontWeight: 900, letterSpacing: "-1px",
             textTransform: "uppercase", marginBottom: 16, lineHeight: 1,
+            color: B.text,
           }}>
             Politica de Tratamiento<br />
-            <span style={{ color: PALETTE.purple }}>de Datos Personales</span>
+            <span style={{ color: B.primary }}>de Datos Personales</span>
           </h1>
           <p style={{
-            fontSize: 13, color: PALETTE.textMuted, lineHeight: 1.7,
+            fontSize: 13, color: B.textMuted, lineHeight: 1.7,
             maxWidth: 560, margin: "0 auto",
           }}>
             {RESPONSIBLE_ENTITY} se compromete con la proteccion de sus datos personales
@@ -223,9 +214,9 @@ export default function PrivacyPolicy() {
             ].map((tag, i) => (
               <div key={i} style={{
                 fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px",
-                color: PALETTE.textMuted, display: "flex", alignItems: "center", gap: 6,
+                color: B.textMuted, display: "flex", alignItems: "center", gap: 6,
               }}>
-                <span style={{ color: PALETTE.purple, fontSize: 12 }}>{tag.icon}</span>
+                <span style={{ color: B.primary, fontSize: 12 }}>{tag.icon}</span>
                 {tag.label}
               </div>
             ))}
@@ -234,7 +225,7 @@ export default function PrivacyPolicy() {
 
         {/* Separador */}
         <div style={{
-          height: 1, background: `linear-gradient(to right, transparent, ${PALETTE.purple}66, transparent)`,
+          height: 1, background: `linear-gradient(to right, transparent, ${B.primaryGlow}, transparent)`,
           marginBottom: 48,
         }} />
 
@@ -245,20 +236,19 @@ export default function PrivacyPolicy() {
               key={section.id}
               id={section.id}
               style={{
-                background: PALETTE.surface,
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                border: `1px solid ${PALETTE.border}`,
-                borderLeft: `3px solid ${PALETTE.purple}`,
+                background: B.cardBg,
+                border: `1px solid ${B.border}`,
+                borderLeft: `3px solid ${B.primary}`,
                 borderRadius: 8,
                 padding: 28,
                 animation: `prv_fade ${0.3 + idx * 0.07}s ease-out`,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
               }}
             >
               <h2 style={{
                 fontSize: 13, fontWeight: 700, textTransform: "uppercase",
-                letterSpacing: "1px", color: "white", marginBottom: 16,
-                paddingBottom: 12, borderBottom: `1px solid ${PALETTE.border}`,
+                letterSpacing: "1px", color: B.text, marginBottom: 16,
+                paddingBottom: 12, borderBottom: `1px solid ${B.border}`,
               }}>
                 {section.title}
               </h2>
@@ -266,11 +256,11 @@ export default function PrivacyPolicy() {
                 <p
                   key={pIdx}
                   style={{
-                    fontSize: 13, color: pIdx === 0 ? "rgba(255,255,255,0.75)" : PALETTE.textMuted,
+                    fontSize: 13, color: pIdx === 0 ? B.text : B.textMuted,
                     lineHeight: 1.8, marginBottom: pIdx < section.content.length - 1 ? 12 : 0,
                     paddingLeft: pIdx > 0 && section.content.length > 2 ? 12 : 0,
                     borderLeft: pIdx > 0 && section.content.length > 2
-                      ? `1px solid ${PALETTE.border}` : "none",
+                      ? `1px solid ${B.border}` : "none",
                   }}
                 >
                   {para}
@@ -284,30 +274,30 @@ export default function PrivacyPolicy() {
         <div style={{
           marginTop: 48,
           padding: 28,
-          background: `linear-gradient(135deg, rgba(139,92,246,0.08), rgba(10,10,20,0.8))`,
-          border: `1px solid ${PALETTE.purple}44`,
+          background: B.primarySoft,
+          border: `1px solid ${B.primaryGlow}`,
           borderRadius: 8,
           textAlign: "center",
         }}>
           <div style={{
             fontSize: 9, textTransform: "uppercase", letterSpacing: "3px",
-            color: PALETTE.purple, marginBottom: 12, fontWeight: 700,
+            color: B.primary, marginBottom: 12, fontWeight: 700,
           }}>
             Contacto de Privacidad
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginBottom: 8 }}>
+          <div style={{ fontSize: 13, color: B.text, marginBottom: 8 }}>
             {RESPONSIBLE_ENTITY}
           </div>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
             style={{
-              fontSize: 13, color: PALETTE.purple, textDecoration: "none",
+              fontSize: 13, color: B.primary, textDecoration: "none",
               fontWeight: 700, letterSpacing: "0.5px",
             }}
           >
             {CONTACT_EMAIL}
           </a>
-          <div style={{ marginTop: 16, fontSize: 10, color: PALETTE.textHint }}>
+          <div style={{ marginTop: 16, fontSize: 10, color: B.textHint }}>
             Tiempo de respuesta: 15 dias habiles para consultas · 15 dias habiles para reclamos
           </div>
         </div>
@@ -315,7 +305,7 @@ export default function PrivacyPolicy() {
         {/* Footer legal minimo */}
         <div style={{
           marginTop: 32, textAlign: "center",
-          fontSize: 9, color: PALETTE.textHint,
+          fontSize: 9, color: B.textHint,
           textTransform: "uppercase", letterSpacing: "2px",
         }}>
           ALTTEZ SAS · Politica version {VERSION} · Vigente desde {LAST_UPDATED}

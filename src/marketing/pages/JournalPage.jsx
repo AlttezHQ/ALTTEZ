@@ -1,13 +1,21 @@
 import { motion, useInView } from "framer-motion";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { DEMO_JOURNAL } from "../data/portalData";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";
+
+const CATEGORY_TABS = [
+  { key: "all", label: "Todos" },
+  { key: "feature", label: "Producto" },
+  { key: "news", label: "Clubes" },
+  { key: "announcement", label: "Vertical" },
+  { key: "update", label: "Updates" },
+];
 
 const CATEGORY_COLORS = {
   announcement: B.primary,
   feature: B.warning,
-  news: "#7BA4FF",
-  update: "#C6D6FF",
+  news: B.primary,
+  update: B.textMuted,
 };
 
 const CATEGORY_LABELS = {
@@ -71,7 +79,7 @@ function FeaturedArticle({ entry }) {
             lineHeight: 1,
             fontWeight: 800,
             letterSpacing: "-0.05em",
-            fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+            fontFamily: F.display,
             maxWidth: 760,
           }}
         >
@@ -124,7 +132,7 @@ function ArticleCard({ entry, index }) {
         <span style={{ color: B.textHint, fontSize: 12 }}>{entry.published_at}</span>
       </div>
 
-      <h3 style={{ margin: 0, fontSize: 28, lineHeight: 1.02, fontWeight: 700, letterSpacing: "-0.04em", fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+      <h3 style={{ margin: 0, fontSize: 28, lineHeight: 1.02, fontWeight: 700, letterSpacing: "-0.04em", fontFamily: F.display }}>
         {entry.title}
       </h3>
       <p style={{ margin: 0, color: B.textMuted, lineHeight: 1.8, fontSize: 15 }}>{entry.excerpt}</p>
@@ -153,8 +161,18 @@ export default function JournalPage() {
     return () => style.remove();
   }, []);
 
-  const featured = DEMO_JOURNAL[0];
-  const rest = DEMO_JOURNAL.slice(1);
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
+
+  const filtered = DEMO_JOURNAL.filter((entry) => {
+    const matchTab = activeTab === "all" || entry.category === activeTab;
+    const q = search.toLowerCase();
+    const matchSearch = !q || entry.title.toLowerCase().includes(q) || entry.excerpt.toLowerCase().includes(q);
+    return matchTab && matchSearch;
+  });
+
+  const featured = filtered[0] || null;
+  const rest = filtered.slice(1);
 
   return (
     <div className="journal-page" style={{ minHeight: "100vh", background: G.hero, color: B.text }}>
@@ -183,27 +201,78 @@ export default function JournalPage() {
               lineHeight: 0.96,
               fontWeight: 800,
               letterSpacing: "-0.06em",
-              fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+              fontFamily: F.display,
             }}
           >
-            Ideas, decisiones y senales de hacia donde esta creciendo el producto.
+            Ideas, decisiones y señales sobre hacia dónde está creciendo el producto.
           </h1>
           <p style={{ maxWidth: 700, color: B.textMuted, fontSize: 18, lineHeight: 1.82 }}>
-            Este espacio traduce producto y vision en mensajes mas editorializados. Sirve para reforzar autoridad, explicar cambios y darle al cliente razones para confiar en la evolucion del ecosistema.
+            Este espacio traduce producto y visión en mensajes editoriales. Sirve para reforzar autoridad, explicar cambios y dar al cliente razones para confiar en la evolución del ecosistema.
           </p>
         </motion.div>
       </section>
 
-      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 26px" }}>
-        <FeaturedArticle entry={featured} />
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 24px" }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar en el journal..."
+            style={{
+              flex: "1 1 220px",
+              padding: "13px 18px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${B.border}`,
+              color: B.text,
+              fontSize: 14,
+              outline: "none",
+              minWidth: 200,
+            }}
+          />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {CATEGORY_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 999,
+                  border: `1px solid ${activeTab === tab.key ? B.primary : B.border}`,
+                  background: activeTab === tab.key ? B.primarySoft : "rgba(255,255,255,0.02)",
+                  color: activeTab === tab.key ? B.primary : B.textMuted,
+                  fontWeight: 700,
+                  fontSize: 12,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  cursor: "pointer",
+                  transition: "all 160ms ease",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
+      {featured && (
+        <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 26px" }}>
+          <FeaturedArticle entry={featured} />
+        </section>
+      )}
+
       <section style={{ maxWidth: 1240, margin: "0 auto", padding: "8px 32px 96px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 18 }}>
-          {rest.map((entry, index) => (
-            <ArticleCard key={entry.slug} entry={entry} index={index} />
-          ))}
-        </div>
+        {rest.length > 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 18 }}>
+            {rest.map((entry, index) => (
+              <ArticleCard key={entry.slug} entry={entry} index={index} />
+            ))}
+          </div>
+        ) : !featured && (
+          <p style={{ color: B.textMuted, textAlign: "center", fontSize: 15 }}>No hay artículos que coincidan con la búsqueda.</p>
+        )}
       </section>
     </div>
   );

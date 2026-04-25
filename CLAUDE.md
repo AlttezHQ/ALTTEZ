@@ -1,4 +1,4 @@
-# CLAUDE.md
+  # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -14,7 +14,7 @@ npm run test:watch   # Vitest watch mode
 ```
 
 Run a single test file: `npx vitest run src/tests/shared/rpeEngine.test.js`
-
+ejecuta 
 Local Supabase (if configured): see `supabase/config.toml` — API on port 54321, DB on 54322.
 
 ## Architecture

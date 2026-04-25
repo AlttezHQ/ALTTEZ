@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+﻿import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useResponsive } from "../../shared/hooks/useResponsive";
@@ -6,21 +6,7 @@ import OfflineBanner from "../../shared/ui/OfflineBanner";
 import UpdateToast from "../../shared/ui/UpdateToast";
 import InstallAppBanner from "../../shared/ui/InstallAppBanner";
 import { buildWhatsAppUrl } from "../data/contactConfig";
-
-const BRAND = {
-  bg: "#05070B",
-  bgSoft: "#0B1220",
-  surface: "rgba(7, 11, 18, 0.92)",
-  surfaceSoft: "rgba(10, 16, 28, 0.8)",
-  primary: "#2F6BFF",
-  primarySoft: "rgba(47, 107, 255, 0.14)",
-  primaryGlow: "rgba(47, 107, 255, 0.3)",
-  text: "#F5F7FA",
-  textMuted: "rgba(226, 232, 240, 0.72)",
-  textHint: "rgba(148, 163, 184, 0.68)",
-  border: "rgba(148, 163, 184, 0.18)",
-  borderStrong: "rgba(148, 163, 184, 0.3)",
-};
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand.js";
 
 const SERVICES = [
   {
@@ -54,14 +40,14 @@ function LoadingFallback() {
           style={{
             width: 24,
             height: 24,
-            border: `2px solid ${BRAND.primary}`,
+            border: `2px solid ${B.primary}`,
             borderTop: "2px solid transparent",
             borderRadius: "50%",
             animation: "spin 0.8s linear infinite",
             margin: "0 auto 12px",
           }}
         />
-        <div style={{ fontSize: 10, color: BRAND.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
+        <div style={{ fontSize: 10, color: B.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
           Inicializando
         </div>
       </div>
@@ -71,31 +57,11 @@ function LoadingFallback() {
 
 function BrandMark() {
   return (
-    <div
-      style={{
-        width: 34,
-        height: 34,
-        borderRadius: 10,
-        background: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 54%, #60A5FA 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: `0 0 20px ${BRAND.primaryGlow}`,
-        flexShrink: 0,
-        overflow: "hidden",
-      }}
-    >
-      <img
-        src="/branding/alttez-symbol-transparent.png"
-        alt="ALTTEZ"
-        style={{
-          width: 18,
-          height: 18,
-          objectFit: "contain",
-          filter: "invert(1) brightness(1.45) contrast(1.1)",
-        }}
-      />
-    </div>
+    <img
+      src="/branding/alttez-symbol-transparent.png"
+      alt="ALTTEZ"
+      style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }}
+    />
   );
 }
 
@@ -107,7 +73,7 @@ function NavItem({ to, label, exact, onClick }) {
       onClick={onClick}
       style={({ isActive }) => ({
         position: "relative",
-        color: isActive ? BRAND.text : BRAND.textMuted,
+        color: isActive ? B.text : B.textMuted,
         textDecoration: "none",
         fontSize: 12,
         fontWeight: isActive ? 700 : 500,
@@ -128,7 +94,7 @@ function NavItem({ to, label, exact, onClick }) {
                 bottom: -1,
                 height: 2,
                 borderRadius: 999,
-                background: `linear-gradient(90deg, ${BRAND.primary}, #93B4FF)`,
+                background: `linear-gradient(90deg, ${B.primary}, ${B.primaryHover})`,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             />
@@ -168,13 +134,13 @@ function ServicesDropdown() {
           border: "none",
           cursor: "pointer",
           fontFamily: "inherit",
-          color: open || active ? BRAND.text : BRAND.textMuted,
+          color: open || active ? B.text : B.textMuted,
           fontSize: 12,
           fontWeight: active ? 700 : 500,
           letterSpacing: "0.4px",
         }}
       >
-        Soluciones
+        Producto
         <motion.svg
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -195,7 +161,7 @@ function ServicesDropdown() {
               bottom: -1,
               height: 2,
               borderRadius: 999,
-              background: `linear-gradient(90deg, ${BRAND.primary}, #93B4FF)`,
+              background: `linear-gradient(90deg, ${B.primary}, ${B.primaryHover})`,
             }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           />
@@ -217,15 +183,15 @@ function ServicesDropdown() {
               width: 410,
               padding: 10,
               borderRadius: 18,
-              background: "rgba(7, 11, 18, 0.97)",
-              border: `1px solid ${BRAND.border}`,
+              background: "rgba(255,255,255,0.98)",
+              border: `1px solid ${B.border}`,
               boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               zIndex: 120,
             }}
           >
-            <div style={{ padding: "12px 14px 10px", color: BRAND.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "2px" }}>
+            <div style={{ padding: "12px 14px 10px", color: B.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "2px" }}>
               Ecosistema ALTTEZ
             </div>
             {SERVICES.map((service) => (
@@ -242,7 +208,7 @@ function ServicesDropdown() {
                   gap: 14,
                   padding: "14px",
                   borderRadius: 14,
-                  border: `1px solid ${BRAND.border}`,
+                  border: `1px solid ${B.border}`,
                   background: "rgba(255,255,255,0.02)",
                   textAlign: "left",
                   cursor: "pointer",
@@ -254,12 +220,12 @@ function ServicesDropdown() {
                     width: 44,
                     height: 44,
                     borderRadius: 14,
-                    background: BRAND.primarySoft,
-                    border: `1px solid rgba(96,165,250,0.22)`,
+                    background: B.primarySoft,
+                    border: `1px solid ${B.border}`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#C7D6FF",
+                    color: B.text,
                     fontSize: 12,
                     fontWeight: 800,
                   }}
@@ -268,7 +234,7 @@ function ServicesDropdown() {
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ color: BRAND.text, fontSize: 13, fontWeight: 700 }}>{service.label}</span>
+                    <span style={{ color: B.text, fontSize: 13, fontWeight: 700 }}>{service.label}</span>
                     <span
                       style={{
                         padding: "2px 7px",
@@ -277,15 +243,15 @@ function ServicesDropdown() {
                         fontWeight: 700,
                         textTransform: "uppercase",
                         letterSpacing: "1.3px",
-                        color: "#C7D6FF",
-                        background: BRAND.primarySoft,
-                        border: "1px solid rgba(96,165,250,0.18)",
+                        color: B.text,
+                        background: B.primarySoft,
+                        border: `1px solid ${B.border}`,
                       }}
                     >
                       {service.tag}
                     </span>
                   </div>
-                  <div style={{ color: BRAND.textMuted, fontSize: 11, lineHeight: 1.55 }}>{service.description}</div>
+                  <div style={{ color: B.textMuted, fontSize: 11, lineHeight: 1.55 }}>{service.description}</div>
                 </div>
               </button>
             ))}
@@ -301,9 +267,9 @@ function ServicesDropdown() {
                 marginTop: 4,
                 padding: "11px 14px",
                 borderRadius: 12,
-                border: "1px solid rgba(96,165,250,0.22)",
-                background: BRAND.primarySoft,
-                color: "#C7D6FF",
+                border: `1px solid ${B.border}`,
+                background: B.primarySoft,
+                color: B.text,
                 fontSize: 11,
                 fontWeight: 700,
                 textTransform: "uppercase",
@@ -328,7 +294,7 @@ function HamburgerIcon({ open }) {
         y1="6"
         x2="19"
         y2="6"
-        stroke={BRAND.text}
+        stroke={B.text}
         strokeWidth="1.8"
         strokeLinecap="round"
         animate={open ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
@@ -340,7 +306,7 @@ function HamburgerIcon({ open }) {
         y1="11"
         x2="19"
         y2="11"
-        stroke={BRAND.text}
+        stroke={B.text}
         strokeWidth="1.8"
         strokeLinecap="round"
         animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
@@ -351,7 +317,7 @@ function HamburgerIcon({ open }) {
         y1="16"
         x2="19"
         y2="16"
-        stroke={BRAND.text}
+        stroke={B.text}
         strokeWidth="1.8"
         strokeLinecap="round"
         animate={open ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
@@ -389,8 +355,8 @@ function MobileDrawer({ open, onClose, navigate }) {
               bottom: 0,
               width: "min(360px, 88vw)",
               zIndex: 121,
-              background: "rgba(7, 11, 18, 0.98)",
-              borderRight: `1px solid ${BRAND.border}`,
+              background: "rgba(255,255,255,0.98)",
+              borderRight: `1px solid ${B.border}`,
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               display: "flex",
@@ -402,9 +368,9 @@ function MobileDrawer({ open, onClose, navigate }) {
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <BrandMark />
                 <div>
-                  <div style={{ color: BRAND.text, fontSize: 15, fontWeight: 800, letterSpacing: "1.8px" }}>ALTTEZ</div>
-                  <div style={{ color: BRAND.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
-                    Sports Operating System
+                  <div style={{ color: B.text, fontSize: 15, fontWeight: 800, letterSpacing: "1.8px" }}>ALTTEZ</div>
+                  <div style={{ color: B.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 2 }}>
+                    Rise Above
                   </div>
                 </div>
               </div>
@@ -412,8 +378,9 @@ function MobileDrawer({ open, onClose, navigate }) {
 
             <div style={{ flex: 1, overflowY: "auto" }}>
               {[
-                { to: "/quienes-somos", label: "Quiénes somos" },
-                { to: "/contacto", label: "Contacto" },
+                { to: "/quienes-somos", label: "Clubes" },
+                { to: "/contacto",      label: "Precios" },
+                { to: "/journal",       label: "Recursos" },
               ].map((item) => (
                 <NavLink
                   key={item.to}
@@ -423,10 +390,10 @@ function MobileDrawer({ open, onClose, navigate }) {
                     display: "block",
                     padding: "14px 24px",
                     textDecoration: "none",
-                    color: isActive ? BRAND.text : BRAND.textMuted,
+                    color: isActive ? B.text : B.textMuted,
                     fontSize: 13,
                     fontWeight: isActive ? 700 : 500,
-                    borderTop: `1px solid ${BRAND.border}`,
+                    borderTop: `1px solid ${B.border}`,
                   })}
                 >
                   {item.label}
@@ -440,15 +407,15 @@ function MobileDrawer({ open, onClose, navigate }) {
                   padding: "14px 24px",
                   background: "none",
                   border: "none",
-                  borderTop: `1px solid ${BRAND.border}`,
-                  color: BRAND.textMuted,
+                  borderTop: `1px solid ${B.border}`,
+                  color: B.textMuted,
                   fontSize: 13,
                   fontWeight: 500,
                   textAlign: "left",
                   cursor: "pointer",
                 }}
               >
-                Soluciones
+                Producto
               </button>
 
               <AnimatePresence>
@@ -472,14 +439,14 @@ function MobileDrawer({ open, onClose, navigate }) {
                           padding: "14px 32px",
                           background: "rgba(255,255,255,0.02)",
                           border: "none",
-                          borderTop: `1px solid ${BRAND.border}`,
-                          color: BRAND.text,
+                          borderTop: `1px solid ${B.border}`,
+                          color: B.text,
                           textAlign: "left",
                           cursor: "pointer",
                         }}
                       >
                         <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>{service.label}</div>
-                        <div style={{ fontSize: 10, color: BRAND.textHint, lineHeight: 1.5 }}>{service.description}</div>
+                        <div style={{ fontSize: 10, color: B.textHint, lineHeight: 1.5 }}>{service.description}</div>
                       </button>
                     ))}
                   </motion.div>
@@ -487,7 +454,7 @@ function MobileDrawer({ open, onClose, navigate }) {
               </AnimatePresence>
             </div>
 
-            <div style={{ padding: 24, borderTop: `1px solid ${BRAND.border}` }}>
+            <div style={{ padding: 24, borderTop: `1px solid ${B.border}` }}>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
@@ -498,8 +465,8 @@ function MobileDrawer({ open, onClose, navigate }) {
                   width: "100%",
                   padding: "14px 0",
                   borderRadius: 12,
-                  border: "1px solid rgba(96,165,250,0.3)",
-                  background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                  border: `1px solid ${B.borderStrong}`,
+                  background: G.button,
                   color: "white",
                   fontSize: 12,
                   fontWeight: 700,
@@ -552,8 +519,8 @@ function WhatsAppCTA() {
           width: 54,
           height: 54,
           borderRadius: "50%",
-          background: "linear-gradient(135deg, #0F172A 0%, #1D4ED8 100%)",
-          boxShadow: hovered ? `0 12px 32px ${BRAND.primaryGlow}` : "0 8px 22px rgba(15,23,42,0.38)",
+          background: G.button,
+          boxShadow: hovered ? `0 12px 32px ${B.primaryGlow}` : "0 8px 22px rgba(15,23,42,0.38)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -586,9 +553,9 @@ function WhatsAppCTA() {
                 padding: "7px 12px",
                 borderRadius: 10,
                 whiteSpace: "nowrap",
-                background: "rgba(7,11,18,0.96)",
-                border: `1px solid ${BRAND.border}`,
-                color: BRAND.text,
+                background: "rgba(255,255,255,0.96)",
+                border: `1px solid ${B.border}`,
+                color: B.text,
                 fontSize: 11,
                 fontWeight: 600,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
@@ -613,8 +580,9 @@ export default function PortalLayout() {
 
   const navLinks = useMemo(
     () => [
-      { to: "/quienes-somos", label: "Quiénes somos", exact: false },
-      { to: "/contacto", label: "Contacto", exact: false },
+      { to: "/quienes-somos", label: "Clubes",  exact: false },
+      { to: "/contacto",      label: "Precios", exact: false },
+      { to: "/journal",       label: "Recursos", exact: false },
     ],
     [],
   );
@@ -636,13 +604,24 @@ export default function PortalLayout() {
     };
   }, [drawerOpen]);
 
+  useEffect(() => {
+    const el = document.createElement("style");
+    el.id = "portal-layout-styles";
+    el.textContent = `
+      .portal-footer-link { transition: color 0.18s ease; }
+      .portal-footer-link:hover { color: #C9973A !important; }
+    `;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, []);
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: `linear-gradient(180deg, ${BRAND.bg} 0%, ${BRAND.bgSoft} 46%, #06080d 100%)`,
-        color: BRAND.text,
-        fontFamily: "'Exo 2', Arial, sans-serif",
+        background: B.bg,
+        color: B.text,
+        fontFamily: F.body,
       }}
     >
       <OfflineBanner />
@@ -651,8 +630,8 @@ export default function PortalLayout() {
 
       <motion.nav
         animate={{
-          backgroundColor: scrolled ? "rgba(7,11,18,0.94)" : "rgba(7,11,18,0.72)",
-          borderBottomColor: scrolled ? "rgba(148,163,184,0.18)" : "rgba(148,163,184,0.08)",
+          backgroundColor: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.88)",
+          borderBottomColor: scrolled ? "rgba(0,0,0,0.10)" : "rgba(0,0,0,0.05)",
         }}
         transition={{ duration: 0.3 }}
         style={{
@@ -685,11 +664,11 @@ export default function PortalLayout() {
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span
               style={{
-                color: BRAND.text,
+                color: B.text,
                 fontSize: 15,
                 fontWeight: 800,
                 letterSpacing: "2px",
-                fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+                fontFamily: F.display,
                 lineHeight: 1,
               }}
             >
@@ -698,7 +677,7 @@ export default function PortalLayout() {
             {!isMobile && (
               <span
                 style={{
-                  color: BRAND.textMuted,
+                  color: B.textMuted,
                   fontSize: 8,
                   fontWeight: 600,
                   letterSpacing: "2.8px",
@@ -707,7 +686,7 @@ export default function PortalLayout() {
                   marginTop: 2,
                 }}
               >
-                Sports Operating System
+                Rise Above
               </span>
             )}
           </div>
@@ -715,25 +694,40 @@ export default function PortalLayout() {
 
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1 }}>
+            <ServicesDropdown />
             {navLinks.map((item) => (
               <NavItem key={item.to} to={item.to} label={item.label} exact={item.exact} />
             ))}
-            <ServicesDropdown />
           </div>
         )}
 
         {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <InstallAppBanner compact />
-            <motion.button
-              whileHover={{ scale: 1.03, boxShadow: `0 12px 28px ${BRAND.primaryGlow}` }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => navigate("/crm")}
+              style={{
+                background: "none",
+                border: "none",
+                color: B.textMuted,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                padding: "6px 8px",
+                letterSpacing: "0.04em",
+              }}
+            >
+              Iniciar sesión
+            </button>
+            <motion.button
+              whileHover={{ scale: 1.03, boxShadow: `0 12px 28px ${B.primaryGlow}` }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate("/contacto")}
               style={{
                 padding: "9px 22px",
                 borderRadius: 10,
-                border: "1px solid rgba(96,165,250,0.3)",
-                background: "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                border: `1px solid ${B.borderStrong}`,
+                background: G.button,
                 color: "white",
                 fontSize: 11,
                 fontWeight: 700,
@@ -742,7 +736,7 @@ export default function PortalLayout() {
                 cursor: "pointer",
               }}
             >
-              Acceder
+              Solicitar demo
             </motion.button>
           </div>
         )}
@@ -787,7 +781,7 @@ export default function PortalLayout() {
       <footer
         style={{
           padding: isMobile ? "32px 20px 24px" : "48px 32px 32px",
-          borderTop: `1px solid ${BRAND.border}`,
+          borderTop: `1px solid ${B.border}`,
           display: "flex",
           flexDirection: isMobile ? "column" : "row",
           justifyContent: "space-between",
@@ -797,10 +791,10 @@ export default function PortalLayout() {
         }}
       >
         <div>
-          <div style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 4 }}>
+          <div style={{ fontSize: 13, color: B.textMuted, marginBottom: 4 }}>
             ALTTEZ &mdash; infraestructura operativa para clubes de alto rendimiento
           </div>
-          <div style={{ fontSize: 10, color: BRAND.textHint }}>&copy; 2026 ALTTEZ. Todos los derechos reservados.</div>
+          <div style={{ fontSize: 10, color: B.textHint }}>&copy; 2026 ALTTEZ. Todos los derechos reservados.</div>
         </div>
         <div style={{ display: "flex", gap: isMobile ? 16 : 20, flexWrap: "wrap" }}>
           {FOOTER_LINKS.map((link) => (
@@ -808,8 +802,9 @@ export default function PortalLayout() {
               key={link.to}
               to={link.to}
               end={link.exact}
+              className="portal-footer-link"
               style={{
-                color: BRAND.textMuted,
+                color: B.textMuted,
                 textDecoration: "none",
                 fontSize: 11,
                 letterSpacing: "0.45px",

@@ -1,30 +1,47 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { sanitizeText, sanitizeTextFinal, sanitizeNote } from "../../shared/utils/sanitize";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G } from "../theme/brand";
+import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";
 import { buildMailtoUrl, buildWhatsAppUrl, CALENDAR_URL, COMMERCIAL_EMAIL } from "../data/contactConfig";
 
 const CHANNELS = [
   {
+    key: "email",
     title: "Correo directo",
     value: COMMERCIAL_EMAIL,
     detail: "Canal principal para demos, activacion inicial y conversaciones comerciales.",
+    cta: "Enviar correo",
   },
   {
-    title: "WhatsApp comercial",
-    value: buildWhatsAppUrl() ? "Disponible" : "Configurar numero",
-    detail: buildWhatsAppUrl()
-      ? "Ideal para una primera conversacion rapida con clubes y responsables deportivos."
-      : "Agrega `VITE_MARKETING_WA_NUMBER` para habilitar este canal en produccion.",
+    key: "demo",
+    title: "Veamos ALTTEZ en acción",
+    value: "Solicitar demo",
+    detail: "Configurar una demo personalizada para tu club y la sesión.",
+    cta: "Solicitar demo",
   },
   {
-    title: "Agenda comercial",
-    value: CALENDAR_URL ? "Demo agendada" : "Configurar agenda",
-    detail: CALENDAR_URL
-      ? "Permite reservar una llamada de descubrimiento con el equipo."
-      : "Agrega `VITE_MARKETING_CALENDAR_URL` para habilitar agendamiento directo.",
+    key: "meeting",
+    title: "Agenda una reunión",
+    value: CALENDAR_URL ? "Disponible" : "Agendar reunión",
+    detail: "Elige el día y la hora que mejor se adapten a tu equipo.",
+    cta: "Agendar reunión",
   },
+  {
+    key: "process",
+    title: "¿Qué sigue después?",
+    value: "Ver proceso",
+    detail: "Conoce el proceso de activación y acompañamiento con ALTTEZ.",
+    cta: "Ver proceso",
+  },
+];
+
+const FAQS = [
+  { q: "¿Cuánto tiempo toma activar ALTTEZ?", a: "La activación inicial toma entre 2 y 7 días. Habla con nosotros para agendar." },
+  { q: "¿Necesitamos migrar datos?", a: "No. Puedes empezar de cero o importar lo que tengas desde Excel." },
+  { q: "¿Hay contratos mínimos?", a: "No exigimos permanencia mínima. El plan incluye soporte desde el inicio." },
+  { q: "¿Qué incluye el piloto?", a: "Incluye configuración, capacitación y acompañamiento activo con el primer equipo." },
 ];
 
 const MOTIVOS = [
@@ -84,6 +101,8 @@ function inputStyle(hasError) {
 
 export default function Contacto() {
   usePageTitle("Contacto");
+  const navigate = useNavigate();
+  const formRef = useRef(null);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -111,6 +130,7 @@ export default function Contacto() {
     nombre: "",
     email: "",
     club: "",
+    whatsapp: "",
     motivo: "",
     mensaje: "",
   });
@@ -178,7 +198,7 @@ export default function Contacto() {
               lineHeight: 0.96,
               fontWeight: 800,
               letterSpacing: "-0.06em",
-              fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif",
+              fontFamily: F.display,
             }}
           >
             Hablemos de como ordenar la operacion real de tu club.
@@ -211,7 +231,7 @@ export default function Contacto() {
                     width: 74,
                     height: 74,
                     borderRadius: 24,
-                    background: "rgba(47,107,255,0.14)",
+                    background: B.primarySoft,
                     border: `1px solid ${B.borderStrong}`,
                     display: "grid",
                     placeItems: "center",
@@ -222,7 +242,7 @@ export default function Contacto() {
                 >
                   OK
                 </div>
-                <h2 style={{ margin: "22px 0 10px", fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+                <h2 style={{ margin: "22px 0 10px", fontSize: 34, lineHeight: 1.02, fontFamily: F.display }}>
                   Tu correo ya quedo listo para enviar.
                 </h2>
                 <p style={{ fontSize: 16, color: B.textMuted, lineHeight: 1.8, maxWidth: 560 }}>
@@ -231,7 +251,7 @@ export default function Contacto() {
                 <button
                   onClick={() => {
                     setSubmitted(false);
-                    setForm({ nombre: "", email: "", club: "", motivo: "", mensaje: "" });
+                    setForm({ nombre: "", email: "", club: "", whatsapp: "", motivo: "", mensaje: "" });
                   }}
                   style={{
                     marginTop: 24,
@@ -251,6 +271,7 @@ export default function Contacto() {
             ) : (
               <motion.form
                 key="form"
+                ref={formRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65 }}
@@ -269,7 +290,7 @@ export default function Contacto() {
                   <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.22em", fontWeight: 700 }}>
                     Formulario
                   </div>
-                  <h2 style={{ marginTop: 12, fontSize: 34, lineHeight: 1.02, fontFamily: "'Orbitron', 'Exo 2', Arial, sans-serif" }}>
+                  <h2 style={{ marginTop: 12, fontSize: 34, lineHeight: 1.02, fontFamily: F.display }}>
                     Cuentanos como funciona hoy tu operacion.
                   </h2>
                 </div>
@@ -285,6 +306,10 @@ export default function Contacto() {
 
                 <Field label="Club u organizacion">
                   <input value={form.club} onChange={handleChange("club")} placeholder="Academia, liga o institucion" style={inputStyle(false)} />
+                </Field>
+
+                <Field label="WhatsApp / Teléfono">
+                  <input value={form.whatsapp} onChange={handleChange("whatsapp")} placeholder="+57 300 000 0000" style={inputStyle(false)} />
                 </Field>
 
                 <Field label="Motivo principal" error={errors.motivo}>
@@ -408,26 +433,76 @@ export default function Contacto() {
                 Canales
               </div>
               <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
-                {CHANNELS.map((channel, index) => (
-                  <motion.div
-                    key={channel.title}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.45, delay: 0.14 + index * 0.08 }}
-                    style={{
-                      padding: 18,
-                      borderRadius: 22,
-                      background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
-                      border: `1px solid ${B.border}`,
-                    }}
-                  >
-                    <div style={{ fontSize: 13, color: B.warning, textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 700 }}>
-                      {channel.title}
-                    </div>
-                    <div style={{ marginTop: 10, fontSize: 24, fontWeight: 700, lineHeight: 1.1 }}>{channel.value}</div>
-                    <p style={{ marginTop: 10, fontSize: 14, lineHeight: 1.7, color: B.textMuted }}>{channel.detail}</p>
-                  </motion.div>
-                ))}
+                {CHANNELS.map((channel, index) => {
+                  const channelHref = {
+                    email: `mailto:${COMMERCIAL_EMAIL}`,
+                    meeting: CALENDAR_URL || null,
+                  }[channel.key] || null;
+                  const channelClick = {
+                    demo: () => formRef.current?.scrollIntoView({ behavior: "smooth" }),
+                    process: () => navigate("/quienes-somos"),
+                  }[channel.key] || null;
+
+                  return (
+                    <motion.div
+                      key={channel.title}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.45, delay: 0.14 + index * 0.08 }}
+                      style={{
+                        padding: 18,
+                        borderRadius: 22,
+                        background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 100%)",
+                        border: `1px solid ${B.border}`,
+                      }}
+                    >
+                      <div style={{ fontSize: 13, color: B.warning, textTransform: "uppercase", letterSpacing: "0.16em", fontWeight: 700 }}>
+                        {channel.title}
+                      </div>
+                      <p style={{ marginTop: 10, fontSize: 13, lineHeight: 1.7, color: B.textMuted, marginBottom: 12 }}>{channel.detail}</p>
+                      {channelHref ? (
+                        <a
+                          href={channelHref}
+                          target={channel.key === "meeting" ? "_blank" : undefined}
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "inline-block",
+                            padding: "10px 16px",
+                            borderRadius: 999,
+                            border: `1px solid ${B.borderStrong}`,
+                            background: "rgba(255,255,255,0.04)",
+                            color: B.text,
+                            fontWeight: 700,
+                            fontSize: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {channel.cta}
+                        </a>
+                      ) : (
+                        <button
+                          onClick={channelClick}
+                          style={{
+                            padding: "10px 16px",
+                            borderRadius: 999,
+                            border: `1px solid ${B.borderStrong}`,
+                            background: "rgba(255,255,255,0.04)",
+                            color: B.text,
+                            fontWeight: 700,
+                            fontSize: 12,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {channel.cta}
+                        </button>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
 
@@ -456,6 +531,46 @@ export default function Contacto() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      <section style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px 96px" }}>
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{ fontSize: 11, color: B.warning, textTransform: "uppercase", letterSpacing: "0.24em", fontWeight: 700 }}>
+            Preguntas frecuentes
+          </div>
+          <h2
+            style={{
+              margin: "16px 0 0",
+              fontSize: "clamp(28px, 4vw, 44px)",
+              lineHeight: 1.02,
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              fontFamily: F.display,
+            }}
+          >
+            Lo que más nos preguntan.
+          </h2>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, maxWidth: 960, margin: "0 auto" }}>
+          {FAQS.map((faq, index) => (
+            <motion.div
+              key={faq.q}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.45, delay: index * 0.06 }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "rgba(255,255,255,0.025)",
+                border: `1px solid ${B.border}`,
+              }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4, marginBottom: 10 }}>{faq.q}</div>
+              <div style={{ fontSize: 13, color: B.textMuted, lineHeight: 1.75 }}>{faq.a}</div>
+            </motion.div>
+          ))}
         </div>
       </section>
     </div>

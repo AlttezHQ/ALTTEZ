@@ -7,12 +7,14 @@
  */
 import HeroSection from "../sections/HeroSection";
 import EcosystemSection from "../sections/EcosystemSection";
+import ModulesSection from "../sections/ModulesSection";
 
 export default function PortalHome() {
   return (
     <>
       <HeroSection />
       <EcosystemSection />
+      <ModulesSection />
     </>
   );
 }
