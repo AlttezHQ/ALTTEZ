@@ -34,7 +34,8 @@ jobs:
       - name: Scan for hardcoded secrets
         run: |
           # Buscar patrones de API keys / secrets en src/
-          if grep -rn "sk_live\|sk_test\|AKIA\|password\s*=\s*['\"]" src/ --include="*.js" --include="*.jsx"; then
+          # password\s*=\s*['"][^ '"] excluye strings con espacios (mensajes UI, no credenciales)
+          if grep -rPn "sk_live|sk_test|AKIA|password\s*=\s*['\"][^ '\"]{6,}['\"]" src/ --include="*.js" --include="*.jsx"; then
             echo "SECRETS FOUND IN CODE"
             exit 1
           fi
