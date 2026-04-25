@@ -15,12 +15,6 @@ const SERVICES = [
     tag: "Core Platform",
     description: "Plantilla, entrenamiento, calendario, operación y administración en una sola capa operativa.",
   },
-  {
-    to: "/journal",
-    label: "Journal",
-    tag: "Insights",
-    description: "Decisiones de producto, visión del deporte y análisis sobre operación deportiva moderna.",
-  },
 ];
 
 const FOOTER_LINKS = [
@@ -110,7 +104,7 @@ function ServicesDropdown() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const active = location.pathname.startsWith("/servicios") || location.pathname.startsWith("/journal");
+  const active = location.pathname.startsWith("/servicios");
 
   useEffect(() => {
     const handleOutside = (event) => {
@@ -375,9 +369,8 @@ function MobileDrawer({ open, onClose, navigate }) {
 
             <div style={{ flex: 1, overflowY: "auto" }}>
               {[
-                { to: "/quienes-somos", label: "Clubes" },
-                { to: "/contacto",      label: "Precios" },
-                { to: "/journal",       label: "Recursos" },
+                { to: "/quienes-somos", label: "Sobre Nosotros" },
+                { to: "/contacto",      label: "Contáctanos" },
               ].map((item) => (
                 <NavLink
                   key={item.to}
@@ -577,9 +570,8 @@ export default function PortalLayout() {
 
   const navLinks = useMemo(
     () => [
-      { to: "/quienes-somos", label: "Clubes",  exact: false },
-      { to: "/contacto",      label: "Precios", exact: false },
-      { to: "/journal",       label: "Recursos", exact: false },
+      { to: "/quienes-somos", label: "Sobre Nosotros", exact: false },
+      { to: "/contacto",      label: "Contáctanos",    exact: false },
     ],
     [],
   );
