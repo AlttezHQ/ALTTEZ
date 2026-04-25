@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Cloud, ShieldCheck, TrendingUp, Users } from "lucide-react";
+import { Cloud, ShieldCheck, Users } from "lucide-react";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 import DashboardPreview, { FloatingSessionCard, FloatingBarCard, FloatingDonutCard } from "./DashboardPreview";
 
@@ -352,24 +352,6 @@ export default function HeroSection() {
               ))}
             </motion.div>
 
-            {/* Rise Above mark */}
-            <motion.div
-              className="hz-rise"
-              {...FADE_UP}
-              transition={{ duration: 0.65, delay: 0.32 }}
-            >
-              <TrendingUp size={22} color={B.primary} />
-              <div style={{ width: 1, height: 28, background: "rgba(0,0,0,0.10)" }} />
-              <span style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.38em",
-                textTransform: "uppercase",
-                color: B.textMuted,
-              }}>
-                ALTTEZ — Rise Above.
-              </span>
-            </motion.div>
           </div>
 
           {/* ── Right column: dashboard mockup ── */}
