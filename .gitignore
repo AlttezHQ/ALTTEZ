@@ -49,6 +49,11 @@ skills-lock.json
 .agents/
 .mcp.json
 
+# Dev tooling (oh-my-claudecode, playwright CLI, MCP servers locales)
+.omc/
+.playwright-cli/
+alttez-image-mcp/
+
 # PWA dev build
 dev-dist/
 
