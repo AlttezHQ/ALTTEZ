@@ -8,7 +8,7 @@
  */
 
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { setHookErrorHandler } from "./shared/hooks/useLocalStorage";
 import { setStorageErrorHandler } from "./shared/services/storageService";
 import { setHealthErrorHandler } from "./shared/services/healthService";
@@ -28,6 +28,7 @@ const JournalPage    = lazy(() => import("./marketing/pages/JournalPage"));
 const QuienesSomos   = lazy(() => import("./marketing/pages/QuienesSomos"));
 const Contacto       = lazy(() => import("./marketing/pages/Contacto"));
 const PrivacyPolicy  = lazy(() => import("./marketing/pages/PrivacyPolicy"));
+const PricingPage    = lazy(() => import("./marketing/pages/PricingPage"));
 const ConfirmarAsistencia = lazy(() => import("./marketing/pages/ConfirmarAsistencia"));
 
 // ── CRM Shell ──
@@ -66,7 +67,9 @@ export default function App() {
           <Route index element={<PortalHome />} />
           <Route path="quienes-somos" element={<QuienesSomos />} />
           <Route path="contacto" element={<Contacto />} />
-          <Route path="servicios/sports-crm" element={<SportsCRMPage />} />
+          <Route path="producto/alttezcrm" element={<SportsCRMPage />} />
+          <Route path="servicios/sports-crm" element={<Navigate to="/producto/alttezcrm" replace />} />
+          <Route path="precios" element={<PricingPage />} />
           <Route path="journal" element={<JournalPage />} />
         </Route>
         {/* Politica de Privacidad — publica, sin navbar del portal */}

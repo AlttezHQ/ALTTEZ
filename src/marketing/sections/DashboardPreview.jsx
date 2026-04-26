@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Bell, Calendar, CheckCircle2, CircleDot, ClipboardList, Dumbbell,
   FileText, Home, MapPin, MessageCircle, Settings, Users, Wallet, XCircle, Activity,
@@ -20,10 +21,10 @@ const MENU = [
 ];
 
 const PLAYERS = [
-  { n: 7,  name: "Marcos Álvarez",  role: "Delantero",     pct: "98%" },
-  { n: 10, name: "Diego Ramírez",   role: "Mediocampista", pct: "92%" },
-  { n: 4,  name: "Simón Torres",    role: "Defensa",       pct: "87%" },
-  { n: 1,  name: "Lautaro Sánchez", role: "Arquero",       pct: "95%" },
+  { n: 7,  name: "Marcos Álvarez",  role: "Delantero",     pct: "98%", img: "/brand/player-marcos-alvarez.png" },
+  { n: 10, name: "Diego Ramírez",   role: "Mediocampista", pct: "92%", img: "/brand/player-diego-ramirez.png" },
+  { n: 4,  name: "Simón Torres",    role: "Defensa",       pct: "87%", img: "/brand/player-simon-torres.png" },
+  { n: 1,  name: "Lautaro Sánchez", role: "Arquero",       pct: "95%", img: "/brand/player-lautaro-sanchez.png" },
 ];
 
 const LINE_COORDS = "16,96 50,72 84,78 118,51 152,62 186,42 220,33 254,20";
@@ -37,7 +38,7 @@ const HEADSHOT_CFG = [
   { skin: "#d4aa7d", hair: "#7b4a18", jersey: "#7b1818", accent: "#ffffff" },
 ];
 
-function PlayerHeadshot({ index = 0, size = 36 }) {
+function PlayerHeadshotSVG({ index = 0, size = 36 }) {
   const cfg = HEADSHOT_CFG[index % 4];
   const cx = size / 2;
   const id = `phc-${index}`;
@@ -46,25 +47,33 @@ function PlayerHeadshot({ index = 0, size = 36 }) {
       <defs>
         <clipPath id={id}><circle cx={cx} cy={cx} r={cx} /></clipPath>
       </defs>
-      {/* Jersey bg */}
       <rect width={size} height={size} fill={cfg.jersey} clipPath={`url(#${id})`} />
-      {/* Neck */}
       <rect x={cx - size * 0.09} y={size * 0.61} width={size * 0.18} height={size * 0.18} fill={cfg.skin} clipPath={`url(#${id})`} />
-      {/* Face */}
       <ellipse cx={cx} cy={size * 0.415} rx={size * 0.235} ry={size * 0.265} fill={cfg.skin} clipPath={`url(#${id})`} />
-      {/* Hair */}
       <ellipse cx={cx} cy={size * 0.175} rx={size * 0.255} ry={size * 0.155} fill={cfg.hair} clipPath={`url(#${id})`} />
-      {/* Eyes */}
       <circle cx={cx - size * 0.08} cy={size * 0.405} r={size * 0.030} fill="#1a0600" clipPath={`url(#${id})`} />
       <circle cx={cx + size * 0.08} cy={size * 0.405} r={size * 0.030} fill="#1a0600" clipPath={`url(#${id})`} />
-      {/* Collar */}
       <path
         d={`M ${cx - size * 0.11} ${size * 0.625} Q ${cx} ${size * 0.655} ${cx + size * 0.11} ${size * 0.625}`}
         fill="none" stroke={cfg.accent} strokeWidth="1" opacity="0.55" clipPath={`url(#${id})`}
       />
-      {/* Border ring */}
       <circle cx={cx} cy={cx} r={cx - 0.8} fill="none" stroke="rgba(201,151,58,0.38)" strokeWidth="1.5" />
     </svg>
+  );
+}
+
+function PlayerHeadshot({ index = 0, size = 36, imgSrc }) {
+  const [failed, setFailed] = useState(false);
+  if (!imgSrc || failed) return <PlayerHeadshotSVG index={index} size={size} />;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "1.5px solid rgba(201,151,58,0.38)", boxSizing: "border-box" }}>
+      <img
+        src={imgSrc}
+        alt=""
+        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }
 
@@ -174,7 +183,7 @@ function PlayerListCard() {
         {PLAYERS.map((p, i) => (
           <div key={p.name} style={{ display: "grid", gridTemplateColumns: "14px 36px 1fr auto", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 8, fontWeight: 700, color: "#aaa" }}>{p.n}</span>
-            <PlayerHeadshot index={i} size={36} />
+            <PlayerHeadshot index={i} size={36} imgSrc={p.img} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 9, fontWeight: 800, color: "#171a1c", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
               <div style={{ fontSize: 7, color: "#bbb" }}>{p.role}</div>
@@ -196,6 +205,19 @@ function PlayerListCard() {
   );
 }
 
+function ShieldImg({ src, FallbackSVG, width = 36, height = 42 }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <FallbackSVG width={width} height={height} />;
+  return (
+    <img
+      src={src}
+      alt=""
+      style={{ width, height, objectFit: "contain", display: "block" }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 function MatchCard() {
   return (
     <InnerCard>
@@ -203,14 +225,14 @@ function MatchCard() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ margin: "0 auto", width: 36, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <AlttezShield />
+            <ShieldImg src="/brand/shield-alttez-fc.png" FallbackSVG={AlttezShield} />
           </div>
           <div style={{ marginTop: 4, fontSize: 8, fontWeight: 700 }}>Alttez FC</div>
         </div>
         <div style={{ borderRadius: 999, background: "#f5f4f0", padding: "3px 7px", fontSize: 8, fontWeight: 700, color: "#999" }}>vs</div>
         <div style={{ textAlign: "center" }}>
           <div style={{ margin: "0 auto", width: 36, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <RiversideShield />
+            <ShieldImg src="/brand/shield-riverside-utd.png" FallbackSVG={RiversideShield} />
           </div>
           <div style={{ marginTop: 4, fontSize: 8, fontWeight: 700 }}>Riverside Utd.</div>
         </div>

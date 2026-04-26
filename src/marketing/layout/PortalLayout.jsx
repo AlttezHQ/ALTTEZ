@@ -10,7 +10,7 @@ import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } 
 
 const SERVICES = [
   {
-    to: "/servicios/sports-crm",
+    to: "/producto/alttezcrm",
     label: "ALTTEZ CRM",
     tag: "Core Platform",
     description: "Plantilla, entrenamiento, calendario, operación y administración en una sola capa operativa.",
@@ -20,7 +20,8 @@ const SERVICES = [
 const FOOTER_LINKS = [
   { to: "/", label: "Home", exact: true },
   { to: "/quienes-somos", label: "Quiénes somos", exact: false },
-  { to: "/servicios/sports-crm", label: "Plataforma", exact: false },
+  { to: "/producto/alttezcrm", label: "Plataforma", exact: false },
+  { to: "/precios", label: "Precios", exact: false },
   { to: "/journal", label: "Journal", exact: false },
   { to: "/contacto", label: "Contacto", exact: false },
   { to: "/privacidad", label: "Privacidad", exact: false },
@@ -370,6 +371,7 @@ function MobileDrawer({ open, onClose, navigate }) {
             <div style={{ flex: 1, overflowY: "auto" }}>
               {[
                 { to: "/quienes-somos", label: "Sobre Nosotros" },
+                { to: "/precios",       label: "Precios" },
                 { to: "/contacto",      label: "Contáctanos" },
               ].map((item) => (
                 <NavLink
@@ -570,8 +572,9 @@ export default function PortalLayout() {
 
   const navLinks = useMemo(
     () => [
-      { to: "/quienes-somos", label: "Sobre Nosotros", exact: false },
-      { to: "/contacto",      label: "Contáctanos",    exact: false },
+      { to: "/quienes-somos", label: "Sobre Nosotros",  exact: false },
+      { to: "/precios",       label: "Precios",          exact: false },
+      { to: "/contacto",      label: "Contáctanos",     exact: false },
     ],
     [],
   );
@@ -619,23 +622,25 @@ export default function PortalLayout() {
 
       <motion.nav
         animate={{
-          backgroundColor: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.88)",
-          borderBottomColor: scrolled ? "rgba(0,0,0,0.10)" : "rgba(0,0,0,0.05)",
+          backgroundColor: scrolled ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.92)",
+          boxShadow: scrolled
+            ? "0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.09)"
+            : "0 4px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.06)",
         }}
         transition={{ duration: 0.3 }}
         style={{
           position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
+          top: 14,
+          left: 24,
+          right: 24,
           zIndex: 100,
-          height: 56,
-          borderBottom: "1px solid",
+          height: 52,
+          borderRadius: 16,
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           display: "flex",
           alignItems: "center",
-          padding: isMobile ? "0 16px" : "0 32px",
+          padding: isMobile ? "0 16px" : "0 28px",
         }}
       >
         <NavLink
@@ -668,6 +673,7 @@ export default function PortalLayout() {
 
         {!isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1 }}>
+            <NavItem to="/" label="Inicio" exact={true} />
             <ServicesDropdown />
             {navLinks.map((item) => (
               <NavItem key={item.to} to={item.to} label={item.label} exact={item.exact} />
@@ -736,7 +742,7 @@ export default function PortalLayout() {
 
       <MobileDrawer open={drawerOpen && isMobile} onClose={() => setDrawerOpen(false)} navigate={navigate} location={location} />
 
-      <main style={{ paddingTop: 56 }}>
+      <main style={{ paddingTop: 80 }}>
         <Suspense fallback={<LoadingFallback />}>
           <AnimatePresence mode="wait">
             <motion.div
