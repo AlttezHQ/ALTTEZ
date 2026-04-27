@@ -213,7 +213,7 @@ export default function Entrenamiento({ clubId = "" }) {
   // inp → usar className="field-input" directamente
 
   return (
-    <div>
+    <div style={{ background: PALETTE.bg, minHeight: "100%", color: PALETTE.text }}>
       {/* ── SESIÓN ACTIVA — Broadcast Live Header ── */}
       {sessionActive && (() => {
         const presentes = athletes.filter(a => a.status === "P");
@@ -257,10 +257,10 @@ export default function Entrenamiento({ clubId = "" }) {
             style={{
               position: "relative",
               padding: "14px 16px",
-              background: "linear-gradient(135deg, rgba(47,107,255,0.08) 0%, rgba(10,15,26,0.96) 55%, rgba(4,6,16,1) 100%)",
-              border: `1px solid ${PALETTE.borderHi}`,
-              borderRadius: 10,
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 24px rgba(0,0,0,0.45)",
+              background: PALETTE.surface,
+              border: `1px solid ${PALETTE.border}`,
+              borderRadius: 16,
+              boxShadow: "0 14px 28px rgba(23,26,28,0.07)",
               overflow: "hidden",
             }}
           >
@@ -268,7 +268,7 @@ export default function Entrenamiento({ clubId = "" }) {
             <span style={{
               position: "absolute", top: 0, left: 0, right: 0, height: 2,
               background: `linear-gradient(90deg, ${m.color}00 0%, ${m.color} 25%, ${m.color} 75%, ${m.color}00 100%)`,
-              boxShadow: `0 0 10px ${m.color}88`,
+              opacity: 0.85,
             }} />
             {/* Corner accent */}
             <span style={{
@@ -277,24 +277,21 @@ export default function Entrenamiento({ clubId = "" }) {
             }} />
 
             <div style={{
-              fontSize: 8.5, fontWeight: 800,
+              fontSize: 10, fontWeight: 700,
               color: PALETTE.textMuted,
               textTransform: "uppercase",
-              letterSpacing: "2.2px",
-              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
-              marginBottom: 6,
+              letterSpacing: "0.12em",
+              marginBottom: 8,
               paddingLeft: 10,
             }}>
               {m.label}
             </div>
             <div style={{
-              fontSize: 26, fontWeight: 900,
-              color: "white",
-              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+              fontSize: 28, fontWeight: 900,
+              color: PALETTE.text,
               lineHeight: 1,
               fontVariantNumeric: "tabular-nums",
               letterSpacing: "-0.5px",
-              textShadow: `0 0 16px ${m.color}66`,
             }}>
               {m.value}
             </div>
@@ -303,7 +300,7 @@ export default function Entrenamiento({ clubId = "" }) {
       </div>
 
       {/* SUBTABS — Broadcast beam */}
-      <div className="entrenamiento-tabs" style={{ padding: "0 16px", background: "rgba(8,8,14,0.92)" }}>
+      <div className="entrenamiento-tabs" style={{ padding: "0 16px", background: PALETTE.bgDeep, borderTop: `1px solid ${PALETTE.border}`, borderBottom: `1px solid ${PALETTE.border}` }}>
         {(() => {
           const TAB_MAP = [
             ["sesion", "Sesión de hoy"],
@@ -327,8 +324,7 @@ export default function Entrenamiento({ clubId = "" }) {
                     fontSize: 9,
                     color: PALETTE.textMuted,
                     textTransform: "uppercase",
-                    letterSpacing: "1.5px",
-                    fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                    letterSpacing: "0.12em",
                     fontWeight: 700,
                   }}>
                     {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
@@ -347,17 +343,15 @@ export default function Entrenamiento({ clubId = "" }) {
                       background: `linear-gradient(180deg, ${PALETTE.blue} 0%, ${PALETTE.blue} 60%, ${PALETTE.blueDeep} 100%)`,
                       color: "white",
                       fontSize: 10,
-                      fontWeight: 800,
+                      fontWeight: 700,
                       textTransform: "uppercase",
-                      letterSpacing: "1.6px",
+                      letterSpacing: "0.12em",
                       padding: "7px 16px",
                       cursor: "pointer",
                       whiteSpace: "nowrap",
-                      borderRadius: 6,
+                      borderRadius: 10,
                       border: `1px solid ${PALETTE.blue}`,
-                      fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
-                      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px ${PALETTE.blueGlow}`,
-                      textShadow: "0 1px 0 rgba(0,0,0,0.25)",
+                      boxShadow: "0 10px 22px rgba(201,151,58,0.22)",
                     }}
                   >
                     Cerrar sesión →
@@ -386,7 +380,7 @@ export default function Entrenamiento({ clubId = "" }) {
             />
           ) : (
           <>
-          <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.25)", marginBottom:12 }}>
+          <div style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"0.12em", color:PALETTE.textMuted, marginBottom:12 }}>
             Marca el estado de cada deportista y registra la percepcion de esfuerzo (RPE)
           </div>
           <div className="entrenamiento-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
@@ -395,18 +389,18 @@ export default function Entrenamiento({ clubId = "" }) {
               const ausente = a.status === "A";
               const lesionado = a.status === "L";
               const borderColor = presente ? PALETTE.green : ausente ? PALETTE.danger : lesionado ? PALETTE.amber : PALETTE.border;
-              const bgColor = presente ? "linear-gradient(135deg,rgba(4,32,20,0.97),rgba(2,18,12,0.98))" : ausente ? "linear-gradient(135deg,rgba(32,4,4,0.97),rgba(18,2,2,0.98))" : lesionado ? "linear-gradient(135deg,rgba(32,18,4,0.97),rgba(18,10,2,0.98))" : "linear-gradient(135deg,rgba(14,20,14,0.97),rgba(8,12,8,0.98))";
-              const opacity = ausente || lesionado ? 0.72 : 1;
+              const bgColor = presente ? "linear-gradient(180deg, #FFFFFF 0%, #F8F5EF 100%)" : ausente ? "linear-gradient(180deg, #FFF7F7 0%, #FBECEC 100%)" : lesionado ? "linear-gradient(180deg, #FFF9F0 0%, #F8EFD8 100%)" : "linear-gradient(180deg, #FFFFFF 0%, #F8F5EF 100%)";
+              const opacity = 1;
               const photoBg = ausente || lesionado ? "555" : "059669";
               return (
                 <div key={a.id} style={{ cursor:"pointer", opacity }}>
-                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden", boxShadow:`0 4px 16px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.03),inset 0 1px 0 rgba(255,255,255,0.04)`, borderRadius:6 }}>
+                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden", boxShadow:"0 12px 28px rgba(23,26,28,0.08)", borderRadius:16 }}>
                     <div style={{ height:4, background:borderColor }}/>
                     <div style={{ position:"relative" }}>
                       <img src={PHOTO(a.photo, photoBg)} alt="" style={{ width:"100%", height:80, objectFit:"cover", objectPosition:"top", display:"block" }}/>
                       {(ausente || lesionado) && (
-                        <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <div style={{ fontSize:10, fontWeight:500, textTransform:"uppercase", letterSpacing:"1.5px", padding:"3px 8px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente?"rgba(226,75,74,0.1)":"rgba(239,159,39,0.1)" }}>
+                        <div style={{ position:"absolute", inset:0, background:"rgba(250,250,248,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                          <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", padding:"4px 10px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente ? PALETTE.dangerDim : PALETTE.amberDim, borderRadius:999 }}>
                             {ausente ? "Ausente" : "Lesionado"}
                           </div>
                         </div>
@@ -436,8 +430,8 @@ export default function Entrenamiento({ clubId = "" }) {
                       )}
                     </div>
                     <div style={{ padding:"6px 8px 4px" }}>
-                      <div style={{ fontSize:10, fontWeight:500, color:"white", textTransform:"uppercase", letterSpacing:"0.3px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{a.name.split(" ")[0]} {a.name.split(" ")[1]?.[0]}.</div>
-                      <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>{a.posCode}</div>
+                      <div style={{ fontSize:10, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.03em", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{a.name.split(" ")[0]} {a.name.split(" ")[1]?.[0]}.</div>
+                      <div style={{ fontSize:8, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginTop:1 }}>{a.posCode}</div>
                     </div>
                     <div style={{ display:"flex", gap:1, padding:"0 6px 6px" }}>
                       {[["P",PALETTE.green,"white"],["A",PALETTE.danger,"white"],["L",PALETTE.amber,"#1a0f00"]].map(([s,bg,tc]) => (
@@ -722,29 +716,27 @@ export default function Entrenamiento({ clubId = "" }) {
                   className="ent-kpi-card"
                   onClick={() => setTab("historial")}
                   style={{
-                    background:"rgba(255,255,255,0.03)",
-                    backdropFilter:"blur(16px)",
-                    WebkitBackdropFilter:"blur(16px)",
+                    background: PALETTE.surface,
                     border:`1px solid ${PALETTE.border}`,
-                    borderRadius:12,
+                    borderRadius:16,
                     padding:14,
-                    boxShadow:"0 8px 32px rgba(0,0,0,0.4)",
+                    boxShadow:"0 14px 28px rgba(23,26,28,0.08)",
                     cursor:"pointer",
                     position:"relative",
                     overflow:"hidden",
                   }}
                 >
                   {/* Ambient glow */}
-                  <div style={{ position:"absolute", top:-16, right:-16, width:60, height:60, borderRadius:"50%", background: m.color === "white" ? "rgba(255,255,255,0.6)" : m.color, opacity:0.05, filter:"blur(16px)", pointerEvents:"none" }} />
-                  <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:8 }}>{m.label}</div>
+                  <div style={{ position:"absolute", top:-16, right:-16, width:60, height:60, borderRadius:"50%", background: m.color === "white" ? "rgba(23,26,28,0.12)" : m.color, opacity:0.08, filter:"blur(16px)", pointerEvents:"none" }} />
+                  <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:PALETTE.textMuted, marginBottom:8 }}>{m.label}</div>
                   <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1, marginBottom:8 }}>{m.value}</div>
                   <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:4 }}>
-                    <div style={{ fontSize:8, color:"rgba(255,255,255,0.22)", lineHeight:1.3, flex:1 }}>{m.hint}</div>
+                    <div style={{ fontSize:9, color:PALETTE.textMuted, lineHeight:1.4, flex:1 }}>{m.hint}</div>
                     {m.spark.length > 1 && (
-                      <MiniSparkBars values={m.spark} color={m.color === "white" ? "rgba(255,255,255,0.7)" : m.color} />
+                      <MiniSparkBars values={m.spark} color={m.color === "white" ? PALETTE.textMuted : m.color} />
                     )}
                   </div>
-                  <div style={{ marginTop:10, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.05)", fontSize:8, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px" }}>
+                  <div style={{ marginTop:10, paddingTop:8, borderTop:`1px solid ${PALETTE.border}`, fontSize:8, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.1em" }}>
                     Ver historial →
                   </div>
                 </div>
@@ -762,7 +754,7 @@ export default function Entrenamiento({ clubId = "" }) {
                       <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
                         <div style={{ fontSize:12, fontWeight:700, color: cfg.color, marginBottom:4 }}>{cfg.count}</div>
                         <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: cfg.color, minHeight: cfg.count > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0" }} />
-                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.05em", color:PALETTE.textMuted, marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
                       </div>
                     );
                   })}
@@ -781,7 +773,7 @@ export default function Entrenamiento({ clubId = "" }) {
                       <div key={cat} style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1, height:"100%", justifyContent:"flex-end" }}>
                         <div style={{ fontSize:12, fontWeight:700, color: rpeColor, marginBottom:4 }}>{avg > 0 ? avg.toFixed(1) : "—"}</div>
                         <div style={{ width:"100%", maxWidth:40, height:`${h}%`, background: rpeColor, minHeight: avg > 0 ? 4 : 0, transition:"height 0.4s ease", borderRadius:"2px 2px 0 0", opacity: avg > 0 ? 1 : 0.2 }} />
-                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.5px", color:"rgba(255,255,255,0.4)", marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
+                        <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"0.05em", color:PALETTE.textMuted, marginTop:6, textAlign:"center", lineHeight:1.2 }}>{cat}</div>
                       </div>
                     );
                   })}
@@ -793,19 +785,19 @@ export default function Entrenamiento({ clubId = "" }) {
             <GlassPanel padding="md">
               <SectionLabel style={{ marginBottom:14 }}>Detalle por tipo de tarea</SectionLabel>
               {tipoStats.length === 0 && (
-                <div style={{ fontSize:11, color:"rgba(255,255,255,0.25)", textAlign:"center", padding:16 }}>Sin datos</div>
+                <div style={{ fontSize:11, color:PALETTE.textMuted, textAlign:"center", padding:16 }}>Sin datos</div>
               )}
               {tipoStats.map(t => {
-                const color = TIPO_COLORS[t.name] || "rgba(255,255,255,0.4)";
+                const color = TIPO_COLORS[t.name] || PALETTE.textMuted;
                 return (
                   <div key={t.name} style={{ marginBottom:10 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
-                      <div style={{ fontSize:11, fontWeight:500, color:"white", textTransform:"uppercase", letterSpacing:"0.8px" }}>{t.name}</div>
-                      <div style={{ fontSize:10, color:"rgba(255,255,255,0.45)" }}>
+                      <div style={{ fontSize:11, fontWeight:600, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t.name}</div>
+                      <div style={{ fontSize:10, color:PALETTE.textMuted }}>
                         {t.count} sesion{t.count !== 1 ? "es" : ""} · <span style={{ color, fontWeight:600 }}>{t.pct}%</span>
                       </div>
                     </div>
-                    <div style={{ width:"100%", height:6, background:"rgba(255,255,255,0.06)" }}>
+                    <div style={{ width:"100%", height:6, background:PALETTE.bgDeep, borderRadius:999 }}>
                       <div style={{ width:`${t.pct}%`, height:"100%", background:color, transition:"width 0.4s ease" }} />
                     </div>
                   </div>
@@ -826,7 +818,7 @@ export default function Entrenamiento({ clubId = "" }) {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.7)",
+              background: "rgba(23,26,28,0.28)",
               backdropFilter: "blur(6px)",
               zIndex: 9999,
               display: "flex",
@@ -861,16 +853,16 @@ export default function Entrenamiento({ clubId = "" }) {
               bottom: 24,
               left: "50%",
               transform: "translateX(-50%)",
-              background: "rgba(8,8,20,0.95)",
+              background: "rgba(255,255,255,0.98)",
               backdropFilter: "blur(20px)",
               border: `1px solid ${healthFeedback.color}44`,
-              borderRadius: 12,
+              borderRadius: 16,
               padding: "12px 20px",
               display: "flex",
               alignItems: "center",
               gap: 12,
               zIndex: 10000,
-              boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${healthFeedback.color}22`,
+              boxShadow: `0 18px 34px rgba(23,26,28,0.12), 0 0 0 1px ${healthFeedback.color}16`,
               minWidth: 240,
             }}
           >
@@ -892,7 +884,7 @@ export default function Entrenamiento({ clubId = "" }) {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "white" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: PALETTE.text }}>
                 {healthFeedback.athleteName} — Bateria actualizada
               </div>
               <div style={{ fontSize: 9, color: healthFeedback.color, textTransform: "uppercase", letterSpacing: "1px", marginTop: 2 }}>
@@ -907,3 +899,6 @@ export default function Entrenamiento({ clubId = "" }) {
     </div>
   );
 }
+
+
+

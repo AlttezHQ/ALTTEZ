@@ -1,0 +1,26 @@
+{
+  "home-1440": {
+    "sw": 1440,
+    "cw": 1440
+  },
+  "crm-dashboard-1440": {
+    "sw": 1440,
+    "cw": 1440
+  },
+  "crm-entrenamiento-1440": {
+    "sw": 1440,
+    "cw": 1440
+  },
+  "crm-gestion-plantilla-1440": {
+    "sw": 1440,
+    "cw": 1440
+  },
+  "home-430": {
+    "sw": 430,
+    "cw": 430
+  },
+  "crm-dashboard-430": {
+    "sw": 430,
+    "cw": 430
+  }
+}

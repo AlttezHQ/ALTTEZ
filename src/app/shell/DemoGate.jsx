@@ -1,66 +1,26 @@
-/**
- * @component DemoGate
- * @description Gate de conversión para el modo demo de ALTTEZ.
- *
- * Estrategia: Banner persistente (Opción D) + timeout de 15 minutos (Opción A).
- *
- * COMPORTAMIENTO:
- * - Desde el minuto 0: banner inferior fijo "MODO DEMO" con contador regresivo.
- * - A los 15 minutos: modal de conversión con CTA de registro. No bloquea de forma
- *   abrupta — el usuario puede cerrar el modal pero el banner persiste.
- * - El temporizador persiste en sessionStorage para sobrevivir navegación intra-CRM
- *   pero se reinicia en cada sesión nueva (no acumulativo entre días).
- *
- * RATIONALE (conversión):
- * - La Opción D (watermark) mantiene al usuario dentro del producto, aumentando el
- *   tiempo de exposición a las features.
- * - La Opción A (tiempo) crea urgencia sin bloquear la exploración inicial.
- * - El modal a los 15 min aparece cuando el usuario ya ha visto suficiente valor
- *   para tomar la decisión de registrarse.
- *
- * @param {{ onRegister: () => void, onLogout: () => void }} props
- * @author @Arquitecto (Carlos)
- * @version 1.0.0
- */
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PALETTE as C } from "../../shared/tokens/palette";
 
-/** Duración del demo en segundos antes de mostrar el modal (15 minutos) */
 const DEMO_DURATION_SEC = 15 * 60;
-
-/** Clave de sessionStorage para el tiempo de inicio del demo */
 const DEMO_START_KEY = "alttez_demo_start";
 
-/**
- * Obtiene o inicializa el timestamp de inicio del demo en sessionStorage.
- * @returns {number} timestamp en ms
- */
 function getOrInitDemoStart() {
   const stored = sessionStorage.getItem(DEMO_START_KEY);
   if (stored) {
     const ts = parseInt(stored, 10);
-    if (!isNaN(ts)) return ts;
+    if (!Number.isNaN(ts)) return ts;
   }
   const now = Date.now();
   sessionStorage.setItem(DEMO_START_KEY, String(now));
   return now;
 }
 
-/**
- * Formatea segundos restantes a "MM:SS"
- * @param {number} seconds
- * @returns {string}
- */
 function formatCountdown(seconds) {
-  const m = Math.floor(Math.max(0, seconds) / 60);
-  const s = Math.max(0, seconds) % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const minutes = Math.floor(Math.max(0, seconds) / 60);
+  const secs = Math.max(0, seconds) % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-/**
- * Modal de conversión que aparece cuando expira el timer.
- */
 function ConversionModal({ onClose, onRegister }) {
   return (
     <motion.div
@@ -69,139 +29,130 @@ function ConversionModal({ onClose, onRegister }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        position: "fixed", inset: 0, zIndex: 2000,
-        background: "rgba(0,0,0,0.85)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "20px",
+        position: "fixed",
+        inset: 0,
+        zIndex: 2000,
+        background: "rgba(23,26,28,0.38)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
       }}
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        initial={{ opacity: 0, scale: 0.94, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ type: "spring", stiffness: 340, damping: 28 }}
-        onClick={(e) => e.stopPropagation()}
+        exit={{ opacity: 0, scale: 0.98, y: 14 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+        onClick={(event) => event.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 460,
-          background: "linear-gradient(135deg, rgba(15,15,24,0.98) 0%, rgba(10,10,18,0.98) 100%)",
-          backdropFilter: "blur(32px)",
-          WebkitBackdropFilter: "blur(32px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: 20,
-          padding: "40px 36px",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)",
+          width: "100%",
+          maxWidth: 460,
+          background: "#FFFCF7",
+          border: "1px solid #E9E2D7",
+          borderRadius: 24,
+          padding: "34px 32px",
+          boxShadow: "0 28px 70px rgba(23,26,28,0.18)",
           textAlign: "center",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Orbe decorativo */}
-        <div style={{
-          position: "absolute", top: "-40%", left: "50%",
-          transform: "translateX(-50%)",
-          width: 300, height: 300, borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(200,255,0,0.06) 0%, transparent 70%)",
-          filter: "blur(40px)", pointerEvents: "none",
-        }} />
+        <div
+          style={{
+            position: "absolute",
+            inset: "auto -10% -35% auto",
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(201,151,58,0.18) 0%, rgba(201,151,58,0) 72%)",
+            pointerEvents: "none",
+          }}
+        />
 
-        {/* Icono */}
-        <div style={{
-          width: 64, height: 64, borderRadius: 16,
-          background: `linear-gradient(135deg, ${C.neon}18, ${C.violetDim})`,
-          border: `1px solid ${C.neon}30`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          margin: "0 auto 24px",
-        }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <path d="M14 3l2.5 5 5.5.8-4 3.9.9 5.5L14 15.6l-4.9 2.6.9-5.5-4-3.9 5.5-.8L14 3z"
-              stroke={C.neon} strokeWidth="1.5" strokeLinejoin="round"
-              fill={`${C.neon}20`}
-            />
-            <circle cx="14" cy="20" r="5" stroke={C.neon} strokeWidth="1.5"
-              strokeDasharray="4 2"
-            />
+        <div
+          style={{
+            width: 68,
+            height: 68,
+            borderRadius: 20,
+            background: "#F4E7CF",
+            border: "1px solid #E4C98C",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 22px",
+          }}
+        >
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.4-4.6 2.4.9-5.2-3.8-3.7 5.2-.8L12 3Z" stroke="#C9973A" strokeWidth="1.6" strokeLinejoin="round" fill="rgba(201,151,58,0.14)" />
           </svg>
         </div>
 
-        {/* Título */}
-        <div style={{
-          fontSize: 11, fontWeight: 600, letterSpacing: "2px",
-          textTransform: "uppercase", color: C.neon, marginBottom: 12,
-        }}>
-          Demo expirado
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: "#B7832D" }}>
+          DEMO EXPIRADO
         </div>
-        <h2 style={{
-          fontSize: "clamp(20px, 4vw, 28px)",
-          fontWeight: 800, color: "white",
-          margin: "0 0 14px",
-          fontFamily: "'Barlow Condensed', 'Arial Narrow', Arial, sans-serif",
-          lineHeight: 1.1,
-        }}>
-          Ya viste el potencial.{"\n"}Ahora hazlo tuyo.
+        <h2 style={{ margin: "12px 0 12px", fontSize: "clamp(24px, 4vw, 30px)", lineHeight: 1.08, color: "#171A1C" }}>
+          Ya viste el potencial.
+          <br />
+          Ahora hazlo tuyo.
         </h2>
-        <p style={{
-          fontSize: 13, color: C.textMuted, lineHeight: 1.7,
-          margin: "0 0 32px", maxWidth: 340, marginLeft: "auto", marginRight: "auto",
-        }}>
-          Registra tu club en 2 minutos y accede a todas las funcionalidades sin límite.
-          Sin costo durante el piloto.
+        <p style={{ margin: "0 auto 26px", maxWidth: 340, fontSize: 15, color: "#667085", lineHeight: 1.65 }}>
+          Registra tu club en 2 minutos y accede a todas las funcionalidades con tus datos reales.
         </p>
 
-        {/* Beneficios */}
-        <div style={{
-          display: "flex", flexDirection: "column", gap: 8,
-          marginBottom: 28, textAlign: "left",
-        }}>
+        <div style={{ display: "grid", gap: 10, textAlign: "left", marginBottom: 28 }}>
           {[
             "Plantilla ilimitada",
-            "Datos reales de tu club — no demo",
-            "Sincronización en la nube",
-            "Sin tarjeta de crédito",
+            "Datos reales de tu club",
+            "Sincronizacion en la nube",
+            "Sin tarjeta de credito",
           ].map((item) => (
             <div key={item} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 16, height: 16, borderRadius: "50%",
-                background: `${C.neon}18`,
-                border: `1px solid ${C.neon}40`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path d="M1.5 4l2 2 3-3" stroke={C.neon} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#F4E7CF", border: "1px solid #E4C98C", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                  <path d="M1.5 4l1.8 1.8L6.5 2.7" stroke="#C9973A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.65)" }}>{item}</span>
+              <span style={{ fontSize: 14, color: "#475467" }}>{item}</span>
             </div>
           ))}
         </div>
 
-        {/* CTAs */}
         <motion.button
-          whileHover={{ scale: 1.03, boxShadow: `0 0 28px ${C.neonGlow}` }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ scale: 1.02, boxShadow: "0 16px 34px rgba(201,151,58,0.24)" }}
+          whileTap={{ scale: 0.98 }}
           onClick={onRegister}
           style={{
-            width: "100%", padding: "14px 0",
-            fontSize: 13, fontWeight: 700,
-            textTransform: "uppercase", letterSpacing: "1.5px",
-            background: C.neon, color: "#0a0a0f",
-            border: "none", borderRadius: 10,
-            cursor: "pointer", fontFamily: "inherit",
+            width: "100%",
+            padding: "14px 0",
+            fontSize: 13,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            background: "#C9973A",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: 12,
+            cursor: "pointer",
+            fontFamily: "inherit",
             marginBottom: 10,
           }}
         >
-          Registrar mi club — es gratis
+          Registrar mi club
         </motion.button>
 
         <button
           onClick={onClose}
           style={{
-            background: "none", border: "none",
-            fontSize: 11, color: C.textMuted,
-            cursor: "pointer", padding: "8px 16px",
+            background: "none",
+            border: "none",
+            fontSize: 13,
+            color: "#667085",
+            cursor: "pointer",
+            padding: "8px 16px",
             fontFamily: "inherit",
           }}
         >
@@ -212,9 +163,6 @@ function ConversionModal({ onClose, onRegister }) {
   );
 }
 
-/**
- * Banner inferior persistente del modo demo con countdown.
- */
 function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
   const progress = Math.max(0, secondsLeft / DEMO_DURATION_SEC);
 
@@ -225,41 +173,49 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
       transition={{ type: "spring", stiffness: 360, damping: 32, delay: 1.5 }}
       style={{
         position: "fixed",
-        bottom: 0, left: 0, right: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
         zIndex: 1000,
-        background: "rgba(5,10,20,0.97)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderTop: `1px solid ${expired ? C.amber : "rgba(255,255,255,0.08)"}`,
-        padding: "10px 20px",
+        background: "rgba(255,255,252,0.96)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        borderTop: `1px solid ${expired ? "#D8B16A" : "#E9E2D7"}`,
+        boxShadow: "0 -12px 28px rgba(23,26,28,0.08)",
+        padding: "12px 20px",
         display: "flex",
         alignItems: "center",
         gap: 14,
       }}
     >
-      {/* Badge DEMO */}
-      <div style={{
-        padding: "3px 10px",
-        fontSize: 8, fontWeight: 800,
-        textTransform: "uppercase", letterSpacing: "2px",
-        background: `${C.amber}22`,
-        color: C.amber,
-        border: `1px solid ${C.amber}55`,
-        borderRadius: 5, flexShrink: 0,
-        whiteSpace: "nowrap",
-      }}>
+      <div
+        style={{
+          padding: "5px 12px",
+          fontSize: 10,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: "2px",
+          background: "#FFF8EB",
+          color: "#B7832D",
+          border: "1px solid #E4C98C",
+          borderRadius: 999,
+          flexShrink: 0,
+          whiteSpace: "nowrap",
+        }}
+      >
         Modo Demo
       </div>
 
-      {/* Barra de progreso */}
-      <div style={{
-        flex: 1,
-        height: 3,
-        background: "rgba(255,255,255,0.06)",
-        borderRadius: 2, overflow: "hidden",
-        display: "none",
-      }}
+      <div
         className="demo-banner-progress"
+        style={{
+          flex: 1,
+          height: 6,
+          background: "#F3ECE1",
+          borderRadius: 999,
+          overflow: "hidden",
+          display: "none",
+        }}
       >
         <motion.div
           animate={{ width: `${progress * 100}%` }}
@@ -267,83 +223,81 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
           style={{
             height: "100%",
             background: expired
-              ? `linear-gradient(90deg, ${C.amber}, #E24B4A)`
-              : `linear-gradient(90deg, ${C.neon}, ${C.amber})`,
-            borderRadius: 2,
+              ? "linear-gradient(90deg, #D89A2B, #D95C5C)"
+              : "linear-gradient(90deg, #C9973A, #E3B868)",
+            borderRadius: 999,
           }}
         />
       </div>
 
-      {/* Texto */}
-      <div style={{ flex: 1, fontSize: 11, color: C.textMuted, minWidth: 0 }}>
+      <div style={{ flex: 1, fontSize: 14, color: "#667085", minWidth: 0, textAlign: "center" }}>
         {expired
-          ? "El demo ha expirado — registra tu club para continuar con acceso completo"
-          : `Estás en el entorno demo de ALTTEZ. Tiempo restante: `
-        }
+          ? "El demo ha expirado. Registra tu club para continuar con acceso completo."
+          : "Estas en el entorno demo de ALTTEZ. Tiempo restante: "}
         {!expired && (
-          <span style={{
-            fontWeight: 700, color: secondsLeft < 120 ? C.amber : "rgba(255,255,255,0.6)",
-            fontFamily: "monospace",
-          }}>
+          <span
+            style={{
+              fontWeight: 700,
+              color: secondsLeft < 120 ? "#B7832D" : "#171A1C",
+              fontFamily: "monospace",
+            }}
+          >
             {formatCountdown(secondsLeft)}
           </span>
         )}
       </div>
 
-      {/* CTA Registro */}
       <motion.button
-        whileHover={{ scale: 1.04, boxShadow: `0 0 16px ${C.neonGlow}` }}
+        whileHover={{ scale: 1.02, boxShadow: "0 14px 28px rgba(201,151,58,0.22)" }}
         whileTap={{ scale: 0.97 }}
         onClick={onRegister}
         style={{
-          padding: "7px 18px",
-          fontSize: 11, fontWeight: 700,
-          textTransform: "uppercase", letterSpacing: "1px",
-          background: C.neon, color: "#0a0a0f",
-          border: "none", borderRadius: 6,
-          cursor: "pointer", fontFamily: "inherit",
-          flexShrink: 0, whiteSpace: "nowrap",
+          padding: "11px 18px",
+          fontSize: 13,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+          background: "#C9973A",
+          color: "#FFFFFF",
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontFamily: "inherit",
+          flexShrink: 0,
+          whiteSpace: "nowrap",
         }}
       >
         Registrar club
       </motion.button>
 
-      {/* Cerrar (solo si no expiró) */}
       {!expired && (
         <button
           onClick={onClose}
           aria-label="Cerrar banner demo"
           style={{
-            background: "none", border: "none",
-            color: C.textHint, cursor: "pointer",
-            padding: "4px", display: "flex",
+            background: "none",
+            border: "none",
+            color: "#98A2B3",
+            cursor: "pointer",
+            padding: 4,
+            display: "flex",
             alignItems: "center",
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
       )}
 
       <style>{`
         @media (min-width: 600px) { .demo-banner-progress { display: block !important; } }
-        @media (max-width: 599px) {
-          .demo-banner-progress { display: none !important; }
-        }
+        @media (max-width: 599px) { .demo-banner-progress { display: none !important; } }
       `}</style>
     </motion.div>
   );
 }
 
-/**
- * @component DemoGate
- * @description Gate de conversión del modo demo. Renderiza banner persistente
- * y modal de conversión cuando el timer expira.
- *
- * @param {{ onNavigateToRegister: () => void }} props
- * @returns {JSX.Element | null}
- */
 export default function DemoGate({ onNavigateToRegister }) {
   const [secondsLeft, setSecondsLeft] = useState(() => {
     const demoStart = getOrInitDemoStart();
@@ -355,16 +309,15 @@ export default function DemoGate({ onNavigateToRegister }) {
 
   const expired = secondsLeft === 0;
 
-  // Tick del countdown
   useEffect(() => {
     if (secondsLeft <= 0) return;
     const interval = setInterval(() => {
-      setSecondsLeft((s) => {
-        const next = s - 1;
+      setSecondsLeft((value) => {
+        const next = value - 1;
         if (next <= 0) {
           clearInterval(interval);
           setShowModal(true);
-          setBannerVisible(true); // re-mostrar si fue cerrado
+          setBannerVisible(true);
           return 0;
         }
         return next;
@@ -382,7 +335,6 @@ export default function DemoGate({ onNavigateToRegister }) {
 
   return (
     <>
-      {/* Banner persistente */}
       {bannerVisible && (
         <DemoBanner
           secondsLeft={secondsLeft}
@@ -392,7 +344,6 @@ export default function DemoGate({ onNavigateToRegister }) {
         />
       )}
 
-      {/* Modal de conversión cuando expira */}
       <AnimatePresence>
         {showModal && (
           <ConversionModal

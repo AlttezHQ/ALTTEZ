@@ -70,7 +70,7 @@ export default function Badge({
   const radius      = "var(--radius-sm)";
 
   const variantStyle = variant === "solid"
-    ? { background: color, color: C.bgDark }
+    ? { background: color, color: "#FFFFFF" }
     : { background: dim, color, border: `1px solid ${border}` };
 
   return (

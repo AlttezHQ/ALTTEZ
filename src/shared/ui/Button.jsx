@@ -68,35 +68,34 @@ export default function Button({
     switch (variant) {
       case "primary":
         return {
-          background: `linear-gradient(180deg, ${accent} 0%, ${accent} 60%, ${C.blueDeep} 100%)`,
+          background: `linear-gradient(135deg, ${accent} 0%, ${C.blueDeep} 100%)`,
           color: "#FFFFFF",
           border: `1px solid ${accent}`,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.18), 0 6px 18px ${accent}3D, 0 0 0 1px rgba(255,255,255,0.04)`,
-          textShadow: "0 1px 0 rgba(0,0,0,0.18)",
+          boxShadow: "0 10px 24px rgba(201,151,58,0.18)",
         };
       case "ghost":
         return {
-          background: "linear-gradient(180deg, rgba(47,107,255,0.06) 0%, rgba(47,107,255,0.02) 100%)",
-          color: accent,
-          border: `1px solid ${accent}55`,
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+          background: "#FFFFFF",
+          color: C.text,
+          border: `1px solid ${C.border}`,
+          boxShadow: "0 4px 14px rgba(23,26,28,0.05)",
         };
       case "capsule":
         return {
-          background: "transparent",
+          background: C.blueDim,
           color: accent,
-          border: `1px solid ${accent}44`,
+          border: `1px solid ${C.blueBorder}`,
           borderRadius: "var(--radius-pill)",
           letterSpacing: "var(--ls-caps-sm)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+          boxShadow: "none",
         };
       case "icon":
         return {
-          background: "rgba(255,255,255,0.06)",
-          color: "rgba(255,255,255,0.7)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          background: C.bgDeep,
+          color: C.textMuted,
+          border: `1px solid ${C.border}`,
           borderRadius: "var(--radius-md)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+          boxShadow: "none",
         };
       default:
         return {};
@@ -107,9 +106,9 @@ export default function Button({
     ? {
         whileHover: isDisabled ? {} : (
           variant === "primary"
-            ? { y: -1, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(0,0,0,0.20), 0 10px 28px ${accent}66, 0 0 0 1px rgba(255,255,255,0.06)` }
+            ? { y: -1, boxShadow: "0 14px 28px rgba(201,151,58,0.24)" }
             : variant === "ghost"
-              ? { y: -1, borderColor: `${accent}88`, backgroundColor: "rgba(47,107,255,0.10)" }
+              ? { y: -1, borderColor: `${accent}`, color: `${accent}` }
               : { scale: 1.03 }
         ),
         whileTap:   isDisabled ? {} : { scale: 0.97, y: 0 },
@@ -133,8 +132,8 @@ export default function Button({
         gap: "var(--sp-2)",
         outline: "none",
         fontFamily: "inherit",
-        letterSpacing: variant === "primary" || variant === "ghost" ? "0.6px" : undefined,
-        textTransform: variant === "primary" || variant === "ghost" ? "uppercase" : undefined,
+        letterSpacing: variant === "primary" || variant === "ghost" ? "0.04em" : undefined,
+        textTransform: variant === "primary" ? "uppercase" : undefined,
         ...variantStyle,
         ...style,
       }}
@@ -152,7 +151,7 @@ function Spinner() {
       style={{
         width: 14,
         height: 14,
-        border: "2px solid rgba(255,255,255,0.25)",
+        border: "2px solid rgba(255,255,255,0.35)",
         borderTopColor: "#FFFFFF",
         borderRadius: "50%",
         animation: "spin 0.7s linear infinite",

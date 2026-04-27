@@ -51,7 +51,6 @@ const LoadingFallback = () => (
     height:"60vh", position:"relative",
   }}>
     <div style={{ textAlign:"center", position:"relative" }}>
-      {/* Logo + sweep overlay */}
       <div style={{
         position:"relative",
         width: 80, height: 80,
@@ -63,15 +62,14 @@ const LoadingFallback = () => (
           alt="ALTTEZ"
           style={{
             width: 64, height: 64, objectFit:"contain",
-            filter:`drop-shadow(0 0 16px ${C.blueGlow})`,
+            opacity: 0.92,
             animation: "alttez-pulse 1.8s ease-in-out infinite",
           }}
           onError={e => { e.currentTarget.style.display = "none"; }}
         />
-        {/* Ring progress */}
         <span style={{
           position:"absolute", inset:0,
-          border:`2px solid ${C.blueBorder}`,
+          border:`2px solid ${C.border}`,
           borderTopColor: C.blue,
           borderRightColor: C.blueHi,
           borderRadius:"50%",
@@ -79,12 +77,11 @@ const LoadingFallback = () => (
         }} />
       </div>
       <div style={{
-        fontSize:10,
+        fontSize:11,
         color:C.textMuted,
         textTransform:"uppercase",
-        letterSpacing:"3px",
+        letterSpacing:"0.14em",
         fontWeight:700,
-        fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
       }}>
         Cargando ALTTEZ
       </div>
@@ -302,7 +299,7 @@ export function CRMApp() {
   // ── Landing: directo al formulario de login/registro ──
   if (!mode) {
     return (
-      <div style={{ minHeight:"100vh", background:"#050a14", position:"relative" }}>
+      <div style={{ minHeight:"100vh", background:"#FAFAF8", position:"relative" }}>
         <FieldBackground />
         <ToastContainer />
         <OfflineBanner />
@@ -326,10 +323,12 @@ export function CRMApp() {
     />
   );
 
+  const isHomeModule = activeModule === "home";
+
   // ── Routing con ErrorBoundary + Suspense por modulo ──
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, position:"relative" }}>
-      <FieldBackground />
+    <div style={{ minHeight:"100vh", background:isHomeModule ? "#FAFAF8" : C.bg, position:"relative" }}>
+      {!isHomeModule && <FieldBackground />}
       <ToastContainer />
       <OfflineBanner />
       <UpdateToast />

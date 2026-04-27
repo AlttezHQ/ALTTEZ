@@ -1,801 +1,802 @@
-/**
- * @component Home
- * @description Pantalla principal de ALTTEZ con UX nivel consola.
- *
- * @ux-features
- * - Hover/Focus con glow neón radial por tile
- * - Scale transform suave (1.02) en tile activo
- * - Imagen de fondo: oscura en reposo, saturada al hover
- * - Botón CTA: cambia a blanco al hover
- * - Audio sintetizado con Web Audio API (sin archivos externos):
- *     · hover  → "woosh" suave de baja frecuencia (tipo FIFA nav)
- *     · click  → "confirmación" metálica breve
- *
- * @audio-architecture
- * AudioContext se crea una sola vez (lazy) para evitar warnings del browser.
- * Dos funciones de síntesis: playHover() y playSelect()
- * que generan sonido programáticamente con OscillatorNode + GainNode.
- *
- * @palette  Ver objeto PALETTE (centralizado)
- * @version  5.0
- * @author   ALTTEZ
- */
-
-import { useState, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import imgEntrenamiento from "./assets/entrenamiento.jpeg";
-import imgPlantilla     from "./assets/Gestion_de_plantilla.jpeg";
-import imgPartido       from "./assets/Partido.jpeg";
-import imgOficina       from "./assets/Oficina.jpeg";
-import imgProximo       from "./assets/Proximo_partido.jpeg";
-import { PALETTE }      from "../../shared/tokens/palette";
-import EmptyState       from "../../shared/ui/EmptyState";
+import imgPlantilla from "./assets/Gestion_de_plantilla.jpeg";
+import imgPartido from "./assets/Partido.jpeg";
+import imgOficina from "./assets/Oficina.jpeg";
+import imgProximo from "./assets/Proximo_partido.jpeg";
+import EmptyState from "../../shared/ui/EmptyState";
 import { useStore } from "../../shared/store/useStore";
 import { calcStats } from "../../shared/services/storageService";
 
-// ─────────────────────────────────────────────
-// ANIMATION VARIANTS
-// ─────────────────────────────────────────────
-const staggerContainer = {
-  animate: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+const COLORS = {
+  page: "#FAFAF8",
+  pageAlt: "#F5F1EA",
+  surface: "#FFFFFF",
+  surfaceSoft: "#FCFAF6",
+  text: "#171A1C",
+  textMuted: "#667085",
+  textSoft: "#8E8A83",
+  border: "#E9E2D7",
+  borderStrong: "#D8CCB9",
+  copper: "#C9973A",
+  copperHover: "#B7832D",
+  copperSoft: "#F4E7CF",
+  success: "#2FA56F",
+  warning: "#D89A2B",
+  danger: "#D95C5C",
+  shadow: "0 18px 44px rgba(23, 26, 28, 0.07)",
+  shadowHover: "0 22px 50px rgba(23, 26, 28, 0.10)",
 };
 
-const metricItemVariant = {
-  initial: { opacity: 0, y: 12, scale: 0.96 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 320, damping: 26 } },
-};
+const NAV_ITEMS = [
+  { key: "home", label: "Inicio", navigable: false },
+  { key: "entrenamiento", label: "Entrenamiento", navigable: true },
+  { key: "plantilla", label: "Gestion de plantilla", navigable: true },
+  { key: "calendario", label: "Calendario", navigable: true },
+  { key: "admin", label: "Administracion", navigable: true },
+  { key: "reportes", label: "Reportes", navigable: true },
+  { key: "miclub", label: "Mi Club", navigable: true },
+];
 
-// ─────────────────────────────────────────────
-// PRÓXIMO EVENTO — busca en datos reales del calendario
-// ─────────────────────────────────────────────
-const EVENT_COLORS = { match: "#2F6BFF", training: "#5B9DFF", club: "#F59E0B" };
+const EVENT_COLORS = { match: COLORS.copper, training: COLORS.warning, club: COLORS.success };
 const EVENT_LABELS = { match: "Partido", training: "Entrenamiento", club: "Evento" };
 
-/**
- * Genera los eventos demo del mes actual como fallback.
- * @returns {Array} Eventos demo con datetime ISO
- */
+const cardEnter = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+};
+
+const ICON_SIZE = 20;
+
+const Icon = {
+  Users: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="4" stroke={color} strokeWidth="1.8" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+  Calendar: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="4" stroke={color} strokeWidth="1.8" />
+      <path d="M3 10h18M8 2v4M16 2v4" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+  Session: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  Chart: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  Target: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.8" />
+      <path d="M12 3v3M21 12h-3M12 18v3M6 12H3" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+  ArrowUp: ({ color = COLORS.copper }) => (
+    <svg width={ICON_SIZE} height={ICON_SIZE} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m7 17 10-10M17 7H9m8 0v8" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+};
+
 function getDemoEvents() {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
   const d = (day, hour = 18, min = 0) => new Date(y, m, day, hour, min).toISOString();
   return [
-    { type:"training", title:"Entrenamiento físico",        datetime:d(2,18,0),  location:"Campo A" },
-    { type:"training", title:"Trabajo táctico",             datetime:d(4,18,0),  location:"Campo A" },
-    { type:"match",    title:"vs Atlético Sur",             datetime:d(7,16,0),  location:"Estadio Local" },
-    { type:"training", title:"Rondos y pressing",           datetime:d(9,18,0),  location:"Campo A" },
-    { type:"training", title:"Entrenamiento precompetición",datetime:d(11,17,30),location:"Campo B" },
-    { type:"match",    title:"vs Deportivo Norte",          datetime:d(14,11,0), location:"Est. Norte" },
-    { type:"training", title:"Recuperación activa",         datetime:d(16,10,0), location:"Gimnasio" },
-    { type:"training", title:"Pautas tácticas jornada",     datetime:d(18,18,0), location:"Campo A" },
-    { type:"club",     title:"Jornada de puertas abiertas", datetime:d(19,10,0), location:"Campo A" },
-    { type:"match",    title:"vs Unión FC",                 datetime:d(21,16,30),location:"Estadio Local" },
-    { type:"training", title:"Ensayo de balón parado",      datetime:d(23,18,0), location:"Campo A" },
-    { type:"training", title:"Entrenamiento técnico",       datetime:d(25,18,0), location:"Campo B" },
-    { type:"match",    title:"vs Racing Club",              datetime:d(28,17,0), location:"Estadio Racing" },
+    { type: "training", title: "Entrenamiento fisico", datetime: d(2, 18, 0), location: "Campo A" },
+    { type: "training", title: "Trabajo tactico", datetime: d(4, 18, 0), location: "Campo A" },
+    { type: "match", title: "vs Atletico Sur", datetime: d(7, 16, 0), location: "Estadio Local" },
+    { type: "training", title: "Rondos y pressing", datetime: d(9, 18, 0), location: "Campo A" },
+    { type: "training", title: "Entrenamiento precompeticion", datetime: d(11, 17, 30), location: "Campo B" },
+    { type: "match", title: "vs Deportivo Norte", datetime: d(14, 11, 0), location: "Est. Norte" },
+    { type: "training", title: "Recuperacion activa", datetime: d(16, 10, 0), location: "Gimnasio" },
+    { type: "training", title: "Pautas tacticas jornada", datetime: d(18, 18, 0), location: "Campo A" },
+    { type: "club", title: "Jornada de puertas abiertas", datetime: d(19, 10, 0), location: "Campo A" },
+    { type: "match", title: "vs Union FC", datetime: d(21, 16, 30), location: "Estadio Local" },
+    { type: "training", title: "Ensayo de balon parado", datetime: d(23, 18, 0), location: "Campo A" },
+    { type: "training", title: "Entrenamiento tecnico", datetime: d(25, 18, 0), location: "Campo B" },
+    { type: "match", title: "vs Racing Club", datetime: d(28, 17, 0), location: "Estadio Racing" },
   ];
 }
 
-/**
- * Obtiene el proximo evento del club.
- * Prioridad: eventos reales del calendario (alttez_events_{clubId})
- * Fallback: eventos demo del mes en curso.
- * @returns {{ type: string, title: string, datetime: string, location: string } | null}
- */
 function getNextEvent() {
   const now = new Date();
 
-  // 1. Intentar leer eventos reales del calendario del club
   try {
-    const clubId = localStorage.getItem("alttez_club_id") || "demo";
-    const rawEvents = localStorage.getItem(`alttez_events_`);
+    const rawEvents = localStorage.getItem("alttez_events_");
     if (rawEvents) {
       const customEvents = JSON.parse(rawEvents);
       if (Array.isArray(customEvents) && customEvents.length > 0) {
         const future = customEvents
-          .filter(e => e.datetime && new Date(e.datetime) > now)
+          .filter((event) => event.datetime && new Date(event.datetime) > now)
           .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
         if (future.length > 0) return future[0];
       }
     }
   } catch {
-    // localStorage no disponible o datos corruptos — continuar con fallback
+    // Ignore malformed localStorage and keep demo fallback.
   }
 
-  // 2. Fallback: eventos demo del mes actual
   const demoEvents = getDemoEvents();
-  const future = demoEvents.filter(e => new Date(e.datetime) > now).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+  const future = demoEvents.filter((event) => new Date(event.datetime) > now).sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
   return future[0] || null;
 }
 
 function fmtEventDate(iso) {
-  const d = new Date(iso);
-  const dias = ["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"];
-  const meses = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
-  return `${dias[d.getDay()]} ${d.getDate()} ${meses[d.getMonth()]} · ${d.getHours().toString().padStart(2,"0")}:${d.getMinutes().toString().padStart(2,"0")}h`;
+  const date = new Date(iso);
+  const dias = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"];
+  const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+  return `${dias[date.getDay()]} ${date.getDate()} ${meses[date.getMonth()]} · ${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}h`;
 }
 
 function daysUntil(iso) {
-  const diff = Math.ceil((new Date(iso) - new Date()) / (1000*60*60*24));
+  const diff = Math.ceil((new Date(iso) - new Date()) / (1000 * 60 * 60 * 24));
   if (diff === 0) return "Hoy";
-  if (diff === 1) return "Mañana";
-  return `${diff} días`;
+  if (diff === 1) return "Manana";
+  return `Faltan ${diff} dias`;
 }
 
-// ─────────────────────────────────────────────
-// NAVEGACIÓN
-// ─────────────────────────────────────────────
-const NAV_ITEMS = [
-  { key:"home",          label:"Inicio",               navigable:false },
-  { key:"entrenamiento", label:"Entrenamiento",         navigable:true  },
-  { key:"plantilla",     label:"Gestión de plantilla",  navigable:true  },
-  { key:"calendario",    label:"Calendario",            navigable:true  },
-  { key:"admin",         label:"Administración",        navigable:true  },
-  { key:"reportes",      label:"Reportes",              navigable:true  },
-  { key:"miclub",        label:"Mi club",               navigable:true  },
-];
-
-// ─────────────────────────────────────────────
-// ICONOS SVG
-// ─────────────────────────────────────────────
-const Icon = {
-  Users: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round"/><circle cx="9" cy="7" r="4" stroke={PALETTE.blue} strokeWidth="2"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round"/></svg>,
-  Ball:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke={PALETTE.blue} strokeWidth="2"/><path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.blue} strokeWidth="1.5"/></svg>,
-  Train: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  Chart: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke={PALETTE.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-};
-
-// ─────────────────────────────────────────────
-// WEB AUDIO API — SÍNTESIS DE SONIDO
-// No requiere archivos externos.
-// AudioContext se crea de forma lazy al primer uso.
-// ─────────────────────────────────────────────
-
-/**
- * Hook que expone dos funciones de audio sintetizado:
- * - playHover():  sonido de navegación suave (woosh FIFA)
- * - playSelect(): sonido de confirmación metálica
- */
 function useGameAudio() {
   const ctxRef = useRef(null);
 
-  /** Obtiene o crea el AudioContext (lazy, evita warnings del browser) */
   const getCtx = useCallback(() => {
-    if (!ctxRef.current) {
+    if (!ctxRef.current && typeof window !== "undefined") {
       ctxRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
     return ctxRef.current;
   }, []);
 
-  /**
-   * Sonido de hover/navegación
-   * Síntesis: oscilador sinusoidal de baja frecuencia (80→40 Hz)
-   * con envelope rápido — reproduce el "thud" suave de menús FIFA.
-   */
   const playHover = useCallback(() => {
     try {
-      const ctx  = getCtx();
-      const osc  = ctx.createOscillator();
+      const ctx = getCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.type = "sine";
-      osc.frequency.setValueAtTime(120, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(55, ctx.currentTime + 0.12);
-
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
-
+      osc.frequency.setValueAtTime(140, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.03, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
       osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.15);
+      osc.stop(ctx.currentTime + 0.11);
     } catch {
-      // AudioContext puede estar bloqueado hasta interacción del usuario — silencioso
+      // Audio remains optional.
     }
   }, [getCtx]);
 
-  /**
-   * Sonido de selección/click
-   * Síntesis: dos osciladores (fundamental + armónico) con
-   * envelope más largo y frecuencia ascendente — "ding" metálico FIFA.
-   */
   const playSelect = useCallback(() => {
     try {
-      const ctx   = getCtx();
-      const now   = ctx.currentTime;
-
-      // Oscilador 1: fundamental
-      const osc1  = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.connect(gain1);
-      gain1.connect(ctx.destination);
-      osc1.type = "triangle";
-      osc1.frequency.setValueAtTime(320, now);
-      osc1.frequency.exponentialRampToValueAtTime(480, now + 0.08);
-      gain1.gain.setValueAtTime(0.22, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc1.start(now);
-      osc1.stop(now + 0.26);
-
-      // Oscilador 2: armónico (5ª justa)
-      const osc2  = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.type = "sine";
-      osc2.frequency.setValueAtTime(480, now);
-      osc2.frequency.exponentialRampToValueAtTime(720, now + 0.08);
-      gain2.gain.setValueAtTime(0.1, now);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-      osc2.start(now);
-      osc2.stop(now + 0.21);
-    } catch { /* audio context not supported */ }
+      const ctx = getCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + 0.12);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch {
+      // Audio remains optional.
+    }
   }, [getCtx]);
 
   return { playHover, playSelect };
 }
 
-// ─────────────────────────────────────────────
-// COMPONENTE TILE INTERACTIVO
-// Encapsula toda la lógica de hover/focus/audio
-// para no repetirla en cada mosaico.
-// ─────────────────────────────────────────────
-
-/**
- * @component InteractiveTile
- * @param {string}   tileKey        - Identificador único del tile
- * @param {string}   gridColumn     - CSS grid-column
- * @param {string}   gridRow        - CSS grid-row
- * @param {string}   image          - URL de imagen de fondo
- * @param {string}   overlayType    - "left" | "bottom"
- * @param {string}   borderTopColor - Color del borde superior
- * @param {number}   borderTopWidth - Grosor del borde superior
- * @param {Function} onClick        - Callback al hacer click
- * @param {Function} playHover      - Función de audio hover
- * @param {Function} playSelect     - Función de audio selección
- * @param {ReactNode} children      - Contenido del tile
- */
-function InteractiveTile({
-  gridColumn, gridRow,
-  image, overlayType = "bottom",
-  borderTopColor = PALETTE.blue, borderTopWidth = 4,
-  onClick, playHover, playSelect,
-  children,
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  const handleMouseEnter = () => {
-    setHovered(true);
-    playHover();
-  };
-
-  const handleMouseLeave = () => {
-    setHovered(false);
-  };
-
-  const handleClick = () => {
-    playSelect();
-    onClick && onClick();
-  };
-
-  // Overlay gradiente según tipo de tile
-  const overlayGradient = overlayType === "left"
-    ? "linear-gradient(to right, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.22) 65%, transparent 100%)"
-    : "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.05) 100%)";
-
+function SurfaceCard({ children, style, onClick, onMouseEnter, onMouseLeave, role = "presentation" }) {
   return (
-    <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
+    <motion.div
+      variants={cardEnter}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      whileHover={onClick ? { y: -3, boxShadow: COLORS.shadowHover } : undefined}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      role={role}
       style={{
-        position:    "relative",
-        overflow:    "hidden",
-        cursor:      "pointer",
-        gridColumn,
-        gridRow,
-        borderTop:   `${borderTopWidth}px solid ${borderTopColor}`,
-        // ── Glow effect ──
-        boxShadow: hovered
-          ? `0 0 0 1px rgba(47,107,255,0.5), 0 0 24px rgba(47,107,255,0.3), inset 0 0 30px rgba(47,107,255,0.03), 0 12px 40px rgba(0,0,0,0.7)`
-          : "0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)",
-        // ── Scale + lift ──
-        transform:  hovered ? "scale(1.018) translateY(-2px)" : "scale(1) translateY(0)",
-        zIndex:     hovered ? 3 : 1,
-        transition: "transform 280ms cubic-bezier(0.25,0.46,0.45,0.94), box-shadow 280ms cubic-bezier(0.25,0.46,0.45,0.94)",
+        background: COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 18,
+        boxShadow: COLORS.shadow,
+        overflow: "hidden",
+        ...style,
       }}
     >
-      {/* Imagen de fondo con filtro dinámico */}
-      <div style={{
-        position:        "absolute",
-        inset:           0,
-        backgroundImage: `url(${image})`,
-        backgroundSize:  "cover",
-        backgroundPosition: "center",
-        zIndex:          0,
-        // Cuando NO está en hover: desaturado y oscuro (reposo)
-        // Cuando SÍ está en hover: saturado y brillante
-        filter: hovered
-          ? "brightness(1.05) saturate(1.2) contrast(1.05)"
-          : "brightness(0.65) saturate(0.7)",
-        transform: hovered ? "scale(1.04)" : "scale(1)",
-        transition: "filter 350ms ease-out, transform 600ms ease-out",
-      }}/>
-
-      {/* Overlay de gradiente */}
-      <div style={{
-        position:   "absolute",
-        inset:      0,
-        background: overlayGradient,
-        zIndex:     2,
-        // Overlay más claro en hover para resaltar imagen
-        opacity:    hovered ? 0.78 : 1,
-        transition: "opacity 350ms ease-out",
-      }}/>
-
-      {/* Contenido del tile con prop isHovered para CTA */}
-      <div style={{
-        position: "relative",
-        zIndex:   5,
-        height:   "100%",
-        display:  "flex",
-        flexDirection:  "column",
-        justifyContent: "flex-end",
-        padding:  "18px 20px",
-      }}>
-        {typeof children === "function" ? children(hovered) : children}
-      </div>
-    </div>
+      {children}
+    </motion.div>
   );
 }
 
-// ─────────────────────────────────────────────
-// HOME PRINCIPAL
-// ─────────────────────────────────────────────
+function PrimaryButton({ children, onClick, style }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: "none",
+        borderRadius: 12,
+        background: COLORS.copper,
+        color: "#FFFFFF",
+        fontSize: 15,
+        fontWeight: 700,
+        letterSpacing: "0.01em",
+        padding: "14px 22px",
+        cursor: "pointer",
+        boxShadow: "0 12px 28px rgba(201, 151, 58, 0.24)",
+        transition: "background 160ms ease, transform 160ms ease",
+        ...style,
+      }}
+      onMouseEnter={(event) => { event.currentTarget.style.background = COLORS.copperHover; }}
+      onMouseLeave={(event) => { event.currentTarget.style.background = COLORS.copper; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function HeroModuleCard({
+  title,
+  description,
+  cta,
+  image,
+  icon,
+  onClick,
+  playHover,
+  playSelect,
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <SurfaceCard
+      onClick={() => {
+        playSelect();
+        onClick();
+      }}
+      onMouseEnter={() => {
+        setHovered(true);
+        playHover();
+      }}
+      onMouseLeave={() => setHovered(false)}
+      role="button"
+      style={{
+        minHeight: 332,
+        cursor: "pointer",
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${image})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          transform: hovered ? "scale(1.03)" : "scale(1)",
+          transition: "transform 320ms ease",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, rgba(23,26,28,0.18) 0%, rgba(23,26,28,0.58) 58%, rgba(23,26,28,0.82) 100%)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(90deg, rgba(23,26,28,0.58) 0%, rgba(23,26,28,0.10) 60%, rgba(23,26,28,0.12) 100%)",
+        }}
+      />
+      <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%", padding: 22 }}>
+        <div
+          style={{
+            width: 62,
+            height: 62,
+            borderRadius: 16,
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.24)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
+          {icon}
+        </div>
+        <div style={{ maxWidth: 320 }}>
+          <h2 style={{ margin: 0, color: "#FFFFFF", fontSize: 20, lineHeight: 1.05, fontWeight: 800, letterSpacing: "-0.02em" }}>{title}</h2>
+          <p style={{ margin: "12px 0 0", color: "rgba(255,255,255,0.88)", fontSize: 16, lineHeight: 1.5 }}>{description}</p>
+          <PrimaryButton style={{ marginTop: 22 }}>{cta} {"\u2192"}</PrimaryButton>
+        </div>
+      </div>
+    </SurfaceCard>
+  );
+}
+
 export default function Home({ onNavigate, onLogout }) {
-  const mode = useStore(state => state.mode);
-  const athletes = useStore(state => state.athletes);
-  const historial = useStore(state => state.historial);
-  const clubInfo = useStore(state => state.clubInfo);
-  const matchStats = useStore(state => state.matchStats);
+  const mode = useStore((state) => state.mode);
+  const athletes = useStore((state) => state.athletes);
+  const historial = useStore((state) => state.historial);
+  const clubInfo = useStore((state) => state.clubInfo);
+  const matchStats = useStore((state) => state.matchStats);
 
   const stats = calcStats(athletes, historial);
   const club = { ...clubInfo, categoria: (clubInfo.categorias || [])[0] || "General" };
-
+  const clubInitials = (club.nombre || "CT").split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();
+  const nextEvent = getNextEvent();
   const { playHover, playSelect } = useGameAudio();
 
-  const clubInitials = (club.nombre || "ES")
-    .split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
-
-  // ── Estilos estáticos ────────────────────
-  const css = {
-    app: { minHeight:"100vh", background:PALETTE.bg, display:"flex", flexDirection:"column" },
-    topbar: { height:44, background:"rgba(6,8,14,0.88)", backdropFilter:"blur(28px)", WebkitBackdropFilter:"blur(28px)", borderBottom:`1px solid rgba(47,107,255,0.12)`, display:"flex", alignItems:"stretch", flexShrink:0, overflowX:"auto", boxShadow:"0 1px 0 rgba(255,255,255,0.02), 0 4px 16px rgba(0,0,0,0.4)" },
-    brandBlock: { padding:"0 22px", display:"flex", alignItems:"center", background:"rgba(0,0,0,0.6)", borderRight:`1px solid ${PALETTE.border}` },
-    navItem: (active) => ({ padding:"0 15px", fontSize:10, textTransform:"uppercase", letterSpacing:"1.8px", color: active ? PALETTE.text : PALETTE.textMuted, display:"flex", alignItems:"center", cursor:"pointer", borderRight:`1px solid ${PALETTE.border}`, borderBottom: active ? `2px solid ${PALETTE.blue}` : "2px solid transparent", background: active ? "rgba(47,107,255,0.06)" : "transparent", whiteSpace:"nowrap", transition:"color 0.15s" }),
-    clubBadge: { marginLeft:"auto", display:"flex", alignItems:"center", gap:10, padding:"0 18px", borderLeft:`1px solid ${PALETTE.border}` },
-    clubLogo: { width:28, height:28, borderRadius:"50%", background:"rgba(47,107,255,0.12)", border:`2px solid ${PALETTE.blue}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:PALETTE.blue, flexShrink:0 },
-    metrics: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:0, flexShrink:0, borderBottom:`1px solid rgba(255,255,255,0.06)` },
-    metricBlock: (i) => ({ position:"relative", padding:"16px 22px", display:"flex", alignItems:"center", gap:14, background: i===0 ? "linear-gradient(135deg,rgba(47,107,255,0.14) 0%,rgba(10,15,26,0.96) 55%,rgba(4,6,16,1) 100%)" : "linear-gradient(135deg,rgba(47,107,255,0.06) 0%,rgba(10,15,26,0.98) 60%,rgba(4,6,16,1) 100%)", backdropFilter:"blur(24px) saturate(140%)", WebkitBackdropFilter:"blur(24px) saturate(140%)", borderRight:`1px solid rgba(255,255,255,0.06)`, boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.30), 0 4px 20px rgba(0,0,0,0.35)", overflow:"hidden" }),
-    grid: { flex:1, display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(min(100%,280px),1fr))", gridAutoRows:"minmax(180px,1fr)", gap:4, padding:"4px 12px 12px", minHeight:0 },
-    tag: { fontSize:8, textTransform:"uppercase", letterSpacing:"3.5px", fontWeight:600, color:PALETTE.blueHi, marginBottom:10, opacity:0.85 },
-    titleBig: { fontSize:42, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-1.5px", lineHeight:0.92, textShadow:"0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.4)", marginBottom:18 },
-    titleMid: { fontSize:22, fontWeight:800, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.5px", lineHeight:1.05, textShadow:"0 2px 12px rgba(0,0,0,0.85)", marginBottom:14 },
-    // Botón CTA: recibe isHovered para cambiar color
-    btn: (hov) => ({ display:"inline-flex", alignItems:"center", fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.8px", padding:"10px 24px", background: hov ? "rgba(255,255,255,0.95)" : PALETTE.blue, color: hov ? PALETTE.bgDark : "#F0F4F8", border:"none", cursor:"pointer", width:"fit-content", borderRadius:2, boxShadow: hov ? `0 0 16px rgba(47,107,255,0.4)` : "0 2px 8px rgba(0,0,0,0.4)", transition:"all 250ms ease-out" }),
-    ghostBtn: { display:"inline-flex", alignItems:"center", fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"6px 14px", background:"transparent", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi, cursor:"pointer" },
-    statRow: { display:"flex", alignItems:"center", height:"100%", position:"relative", zIndex:2, padding:"0 12px", gap:0 },
-    statBlock: (last) => ({ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"10px 8px", borderRight: last ? "none" : `1px solid ${PALETTE.border}` }),
-    footer: { display:"flex", alignItems:"center", justifyContent:"flex-end", padding:"4px 18px 8px", flexShrink:0 },
-  };
-
-  const METRICS = [
-    { label:"Plantilla",      value:athletes.length,        icon:Icon.Users, route:"plantilla" },
-    { label:"Partidos",       value:matchStats.played,      icon:Icon.Ball,  route:"partidos" },
-    { label:"Sesiones",       value:stats.sesiones,         icon:Icon.Train, route:"entrenamiento" },
-    { label:"Asistencia",     value:stats.asistencia + "%", icon:Icon.Chart, route:"calendario" },
+  const metrics = [
+    { label: "Plantilla", value: athletes.length, icon: <Icon.Users />, route: "plantilla", caption: "Jugadores registrados" },
+    { label: "Partidos", value: matchStats.played, icon: <Icon.Calendar />, route: "partidos", caption: "Proximos compromisos" },
+    { label: "Sesiones", value: stats.sesiones, icon: <Icon.Session />, route: "entrenamiento", caption: "Esta semana" },
+    { label: "Asistencia", value: `${stats.asistencia}%`, icon: <Icon.Chart />, route: "calendario", caption: "Promedio de sesiones" },
   ];
 
-  const STATS = [
-    { val:matchStats.won,         lbl:"Ganados",   color:PALETTE.success },
-    { val:matchStats.lost,        lbl:"Perdidos",  color:PALETTE.danger },
-    { val:matchStats.points,      lbl:"Puntos",    color:PALETTE.blue },
-    { val:`${matchStats.goalsFor}-${matchStats.goalsAgainst}`, lbl:"Goles F/C", color:"white" },
+  const results = [
+    { label: "Ganados", value: matchStats.won, detail: "Partidos", color: COLORS.success },
+    { label: "Perdidos", value: matchStats.lost, detail: "Partidos", color: COLORS.danger },
+    { label: "Puntos", value: matchStats.points, detail: "Acumulados", color: COLORS.text },
+    { label: "Goles F/C", value: `${matchStats.goalsFor}-${matchStats.goalsAgainst}`, detail: "Diferencia", color: COLORS.text },
   ];
 
   return (
-    <div style={css.app}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: `linear-gradient(180deg, ${COLORS.page} 0%, ${COLORS.pageAlt} 100%)`,
+        color: COLORS.text,
+      }}
+    >
+      <style>{`
+        .crm-home-shell {
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 0 32px 28px;
+        }
+        .crm-home-header {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: rgba(255,255,255,0.92);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border-bottom: 1px solid ${COLORS.border};
+        }
+        .crm-home-header-inner {
+          max-width: 1440px;
+          margin: 0 auto;
+          min-height: 72px;
+          padding: 0 32px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+        .crm-home-nav {
+          display: flex;
+          align-items: stretch;
+          gap: 10px;
+          flex: 1;
+          min-width: 0;
+        }
+        .crm-home-nav-scroll {
+          display: flex;
+          align-items: stretch;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          min-width: 0;
+        }
+        .crm-home-nav-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .crm-home-kpis {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
+          margin-top: 18px;
+        }
+        .crm-home-main {
+          display: grid;
+          grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+          gap: 16px;
+          margin-top: 18px;
+          align-items: start;
+        }
+        .crm-home-secondary {
+          display: grid;
+          grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr);
+          gap: 16px;
+          margin-top: 16px;
+          align-items: start;
+        }
+        .crm-home-left-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .crm-home-right-stack {
+          display: grid;
+          gap: 16px;
+        }
+        .crm-home-results {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 0;
+        }
+        .crm-home-match {
+          margin-top: 18px;
+        }
+        .crm-home-footer-space {
+          height: 8px;
+        }
+        @media (max-width: 1279px) {
+          .crm-home-main {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .crm-home-secondary {
+            grid-template-columns: minmax(0, 1fr);
+          }
+          .crm-home-right-stack {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 1023px) {
+          .crm-home-shell,
+          .crm-home-header-inner {
+            padding-left: 20px;
+            padding-right: 20px;
+          }
+          .crm-home-header-inner {
+            flex-wrap: wrap;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            align-items: flex-start;
+          }
+          .crm-home-nav {
+            order: 3;
+            flex-basis: 100%;
+          }
+          .crm-home-kpis {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .crm-home-left-grid,
+          .crm-home-right-stack,
+          .crm-home-secondary,
+          .crm-home-results {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 767px) {
+          .crm-home-shell,
+          .crm-home-header-inner {
+            padding-left: 14px;
+            padding-right: 14px;
+          }
+          .crm-home-kpis {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+        }
+      `}</style>
 
-      {/* TOPBAR */}
-      <div className="home-topbar" style={css.topbar}>
-        <div style={css.brandBlock}>
-          <img
-            src="/branding/alttez-symbol-transparent.png"
-            alt="ALTTEZ"
-            style={{
-              height:22, width:"auto", display:"block", marginRight:10,
-              filter:`drop-shadow(0 0 10px ${PALETTE.blueGlow})`,
-            }}
-            onError={e => { e.currentTarget.style.display = "none"; }}
-          />
-          <span className="home-brand-full" style={{
-            fontSize:14, fontWeight:800, color:PALETTE.text,
-            letterSpacing:"3px", whiteSpace:"nowrap",
-            fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
-            textTransform:"uppercase",
-          }}>
-            ALTTEZ
-          </span>
+      <header className="crm-home-header">
+        <div className="crm-home-header-inner">
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
+            <img
+              src="/branding/alttez-symbol-transparent.png"
+              alt="ALTTEZ"
+              style={{ width: 38, height: 38, objectFit: "contain" }}
+              onError={(event) => { event.currentTarget.style.display = "none"; }}
+            />
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "0.18em" }}>ALTTEZ</div>
+          </div>
+
+          <div className="crm-home-nav">
+            <div className="crm-home-nav-scroll">
+              {NAV_ITEMS.map(({ key, label, navigable }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => navigable && onNavigate(key)}
+                  style={{
+                    position: "relative",
+                    border: "none",
+                    background: "transparent",
+                    color: key === "home" ? COLORS.text : COLORS.textMuted,
+                    fontSize: 14,
+                    fontWeight: key === "home" ? 700 : 600,
+                    padding: "12px 12px 14px",
+                    whiteSpace: "nowrap",
+                    cursor: navigable ? "pointer" : "default",
+                  }}
+                >
+                  {label}
+                  {key === "home" && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        right: 12,
+                        bottom: 0,
+                        height: 3,
+                        borderRadius: 999,
+                        background: COLORS.copper,
+                      }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            {mode === "demo" && (
+              <div style={{ border: `1px solid ${COLORS.borderStrong}`, color: COLORS.copper, background: COLORS.surface, borderRadius: 10, padding: "7px 10px", fontSize: 12, fontWeight: 700 }}>
+                DEMO
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, background: COLORS.surfaceSoft, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "8px 12px" }}>
+              <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1F2A37", color: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800 }}>
+                {clubInitials}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>{club.nombre || "Mi Club"}</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted, whiteSpace: "nowrap" }}>{club.temporada || "Temporada 2024/25"}</div>
+              </div>
+            </div>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                style={{
+                  borderRadius: 12,
+                  border: `1px solid ${COLORS.border}`,
+                  background: COLORS.surface,
+                  color: COLORS.textMuted,
+                  padding: "10px 14px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar sesion
+              </button>
+            )}
+          </div>
         </div>
-        {NAV_ITEMS.map(({ key, label, navigable }) => (
-          <div key={key} onClick={() => navigable && onNavigate(key)} style={css.navItem(key==="home")}>
-            {label}
-          </div>
-        ))}
-        <div style={css.clubBadge}>
-          {mode === "demo" && (
-            <div style={{ padding:"2px 8px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", background:"rgba(239,159,39,0.2)", color:"#EF9F27", border:"1px solid rgba(239,159,39,0.4)", marginRight:6 }}>
-              Demo
-            </div>
-          )}
-          <div style={css.clubLogo}>{clubInitials}</div>
-          <div className="home-club-name">
-            <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"1px", whiteSpace:"nowrap" }}>
-              {club.nombre || "Mi Club"}
-            </div>
-            <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:1 }}>
-              {(club.categorias||[])[0]||"General"} · {club.temporada||"2025-26"}
-            </div>
-          </div>
-          {onLogout && (
-            <div
-              onClick={onLogout}
-              style={{ marginLeft:10, padding:"4px 10px", fontSize:8, fontWeight:700, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.35)", border:"1px solid rgba(255,255,255,0.12)", cursor:"pointer", whiteSpace:"nowrap" }}
+      </header>
+
+      <main className="crm-home-shell">
+        <motion.div className="crm-home-kpis" initial="initial" animate="animate" variants={{ animate: { transition: { staggerChildren: 0.06 } } }}>
+          {metrics.map((metric) => (
+            <SurfaceCard
+              key={metric.label}
+              onClick={() => {
+                playSelect();
+                onNavigate(metric.route);
+              }}
+              onMouseEnter={() => playHover()}
+              role="button"
+              style={{ cursor: "pointer", padding: "22px 24px", minHeight: 102 }}
             >
-              Cerrar sesion
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* METRICS */}
-      <motion.div
-        variants={staggerContainer}
-        initial="initial"
-        animate="animate"
-        className="home-metrics"
-        style={css.metrics}
-      >
-        {METRICS.map((m, i) => (
-          <motion.div key={m.label} variants={metricItemVariant}
-            onClick={() => { playSelect(); onNavigate(m.route); }}
-            style={{ ...css.metricBlock(i), cursor:"pointer", transition:"border-color 200ms ease-out, box-shadow 200ms ease-out" }}
-            onMouseEnter={e => {
-              e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.30), 0 8px 32px rgba(47,107,255,0.25), 0 0 0 1px rgba(47,107,255,0.28)";
-              playHover();
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.30), 0 4px 20px rgba(0,0,0,0.35)";
-            }}
-          >
-            {/* Top sweep bar */}
-            <span style={{
-              position:"absolute", top:0, left:0, right:0, height:2,
-              background:`linear-gradient(90deg, rgba(47,107,255,0) 0%, ${PALETTE.blue} 25%, ${PALETTE.blueHi} 50%, ${PALETTE.blue} 75%, rgba(47,107,255,0) 100%)`,
-              boxShadow:`0 0 8px ${PALETTE.blueGlow}`,
-              opacity: i===0 ? 1 : 0.5,
-            }} />
-            {/* Corner accent */}
-            <span style={{
-              position:"absolute", top:6, left:8,
-              width:5, height:5,
-              borderTop:`1px solid ${PALETTE.blue}`,
-              borderLeft:`1px solid ${PALETTE.blue}`,
-              opacity:0.7,
-            }} />
-            {m.icon}
-            <div style={{ position:"relative", zIndex:2 }}>
-              <div style={{
-                fontSize:26, fontWeight:900, color:"white", lineHeight:1,
-                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
-                letterSpacing:"-0.8px",
-                textShadow:`0 0 18px ${PALETTE.blueGlow}`,
-              }}>
-                {m.value}
+              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 18, background: COLORS.pageAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  {metric.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, color: COLORS.textMuted, fontWeight: 600 }}>{metric.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 4 }}>
+                    <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 800 }}>{metric.value}</div>
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 13, color: COLORS.textSoft }}>{metric.caption}</div>
+                </div>
               </div>
-              <div style={{
-                fontSize:8.5, textTransform:"uppercase", letterSpacing:"2.4px",
-                color:PALETTE.textMuted, marginTop:5, fontWeight:700,
-                fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
-              }}>
-                {m.label}
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* EMPTY STATE — shown when no athletes registered yet */}
-      {athletes.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 280, damping: 26, delay: 0.2 }}
-          style={{
-            margin: "0 12px",
-            background: PALETTE.blueDim,
-            border: `1px solid ${PALETTE.blueBorder}`,
-            borderRadius: 8,
-            overflow: "hidden",
-          }}
-        >
-          <EmptyState
-            icon={
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke={PALETTE.blueHi} strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="9" cy="7" r="4" stroke={PALETTE.blueHi} strokeWidth="1.8"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke={PALETTE.blueHi} strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            }
-            title="Tu plantilla esta vacia"
-            subtitle="Incorpora deportistas a la plantilla para activar el seguimiento de carga, el control de asistencia y los analytics de rendimiento"
-            actionLabel="Registrar primer deportista"
-            onAction={() => onNavigate("plantilla")}
-            compact
-          />
+            </SurfaceCard>
+          ))}
         </motion.div>
-      )}
 
-      {/* GRID DE MOSAICOS */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="home-grid"
-        style={css.grid}
-      >
+        {athletes.length === 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: "easeOut" }} style={{ marginTop: 18 }}>
+            <SurfaceCard style={{ overflow: "hidden" }}>
+              <div style={{ background: COLORS.surface }}>
+                <EmptyState
+                  icon={<Icon.Users color={COLORS.copper} />}
+                  title="Tu plantilla esta vacia"
+                  subtitle="Incorpora deportistas a la plantilla para activar el seguimiento de carga, el control de asistencia y los analytics de rendimiento."
+                  actionLabel="Registrar primer deportista"
+                  onAction={() => onNavigate("plantilla")}
+                  compact
+                />
+              </div>
+            </SurfaceCard>
+          </motion.div>
+        )}
 
-        {/* TILE 1 — ENTRENAMIENTO */}
-        <InteractiveTile
-          tileKey="entrenamiento"
-          gridColumn="1" gridRow="1"
-          image={imgEntrenamiento}
-          overlayType="left"
-          onClick={() => onNavigate("entrenamiento")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.titleMid}>Entrenamiento</div>
-              <div style={css.btn(hov)}>Entrar →</div>
-            </>
-          )}
-        </InteractiveTile>
+        <div className="crm-home-main">
+          <div className="crm-home-left-grid">
+            <HeroModuleCard
+              title="Entrenamiento"
+              description="Planifica sesiones, ejercicios y cargas de trabajo para el equipo."
+              cta="Entrar"
+              image={imgEntrenamiento}
+              icon={<Icon.Target color="#FFFFFF" />}
+              onClick={() => onNavigate("entrenamiento")}
+              playHover={playHover}
+              playSelect={playSelect}
+            />
 
-        {/* TILE 2 — GESTIÓN DE PLANTILLA */}
-        <InteractiveTile
-          tileKey="plantilla"
-          gridColumn="2" gridRow="1"
-          image={imgPlantilla}
-          overlayType="bottom"
-          onClick={() => onNavigate("plantilla")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <>
-              <div style={css.titleMid}>Gestión de plantilla</div>
-              <div style={css.btn(hov)}>Ver plantilla →</div>
-            </>
-          )}
-        </InteractiveTile>
+            <HeroModuleCard
+              title="Gestion de plantilla"
+              description="Administra jugadores, roles, contratos y planificacion deportiva."
+              cta="Ver plantilla"
+              image={imgPlantilla}
+              icon={<Icon.Users color="#FFFFFF" />}
+              onClick={() => onNavigate("plantilla")}
+              playHover={playHover}
+              playSelect={playSelect}
+            />
+          </div>
 
-        {/* TILE 3 — PRÓXIMO EVENTO (datos reales del calendario) */}
-        <InteractiveTile
-          tileKey="evento"
-          gridColumn="3" gridRow="1"
-          image={imgPartido}
-          overlayType="bottom"
-          onClick={() => onNavigate("calendario")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => {
-            const nextEv = getNextEvent();
-            if (!nextEv) return (
-              <>
-                <div style={css.tag}>Próximo evento</div>
-                <div style={css.titleMid}>Sin eventos</div>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.4)", marginTop:4 }}>No hay eventos programados en el calendario</div>
-                <div style={{ ...css.btn(hov), marginTop:12 }}>Programar evento →</div>
-              </>
-            );
-            const evColor = EVENT_COLORS[nextEv.type] || "#2F6BFF";
-            return (
-              <>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  <div style={{ ...css.tag, marginBottom:0 }}>Próximo evento</div>
-                  <div style={{ fontSize:7, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"2px 8px", background:`${evColor}22`, border:`1px solid ${evColor}55`, color:evColor, borderRadius:2 }}>
-                    {EVENT_LABELS[nextEv.type]}
+          <div className="crm-home-right-stack">
+            <SurfaceCard
+              onClick={() => {
+                playSelect();
+                onNavigate("calendario");
+              }}
+              onMouseEnter={() => playHover()}
+              role="button"
+              style={{ cursor: "pointer", minHeight: 332, position: "relative" }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `url(${imgPartido})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  filter: "brightness(0.84)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "linear-gradient(180deg, rgba(23,26,28,0.08) 0%, rgba(23,26,28,0.36) 54%, rgba(23,26,28,0.82) 100%)",
+                }}
+              />
+              <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%", padding: 22 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ background: "rgba(23,26,28,0.62)", color: "#FFFFFF", borderRadius: 999, padding: "6px 10px", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em" }}>
+                    PROXIMO EVENTO
+                  </span>
+                  <span style={{ background: "rgba(255,255,255,0.18)", color: "#FFFFFF", borderRadius: 999, padding: "6px 10px", fontSize: 11, fontWeight: 700 }}>
+                    {EVENT_LABELS[nextEvent?.type || "match"]}
+                  </span>
+                </div>
+                <div>
+                  <div style={{ color: "#FFFFFF", fontSize: 16, fontWeight: 600, opacity: 0.92 }}>Partido</div>
+                  <div style={{ marginTop: 8, color: "#FFFFFF", fontSize: 20, lineHeight: 1.08, fontWeight: 800 }}>
+                    {nextEvent?.title?.toUpperCase() || "SIN EVENTOS"}
+                  </div>
+                  <div style={{ display: "grid", gap: 10, marginTop: 18, color: "rgba(255,255,255,0.94)", fontSize: 15 }}>
+                    <div>{nextEvent ? fmtEventDate(nextEvent.datetime) : "No hay eventos programados en el calendario."}</div>
+                    {nextEvent && <div>{nextEvent.location}</div>}
+                    {nextEvent && (
+                      <div style={{ color: EVENT_COLORS[nextEvent.type] || COLORS.copper, fontWeight: 700 }}>
+                        {daysUntil(nextEvent.datetime)}
+                      </div>
+                    )}
+                  </div>
+                  <PrimaryButton style={{ marginTop: 20 }}>Ver calendario {"\u2192"}</PrimaryButton>
+                </div>
+              </div>
+            </SurfaceCard>
+          </div>
+        </div>
+
+        <motion.div className="crm-home-secondary" initial="initial" animate="animate" variants={{ animate: { transition: { staggerChildren: 0.05 } } }}>
+          <SurfaceCard style={{ padding: "8px 0" }}>
+            <div className="crm-home-results">
+              {results.map((item, index) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: "22px 16px",
+                    textAlign: "center",
+                    borderRight: index === results.length - 1 ? "none" : `1px solid ${COLORS.border}`,
+                  }}
+                >
+                  <div style={{ fontSize: 16, fontWeight: 800, color: item.color }}>{item.value}</div>
+                  <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: COLORS.text }}>{item.label}</div>
+                  <div style={{ marginTop: 4, fontSize: 12, color: COLORS.textSoft }}>{item.detail}</div>
+                </div>
+              ))}
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard
+            onClick={() => {
+              playSelect();
+              onNavigate("admin");
+            }}
+            onMouseEnter={() => playHover()}
+            role="button"
+            style={{ cursor: "pointer", minHeight: 122, position: "relative", background: COLORS.surface }}
+          >
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgOficina})`, backgroundSize: "cover", backgroundPosition: "right center", opacity: 0.2 }} />
+            <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, padding: 24, minHeight: 122 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: COLORS.pageAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon.ArrowUp />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, letterSpacing: "0.02em" }}>SALUD FINANCIERA DEL CLUB</div>
+                  <div style={{ marginTop: 6, fontSize: 14, color: COLORS.textMuted, lineHeight: 1.5 }}>Resumen general y estados financieros.</div>
+                </div>
+              </div>
+            </div>
+          </SurfaceCard>
+        </motion.div>
+
+        <div className="crm-home-match">
+          <SurfaceCard
+            onClick={() => {
+              playSelect();
+              onNavigate("partidos");
+            }}
+            onMouseEnter={() => playHover()}
+            role="button"
+            style={{ cursor: "pointer", position: "relative" }}
+          >
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgProximo})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.09, filter: "grayscale(100%)" }} />
+            <div style={{ position: "relative", zIndex: 1, padding: "28px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 22, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
+                <div style={{ width: 58, height: 58, borderRadius: 16, border: `1px solid ${COLORS.borderStrong}`, background: COLORS.surfaceSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Icon.Target />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>Match Center</div>
+                  <div style={{ marginTop: 8, fontSize: 16, color: COLORS.textMuted, lineHeight: 1.5 }}>
+                    Resultados, estadisticas y analisis de partidos y rivales.
                   </div>
                 </div>
-                <div style={css.titleMid}>{nextEv.title}</div>
-                <div style={{ fontSize:10, color:"rgba(255,255,255,0.5)", letterSpacing:"0.8px" }}>
-                  {fmtEventDate(nextEv.datetime)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap", marginLeft: "auto" }}>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", color: COLORS.textMuted, fontSize: 14 }}>
+                  <span>Rendimiento</span>
+                  <span>Player Cards</span>
+                  <span>Analitica Post-Partido</span>
                 </div>
-                <div style={{ display:"flex", alignItems:"center", gap:10, marginTop:6 }}>
-                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)" }}>{nextEv.location}</div>
-                  <div style={{ fontSize:9, fontWeight:700, color:evColor, padding:"2px 8px", background:`${evColor}15`, borderRadius:10 }}>
-                    {daysUntil(nextEv.datetime)}
-                  </div>
-                </div>
-                <div style={{ ...css.btn(hov), marginTop:12 }}>Ver calendario →</div>
-              </>
-            );
-          }}
-        </InteractiveTile>
-
-        {/* TILE 4 — RESUMEN DEL CICLO */}
-        <div
-          onClick={() => { playSelect(); onNavigate("partidos"); }}
-          onMouseEnter={() => playHover()}
-          style={{ position:"relative", overflow:"hidden", gridColumn:"1/3", gridRow:"2", borderTop:`2px solid ${PALETTE.blueBorder}`, boxShadow:"0 4px 24px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.03)", cursor:"pointer" }}
-        >
-          <div style={{ position:"absolute", inset:0, backgroundImage:`url(${imgProximo})`, backgroundSize:"cover", backgroundPosition:"center", filter:"brightness(0.12) saturate(0.6)", zIndex:0 }}/>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,rgba(14,14,24,0.92),rgba(8,8,16,0.96))", zIndex:1 }}/>
-          <div className="home-stat-row" style={css.statRow}>
-            {STATS.map((m, i) => (
-              <div key={m.lbl} style={css.statBlock(i===3)}>
-                <div style={{ fontSize:18, fontWeight:800, color:m.color, lineHeight:1 }}>{m.val}</div>
-                <div style={{ fontSize:8, color:PALETTE.textHint, textTransform:"uppercase", letterSpacing:"1px", marginTop:4 }}>{m.lbl}</div>
+                <PrimaryButton>Abrir {"\u2192"}</PrimaryButton>
               </div>
-            ))}
-          </div>
+            </div>
+          </SurfaceCard>
         </div>
 
-        {/* TILE 5 — OFICINA */}
-        <InteractiveTile
-          tileKey="oficina"
-          gridColumn="3" gridRow="2"
-          image={imgOficina}
-          overlayType="bottom"
-          borderTopWidth={2}
-          borderTopColor={PALETTE.blueBorder}
-          onClick={() => onNavigate("admin")}
-          playHover={playHover}
-          playSelect={playSelect}
-        >
-          {(hov) => (
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", height:"100%", paddingBottom:4 }}>
-              <div>
-                <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1.5px", color:PALETTE.textHint, marginBottom:3 }}>Finanzas</div>
-                <div style={{ fontSize:12, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.5px" }}>Salud financiera del club</div>
-              </div>
-              <div style={{ ...css.ghostBtn, borderColor: hov ? PALETTE.blue : "rgba(47,107,255,0.3)", color: hov ? "white" : PALETTE.blueHi, transition:"color 200ms, border-color 200ms" }}>
-                Entrar →
-              </div>
-            </div>
-          )}
-        </InteractiveTile>
-
-        {/* TILE 6 — MATCH CENTER */}
-        <div
-          onClick={() => onNavigate("partidos")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.blue; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(47,107,255,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"3",
-            borderTop:`2px solid rgba(47,107,255,0.25)`,
-            border:`1px solid rgba(47,107,255,0.15)`,
-            background:"linear-gradient(135deg,rgba(47,107,255,0.05),rgba(10,15,26,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(47,107,255,0.25)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(47,107,255,0.08)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke={PALETTE.blueHi} strokeWidth="1.5"/>
-                <path d="M12 2a10 10 0 0 1 0 20M2 12h20M12 2c-2.5 3-4 6.5-4 10s1.5 7 4 10M12 2c2.5 3 4 6.5 4 10s-1.5 7-4 10" stroke={PALETTE.blueHi} strokeWidth="1.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Match Center
-              </div>
-            </div>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Rendimiento · Player Cards · Analítica post-partido
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi }}>
-              Abrir →
-            </div>
-          </div>
-        </div>
-
-        {/* TILE 7 — CALENDARIO (fila 4, ancho completo) */}
-        <div
-          onClick={() => onNavigate("calendario")}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = PALETTE.blue; playHover(); }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(47,107,255,0.15)"; }}
-          style={{
-            position:"relative", overflow:"hidden",
-            gridColumn:"1/4", gridRow:"4",
-            borderTop:`2px solid rgba(47,107,255,0.25)`,
-            border:`1px solid rgba(47,107,255,0.15)`,
-            background:"linear-gradient(135deg,rgba(47,107,255,0.04),rgba(10,15,26,0.96))",
-            cursor:"pointer",
-            minHeight:64,
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"0 24px",
-            transition:"border-color 200ms",
-            boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
-          }}
-        >
-          {/* Icono calendario */}
-          <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-            <div style={{ width:36, height:36, border:`1px solid rgba(47,107,255,0.25)`, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(47,107,255,0.06)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="18" rx="1" stroke={PALETTE.blueHi} strokeWidth="1.5"/>
-                <path d="M3 10h18M8 2v4M16 2v4" stroke={PALETTE.blueHi} strokeWidth="1.5" strokeLinecap="round"/>
-                <rect x="7" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.7"/>
-                <rect x="10.5" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.4"/>
-                <rect x="14" y="14" width="3" height="3" rx="0.5" fill={PALETTE.blue} opacity="0.2"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:900, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px" }}>
-                Calendario & RSVP
-              </div>
-            </div>
-          </div>
-
-          {/* Descripción + CTA */}
-          <div style={{ display:"flex", alignItems:"center", gap:24 }}>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:9, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.5px" }}>
-                Partidos · Entrenamiento · RSVP en tiempo real
-              </div>
-            </div>
-            <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"1.5px", padding:"7px 16px", border:`1px solid rgba(47,107,255,0.35)`, color:PALETTE.blueHi }}>
-              Abrir →
-            </div>
-          </div>
-        </div>
-
-      </motion.div>
-
-      {/* FOOTER */}
-      <div style={css.footer}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <img
-            src="/branding/alttez-symbol-transparent.png"
-            alt=""
-            style={{ height:14, width:"auto", opacity:0.55, filter:`drop-shadow(0 0 6px ${PALETTE.blueGlow})` }}
-            onError={e => { e.currentTarget.style.display = "none"; }}
-          />
-          <div style={{
-            fontSize:10, color:"rgba(255,255,255,0.45)",
-            letterSpacing:"3px", fontWeight:700, textTransform:"uppercase",
-            fontFamily:'"Orbitron","Exo 2",Arial,sans-serif',
-          }}>ALTTEZ</div>
-          <div style={{ width:1, height:10, background:"rgba(255,255,255,0.12)" }} />
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", letterSpacing:"1.2px", fontWeight:600 }}>v2.0</div>
-        </div>
-      </div>
-
+        <div className="crm-home-footer-space" />
+      </main>
     </div>
   );
 }

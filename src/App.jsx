@@ -50,8 +50,8 @@ runMigrations();
 const LoadingFallback = () => (
   <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh" }}>
     <div style={{ textAlign:"center" }}>
-      <div style={{ width:24, height:24, border:`2px solid ${C.neon}`, borderTop:"2px solid transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }} />
-      <div style={{ fontSize:10, color:C.textMuted, textTransform:"uppercase", letterSpacing:"2px" }}>Inicializando</div>
+      <div style={{ width:24, height:24, border:`2px solid ${C.border}`, borderTop:`2px solid ${C.blue}`, borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 12px" }} />
+      <div style={{ fontSize:11, color:C.textMuted, letterSpacing:"0.12em", textTransform:"uppercase" }}>Inicializando</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   </div>

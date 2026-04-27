@@ -1,12 +1,3 @@
-/**
- * @component LandingPage
- * @description Pantalla de bienvenida / onboarding de ALTTEZ.
- * Dos caminos: Demo o Nuevo Club.
- *
- * @props { onDemo, onRegister, onLogin }
- * @version 3.1.0
- */
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -17,87 +8,70 @@ import { isSupabaseReady } from "../lib/supabase";
 
 const BRAND_SYMBOL = "/branding/alttez-symbol-transparent.png";
 const EASE = [0.22, 1, 0.36, 1];
+const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
 
-/* ── Keyframes ── */
 if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
   const s = document.createElement("style");
   s.id = "landing-kf";
   s.textContent = `
-    @keyframes ldg_fade { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
-    @keyframes ldg_float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
-    @media (max-width: 640px) {
-      .ldg-cards { grid-template-columns: 1fr !important; }
-      .ldg-form-row { grid-template-columns: 1fr !important; }
-      .ldg-form-pad { padding: 28px 22px !important; }
+    @media (max-width: 720px) {
+      .ldg-grid,
+      .ldg-form-row,
+      .ldg-auth-shell {
+        grid-template-columns: 1fr !important;
+      }
+      .ldg-shell {
+        padding: 28px 18px 40px !important;
+      }
+      .ldg-card,
+      .ldg-panel {
+        padding: 24px 20px !important;
+      }
     }
   `;
   document.head.appendChild(s);
 }
 
-const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
-
-/* ─── Shared page background shell (defined outside component) ─── */
 const PAGE_BG = {
   minHeight: "100vh",
   display: "flex",
-  flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   background: `
-    radial-gradient(ellipse at 50% 16%, rgba(200,255,0,0.05), transparent 38%),
-    radial-gradient(ellipse at 88% 80%, rgba(127,119,221,0.07), transparent 30%),
-    linear-gradient(180deg, #03040A 0%, #07090F 50%, #030408 100%)
+    radial-gradient(circle at 12% 12%, rgba(201,151,58,0.10), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(201,151,58,0.12), transparent 22%),
+    linear-gradient(180deg, #FAFAF8 0%, #F5F1EA 100%)
   `,
-  padding: "32px 20px",
+  padding: "40px 24px",
   position: "relative",
   overflow: "hidden",
 };
 
-const GRID_A = {
-  position: "absolute", inset: 0, pointerEvents: "none",
-  background: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-  backgroundSize: "48px 48px",
-  opacity: 0.2,
+const GRID = {
+  position: "absolute",
+  inset: 0,
+  pointerEvents: "none",
+  backgroundImage: "linear-gradient(rgba(23,26,28,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(23,26,28,0.018) 1px, transparent 1px)",
+  backgroundSize: "60px 60px",
+  maskImage: "linear-gradient(180deg, rgba(0,0,0,0.52), transparent 92%)",
 };
 
-const GRID_B = {
-  position: "absolute", inset: 0, pointerEvents: "none",
-  background: "linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)",
-  backgroundSize: "192px 192px",
-  opacity: 0.25,
-};
-
-const VIGNETTE = {
-  position: "absolute", inset: 0, pointerEvents: "none",
-  background: "radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,0.58) 100%)",
-};
-
-/* ─── Reusable pieces ─── */
 function BrandSymbol() {
   return (
     <div
       style={{
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        background: "rgba(200,255,0,0.08)",
-        border: "1px solid rgba(200,255,0,0.18)",
+        width: 46,
+        height: 46,
+        borderRadius: 16,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,241,234,0.96))",
+        border: `1px solid ${PALETTE.border}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        flexShrink: 0,
+        boxShadow: "0 10px 28px rgba(23,26,28,0.08)",
       }}
     >
-      <img
-        src={BRAND_SYMBOL}
-        alt="ALTTEZ"
-        style={{
-          width: 22,
-          height: 22,
-          objectFit: "contain",
-          filter: "invert(1) brightness(1.4) sepia(1) hue-rotate(50deg) saturate(2.2)",
-        }}
-      />
+      <img src={BRAND_SYMBOL} alt="ALTTEZ" style={{ width: 24, height: 24, objectFit: "contain" }} />
     </div>
   );
 }
@@ -105,7 +79,7 @@ function BrandSymbol() {
 function FieldGroup({ label, error, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "block", fontSize: 9, textTransform: "uppercase", letterSpacing: "1.5px", color: "rgba(255,255,255,0.32)", marginBottom: 6, fontWeight: 600 }}>
+      <label style={{ display: "block", fontSize: 10, color: PALETTE.textMuted, marginBottom: 6, fontWeight: 600 }}>
         {label}
       </label>
       {children}
@@ -118,21 +92,56 @@ function mkInput(hasError) {
   return {
     width: "100%",
     fontSize: 13,
-    padding: "10px 13px",
-    background: "rgba(255,255,255,0.04)",
-    border: `1px solid ${hasError ? PALETTE.danger : "rgba(255,255,255,0.09)"}`,
-    borderRadius: 9,
-    color: "white",
+    padding: "11px 13px",
+    background: PALETTE.surface,
+    border: `1px solid ${hasError ? PALETTE.danger : PALETTE.border}`,
+    borderRadius: 12,
+    color: PALETTE.text,
     fontFamily: "inherit",
     outline: "none",
     boxSizing: "border-box",
-    transition: "border-color 0.2s",
   };
 }
 
-/* ══════════════════════════════════════════════════════
-   MAIN COMPONENT
-══════════════════════════════════════════════════════ */
+function Shell({ children }) {
+  return (
+    <div style={PAGE_BG}>
+      <div style={GRID} />
+      <div
+        className="ldg-shell"
+        style={{
+          width: "100%",
+          maxWidth: 1120,
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TopBack({ onClick, label = "Volver al inicio" }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: "none",
+        background: "none",
+        padding: 0,
+        marginBottom: 18,
+        cursor: "pointer",
+        color: PALETTE.textMuted,
+        fontSize: 11,
+        fontWeight: 600,
+      }}
+    >
+      ← {label}
+    </button>
+  );
+}
+
 export default function LandingPage({ onDemo, onRegister, onLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState("landing");
@@ -148,13 +157,13 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
   const [consentGuardian, setConsentGuardian] = useState(false);
 
   const updateField = (key, val) => {
-    setForm(prev => ({ ...prev, [key]: val }));
-    if (errors[key]) setErrors(prev => { const n = { ...prev }; delete n[key]; return n; });
+    setForm((prev) => ({ ...prev, [key]: val }));
+    if (errors[key]) setErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
   };
 
   const validateAndSubmit = async () => {
     const errs = {};
-    REQUIRED_FIELDS.forEach(k => {
+    REQUIRED_FIELDS.forEach((k) => {
       if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
     });
     const cleanEmail = sanitizeEmail(form.email);
@@ -164,15 +173,21 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
     if (!consentData) errs.consentData = "Debes aceptar la política de tratamiento de datos";
     if (!consentGuardian) errs.consentGuardian = "Debes certificar la autorización parental";
     setErrors(errs);
+
     if (Object.keys(errs).length === 0) {
       setLoading(true);
       await onRegister({
         ...form,
-        nombre: sanitizeTextFinal(form.nombre), ciudad: sanitizeTextFinal(form.ciudad),
-        entrenador: sanitizeTextFinal(form.entrenador), categorias: sanitizeTextFinal(form.categorias),
-        campo: sanitizeTextFinal(form.campo), telefono: sanitizePhone(form.telefono),
-        email: cleanEmail, password: form.password,
-        consent_at: new Date().toISOString(), consent_version: "1.0",
+        nombre: sanitizeTextFinal(form.nombre),
+        ciudad: sanitizeTextFinal(form.ciudad),
+        entrenador: sanitizeTextFinal(form.entrenador),
+        categorias: sanitizeTextFinal(form.categorias),
+        campo: sanitizeTextFinal(form.campo),
+        telefono: sanitizePhone(form.telefono),
+        email: cleanEmail,
+        password: form.password,
+        consent_at: new Date().toISOString(),
+        consent_version: "1.0",
         guardian_consent: consentGuardian,
       });
       setLoading(false);
@@ -192,429 +207,346 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
     }
   };
 
-  /* ════════════ LANDING ════════════ */
-  if (step === "landing") return (
-    <div style={PAGE_BG}>
-      <div style={GRID_A} />
-      <div style={GRID_B} />
-      <div style={VIGNETTE} />
-
-      {/* Back to portal */}
-      <div
-        onClick={() => navigate("/")}
-        style={{
-          position: "absolute", top: 20, left: 24, zIndex: 10,
-          fontSize: 11, textTransform: "uppercase", letterSpacing: "1.5px",
-          color: "rgba(255,255,255,0.25)", cursor: "pointer",
-          transition: "color 0.2s", userSelect: "none",
-        }}
-        onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
-        onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.25)"}
-      >
-        ← Volver al inicio
-      </div>
-
-      {/* Content */}
-      <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 720 }}>
-
-        {/* Logotype */}
-        <motion.div
-          initial={{ opacity: 0, y: -18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: EASE }}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 44 }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-            <BrandSymbol />
-            <span style={{ fontSize: 38, fontWeight: 900, letterSpacing: "-2px", color: "white", textTransform: "uppercase", fontFamily: "'Orbitron','Exo 2',Arial,sans-serif", lineHeight: 1 }}>
-              ALTTEZ
-            </span>
-          </div>
-          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "4.5px", color: "rgba(255,255,255,0.22)", fontWeight: 500 }}>
-            Sistema operativo · Clubes de alto rendimiento
-          </div>
-        </motion.div>
-
-        {/* Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, delay: 0.1, ease: EASE }}
-          className="ldg-cards"
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-        >
-          {/* ── DEMO ── */}
+  if (step === "landing") {
+    return (
+      <Shell>
+        <TopBack onClick={() => navigate("/")} />
+        <div className="ldg-auth-shell" style={{ display: "grid", gridTemplateColumns: "1.02fr 1fr", gap: 24 }}>
           <motion.div
-            whileHover={{ y: -5, boxShadow: `0 28px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(200,255,0,0.28)` }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 360, damping: 28 }}
-            onClick={onDemo}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.58, ease: EASE }}
+            className="ldg-card"
             style={{
-              padding: "32px 28px",
-              background: "rgba(255,255,255,0.022)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(200,255,0,0.1)",
-              borderTop: `3px solid ${PALETTE.neon}`,
-              borderRadius: 18,
-              cursor: "pointer",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
-              display: "flex",
-              flexDirection: "column",
+              padding: "40px 38px",
+              borderRadius: 28,
+              background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,250,248,0.96) 100%)",
+              border: `1px solid ${PALETTE.border}`,
+              boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 16 }}>
-              <motion.span
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{ width: 5, height: 5, borderRadius: "50%", background: PALETTE.neon, display: "block", flexShrink: 0 }}
-              />
-              <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "3px", color: PALETTE.neon, fontWeight: 700 }}>
-                Entorno demo
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 26 }}>
+              <BrandSymbol />
+              <div>
+                <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-0.06em", color: PALETTE.text }}>ALTTEZ</div>
+                <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Infraestructura operativa para clubes</div>
+              </div>
             </div>
 
-            <div style={{ fontSize: 26, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.5px", lineHeight: 1.08, marginBottom: 12, fontFamily: "'Orbitron','Exo 2',Arial,sans-serif" }}>
-              Explorar Demo
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 999, background: "rgba(244,231,207,0.72)", color: PALETTE.text, fontSize: 11, fontWeight: 700, marginBottom: 18 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: PALETTE.neon }} />
+              Nuevo sistema visual ALTTEZ
             </div>
 
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.65, marginBottom: 24, flex: 1 }}>
-              Accede con datos simulados de un club de alto rendimiento. Sin configuración. Con toda la funcionalidad activa.
+            <h1 style={{ margin: "0 0 14px", fontSize: "clamp(38px, 4.6vw, 58px)", lineHeight: 0.95, letterSpacing: "-0.07em", color: PALETTE.text }}>
+              Un acceso claro
+              <br />
+              para todo tu club.
+            </h1>
+
+            <p style={{ margin: 0, maxWidth: 500, fontSize: 16, lineHeight: 1.7, color: PALETTE.textMuted }}>
+              Entra al entorno demo, registra un club real o inicia sesión con tu equipo. Misma operación, misma lógica, ahora con una experiencia más editorial y profesional.
             </p>
 
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", padding: "11px 20px", background: PALETTE.neon, color: PALETTE.bgDark, borderRadius: 8, boxShadow: `0 0 18px rgba(200,255,0,0.22)`, width: "fit-content" }}>
-              Acceder al demo →
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 26 }}>
+              {[
+                ["Plantilla", "Jugadores, estados y fichas"],
+                ["Entrenamiento", "Carga, sesiones y bienestar"],
+                ["Administración", "Calendario, finanzas y reportes"],
+              ].map(([title, copy]) => (
+                <div key={title} style={{ padding: "14px 12px", borderRadius: 16, background: "#FFFDFC", border: `1px solid ${PALETTE.border}` }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 5 }}>{title}</div>
+                  <div style={{ fontSize: 11, color: PALETTE.textMuted, lineHeight: 1.55 }}>{copy}</div>
+                </div>
+              ))}
             </div>
           </motion.div>
 
-          {/* ── REGISTRO ── */}
           <motion.div
-            whileHover={{ y: -5, boxShadow: `0 28px 60px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(127,119,221,0.3)` }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 360, damping: 28 }}
-            onClick={() => setStep("register")}
-            style={{
-              padding: "32px 28px",
-              background: "rgba(255,255,255,0.022)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(127,119,221,0.1)",
-              borderTop: `3px solid ${PALETTE.purple}`,
-              borderRadius: 18,
-              cursor: "pointer",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
-              display: "flex",
-              flexDirection: "column",
-            }}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.58, delay: 0.06, ease: EASE }}
+            style={{ display: "grid", gap: 16 }}
           >
-            <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "3px", color: PALETTE.purple, fontWeight: 700, marginBottom: 16 }}>
-              Club real
-            </div>
+            <button
+              onClick={onDemo}
+              className="ldg-card"
+              style={{
+                textAlign: "left",
+                padding: "28px",
+                borderRadius: 24,
+                background: "#FFFFFF",
+                border: `1px solid ${PALETTE.border}`,
+                boxShadow: "0 18px 48px rgba(23,26,28,0.08)",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: PALETTE.neon, marginBottom: 12 }}>Entorno demo</div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text, marginBottom: 10 }}>Explorar demo</div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: PALETTE.textMuted }}>Accede con datos simulados y recorre el CRM sin configuración previa.</div>
+            </button>
 
-            <div style={{ fontSize: 26, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.5px", lineHeight: 1.08, marginBottom: 12, fontFamily: "'Orbitron','Exo 2',Arial,sans-serif" }}>
-              Registrar Club
-            </div>
+            <button
+              onClick={() => setStep("register")}
+              className="ldg-card"
+              style={{
+                textAlign: "left",
+                padding: "28px",
+                borderRadius: 24,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(245,241,234,0.96) 100%)",
+                border: `1px solid ${PALETTE.border}`,
+                boxShadow: "0 18px 48px rgba(23,26,28,0.08)",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: PALETTE.textMuted, marginBottom: 12 }}>Club real</div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text, marginBottom: 10 }}>Registrar club</div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: PALETTE.textMuted }}>Carga la operación base de tu organización y deja lista la cuenta de acceso.</div>
+            </button>
 
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", lineHeight: 1.65, marginBottom: 24, flex: 1 }}>
-              Incorpora tu organización al ecosistema. Nombre, categorías, cuerpo técnico y estructura operativa completa.
-            </p>
-
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px", padding: "11px 20px", background: PALETTE.purple, color: "white", borderRadius: 8, boxShadow: `0 0 18px rgba(127,119,221,0.24)`, width: "fit-content" }}>
-              Incorporar club →
-            </div>
+            {isSupabaseReady && (
+              <button
+                onClick={() => setStep("login")}
+                style={{
+                  minHeight: 54,
+                  borderRadius: 16,
+                  border: `1px solid ${PALETTE.border}`,
+                  background: "rgba(255,255,255,0.84)",
+                  color: PALETTE.text,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                }}
+              >
+                Ya tengo cuenta
+              </button>
+            )}
           </motion.div>
-        </motion.div>
+        </div>
+      </Shell>
+    );
+  }
 
-        {/* Login link */}
-        {isSupabaseReady && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
-            onClick={() => setStep("login")}
-            style={{ marginTop: 24, textAlign: "center", fontSize: 12, cursor: "pointer", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "1.5px", transition: "color 0.2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.65)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.28)"}
-          >
-            Ya tengo cuenta →{" "}
-            <span style={{ color: PALETTE.neon, fontWeight: 700 }}>Iniciar sesión</span>
-          </motion.div>
-        )}
-
+  if (step === "register") {
+    return (
+      <Shell>
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          style={{ marginTop: 20, textAlign: "center", fontSize: 9, color: "rgba(255,255,255,0.1)", textTransform: "uppercase", letterSpacing: "2.5px" }}
-        >
-          v2.0 · ALTTEZ
-        </motion.div>
-      </div>
-    </div>
-  );
-
-  /* ════════════ REGISTER ════════════ */
-  if (step === "register") return (
-    <div style={PAGE_BG}>
-      <div style={GRID_A} />
-      <div style={GRID_B} />
-      <div style={VIGNETTE} />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="ldg-form-pad"
-        style={{
-          position: "relative", zIndex: 2,
-          width: "100%", maxWidth: 560,
-          background: "rgba(5,8,18,0.9)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: 20,
-          padding: "36px 32px",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
-      >
-        {/* Header */}
-        <div style={{ marginBottom: 28 }}>
-          <div
-            onClick={() => setStep("landing")}
-            style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", cursor: "pointer", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 20, transition: "color 0.2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.28)"}
-          >
-            ← Volver
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-            <BrandSymbol />
-            <div style={{ fontSize: 24, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.5px", fontFamily: "'Orbitron','Exo 2',Arial,sans-serif" }}>
-              Incorporar club
-            </div>
-          </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "2px" }}>
-            Datos operativos
-          </div>
-        </div>
-
-        {/* Form rows */}
-        <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <FieldGroup label="Nombre del club *" error={errors.nombre}>
-            <input style={mkInput(errors.nombre)} value={form.nombre} onChange={e => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Aguilas FC" maxLength={60} />
-          </FieldGroup>
-          <FieldGroup label="Disciplina" error={null}>
-            <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={e => updateField("disciplina", e.target.value)}>
-              {["Futbol","Futsal","Baloncesto","Voleibol","Otro"].map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </FieldGroup>
-        </div>
-
-        <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <FieldGroup label="Ciudad *" error={errors.ciudad}>
-            <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={e => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
-          </FieldGroup>
-          <FieldGroup label="Director técnico *" error={errors.entrenador}>
-            <input style={mkInput(errors.entrenador)} value={form.entrenador} onChange={e => updateField("entrenador", sanitizeText(e.target.value))} placeholder="Nombre completo" maxLength={60} />
-          </FieldGroup>
-        </div>
-
-        <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <FieldGroup label="Categoría principal *" error={errors.categorias}>
-            <input style={mkInput(errors.categorias)} value={form.categorias} onChange={e => updateField("categorias", sanitizeText(e.target.value))} placeholder="Ej: Sub-17" maxLength={30} />
-          </FieldGroup>
-          <FieldGroup label="Temporada" error={null}>
-            <input style={mkInput(false)} value={form.temporada} onChange={e => updateField("temporada", e.target.value)} placeholder="2025-26" maxLength={10} />
-          </FieldGroup>
-        </div>
-
-        <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <FieldGroup label="Campo / Cancha" error={null}>
-            <input style={mkInput(false)} value={form.campo} onChange={e => updateField("campo", sanitizeText(e.target.value))} placeholder="Ej: Cancha La Floresta" maxLength={60} />
-          </FieldGroup>
-          <FieldGroup label="Teléfono" error={null}>
-            <input style={mkInput(false)} value={form.telefono} onChange={e => updateField("telefono", sanitizePhone(e.target.value))} placeholder="300 123 4567" maxLength={20} />
-          </FieldGroup>
-        </div>
-
-        {/* Cuenta de acceso */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16, marginTop: 4 }}>
-          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.neon, marginBottom: 12, fontWeight: 700 }}>
-            Cuenta de acceso
-          </div>
-          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Email *" error={errors.email}>
-              <input style={mkInput(errors.email)} value={form.email} onChange={e => updateField("email", sanitizeEmail(e.target.value))} placeholder="tu@email.com" maxLength={80} type="email" autoComplete="email" />
-            </FieldGroup>
-            <FieldGroup label="Contraseña *" error={errors.password}>
-              <input style={mkInput(errors.password)} value={form.password} onChange={e => updateField("password", e.target.value)} placeholder="Mínimo 6 caracteres" maxLength={72} type="password" autoComplete="new-password" />
-            </FieldGroup>
-          </div>
-        </div>
-
-        {/* Rol */}
-        <FieldGroup label="Tu rol en el club" error={errors.role}>
-          <select style={{ ...mkInput(errors.role), cursor: "pointer" }} value={form.role} onChange={e => updateField("role", e.target.value)}>
-            {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key}>{r.label}</option>)}
-          </select>
-        </FieldGroup>
-
-        {/* Consentimiento */}
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16, marginTop: 4 }}>
-          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: PALETTE.purple, marginBottom: 12, fontWeight: 700 }}>
-            Autorización Ley 1581 de 2012
-          </div>
-
-          <div style={{ marginBottom: 10 }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-              <input type="checkbox" checked={consentData} onChange={e => { setConsentData(e.target.checked); if (errors.consentData) setErrors(p => { const n={...p}; delete n.consentData; return n; }); }} style={{ marginTop: 2, width: 15, height: 15, flexShrink: 0, accentColor: PALETTE.purple, cursor: "pointer" }} />
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-                He leído y acepto la{" "}
-                <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: PALETTE.purple, textDecoration: "underline" }} onClick={e => e.stopPropagation()}>
-                  Política de Tratamiento de Datos Personales
-                </a>{" "}conforme a la Ley 1581 de 2012.
-              </span>
-            </label>
-            {errors.consentData && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4, marginLeft: 25 }}>{errors.consentData}</div>}
-          </div>
-
-          <div style={{ marginBottom: 4 }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-              <input type="checkbox" checked={consentGuardian} onChange={e => { setConsentGuardian(e.target.checked); if (errors.consentGuardian) setErrors(p => { const n={...p}; delete n.consentGuardian; return n; }); }} style={{ marginTop: 2, width: 15, height: 15, flexShrink: 0, accentColor: PALETTE.purple, cursor: "pointer" }} />
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", lineHeight: 1.55 }}>
-                Certifico que cuento con la autorización de padres o tutores legales para registrar datos personales de atletas menores de edad.
-              </span>
-            </label>
-            {errors.consentGuardian && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4, marginLeft: 25 }}>{errors.consentGuardian}</div>}
-          </div>
-        </div>
-
-        {/* Submit */}
-        <div style={{ marginTop: 22 }}>
-          <motion.button
-            onClick={validateAndSubmit}
-            disabled={loading || !consentData || !consentGuardian}
-            whileHover={(!loading && consentData && consentGuardian) ? { scale: 1.02, boxShadow: "0 0 28px rgba(200,255,0,0.28)" } : {}}
-            whileTap={(!loading && consentData && consentGuardian) ? { scale: 0.97 } : {}}
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            style={{
-              width: "100%", padding: "13px 24px", fontSize: 12, fontWeight: 700,
-              textTransform: "uppercase", letterSpacing: "2px", borderRadius: 11,
-              background: (!consentData || !consentGuardian) ? "rgba(127,119,221,0.15)"
-                : loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
-              color: (!consentData || !consentGuardian) ? "rgba(255,255,255,0.28)" : PALETTE.bgDark,
-              border: (!consentData || !consentGuardian) ? "1px solid rgba(127,119,221,0.22)" : "none",
-              cursor: loading ? "wait" : (!consentData || !consentGuardian) ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-              transition: "all 0.2s",
-            }}
-          >
-            {loading ? "Registrando club..." : "Confirmar registro →"}
-          </motion.button>
-        </div>
-
-        {Object.keys(errors).length > 0 && (
-          <div style={{ marginTop: 10, fontSize: 10, color: PALETTE.danger, textTransform: "uppercase", letterSpacing: "1px" }}>
-            Completa los campos marcados con *
-          </div>
-        )}
-
-        {isSupabaseReady && (
-          <div onClick={() => { setStep("login"); setErrors({}); }} style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.32)", cursor: "pointer", textAlign: "center" }}>
-            Ya tengo cuenta →{" "}
-            <span style={{ color: PALETTE.neon }}>Iniciar sesión</span>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-
-  /* ════════════ LOGIN ════════════ */
-  if (step === "login") return (
-    <div style={PAGE_BG}>
-      <div style={GRID_A} />
-      <div style={GRID_B} />
-      <div style={VIGNETTE} />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE }}
-        style={{
-          position: "relative", zIndex: 2,
-          width: "100%", maxWidth: 400,
-          background: "rgba(5,8,18,0.9)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: 20,
-          padding: "40px 34px",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.04)",
-        }}
-      >
-        <div style={{ marginBottom: 32 }}>
-          <div
-            onClick={() => { setStep("landing"); setErrors({}); }}
-            style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", cursor: "pointer", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 22, transition: "color 0.2s" }}
-            onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.28)"}
-          >
-            ← Volver
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-            <BrandSymbol />
-            <div style={{ fontSize: 22, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.5px", fontFamily: "'Orbitron','Exo 2',Arial,sans-serif" }}>
-              Acceder
-            </div>
-          </div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "2px" }}>
-            Credenciales del club
-          </div>
-        </div>
-
-        <FieldGroup label="Email" error={errors.email}>
-          <input
-            style={mkInput(errors.email)} value={loginForm.email}
-            onChange={e => { setLoginForm(p => ({...p, email: e.target.value})); if (errors.email) setErrors(p => { const n={...p}; delete n.email; return n; }); }}
-            placeholder="tu@email.com" maxLength={80} type="email" autoComplete="email"
-          />
-        </FieldGroup>
-
-        <FieldGroup label="Contraseña" error={errors.password}>
-          <input
-            style={mkInput(errors.password)} value={loginForm.password}
-            onChange={e => { setLoginForm(p => ({...p, password: e.target.value})); if (errors.password) setErrors(p => { const n={...p}; delete n.password; return n; }); }}
-            placeholder="Tu contraseña" type="password" autoComplete="current-password"
-            onKeyDown={e => e.key === "Enter" && validateAndLogin()}
-          />
-        </FieldGroup>
-
-        <motion.button
-          onClick={validateAndLogin}
-          disabled={loading}
-          whileHover={!loading ? { scale: 1.02, boxShadow: "0 0 28px rgba(200,255,0,0.28)" } : {}}
-          whileTap={!loading ? { scale: 0.97 } : {}}
-          transition={{ type: "spring", stiffness: 400, damping: 28 }}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.52, ease: EASE }}
+          className="ldg-panel"
           style={{
-            width: "100%", marginTop: 8, padding: "13px 24px", fontSize: 12, fontWeight: 700,
-            textTransform: "uppercase", letterSpacing: "2px", borderRadius: 11,
-            background: loading ? "rgba(200,255,0,0.5)" : PALETTE.neon,
-            color: PALETTE.bgDark, border: "none",
-            cursor: loading ? "wait" : "pointer",
-            opacity: loading ? 0.7 : 1,
+            maxWidth: 760,
+            margin: "0 auto",
+            padding: "36px 34px",
+            borderRadius: 28,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
           }}
         >
-          {loading ? "Verificando..." : "Ingresar al CRM →"}
-        </motion.button>
+          <TopBack onClick={() => setStep("landing")} label="Volver" />
 
-        <div
-          onClick={() => { setStep("register"); setErrors({}); }}
-          style={{ marginTop: 20, fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textAlign: "center" }}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Registrar club</div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Datos operativos y acceso principal</div>
+            </div>
+          </div>
+
+          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Nombre del club *" error={errors.nombre}>
+              <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Águilas del Lucero" maxLength={60} />
+            </FieldGroup>
+            <FieldGroup label="Disciplina" error={null}>
+              <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
+                {["Futbol", "Futsal", "Baloncesto", "Voleibol", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </FieldGroup>
+          </div>
+
+          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Ciudad *" error={errors.ciudad}>
+              <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
+            </FieldGroup>
+            <FieldGroup label="Director técnico *" error={errors.entrenador}>
+              <input style={mkInput(errors.entrenador)} value={form.entrenador} onChange={(e) => updateField("entrenador", sanitizeText(e.target.value))} placeholder="Nombre completo" maxLength={60} />
+            </FieldGroup>
+          </div>
+
+          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Categoría principal *" error={errors.categorias}>
+              <input style={mkInput(errors.categorias)} value={form.categorias} onChange={(e) => updateField("categorias", sanitizeText(e.target.value))} placeholder="Ej: Sub-17" maxLength={30} />
+            </FieldGroup>
+            <FieldGroup label="Temporada" error={null}>
+              <input style={mkInput(false)} value={form.temporada} onChange={(e) => updateField("temporada", e.target.value)} placeholder="2025-26" maxLength={10} />
+            </FieldGroup>
+          </div>
+
+          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <FieldGroup label="Campo / Cancha" error={null}>
+              <input style={mkInput(false)} value={form.campo} onChange={(e) => updateField("campo", sanitizeText(e.target.value))} placeholder="Ej: Estadio Sur" maxLength={60} />
+            </FieldGroup>
+            <FieldGroup label="Teléfono" error={null}>
+              <input style={mkInput(false)} value={form.telefono} onChange={(e) => updateField("telefono", sanitizePhone(e.target.value))} placeholder="300 123 4567" maxLength={20} />
+            </FieldGroup>
+          </div>
+
+          <div style={{ marginTop: 6, paddingTop: 18, borderTop: `1px solid ${PALETTE.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 12 }}>Cuenta de acceso</div>
+            <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <FieldGroup label="Email *" error={errors.email}>
+                <input style={mkInput(errors.email)} value={form.email} onChange={(e) => updateField("email", sanitizeEmail(e.target.value))} placeholder="tu@email.com" maxLength={80} type="email" autoComplete="email" />
+              </FieldGroup>
+              <FieldGroup label="Contraseña *" error={errors.password}>
+                <input style={mkInput(errors.password)} value={form.password} onChange={(e) => updateField("password", e.target.value)} placeholder="Mínimo 6 caracteres" maxLength={72} type="password" autoComplete="new-password" />
+              </FieldGroup>
+            </div>
+          </div>
+
+          <FieldGroup label="Tu rol en el club" error={errors.role}>
+            <select style={{ ...mkInput(errors.role), cursor: "pointer" }} value={form.role} onChange={(e) => updateField("role", e.target.value)}>
+              {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key}>{r.label}</option>)}
+            </select>
+          </FieldGroup>
+
+          <div style={{ marginTop: 8, padding: "18px", borderRadius: 18, background: "#FFFCF7", border: `1px solid ${PALETTE.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 10 }}>Autorización de datos</div>
+
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <input type="checkbox" checked={consentData} onChange={(e) => { setConsentData(e.target.checked); if (errors.consentData) setErrors((p) => { const n = { ...p }; delete n.consentData; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
+              <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
+                Acepto la{" "}
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: PALETTE.neon }}>
+                  Política de Tratamiento de Datos Personales
+                </a>.
+              </span>
+            </label>
+            {errors.consentData && <div style={{ fontSize: 10, color: PALETTE.danger, marginBottom: 10 }}>{errors.consentData}</div>}
+
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+              <input type="checkbox" checked={consentGuardian} onChange={(e) => { setConsentGuardian(e.target.checked); if (errors.consentGuardian) setErrors((p) => { const n = { ...p }; delete n.consentGuardian; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
+              <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
+                Certifico la autorización de padres o tutores si se registran menores de edad.
+              </span>
+            </label>
+            {errors.consentGuardian && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 8 }}>{errors.consentGuardian}</div>}
+          </div>
+
+          <button
+            onClick={validateAndSubmit}
+            disabled={loading || !consentData || !consentGuardian}
+            style={{
+              width: "100%",
+              marginTop: 20,
+              minHeight: 52,
+              borderRadius: 14,
+              border: "none",
+              background: loading || !consentData || !consentGuardian ? "#E8DCC4" : "linear-gradient(135deg, #C9973A 0%, #B7832D 100%)",
+              color: loading || !consentData || !consentGuardian ? PALETTE.textMuted : "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: loading ? "wait" : (!consentData || !consentGuardian) ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "Registrando club..." : "Confirmar registro"}
+          </button>
+
+          {isSupabaseReady && (
+            <div onClick={() => { setStep("login"); setErrors({}); }} style={{ marginTop: 14, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}>
+              Ya tengo cuenta. <span style={{ color: PALETTE.neon, fontWeight: 700 }}>Iniciar sesión</span>
+            </div>
+          )}
+        </motion.div>
+      </Shell>
+    );
+  }
+
+  if (step === "login") {
+    return (
+      <Shell>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="ldg-panel"
+          style={{
+            maxWidth: 440,
+            margin: "0 auto",
+            padding: "34px 30px",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          }}
         >
-          No tengo cuenta →{" "}
-          <span style={{ color: PALETTE.purple }}>Incorporar club</span>
-        </div>
-      </motion.div>
-    </div>
-  );
+          <TopBack onClick={() => { setStep("landing"); setErrors({}); }} label="Volver" />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Iniciar sesión</div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Credenciales del club</div>
+            </div>
+          </div>
+
+          <FieldGroup label="Email" error={errors.email}>
+            <input
+              style={mkInput(errors.email)}
+              value={loginForm.email}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, email: e.target.value })); if (errors.email) setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
+              placeholder="tu@email.com"
+              maxLength={80}
+              type="email"
+              autoComplete="email"
+            />
+          </FieldGroup>
+
+          <FieldGroup label="Contraseña" error={errors.password}>
+            <input
+              style={mkInput(errors.password)}
+              value={loginForm.password}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, password: e.target.value })); if (errors.password) setErrors((p) => { const n = { ...p }; delete n.password; return n; }); }}
+              placeholder="Tu contraseña"
+              type="password"
+              autoComplete="current-password"
+              onKeyDown={(e) => e.key === "Enter" && validateAndLogin()}
+            />
+          </FieldGroup>
+
+          <button
+            onClick={validateAndLogin}
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 10,
+              minHeight: 50,
+              borderRadius: 14,
+              border: "none",
+              background: loading ? "#E8DCC4" : "linear-gradient(135deg, #C9973A 0%, #B7832D 100%)",
+              color: loading ? PALETTE.textMuted : "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: loading ? "wait" : "pointer",
+            }}
+          >
+            {loading ? "Verificando..." : "Ingresar al CRM"}
+          </button>
+
+          <div onClick={() => { setStep("register"); setErrors({}); }} style={{ marginTop: 16, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}>
+            No tengo cuenta. <span style={{ color: PALETTE.neon, fontWeight: 700 }}>Registrar club</span>
+          </div>
+        </motion.div>
+      </Shell>
+    );
+  }
 
   return null;
 }

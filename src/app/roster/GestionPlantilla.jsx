@@ -82,13 +82,13 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
   const rowBase = {
     cursor:      "pointer",
     background:  isSelected
-      ? "linear-gradient(135deg,rgba(57,255,20,0.12),rgba(57,255,20,0.04))"
+      ? "linear-gradient(180deg, rgba(244,231,207,0.82), rgba(255,255,255,0.98))"
       : hovered
-        ? "linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))"
-        : index % 2 === 0 ? "rgba(255,255,255,0.012)" : "transparent",
+        ? "linear-gradient(180deg, rgba(245,241,234,0.88), rgba(255,255,255,0.98))"
+        : index % 2 === 0 ? "rgba(245,241,234,0.44)" : "transparent",
     borderLeft:  isSelected ? `3px solid ${PALETTE.neon}` : "3px solid transparent",
-    borderBottom:`1px solid rgba(255,255,255,0.05)`,
-    boxShadow:   isSelected ? `inset 0 0 20px rgba(57,255,20,0.06)` : "none",
+    borderBottom:`1px solid ${PALETTE.border}`,
+    boxShadow:   isSelected ? `inset 0 0 0 1px ${PALETTE.neonBorder}` : "none",
     transition:  "background 150ms ease, box-shadow 150ms ease",
   };
 
@@ -114,7 +114,7 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
         <div style={{ fontSize:12, fontWeight:700, color: isActive ? PALETTE.text : PALETTE.textMuted, textAlign:"center" }}>
           {athlete.id}
         </div>
-        <div style={{ fontSize:11, color: isActive ? PALETTE.text : "rgba(255,255,255,0.7)", fontWeight: isSelected ? 600 : 400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+        <div style={{ fontSize:11, color: isActive ? PALETTE.text : PALETTE.textMuted, fontWeight: isSelected ? 600 : 400, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {athlete.name}
         </div>
         <div style={{ fontSize:9, color: PALETTE.textMuted, textAlign:"center" }}>
@@ -157,8 +157,8 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
         <div style={{
           fontSize:9, fontWeight:700, textTransform:"uppercase",
           color: isActive ? PALETTE.neon : PALETTE.textMuted,
-          background: isActive ? `${PALETTE.neon}18` : "rgba(255,255,255,0.05)",
-          border: `1px solid ${isActive ? PALETTE.neonBorder : "rgba(255,255,255,0.1)"}`,
+          background: isActive ? `${PALETTE.neon}18` : PALETTE.bgDeep,
+          border: `1px solid ${isActive ? PALETTE.neonBorder : PALETTE.border}`,
           padding: "3px 6px", borderRadius:3, flexShrink:0, minWidth:32, textAlign:"center",
         }}>
           {athlete.posCode}
@@ -166,7 +166,7 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
 
         {/* Name + secondary info */}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:12, fontWeight: isSelected ? 600 : 400, color: isActive ? PALETTE.text : "rgba(255,255,255,0.8)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          <div style={{ fontSize:12, fontWeight: isSelected ? 600 : 400, color: isActive ? PALETTE.text : PALETTE.textMuted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
             {athlete.name}
           </div>
           <div style={{ fontSize:9, color: PALETTE.textMuted, marginTop:2 }}>
@@ -273,7 +273,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflowY:"auto", minHeight:0 }}>
 
       {/* Header del panel */}
-      <div style={{ padding:"14px 16px", background:"linear-gradient(135deg,rgba(14,14,24,0.97),rgba(8,8,16,0.99))", borderBottom:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"flex-start", gap:12 }}>
+      <div style={{ padding:"14px 16px", background:"linear-gradient(180deg,#FFFFFF 0%,#F8F5EF 100%)", borderBottom:`1px solid ${PALETTE.border}`, display:"flex", alignItems:"flex-start", gap:12 }}>
         {/* Avatar con overlay de cambio de foto en editMode */}
         <div
           style={{ position:"relative", flexShrink:0, cursor: editMode ? "pointer" : "default" }}
@@ -304,7 +304,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
         </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontSize:15, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"-0.3px", lineHeight:1.1 }}>{draft.name}</div>
-          <div style={{ fontSize:10, color: PALETTE.neon, textTransform:"uppercase", letterSpacing:"1px", marginTop:3 }}>{draft.pos}</div>
+          <div style={{ fontSize:10, color: PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginTop:3 }}>{draft.pos}</div>
           <div style={{ fontSize:9, color: statusStyle.color, textTransform:"uppercase", letterSpacing:"0.5px", marginTop:2 }}>{statusStyle.label}</div>
         </div>
         <div onClick={onClose} style={{ fontSize:16, color: PALETTE.textMuted, cursor:"pointer", padding:"2px 6px" }}>✕</div>
@@ -325,7 +325,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
 
           {/* Celda salud — circular gauge SVG */}
           <div style={{
-            background:"linear-gradient(135deg,rgba(8,8,20,0.9),rgba(4,4,12,0.95))",
+            background:"linear-gradient(180deg,#FFFFFF 0%,#F8F5EF 100%)",
             border:`1px solid ${rpeResult.color}22`,
             borderRadius:10,
             padding:"10px 8px",
@@ -381,7 +381,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
 
           {/* Celda ACWR */}
           <div style={{
-            background:"linear-gradient(135deg,rgba(8,8,20,0.9),rgba(4,4,12,0.95))",
+            background:"linear-gradient(180deg,#FFFFFF 0%,#F8F5EF 100%)",
             border:`1px solid ${
               risk.status==="red" ? "rgba(226,75,74,0.2)" :
               risk.status==="yellow" ? "rgba(239,159,39,0.2)" :
@@ -977,7 +977,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
       <div style={{ display:"flex", flexDirection:"column", minHeight:0 }}>
 
         {/* Controles de filtro, orden y acciones */}
-        <div style={{ padding:"9px 12px", background:"rgba(6,6,12,0.96)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid rgba(255,255,255,0.06)`, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
+        <div style={{ padding:"12px", background:PALETTE.bgDeep, borderBottom:`1px solid ${PALETTE.border}`, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
           <div style={{ fontSize:9, color: PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"1px" }}>
             {displayedAthletes.length} deportistas
           </div>
@@ -986,7 +986,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
               <div
                 key={v}
                 onClick={() => setFilterStatus(v)}
-                style={{ fontSize:9, padding:"4px 10px", cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px", borderRadius:20, background: filterStatus===v ? "linear-gradient(135deg,rgba(57,255,20,0.18),rgba(57,255,20,0.06))" : "rgba(255,255,255,0.03)", border:`1px solid ${filterStatus===v ? PALETTE.neon : "rgba(255,255,255,0.1)"}`, color: filterStatus===v ? PALETTE.neon : PALETTE.textMuted, boxShadow: filterStatus===v ? `0 0 10px rgba(57,255,20,0.2)` : "none", transition:"all 0.18s" }}
+                style={{ fontSize:9, padding:"4px 10px", cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px", borderRadius:20, background: filterStatus===v ? PALETTE.neonDim : PALETTE.surface, border:`1px solid ${filterStatus===v ? PALETTE.neon : PALETTE.border}`, color: filterStatus===v ? PALETTE.neon : PALETTE.textMuted, boxShadow: "none", transition:"all 0.18s" }}
               >
                 {l}
               </div>
@@ -1058,7 +1058,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
         </AnimatePresence>
 
         {/* Cabecera de la tabla — hidden on mobile (card view takes over) */}
-        <div className="plantilla-table-header" style={{ display:"grid", gridTemplateColumns:"32px 28px 1fr 80px 30px 30px 30px 60px", padding:"6px 12px", background:"rgba(0,0,0,0.6)", borderBottom:`1px solid ${PALETTE.border}` }}>
+        <div className="plantilla-table-header" style={{ display:"grid", gridTemplateColumns:"32px 28px 1fr 80px 30px 30px 30px 60px", padding:"6px 12px", background:PALETTE.surface, borderBottom:`1px solid ${PALETTE.border}` }}>
           <div onClick={() => setSortKey("posCode")} style={headerCell("POS","posCode")}>POS</div>
           <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color: PALETTE.textHint, textAlign:"center" }}>#</div>
           <div onClick={() => setSortKey("name")} style={headerCell("Nombre","name")}>Nombre</div>
@@ -1120,7 +1120,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
           initial="initial"
           animate="animate"
           exit="exit"
-          style={{ background:"linear-gradient(180deg,rgba(12,12,22,0.99),rgba(8,8,16,0.99))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderLeft:`1px solid rgba(255,255,255,0.06)`, boxShadow:"-4px 0 24px rgba(0,0,0,0.4)", overflow:"hidden", display:"flex", flexDirection:"column", minHeight:0 }}
+          style={{ background:PALETTE.surface, borderLeft:`1px solid ${PALETTE.border}`, boxShadow:"-10px 0 28px rgba(23,26,28,0.08)", overflow:"hidden", display:"flex", flexDirection:"column", minHeight:0 }}
         >
           <PlayerEditPanel
             athlete={selectedAthlete}
@@ -1350,7 +1350,7 @@ function TacticalBoardView({ athletes }) {
       </div>
 
       {/* ── PANEL DERECHO: info + notas ─────── */}
-      <div style={{ background:"rgba(0,0,0,0.88)", borderLeft:`1px solid ${PALETTE.border}`, display:"flex", flexDirection:"column" }}>
+      <div style={{ background:PALETTE.surface, borderLeft:`1px solid ${PALETTE.border}`, display:"flex", flexDirection:"column" }}>
 
         {/* Info del jugador seleccionado en el campo */}
         {selected ? (
@@ -1495,10 +1495,10 @@ export default function GestionPlantilla({ clubId = "" }) {
   ];
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 80px)", minHeight:0 }}>
+    <div style={{ display:"flex", flexDirection:"column", height:"calc(100vh - 80px)", minHeight:0, background:PALETTE.bg }}>
 
       {/* Tabs de navegación interna */}
-      <div style={{ display:"flex", alignItems:"stretch", height:36, background:"rgba(0,0,0,0.82)", borderBottom:`1px solid ${PALETTE.border}`, flexShrink:0 }}>
+      <div style={{ display:"flex", alignItems:"stretch", height:36, background:PALETTE.bgDeep, borderBottom:`1px solid ${PALETTE.border}`, flexShrink:0 }}>
         {tabs.map(({ key, label }) => (
           <div
             key={key}
@@ -1514,7 +1514,7 @@ export default function GestionPlantilla({ clubId = "" }) {
               cursor:         "pointer",
               borderRight:    `1px solid ${PALETTE.border}`,
               borderBottom:   activeTab === key ? `2px solid ${PALETTE.neon}` : "2px solid transparent",
-              background:     activeTab === key ? PALETTE.neonDim : "transparent",
+              background:     activeTab === key ? PALETTE.neonDim : PALETTE.bgDeep,
               transition:     "all 150ms",
             }}
           >
@@ -1543,3 +1543,5 @@ export default function GestionPlantilla({ clubId = "" }) {
     </div>
   );
 }
+
+
