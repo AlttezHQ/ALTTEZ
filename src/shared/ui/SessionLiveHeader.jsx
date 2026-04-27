@@ -49,7 +49,6 @@ export default function SessionLiveHeader({
         background: isLive
           ? `linear-gradient(90deg, ${C.danger}00 0%, ${C.danger} 18%, ${C.dangerHi || C.danger} 50%, ${C.danger} 82%, ${C.danger}00 100%)`
           : `linear-gradient(90deg, ${accent}00 0%, ${accent} 20%, ${C.blueHi} 50%, ${accent} 80%, ${accent}00 100%)`,
-        boxShadow: isLive ? `0 0 14px ${C.danger}88` : `0 0 14px ${accent}88`,
       }} />
       {/* Hairline */}
       <span style={{
@@ -76,24 +75,21 @@ export default function SessionLiveHeader({
             <div style={{
               display: "flex", alignItems: "center", gap: 8,
               padding: "5px 12px",
-              background: "rgba(239,68,68,0.14)",
+              background: C.dangerDim,
               border: `1px solid ${C.danger}66`,
               borderRadius: 999,
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 14px ${C.danger}33`,
             }}>
               <span style={{
                 width: 7, height: 7, borderRadius: "50%",
                 background: C.danger,
-                boxShadow: `0 0 10px ${C.danger}, 0 0 18px ${C.danger}88`,
                 animation: "alttez-live 1.4s ease-in-out infinite",
               }} />
               <span style={{
                 fontSize: 9,
                 fontWeight: 900,
-                color: "white",
+                color: C.text,
                 textTransform: "uppercase",
-                letterSpacing: "2.2px",
-                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                letterSpacing: "0.12em",
               }}>
                 EN VIVO
               </span>
@@ -103,11 +99,9 @@ export default function SessionLiveHeader({
             <div style={{
               fontSize: 15,
               fontWeight: 900,
-              color: "white",
+              color: C.text,
               textTransform: "uppercase",
-              letterSpacing: "2.5px",
-              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
-              textShadow: `0 0 18px ${C.blueGlow}`,
+              letterSpacing: "0.12em",
               lineHeight: 1.2,
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -121,9 +115,8 @@ export default function SessionLiveHeader({
                 fontWeight: 700,
                 color: C.textMuted,
                 textTransform: "uppercase",
-                letterSpacing: "1.6px",
+                letterSpacing: "0.08em",
                 marginTop: 4,
-                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
               }}>
                 {subtitle}
               </div>
@@ -146,7 +139,7 @@ export default function SessionLiveHeader({
           gridTemplateColumns: `repeat(${Math.min(kpis.length, 4)}, 1fr)`,
           gap: 0,
           borderTop: `1px solid ${C.borderHi}`,
-          background: "rgba(4,6,16,0.45)",
+          background: "rgba(245,241,234,0.72)",
         }}>
           {kpis.slice(0, 4).map((k, i) => (
             <div
@@ -163,8 +156,7 @@ export default function SessionLiveHeader({
                 fontWeight: 800,
                 color: C.textMuted,
                 textTransform: "uppercase",
-                letterSpacing: "2.2px",
-                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                letterSpacing: "0.1em",
                 marginBottom: 5,
               }}>
                 {k.label}
@@ -172,11 +164,9 @@ export default function SessionLiveHeader({
               <div style={{
                 fontSize: 22,
                 fontWeight: 900,
-                color: k.accent || "white",
-                fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+                color: k.accent || C.text,
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
-                textShadow: `0 0 14px ${(k.accent || C.blue)}55`,
                 letterSpacing: "-0.5px",
               }}>
                 {k.value}

@@ -38,7 +38,7 @@ export default function KpiCard({ label, value, accent, sparkData, trend, onClic
         padding: "18px 18px 16px",
         background: BROADCAST_GRADIENT.stat,
         border: `1px solid ${C.borderHi}`,
-        borderRadius: 10,
+        borderRadius: 16,
         boxShadow: ELEVATION.stat,
         cursor: isClickable ? "pointer" : "default",
         overflow: "hidden",
@@ -58,13 +58,12 @@ export default function KpiCard({ label, value, accent, sparkData, trend, onClic
       <span style={{
         position: "absolute", top: 0, left: 0, right: 0, height: 2,
         background: `linear-gradient(90deg, ${hue}00 0%, ${hue} 25%, ${C.blueHi} 50%, ${hue} 75%, ${hue}00 100%)`,
-        boxShadow: `0 0 10px ${hue}66`,
       }} />
 
       {/* Bisel superior — hairline de luz */}
       <span style={{
         position: "absolute", top: 2, left: 0, right: 0, height: 1,
-        background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0) 100%)",
+        background: "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0) 100%)",
         pointerEvents: "none",
       }} />
 
@@ -78,9 +77,8 @@ export default function KpiCard({ label, value, accent, sparkData, trend, onClic
         fontWeight: 700,
         color: C.textMuted,
         textTransform: "uppercase",
-        letterSpacing: "2.4px",
+        letterSpacing: "0.12em",
         marginBottom: 10,
-        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
       }}>
         {label}
       </div>
@@ -89,11 +87,9 @@ export default function KpiCard({ label, value, accent, sparkData, trend, onClic
       <div style={{
         fontSize: 34,
         fontWeight: 900,
-        color: "white",
+        color: C.text,
         lineHeight: 1.02,
         letterSpacing: "-1.2px",
-        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
-        textShadow: `0 0 24px ${hue}33`,
         marginBottom: sparkData || trend != null ? 10 : 0,
         display: "flex",
         alignItems: "baseline",
@@ -129,15 +125,14 @@ function DeltaChip({ trend }) {
       display: "inline-flex",
       alignItems: "center",
       gap: 4,
-      padding: "3px 8px",
+      padding: "4px 8px",
       fontSize: 10,
       fontWeight: 700,
       color,
       background: bg,
       border: `1px solid ${brd}`,
       borderRadius: 999,
-      letterSpacing: "0.5px",
-      fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+      letterSpacing: "0.03em",
     }}>
       <span style={{ fontSize: 8, lineHeight: 1 }}>{up ? "▲" : "▼"}</span>
       {Math.abs(trend)}%

@@ -17,16 +17,16 @@ function AvailabilityWidget({ availability }) {
   const pct = total > 0 ? Math.round((confirmados / total) * 100) : 0;
 
   return (
-    <div style={{ background: "rgba(0,0,0,0.45)", border: `1px solid ${C.border}`, borderRadius: 6, padding: "12px 16px", marginBottom: 12 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "12px 16px", marginBottom: 12, boxShadow: "0 12px 24px rgba(23,26,28,0.06)" }}>
       <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "2px", color: C.textMuted, marginBottom: 10 }}>
         Disponibilidad
       </div>
-      <div style={{ height: 6, background: "rgba(255,255,255,0.07)", marginBottom: 10, borderRadius: 3, overflow: "hidden", position: "relative" }}>
+      <div style={{ height: 6, background: C.bgDeep, marginBottom: 10, borderRadius: 999, overflow: "hidden", position: "relative" }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
-          style={{ height: "100%", background: `linear-gradient(90deg, ${C.neon}cc, ${C.neon})`, boxShadow: `0 0 10px ${C.neon}88`, borderRadius: 3 }}
+          style={{ height: "100%", background: `linear-gradient(90deg, ${C.neon}, ${C.blueHi})`, borderRadius: 999 }}
         />
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
@@ -92,7 +92,7 @@ function AthleteRsvpRow({ athlete, currentState, onChangeState }) {
           {(athlete.nombre || "?")[0]?.toUpperCase()}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {athlete.nombre || "Deportista"}
           </div>
           <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -131,11 +131,9 @@ export function PanelEmpty() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       style={{
-        background: "rgba(10,10,18,0.6)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: C.surface,
         border: `1px solid ${C.border}`,
-        borderRadius: 8,
+        borderRadius: 18,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -146,8 +144,8 @@ export function PanelEmpty() {
       }}
     >
       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 16, opacity: 0.3 }}>
-        <rect x="3" y="4" width="18" height="18" rx="2" stroke="white" strokeWidth="1.5"/>
-        <path d="M3 10h18M8 2v4M16 2v4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+        <rect x="3" y="4" width="18" height="18" rx="2" stroke={C.textMuted} strokeWidth="1.5"/>
+        <path d="M3 10h18M8 2v4M16 2v4" stroke={C.textMuted} strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
       <div style={{ fontSize: 12, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 6 }}>
         Selecciona un evento
@@ -218,13 +216,11 @@ export default function EventPanel({ event, athletes, getRsvp, setRsvp, getAvail
       exit={{ opacity: 0, x: 24 }}
       transition={{ type: "spring", stiffness: 340, damping: 30 }}
       style={{
-        background: "rgba(10,10,18,0.96)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+        background: C.surface,
         border: `1px solid ${def.border}`,
         borderTop: `3px solid ${def.color}`,
-        boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${def.color}11`,
-        borderRadius: 8,
+        boxShadow: `0 18px 36px rgba(23,26,28,0.10), 0 0 0 1px ${def.color}08`,
+        borderRadius: 18,
         display: "flex",
         flexDirection: "column",
         minHeight: 320,
@@ -241,7 +237,7 @@ export default function EventPanel({ event, athletes, getRsvp, setRsvp, getAvail
             <Badge color={def.color} variant="solid" size="xs" style={{ marginBottom: 6 }}>
               {def.label}
             </Badge>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.3px", lineHeight: 1.2 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: C.text, textTransform: "uppercase", letterSpacing: "-0.3px", lineHeight: 1.2 }}>
               {event.title}
             </div>
           </div>

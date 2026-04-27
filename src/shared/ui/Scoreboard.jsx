@@ -53,7 +53,7 @@ export default function Scoreboard({
         minHeight: SZ.h,
         background: BROADCAST_GRADIENT.statAccent,
         border: `1px solid ${C.borderHi}`,
-        borderRadius: 12,
+        borderRadius: 18,
         boxShadow: ELEVATION.stat,
         overflow: "hidden",
       }}
@@ -62,7 +62,6 @@ export default function Scoreboard({
       <span style={{
         position: "absolute", top: 0, left: 0, right: 0, height: 3,
         background: `linear-gradient(90deg, ${C.blue}00 0%, ${C.blue} 20%, ${C.blueHi} 50%, ${C.blue} 80%, ${C.blue}00 100%)`,
-        boxShadow: `0 0 14px ${C.blueGlow}`,
       }} />
       {/* Hairline light */}
       <span style={{
@@ -83,14 +82,13 @@ export default function Scoreboard({
           position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
           display: "flex", alignItems: "center", gap: 8,
           padding: "3px 10px",
-          background: "rgba(47,107,255,0.10)",
+          background: C.blueDim,
           border: `1px solid ${C.blueBorder}`,
           borderRadius: 999,
           fontSize: 8.5, fontWeight: 800,
-          color: C.blueHi,
+          color: C.blueDeep,
           textTransform: "uppercase",
-          letterSpacing: "2px",
-          fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+          letterSpacing: "0.12em",
           zIndex: 3,
         }}>
           {meta.status === "live" && (
@@ -127,7 +125,6 @@ export default function Scoreboard({
         }}>
           <ScoreDigit value={home.score} color={resultColor("home")} fs={SZ.scoreFs} />
           <div style={{
-            fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
             fontSize: Math.round(SZ.scoreFs * 0.55),
             fontWeight: 900,
             color: C.textHint,
@@ -150,15 +147,14 @@ export default function Scoreboard({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
-          background: "rgba(4,6,16,0.4)",
+          background: "rgba(245,241,234,0.72)",
         }}>
           {meta.date && (
             <div style={{
               fontSize: 9, fontWeight: 700,
               color: C.textMuted,
               textTransform: "uppercase",
-              letterSpacing: "2px",
-              fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+              letterSpacing: "0.1em",
             }}>
               {meta.date}
             </div>
@@ -203,8 +199,7 @@ function TeamBlock({ team, align, SZ }) {
             fontWeight: 900,
             color: C.blueHi,
             textTransform: "uppercase",
-            letterSpacing: "2.4px",
-            fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
+            letterSpacing: "0.12em",
             marginBottom: 4,
           }}>
             {team.tag}
@@ -213,16 +208,14 @@ function TeamBlock({ team, align, SZ }) {
         <div style={{
           fontSize: SZ.nameFs,
           fontWeight: 800,
-          color: "white",
+          color: C.text,
           textTransform: "uppercase",
           letterSpacing: "0.4px",
-          fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
           lineHeight: 1.1,
           maxWidth: 180,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          textShadow: `0 0 16px ${C.blueGlow}`,
         }}>
           {team.name}
         </div>
@@ -231,10 +224,10 @@ function TeamBlock({ team, align, SZ }) {
       {/* Crest / logo */}
       <div style={{
         width: 46, height: 46,
-        borderRadius: 6,
-        background: "linear-gradient(135deg, rgba(47,107,255,0.18) 0%, rgba(10,15,26,0.95) 100%)",
+        borderRadius: 10,
+        background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(245,241,234,0.96) 100%)",
         border: `1px solid ${C.blueBorder}`,
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 14px ${C.blueGlow}`,
+        boxShadow: "0 10px 24px rgba(23,26,28,0.08)",
         display: "flex", alignItems: "center", justifyContent: "center",
         flexShrink: 0,
         position: "relative",
@@ -243,14 +236,11 @@ function TeamBlock({ team, align, SZ }) {
         {team.logo ? (
           <img src={team.logo} alt={team.name} style={{
             width: "80%", height: "80%", objectFit: "contain",
-            filter: `drop-shadow(0 0 8px ${C.blueGlow})`,
           }} />
         ) : (
           <span style={{
-            fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
             fontSize: 20, fontWeight: 900,
-            color: "white",
-            textShadow: `0 0 12px ${C.blueGlow}`,
+            color: C.text,
           }}>
             {initial}
           </span>
@@ -281,16 +271,12 @@ function ScoreDigit({ value, color, fs }) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 420, damping: 24 }}
       style={{
-        fontFamily: '"Orbitron","Exo 2",Arial,sans-serif',
         fontSize: fs,
         fontWeight: 900,
         color,
         lineHeight: 1,
         letterSpacing: "-2.5px",
         fontVariantNumeric: "tabular-nums",
-        textShadow: color === "white"
-          ? `0 0 24px ${C.blueGlow}, 0 2px 8px rgba(0,0,0,0.5)`
-          : `0 0 24px ${color}66, 0 2px 8px rgba(0,0,0,0.5)`,
         minWidth: `calc(${fs}px * 0.62)`,
         textAlign: "center",
       }}

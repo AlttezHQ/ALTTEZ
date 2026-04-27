@@ -1,10 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import imgEntrenamiento from "./assets/entrenamiento.jpeg";
-import imgPlantilla from "./assets/Gestion_de_plantilla.jpeg";
-import imgPartido from "./assets/Partido.jpeg";
-import imgOficina from "./assets/Oficina.jpeg";
-import imgProximo from "./assets/Proximo_partido.jpeg";
+import imgEntrenamiento from "./assets/crm-training-field.png";
+import imgTactica from "./assets/crm-tactics-office.png";
+import imgPartido from "./assets/crm-match-action.png";
 import EmptyState from "../../shared/ui/EmptyState";
 import { useStore } from "../../shared/store/useStore";
 import { calcStats } from "../../shared/services/storageService";
@@ -651,7 +649,7 @@ export default function Home({ onNavigate, onLogout }) {
               title="Gestion de plantilla"
               description="Administra jugadores, roles, contratos y planificacion deportiva."
               cta="Ver plantilla"
-              image={imgPlantilla}
+              image={imgTactica}
               icon={<Icon.Users color="#FFFFFF" />}
               onClick={() => onNavigate("plantilla")}
               playHover={playHover}
@@ -745,7 +743,7 @@ export default function Home({ onNavigate, onLogout }) {
             role="button"
             style={{ cursor: "pointer", minHeight: 122, position: "relative", background: COLORS.surface }}
           >
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgOficina})`, backgroundSize: "cover", backgroundPosition: "right center", opacity: 0.2 }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgTactica})`, backgroundSize: "cover", backgroundPosition: "right center", opacity: 0.2 }} />
             <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, padding: 24, minHeight: 122 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <div style={{ width: 56, height: 56, borderRadius: 16, background: COLORS.pageAlt, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -770,7 +768,7 @@ export default function Home({ onNavigate, onLogout }) {
             role="button"
             style={{ cursor: "pointer", position: "relative" }}
           >
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgProximo})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.09, filter: "grayscale(100%)" }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${imgPartido})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.09, filter: "grayscale(100%)" }} />
             <div style={{ position: "relative", zIndex: 1, padding: "28px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 22, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 18, minWidth: 0 }}>
                 <div style={{ width: 58, height: 58, borderRadius: 16, border: `1px solid ${COLORS.borderStrong}`, background: COLORS.surfaceSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

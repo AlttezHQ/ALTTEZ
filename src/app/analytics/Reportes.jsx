@@ -73,7 +73,7 @@ export function Reportes({ onNavigate }) {
   ];
 
   return (
-    <div style={{ padding: "var(--sp-5) var(--sp-4)", maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ padding: "var(--sp-5) var(--sp-4)", maxWidth: 900, margin: "0 auto", background: C.bg }}>
 
       {/* KPI Cards */}
       <div className="rep-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "var(--sp-3)", marginBottom: "var(--sp-5)" }}>
@@ -120,7 +120,7 @@ export function Reportes({ onNavigate }) {
             Rendimiento en competencia
           </SectionLabel>
           <div style={{ display: "flex", gap: "var(--sp-5)", alignItems: "flex-end" }}>
-            {[{ val: matchStats.won, lbl: "Ganados", color: C.green }, { val: matchStats.drawn, lbl: "Empatados", color: "rgba(255,255,255,0.45)" }, { val: matchStats.lost, lbl: "Perdidos", color: C.danger }].map((s, i) => (
+            {[{ val: matchStats.won, lbl: "Ganados", color: C.green }, { val: matchStats.drawn, lbl: "Empatados", color: C.textMuted }, { val: matchStats.lost, lbl: "Perdidos", color: C.danger }].map((s, i) => (
               <div key={i}>
                 <div style={{ fontSize: 30, fontWeight: "var(--fw-bold)", color: s.color, lineHeight: 1 }}>{s.val}</div>
                 <div style={{ fontSize: "var(--fs-tag)", color: C.textHint, textTransform: "uppercase", letterSpacing: "var(--ls-caps-sm)", marginTop: "var(--sp-1)" }}>{s.lbl}</div>
@@ -131,7 +131,7 @@ export function Reportes({ onNavigate }) {
             {matchStats.played > 0 ? (
               <>
                 <div style={{ flex: matchStats.won || 0, background: C.green, borderRadius: "2px 0 0 2px", minWidth: matchStats.won > 0 ? 4 : 0 }} />
-                <div style={{ flex: matchStats.drawn || 0, background: "rgba(255,255,255,0.3)", minWidth: matchStats.drawn > 0 ? 4 : 0 }} />
+                <div style={{ flex: matchStats.drawn || 0, background: C.borderHi, minWidth: matchStats.drawn > 0 ? 4 : 0 }} />
                 <div style={{ flex: matchStats.lost || 0, background: C.danger, borderRadius: "0 2px 2px 0", minWidth: matchStats.lost > 0 ? 4 : 0 }} />
               </>
             ) : (
@@ -203,7 +203,7 @@ export function Reportes({ onNavigate }) {
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 padding: "var(--sp-2) var(--sp-3)",
-                background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent",
+                background: i % 2 === 0 ? "rgba(245,241,234,0.58)" : "transparent",
                 marginBottom: "var(--sp-1)",
                 flexWrap: "wrap", gap: "var(--sp-2)",
               }}
