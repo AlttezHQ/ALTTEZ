@@ -6,20 +6,20 @@ export default function FieldBackground() {
           <radialGradient id="bg1" cx="15%" cy="8%" r="38%">
             <stop offset="0%" stopColor="#F4E7CF" stopOpacity="0.75" />
             <stop offset="55%" stopColor="#F4E7CF" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#FAFAF8" stopOpacity="0" />
+            <stop offset="100%" stopColor="#F6F1EA" stopOpacity="0" />
           </radialGradient>
           <radialGradient id="bg2" cx="85%" cy="10%" r="34%">
             <stop offset="0%" stopColor="#EFE7D8" stopOpacity="0.65" />
             <stop offset="60%" stopColor="#EFE7D8" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#FAFAF8" stopOpacity="0" />
+            <stop offset="100%" stopColor="#F6F1EA" stopOpacity="0" />
           </radialGradient>
           <radialGradient id="bg3" cx="50%" cy="100%" r="48%">
             <stop offset="0%" stopColor="#EADBC0" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#FAFAF8" stopOpacity="0" />
+            <stop offset="100%" stopColor="#F6F1EA" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        <rect width="900" height="620" fill="#FAFAF8" />
+        <rect width="900" height="620" fill="#F6F1EA" />
         <rect width="900" height="620" fill="url(#bg1)" />
         <rect width="900" height="620" fill="url(#bg2)" />
         <rect width="900" height="620" fill="url(#bg3)" />

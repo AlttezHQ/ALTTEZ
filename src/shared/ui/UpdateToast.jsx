@@ -103,7 +103,7 @@ export default function UpdateToast() {
               </button>
 
               <motion.button
-                whileHover={{ scale: 1.02, boxShadow: "0 12px 24px rgba(201,151,58,0.18)" }}
+                whileHover={{ scale: 1.02, boxShadow: "0 12px 24px rgba(206, 137, 70,0.18)" }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleUpdate}
                 disabled={updating}

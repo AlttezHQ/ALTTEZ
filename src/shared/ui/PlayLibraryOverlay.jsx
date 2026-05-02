@@ -13,7 +13,7 @@
  *  onCapture    {(name: string)=>void}   Guarda la jugada actual
  *  onLoad       {(play: Play)=>void}
  *  onDelete     {(id: string)=>void}
- *  accent       {string}   default: PALETTE.blue
+ *  accent       {string}   default: PALETTE.bronce
  *
  * @version 1.0 — Broadcast Arena
  */

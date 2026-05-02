@@ -3,7 +3,7 @@ import { useEffect } from "react";
 const STYLE_ID = "mui-border-beam";
 
 export function BorderBeam({
-  colorFrom = "rgba(201,151,58,0.55)",
+  colorFrom = "rgba(206, 137, 70,0.55)",
   colorTo = "rgba(245,194,102,0.55)",
   duration = 8,
   borderWidth = 1.5,

@@ -55,25 +55,25 @@ export function ShimmerButton({ children, style = {}, disabled, ...props }) {
       style={{
         padding: "13px 28px",
         borderRadius: 10,
-        background: "linear-gradient(135deg, #C9973A 0%, #B8832A 100%)",
+        background: "linear-gradient(135deg, #CE8946 0%, #B8832A 100%)",
         color: "white",
         fontWeight: 700,
         fontSize: 13,
         textTransform: "uppercase",
         letterSpacing: "0.07em",
-        boxShadow: "0 6px 20px rgba(201,151,58,0.28)",
+        boxShadow: "0 6px 20px rgba(206, 137, 70,0.28)",
         transition: "transform 0.18s ease, box-shadow 0.18s ease",
         ...style,
       }}
       onMouseEnter={(e) => {
         if (!disabled) {
           e.currentTarget.style.transform = "translateY(-1px) scale(1.02)";
-          e.currentTarget.style.boxShadow = "0 10px 28px rgba(201,151,58,0.40)";
+          e.currentTarget.style.boxShadow = "0 10px 28px rgba(206, 137, 70,0.40)";
         }
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "";
-        e.currentTarget.style.boxShadow = "0 6px 20px rgba(201,151,58,0.28)";
+        e.currentTarget.style.boxShadow = "0 6px 20px rgba(206, 137, 70,0.28)";
       }}
       {...props}
     >

@@ -332,8 +332,8 @@ function IOSInstructionsModal({ onClose }) {
                 gap: 8,
                 padding: "10px 14px",
                 borderRadius: 8,
-                background: "rgba(200,255,0,0.05)",
-                border: "1px solid rgba(200,255,0,0.15)",
+                background: "rgba(206, 137, 70,0.05)",
+                border: "1px solid rgba(206, 137, 70,0.15)",
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
@@ -343,7 +343,7 @@ function IOSInstructionsModal({ onClose }) {
               <span
                 style={{
                   fontSize: 11,
-                  color: "rgba(200,255,0,0.8)",
+                  color: "rgba(206, 137, 70,0.8)",
                   lineHeight: 1.4,
                 }}
               >

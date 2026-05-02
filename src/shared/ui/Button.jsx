@@ -9,7 +9,7 @@
  *    ghost    — transparente con borde azul y hairline interior; texto accent
  *    capsule  — pill uppercase compacto (acciones secundarias)
  *    icon     — cuadrado compacto (X, close, iconos breves)
- *  accent   {string}  Color override (default: PALETTE.blue)
+ *  accent   {string}  Color override (default: PALETTE.bronce)
  *  size     {"sm"|"md"|"lg"}
  *  loading  {boolean} Spinner + deshabilita interacción
  *  as       {React.ElementType}  Para usar con motion.button etc.
@@ -71,7 +71,7 @@ export default function Button({
           background: `linear-gradient(135deg, ${accent} 0%, ${C.blueDeep} 100%)`,
           color: "#FFFFFF",
           border: `1px solid ${accent}`,
-          boxShadow: "0 10px 24px rgba(201,151,58,0.18)",
+          boxShadow: "0 10px 24px rgba(206, 137, 70,0.18)",
         };
       case "ghost":
         return {
@@ -106,7 +106,7 @@ export default function Button({
     ? {
         whileHover: isDisabled ? {} : (
           variant === "primary"
-            ? { y: -1, boxShadow: "0 14px 28px rgba(201,151,58,0.24)" }
+            ? { y: -1, boxShadow: "0 14px 28px rgba(206, 137, 70,0.24)" }
             : variant === "ghost"
               ? { y: -1, borderColor: `${accent}`, color: `${accent}` }
               : { scale: 1.03 }

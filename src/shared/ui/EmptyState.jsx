@@ -111,7 +111,7 @@ export default function EmptyState({
           {actionLabel && onAction && (
             <motion.button
               onClick={onAction}
-              whileHover={{ y: -1, boxShadow: "0 14px 28px rgba(201,151,58,0.24)" }}
+              whileHover={{ y: -1, boxShadow: "0 14px 28px rgba(206, 137, 70,0.24)" }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 420, damping: 32 }}
               style={{
@@ -127,7 +127,7 @@ export default function EmptyState({
                 minHeight: 44,
                 display: "flex",
                 alignItems: "center",
-                boxShadow: "0 10px 24px rgba(201,151,58,0.18)",
+                boxShadow: "0 10px 24px rgba(206, 137, 70,0.18)",
               }}
             >
               {actionLabel}

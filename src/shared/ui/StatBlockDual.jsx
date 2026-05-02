@@ -8,8 +8,8 @@
  *  home      {number|string}
  *  away      {number|string}
  *  unit      {string}  "%", "km", "" ...
- *  accent    {string}  color del bar del lado home (default: PALETTE.blue)
- *  accentAway{string}  color del bar del lado away (default: PALETTE.blueHi)
+ *  accent    {string}  color del bar del lado home (default: PALETTE.bronce)
+ *  accentAway{string}  color del bar del lado away (default: PALETTE.bronceHi)
  *  size      {"sm"|"md"}  default "md"
  *
  * @version 1.0 — Broadcast Arena

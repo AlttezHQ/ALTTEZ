@@ -10,7 +10,7 @@
  *  isLive        {boolean} Muestra punto live pulsante (default: true)
  *  kpis          {Array<{label, value, unit?, accent?}>}  Máx 4
  *  rightSlot     {ReactNode}  Botones (pausar, finalizar, etc.)
- *  accent        {string}  default: PALETTE.blue
+ *  accent        {string}  default: PALETTE.bronce
  *
  * @version 1.0 — Broadcast Arena
  */
