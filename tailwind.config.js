@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ALTTEZ Blue
-        blue:          "var(--color-blue)",
-        "blue-hi":     "var(--color-blue-hi)",
-        "blue-deep":   "var(--color-blue-deep)",
-        "blue-dim":    "var(--color-blue-dim)",
-        "blue-ice":    "var(--color-blue-ice)",
+        // ALTTEZ Bronce
+        bronce:          "var(--color-bronce)",
+        "bronce-hi":     "var(--color-bronce-hi)",
+        "bronce-deep":   "var(--color-bronce-deep)",
+        "bronce-dim":    "var(--color-bronce-dim)",
+        "bronce-ice":    "var(--color-bronce-ice)",
         // Semantic
         success:       "var(--color-success)",
         amber:         "var(--color-amber)",
@@ -41,8 +41,11 @@ export default {
         card:        "var(--shadow-card)",
         panel:       "var(--shadow-panel)",
         modal:       "var(--shadow-modal)",
-        blue:        "var(--shadow-blue)",
-        "blue-glow": "var(--shadow-blue-glow)",
+        bronce:       "var(--shadow-bronce)",
+        "bronce-glow":"var(--shadow-bronce-glow)",
+      },
+      fontFamily: {
+        sans: ["Manrope", "sans-serif"],
       },
       spacing: {
         1: "var(--sp-1)",
