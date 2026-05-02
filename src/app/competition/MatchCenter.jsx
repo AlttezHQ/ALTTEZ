@@ -7,7 +7,7 @@
  *   B — Player Card Pro (estilo Ultimate Team)
  *   C — Analytics Dashboard (Spider Chart SVG, historial de ALTTEZ Score, recomendaciones)
  *
- * @palette Charcoal (#0a0a14) / Neon (#c8ff00) / Electric Violet (#7F77DD)
+ * @palette Charcoal (#0a0a14) / Neon (#CE8946) / Electric Violet (#7F77DD)
  * @design  Glassmorphism + Framer Motion + SVG propio (sin dependencias externas de charts)
  * @author  @Andres (UI) + @Mateo (Data) + @Carlos (Arquitecto)
  * @version 1.0.0
@@ -62,13 +62,13 @@ const stagger = { animate: { transition: { staggerChildren: 0.05 } } };
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Stepper tipo FIFA — click +/- rapido, sin input manual */
-function FifaStepper({ label, value, min = 0, max, onChange, accent = C.neon }) {
+function FifaStepper({ label, value, min = 0, max, onChange, accent = C.bronce }) {
   const dec = useCallback(() => { if (value > min) onChange(value - 1); }, [value, min, onChange]);
   const inc = useCallback(() => { if (value < max) onChange(value + 1); }, [value, max, onChange]);
 
   const btnBase = {
     width: 36, height: 36, border: `1px solid rgba(255,255,255,0.15)`,
-    background: "rgba(255,255,255,0.05)", color: "white", cursor: "pointer",
+    background:"#FFFFFF", color: "white", cursor: "pointer",
     fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center",
     justifyContent: "center", userSelect: "none",
     transition: "background 80ms, transform 80ms, border-color 80ms",
@@ -158,7 +158,7 @@ function TarjetaSelector({ value, onChange }) {
                   ? (isNone ? "rgba(255,255,255,0.1)" : opt.color)
                   : "rgba(255,255,255,0.03)",
                 color: isSelected
-                  ? (isNone ? "rgba(255,255,255,0.7)" : C.bgDark)
+                  ? (isNone ? "rgba(255,255,255,0.7)" : C.text)
                   : C.textHint,
                 fontSize: isNone ? 14 : 11, fontWeight: 900, cursor: "pointer",
                 transition: "all 120ms",
@@ -215,8 +215,8 @@ function SpiderChart({ data, size = 180, uid = "0" }) {
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
       <defs>
         <radialGradient id={gradId} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={C.neon} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={C.neon} stopOpacity="0.06" />
+          <stop offset="0%" stopColor={C.bronce} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={C.bronce} stopOpacity="0.06" />
         </radialGradient>
       </defs>
 
@@ -235,13 +235,13 @@ function SpiderChart({ data, size = 180, uid = "0" }) {
       ))}
 
       {/* Polígono de datos — fill con gradiente radial */}
-      <path d={playerPath} fill={`url(#${gradId})`} stroke={C.neon} strokeWidth="2" strokeLinejoin="round" />
+      <path d={playerPath} fill={`url(#${gradId})`} stroke={C.bronce} strokeWidth="2" strokeLinejoin="round" />
 
       {/* Puntos en vértices con glow */}
       {playerPts.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="5" fill={C.neon} opacity="0.15" />
-          <circle cx={p.x} cy={p.y} r="3" fill={C.neon} />
+          <circle cx={p.x} cy={p.y} r="5" fill={C.bronce} opacity="0.15" />
+          <circle cx={p.x} cy={p.y} r="3" fill={C.bronce} />
         </g>
       ))}
 
@@ -264,7 +264,7 @@ function SpiderChart({ data, size = 180, uid = "0" }) {
             <text
               x={p.x} y={p.y + 9}
               textAnchor="middle" dominantBaseline="middle"
-              fontSize="7" fill={C.neon}
+              fontSize="7" fill={C.bronce}
               fontFamily="inherit"
               fontWeight="900"
             >
@@ -326,20 +326,20 @@ function MiniLineChart({ data, width = 220, height = 60, uid = "0" }) {
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={C.neon} stopOpacity="0.4" />
-          <stop offset="100%" stopColor={C.neon} stopOpacity="0" />
+          <stop offset="0%" stopColor={C.bronce} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={C.bronce} stopOpacity="0" />
         </linearGradient>
       </defs>
       {/* Area bajo la curva */}
       <path d={areaPath} fill={`url(#${gradId})`} />
       {/* Linea principal — suave y con caps redondeados */}
-      <path d={linePath} fill="none" stroke={C.neon} strokeWidth="2.5"
+      <path d={linePath} fill="none" stroke={C.bronce} strokeWidth="2.5"
         strokeLinecap="round" strokeLinejoin="round" />
       {/* Puntos de datos */}
       {pts.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="5" fill={C.neon} opacity="0.15" />
-          <circle cx={p.x} cy={p.y} r="2.5" fill={C.neon} />
+          <circle cx={p.x} cy={p.y} r="5" fill={C.bronce} opacity="0.15" />
+          <circle cx={p.x} cy={p.y} r="2.5" fill={C.bronce} />
         </g>
       ))}
     </svg>
@@ -371,7 +371,7 @@ function FatigaIndicator({ rpe }) {
 function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial, onSelect, selected }) {
   const ovr     = calcOVR(getAthleteScoreHistory(athlete.id));
   const alert   = rpe != null ? getPerformanceAlert(rpe, alttezScore) : null;
-  const scoreColor = alttezScore >= 7 ? C.neon : alttezScore >= 4 ? C.amber : C.danger;
+  const scoreColor = alttezScore >= 7 ? C.bronce : alttezScore >= 4 ? C.amber : C.danger;
 
   return (
     <motion.div
@@ -382,18 +382,18 @@ function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial
         cursor: "pointer",
         position: "relative",
         background: selected
-          ? "linear-gradient(145deg, rgba(200,255,0,0.1), rgba(10,10,20,0.95))"
+          ? "linear-gradient(145deg, rgba(206, 137, 70,0.1), rgba(10,10,20,0.95))"
           : "linear-gradient(145deg, rgba(20,20,35,0.98), rgba(8,8,16,0.98))",
-        border: `1px solid ${selected ? C.neon : C.border}`,
+        border: `1px solid ${selected ? C.bronce : C.border}`,
         boxShadow: selected
-          ? `0 0 0 1px ${C.neon}55, 0 8px 32px rgba(200,255,0,0.12), inset 0 1px 0 rgba(255,255,255,0.05)`
+          ? `0 0 0 1px ${C.bronce}55, 0 8px 32px rgba(206, 137, 70,0.12), inset 0 1px 0 rgba(255,255,255,0.05)`
           : "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
         overflow: "hidden",
         transition: "border 150ms, box-shadow 150ms, background 150ms",
       }}
     >
       {/* Borde superior de acento */}
-      <div style={{ height: 3, background: selected ? C.neon : C.purple, transition: "background 150ms" }} />
+      <div style={{ height: 3, background: selected ? C.bronce : C.purple, transition: "background 150ms" }} />
 
       <div style={{ padding: "14px 16px" }}>
         {/* Header: Avatar + nombre + posicion */}
@@ -401,10 +401,10 @@ function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial
           {/* Avatar placeholder con inicial */}
           <div style={{
             width: 44, height: 44, borderRadius: 4,
-            background: "linear-gradient(135deg, rgba(200,255,0,0.15), rgba(127,119,221,0.15))",
+            background: "linear-gradient(135deg, rgba(206, 137, 70,0.15), rgba(127,119,221,0.15))",
             border: `1px solid ${C.border}`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 18, fontWeight: 900, color: C.neon, flexShrink: 0,
+            fontSize: 18, fontWeight: 900, color: C.bronce, flexShrink: 0,
           }}>
             {athlete.name.charAt(0)}
           </div>
@@ -419,13 +419,13 @@ function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial
           {/* OVR badge — FIFA Ultimate Team style */}
           <div style={{
             display: "flex", flexDirection: "column", alignItems: "center",
-            background: "linear-gradient(135deg, rgba(200,255,0,0.18), rgba(200,255,0,0.06))",
-            border: `1px solid ${C.neonBorder}`,
-            boxShadow: `0 0 12px rgba(200,255,0,0.2), inset 0 1px 0 rgba(200,255,0,0.15)`,
+            background: "linear-gradient(135deg, rgba(206, 137, 70,0.18), rgba(206, 137, 70,0.06))",
+            border: `1px solid ${C.bronceBorder}`,
+            boxShadow: `0 0 12px rgba(206, 137, 70,0.2), inset 0 1px 0 rgba(206, 137, 70,0.15)`,
             padding: "5px 10px", minWidth: 44, borderRadius: 4,
           }}>
-            <div style={{ fontSize: 22, fontWeight: 900, color: C.neon, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{ovr}</div>
-            <div style={{ fontSize: 7, color: C.neonBorder, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 1 }}>OVR</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: C.bronce, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{ovr}</div>
+            <div style={{ fontSize: 7, color: C.bronceBorder, textTransform: "uppercase", letterSpacing: "1.5px", marginTop: 1 }}>OVR</div>
           </div>
         </div>
 
@@ -450,7 +450,7 @@ function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial
         {stats && (
           <div className="mc-stats-row" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 4, marginBottom: 10 }}>
             {[
-              { lbl: "G",   val: stats.goles,          color: C.neon   },
+              { lbl: "G",   val: stats.goles,          color: C.bronce   },
               { lbl: "A",   val: stats.asistencias,     color: C.purple },
               { lbl: "REC", val: stats.recuperaciones,  color: C.green  },
               { lbl: "DUE", val: stats.duelosGanados,   color: C.amber  },
@@ -567,7 +567,7 @@ function PlayerAnalytics({ athlete, stats, rpe, historial: _historial }) {
               {scoreHistory.slice(-3).map((h, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: C.textMuted }}>
                   <span>vs {h.rival}</span>
-                  <span style={{ color: h.score >= 6 ? C.neon : h.score >= 4 ? C.amber : C.danger, fontWeight: 700 }}>
+                  <span style={{ color: h.score >= 6 ? C.bronce : h.score >= 4 ? C.amber : C.danger, fontWeight: 700 }}>
                     {h.score.toFixed(1)}
                   </span>
                 </div>
@@ -583,7 +583,7 @@ function PlayerAnalytics({ athlete, stats, rpe, historial: _historial }) {
           Correlacion partido
         </div>
         {[
-          { label: "Minutos jugados",    pct: stats ? Math.round((stats.minutosJugados / 90) * 100) : 0, color: C.neon   },
+          { label: "Minutos jugados",    pct: stats ? Math.round((stats.minutosJugados / 90) * 100) : 0, color: C.bronce   },
           { label: "Efectividad",        pct: Math.min(100, Math.round(minEfectividad * 20)),            color: C.purple },
           { label: "Riesgo lesional",     pct: riskPct,                                                  color: riskPct > 70 ? C.danger : riskPct > 50 ? C.amber : C.green },
         ].map(bar => (
@@ -910,8 +910,8 @@ export default function MatchCenter({ clubId }) {
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "7px 8px", marginBottom: 2, cursor: "pointer",
-                    background: isActive ? "rgba(200,255,0,0.06)" : "transparent",
-                    border: `1px solid ${isActive ? C.neonBorder : "transparent"}`,
+                    background: isActive ? "rgba(206, 137, 70,0.06)" : "transparent",
+                    border: `1px solid ${isActive ? C.bronceBorder : "transparent"}`,
                     transition: "all 120ms",
                   }}
                 >
@@ -919,7 +919,7 @@ export default function MatchCenter({ clubId }) {
                     width: 26, height: 26, borderRadius: 3,
                     background: "rgba(255,255,255,0.06)",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 11, fontWeight: 700, color: C.neon, flexShrink: 0,
+                    fontSize: 11, fontWeight: 700, color: C.bronce, flexShrink: 0,
                   }}>
                     {a.name.charAt(0)}
                   </div>
@@ -929,7 +929,7 @@ export default function MatchCenter({ clubId }) {
                     </div>
                     <div style={{ fontSize: 8, color: C.textMuted }}>{a.posCode}</div>
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 900, color: score >= 6 ? C.neon : score >= 3 ? C.amber : C.danger, flexShrink: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: score >= 6 ? C.bronce : score >= 3 ? C.amber : C.danger, flexShrink: 0 }}>
                     {score.toFixed(1)}
                   </div>
                 </div>
@@ -994,7 +994,7 @@ export default function MatchCenter({ clubId }) {
                     {matchAthletes.map(a => {
                       const ps = playerStats[a.id] || { ...EMPTY_STATS };
                       const score = calcALTTEZScore(ps);
-                      const scoreColor = score >= 7 ? C.neon : score >= 4 ? C.amber : C.danger;
+                      const scoreColor = score >= 7 ? C.bronce : score >= 4 ? C.amber : C.danger;
 
                       return (
                         <motion.div
@@ -1010,9 +1010,9 @@ export default function MatchCenter({ clubId }) {
                           <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
                             <div style={{
                               width: 32, height: 32, borderRadius: 3,
-                              background: "rgba(200,255,0,0.08)", border: `1px solid ${C.neonBorder}`,
+                              background: "rgba(206, 137, 70,0.08)", border: `1px solid ${C.bronceBorder}`,
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 14, fontWeight: 900, color: C.neon, flexShrink: 0,
+                              fontSize: 14, fontWeight: 900, color: C.bronce, flexShrink: 0,
                             }}>
                               {a.name.charAt(0)}
                             </div>
@@ -1030,7 +1030,7 @@ export default function MatchCenter({ clubId }) {
                           {/* Steppers */}
                           <div style={{ padding: "12px 14px", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-start" }}>
                             <FifaStepper label="Minutos" value={ps.minutosJugados} min={0} max={120} onChange={v => updateStat(a.id, "minutosJugados", v)} />
-                            <FifaStepper label="Goles" value={ps.goles} min={0} max={10} onChange={v => updateStat(a.id, "goles", v)} accent={C.neon} />
+                            <FifaStepper label="Goles" value={ps.goles} min={0} max={10} onChange={v => updateStat(a.id, "goles", v)} accent={C.bronce} />
                             <FifaStepper label="Asist" value={ps.asistencias} min={0} max={10} onChange={v => updateStat(a.id, "asistencias", v)} accent={C.purple} />
                             <FifaStepper label="Recup" value={ps.recuperaciones} min={0} max={30} onChange={v => updateStat(a.id, "recuperaciones", v)} accent={C.green} />
                             <FifaStepper label="Duelos" value={ps.duelosGanados} min={0} max={20} onChange={v => updateStat(a.id, "duelosGanados", v)} accent={C.amber} />
@@ -1050,7 +1050,7 @@ export default function MatchCenter({ clubId }) {
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0 }}
-                        style={{ padding: "10px 18px", fontSize: 10, color: C.neon, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", display: "flex", alignItems: "center", gap: 6 }}
+                        style={{ padding: "10px 18px", fontSize: 10, color: C.bronce, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", display: "flex", alignItems: "center", gap: 6 }}
                       >
                         <span>&#10003;</span> Reporte confirmado
                       </motion.div>
@@ -1063,7 +1063,7 @@ export default function MatchCenter({ clubId }) {
                     style={{
                       padding: "10px 28px", fontSize: 10, fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: "1.5px",
-                      background: C.neon, color: C.bgDark, border: "none", cursor: "pointer",
+                      background: C.bronce, color: C.text, border: "none", cursor: "pointer",
                     }}
                   >
                     Confirmar reporte

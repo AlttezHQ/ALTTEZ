@@ -249,7 +249,7 @@ export default function Administracion() {
                 </FieldInput>
                 <FieldInput label="CONCEPTO" value={movConcepto} onChange={e => setMovConcepto(e.target.value.replace(/[<>{}]/g, ""))} placeholder="Descripcion del movimiento" maxLength={120} />
                 <FieldInput label="MONTO" type="number" value={movMonto} onChange={e => { const v = e.target.value; if (v === "" || (Number(v) >= 0 && Number(v) <= 999999999)) setMovMonto(v); }} placeholder="0" min="1" step="1000" />
-                <FieldInput label="FECHA" type="date" value={movFecha} onChange={e => setMovFecha(e.target.value)} style={{ colorScheme: "dark" }} />
+                <FieldInput label="FECHA" type="date" value={movFecha} onChange={e => setMovFecha(e.target.value)} style={{ colorScheme: "light" }} />
                 <Button
                   variant="primary"
                   accent={ADMIN}

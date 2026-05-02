@@ -72,7 +72,7 @@ export default function KioskMode() {
           border: "1px solid rgba(57,255,20,0.25)",
           borderRadius: 6,
           fontSize: 9,
-          color: PALETTE.neon,
+          color: PALETTE.bronce,
           textTransform: "uppercase",
           letterSpacing: "1.5px",
           fontWeight: 700,

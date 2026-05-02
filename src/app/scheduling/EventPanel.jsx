@@ -26,16 +26,16 @@ function AvailabilityWidget({ availability }) {
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ type: "spring", stiffness: 120, damping: 20 }}
-          style={{ height: "100%", background: `linear-gradient(90deg, ${C.neon}, ${C.blueHi})`, borderRadius: 999 }}
+          style={{ height: "100%", background: `linear-gradient(90deg, ${C.bronce}, ${C.blueHi})`, borderRadius: 999 }}
         />
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-        <span style={{ fontSize: 28, fontWeight: 900, color: C.neon, lineHeight: 1 }}>{confirmados}</span>
+        <span style={{ fontSize: 28, fontWeight: 900, color: C.bronce, lineHeight: 1 }}>{confirmados}</span>
         <span style={{ fontSize: 12, color: C.textMuted }}>de {total} confirmados</span>
       </div>
       <div style={{ display: "flex", gap: 12 }}>
         {[
-          { label: "Confirm.", val: confirmados, color: C.neon },
+          { label: "Confirm.", val: confirmados, color: C.bronce },
           { label: "Ausentes", val: ausentes,    color: C.danger },
           { label: "Duda",     val: dudas,       color: C.amber },
           { label: "Pendiente",val: pendientes,  color: C.textMuted },
@@ -254,7 +254,7 @@ export default function EventPanel({ event, athletes, getRsvp, setRsvp, getAvail
           </div>
           {event.location && (
             <div style={{ fontSize: 10, color: C.textMuted }}>
-              Lugar: <span style={{ color: "rgba(255,255,255,0.6)" }}>{event.location}</span>
+              Lugar: <span style={{ color:"#1F1F1D" }}>{event.location}</span>
             </div>
           )}
           {event.rival && (
@@ -356,7 +356,7 @@ export default function EventPanel({ event, athletes, getRsvp, setRsvp, getAvail
                     }}>
                       {iconMap[r.status] || "?"}
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "white" }}>{r.athlete_name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color:"#1F1F1D" }}>{r.athlete_name}</span>
                   </div>
                   <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", color }}>
                     {labelMap[r.status] || r.status}

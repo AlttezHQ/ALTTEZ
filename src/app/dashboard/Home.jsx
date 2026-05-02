@@ -8,17 +8,17 @@ import { useStore } from "../../shared/store/useStore";
 import { calcStats } from "../../shared/services/storageService";
 
 const COLORS = {
-  page: "#FAFAF8",
-  pageAlt: "#F5F1EA",
+  page: "#F6F1EA",
+  pageAlt: "#FDFDFB",
   surface: "#FFFFFF",
   surfaceSoft: "#FCFAF6",
-  text: "#171A1C",
+  text: "#1F1F1D",
   textMuted: "#667085",
   textSoft: "#8E8A83",
   border: "#E9E2D7",
   borderStrong: "#D8CCB9",
-  copper: "#C9973A",
-  copperHover: "#B7832D",
+  copper: "#CE8946",
+  copperHover: "#A66F38",
   copperSoft: "#F4E7CF",
   success: "#2FA56F",
   warning: "#D89A2B",
@@ -238,7 +238,7 @@ function PrimaryButton({ children, onClick, style }) {
         letterSpacing: "0.01em",
         padding: "14px 22px",
         cursor: "pointer",
-        boxShadow: "0 12px 28px rgba(201, 151, 58, 0.24)",
+        boxShadow: "0 12px 28px rgba(206, 137, 70, 0.24)",
         transition: "background 160ms ease, transform 160ms ease",
         ...style,
       }}

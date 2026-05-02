@@ -48,17 +48,17 @@ function ExportPDFButton({ onClick }) {
   const style = hovered
     ? {
         ...base,
-        background: "rgba(200,255,0,0.10)",
-        borderColor: "#c8ff00",
-        color: "#c8ff00",
-        boxShadow: "0 0 12px rgba(200,255,0,0.35), inset 0 0 8px rgba(200,255,0,0.05)",
+        background: "rgba(206, 137, 70,0.10)",
+        borderColor: "#CE8946",
+        color: "#CE8946",
+        boxShadow: "0 0 12px rgba(206, 137, 70,0.35), inset 0 0 8px rgba(206, 137, 70,0.05)",
         transform: pressed ? "scale(0.97)" : "scale(1.01)",
       }
     : {
         ...base,
         background: "transparent",
-        borderColor: "rgba(200,255,0,0.35)",
-        color: "rgba(200,255,0,0.7)",
+        borderColor: "rgba(206, 137, 70,0.35)",
+        color: "rgba(206, 137, 70,0.7)",
         boxShadow: "none",
         transform: pressed ? "scale(0.97)" : "scale(1)",
       };
@@ -176,9 +176,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     const CONTENT_W = PAGE_W - MARGIN * 2;
 
     // ── Palette (RGB arrays for jsPDF) ────────────────────────────────────
-    const NEON     = [200, 255, 0];      // #c8ff00
-    const NEON_DIM = [200, 255, 0];      // used at low alpha via setDrawColor
-    const DARK     = [5,   10,  20];     // #050a14
+    const BRONCE = [206, 137, 70];      // #CE8946
+    const BRONCE_DIM = [206, 137, 70];      // used at low alpha via setDrawColor
+    const MARFIL = [246, 241, 234];     // #050a14
     const WHITE    = [255, 255, 255];
     const GRAY_LT  = [240, 242, 236];    // alternating row
     const GRAY_MID = [120, 120, 120];
@@ -191,15 +191,15 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     const tiemposMins = [tiempos.tarea1, tiempos.tarea2, tiempos.tarea3, tiempos.tarea4];
 
     // ── HEADER BAND ────────────────────────────────────────────────────────
-    doc.setFillColor(...DARK);
-    doc.rect(0, 0, PAGE_W, 30, "F");
+    doc.setFillColor(...MARFIL);
+    doc.setFillColor(253, 253, 251); doc.rect(0, 0, PAGE_W, 30, "F");;
 
     // ES badge (neon box)
     doc.setFillColor(0, 0, 0);
-    doc.setDrawColor(...NEON_DIM);
+    doc.setDrawColor(...BRONCE_DIM);
     doc.setLineWidth(0.6);
     doc.roundedRect(MARGIN, 6, 14, 14, 2, 2, "FD");
-    doc.setTextColor(...NEON);
+    doc.setTextColor(...BRONCE);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.text("ES", MARGIN + 7, 15.5, { align: "center" });
@@ -210,7 +210,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     doc.setFont("helvetica", "bold");
     doc.text(clubName.toUpperCase(), 32, 13);
 
-    doc.setTextColor(...NEON);
+    doc.setTextColor(...BRONCE);
     doc.setFontSize(7.5);
     doc.setFont("helvetica", "normal");
     doc.text("PLANIFICACIÓN DE SESIÓN", 32, 19);
@@ -222,7 +222,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     doc.text(`${fecha}  ·  ${hora}  ·  ${duracionTotal} min`, PAGE_W - MARGIN, 17, { align: "right" });
 
     // Neon bottom line of header
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.setLineWidth(0.4);
     doc.line(0, 30, PAGE_W, 30);
 
@@ -257,9 +257,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     curY += 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
+    doc.setTextColor(31, 31, 29);
     doc.text("OBJETIVOS", MARGIN, curY);
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, curY + 1.5, MARGIN + 22, curY + 1.5);
 
@@ -289,9 +289,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     curY += 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
+    doc.setTextColor(31, 31, 29);
     doc.text("CALENTAMIENTO", MARGIN, curY);
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, curY + 1.5, MARGIN + 36, curY + 1.5);
 
@@ -300,7 +300,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.2);
     // left accent bar in neon
-    doc.setFillColor(...NEON);
+    doc.setFillColor(...BRONCE);
     doc.rect(MARGIN, curY - 3, 1.5, 8, "F");
     doc.setFillColor(245, 248, 240);
     doc.rect(MARGIN + 1.5, curY - 3, CONTENT_W - 1.5, 8, "F");
@@ -318,9 +318,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     // ── TAREAS TABLE ──────────────────────────────────────────────────────
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
+    doc.setTextColor(31, 31, 29);
     doc.text("ESTRUCTURA DE LA SESIÓN", MARGIN, curY);
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, curY + 1.5, MARGIN + 46, curY + 1.5);
     curY += 5;
@@ -345,8 +345,8 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         `${tiemposMins[i]} min`,
       ]),
       headStyles: {
-        fillColor: DARK,
-        textColor: NEON,
+        fillColor: MARFIL,
+        textColor: BRONCE,
         fontSize: 8,
         fontStyle: "bold",
         lineWidth: 0,
@@ -385,9 +385,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     // — Material
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
+    doc.setTextColor(31, 31, 29);
     doc.text("MATERIAL", MARGIN, curY);
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, curY + 1.5, MARGIN + 18, curY + 1.5);
 
@@ -395,7 +395,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
       startY: curY + 4,
       head: [["Material", "Cant."]],
       body: materiales.map(m => [m.nombre, m.cantidad]),
-      headStyles: { fillColor: DARK, textColor: NEON, fontSize: 8, fontStyle: "bold" },
+      headStyles: { fillColor: MARFIL, textColor: BRONCE, fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8.5, textColor: [30, 30, 30] },
       alternateRowStyles: { fillColor: GRAY_LT },
       columnStyles: {
@@ -410,9 +410,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     const jugSeleccionados = athletes.filter(a => selectedPlayers.includes(a.id));
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...DARK);
+    doc.setTextColor(31, 31, 29);
     doc.text(`DEPORTISTAS CONVOCADOS (${jugSeleccionados.length})`, COL_RIGHT_X, curY);
-    doc.setDrawColor(...NEON);
+    doc.setDrawColor(...BRONCE);
     doc.line(COL_RIGHT_X, curY + 1.5, COL_RIGHT_X + 52, curY + 1.5);
 
     autoTable(doc, {
@@ -423,7 +423,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         a.pos,
         a.status === "P" ? "Disponible" : a.status === "L" ? "Lesionado" : "Ausente",
       ]),
-      headStyles: { fillColor: DARK, textColor: NEON, fontSize: 8, fontStyle: "bold" },
+      headStyles: { fillColor: MARFIL, textColor: BRONCE, fontSize: 8, fontStyle: "bold" },
       bodyStyles: { fontSize: 8.5, textColor: [30, 30, 30] },
       alternateRowStyles: { fillColor: GRAY_LT },
       columnStyles: {
@@ -464,9 +464,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
       if (notasText) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(...DARK);
+        doc.setTextColor(31, 31, 29);
         doc.text("OBSERVACIONES DEL CUERPO TÉCNICO", MARGIN, curY);
-        doc.setDrawColor(...NEON);
+        doc.setDrawColor(...BRONCE);
         doc.setLineWidth(0.5);
         doc.line(MARGIN, curY + 1.5, MARGIN + 60, curY + 1.5);
         curY += 7;
@@ -480,9 +480,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
       if (charlaText) {
         doc.setFontSize(9);
         doc.setFont("helvetica", "bold");
-        doc.setTextColor(...DARK);
+        doc.setTextColor(31, 31, 29);
         doc.text("COMUNICACIÓN PREVIA A LA PLANTILLA", MARGIN, curY);
-        doc.setDrawColor(...NEON);
+        doc.setDrawColor(...BRONCE);
         doc.setLineWidth(0.5);
         doc.line(MARGIN, curY + 1.5, MARGIN + 52, curY + 1.5);
         curY += 7;
@@ -499,7 +499,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     for (let p = 1; p <= totalPages; p++) {
       doc.setPage(p);
       // neon separator line
-      doc.setDrawColor(...NEON);
+      doc.setDrawColor(...BRONCE);
       doc.setLineWidth(0.4);
       doc.line(MARGIN, PAGE_H - 12, PAGE_W - MARGIN, PAGE_H - 12);
       // footer text
@@ -514,10 +514,10 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
     showToast("PDF generado correctamente", "success");
   };
 
-  const inp = { background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", padding:"7px 10px", fontSize:11, color:"white", fontFamily:"inherit", outline:"none", width:"100%" };
-  const lbl = { fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.3)", marginBottom:4, display:"block" };
-  const panel = { background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.07)", padding:14, marginBottom:10 };
-  const panelTitle = { fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"rgba(255,255,255,0.35)", marginBottom:12 };
+  const inp = { background:"#FFFFFF", border:"1px solid #D8D0C8", padding:"7px 10px", fontSize:11, color:"#1F1F1D", fontFamily:"inherit", outline:"none", width:"100%" };
+  const lbl = { fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"#98A2B3", marginBottom:4, display:"block" };
+  const panel = { background:"#FFFFFF", border:"1px solid #D8D0C8", padding:14, marginBottom:10 };
+  const panelTitle = { fontSize:9, textTransform:"uppercase", letterSpacing:"2px", color:"#667085", marginBottom:12 };
   const TASK_COLORS = ["#1D9E75","#EF9F27","#7F77DD","#E24B4A"];
 
   return (
@@ -534,7 +534,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
             </div>
             <div>
               <label style={lbl}>Sesión #</label>
-              <div style={{ ...inp, background:"rgba(255,255,255,0.03)", color:"rgba(255,255,255,0.5)", cursor:"default", fontSize:12, fontWeight:500 }}>#{sessionCount + 1}</div>
+              <div style={{ ...inp, background:"#F6F1EA", color:"#667085", cursor:"default", fontSize:12, fontWeight:500 }}>#{sessionCount + 1}</div>
             </div>
             <div>
               <label style={lbl}>Categoría</label>
@@ -589,9 +589,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
               <div style={{ position:"relative" }}>
                 <input value={objTec} onChange={e=>setObjTec(e.target.value)} onFocus={()=>setShowTecRec(true)} onBlur={()=>setTimeout(()=>setShowTecRec(false),150)} placeholder="Pressing alto..." style={inp}/>
                 {showTecRec && (
-                  <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#111", border:"1px solid rgba(255,255,255,0.12)", zIndex:20 }}>
+                  <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#FFFFFF", border:"1px solid #D8D0C8", zIndex:20 }}>
                     {RECOMENDACIONES.tecnico.map(r=>(
-                      <div key={r} onMouseDown={()=>{setObjTec(r);setShowTecRec(false);}} style={{ padding:"7px 10px", fontSize:11, color:"rgba(255,255,255,0.6)", cursor:"pointer", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>{r}</div>
+                      <div key={r} onMouseDown={()=>{setObjTec(r);setShowTecRec(false);}} style={{ padding:"7px 10px", fontSize:11, color:"#1F1F1D", cursor:"pointer", borderBottom:"1px solid #F6F1EA" }}>{r}</div>
                     ))}
                   </div>
                 )}
@@ -602,9 +602,9 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
               <div style={{ position:"relative" }}>
                 <input value={objFis} onChange={e=>setObjFis(e.target.value)} onFocus={()=>setShowFisRec(true)} onBlur={()=>setTimeout(()=>setShowFisRec(false),150)} placeholder="Resistencia..." style={inp}/>
                 {showFisRec && (
-                  <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#111", border:"1px solid rgba(255,255,255,0.12)", zIndex:20 }}>
+                  <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#FFFFFF", border:"1px solid #D8D0C8", zIndex:20 }}>
                     {RECOMENDACIONES.fisico.map(r=>(
-                      <div key={r} onMouseDown={()=>{setObjFis(r);setShowFisRec(false);}} style={{ padding:"7px 10px", fontSize:11, color:"rgba(255,255,255,0.6)", cursor:"pointer", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>{r}</div>
+                      <div key={r} onMouseDown={()=>{setObjFis(r);setShowFisRec(false);}} style={{ padding:"7px 10px", fontSize:11, color:"#1F1F1D", cursor:"pointer", borderBottom:"1px solid #F6F1EA" }}>{r}</div>
                     ))}
                   </div>
                 )}
@@ -625,7 +625,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
           <div style={{ display:"flex", alignItems:"center", gap:12, background:"rgba(29,158,117,0.06)", border:"1px solid rgba(29,158,117,0.2)", borderLeft:"3px solid #1D9E75", padding:"8px 12px" }}>
             <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1.5px", color:"#1D9E75", flexShrink:0 }}>Warm Up</div>
             <input value={warmupDesc} onChange={e=>setWarmupDesc(e.target.value)} placeholder="Descripción del calentamiento..." style={{ ...inp, background:"transparent", border:"none", flex:1 }}/>
-            <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:4 }}>
+            <div style={{ fontSize:10, color:"#98A2B3", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:4 }}>
               ⏱
               <input value={tiempos.warmup} onChange={e=>setTiempos({...tiempos,warmup:+e.target.value})} type="number" style={{ ...inp, width:44, textAlign:"center", background:"transparent", border:"none", borderBottom:"1px solid rgba(255,255,255,0.15)", padding:"2px 4px" }}/>
               min
@@ -638,10 +638,10 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
           <div style={panelTitle}>Estructura de la sesión</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             {tareas.map((t, i) => (
-              <div key={i} style={{ border:"1px solid rgba(255,255,255,0.07)", overflow:"hidden" }}>
+              <div key={i} style={{ border:"1px solid #D8D0C8", overflow:"hidden" }}>
                 <div style={{ padding:"8px 12px", background:`${TASK_COLORS[i]}18`, borderBottom:`1px solid ${TASK_COLORS[i]}22`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                   <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1.5px", color:TASK_COLORS[i], fontWeight:500 }}>Tarea {i+1}</div>
-                  <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:9, color:"rgba(255,255,255,0.3)" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:9, color:"#98A2B3" }}>
                     ⏱
                     <input value={[tiempos.tarea1,tiempos.tarea2,tiempos.tarea3,tiempos.tarea4][i]} onChange={e=>{const k=["tarea1","tarea2","tarea3","tarea4"][i];setTiempos({...tiempos,[k]:+e.target.value});}} type="number" style={{ ...inp, width:36, textAlign:"center", background:"transparent", border:"none", borderBottom:"1px solid rgba(255,255,255,0.15)", padding:"1px 3px", fontSize:11 }}/>
                     min
@@ -672,7 +672,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
                     {t.analizando ? (
                       <div style={{ textAlign:"center" }}>
                         <div style={{ fontSize:9, color:"#1D9E75", textTransform:"uppercase", letterSpacing:"1px", marginBottom:4 }}>Analizando...</div>
-                        <div style={{ fontSize:8, color:"rgba(255,255,255,0.3)" }}>Claude está recreando el diagrama</div>
+                        <div style={{ fontSize:8, color:"#98A2B3" }}>Claude está recreando el diagrama</div>
                       </div>
                     ) : t.svgRec ? (
                       <div>
@@ -684,12 +684,12 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
                           alt="Diagrama tactico"
                           style={{ display: "block" }}
                         />
-                        <div onClick={()=>fileRefs.current[i]?.click()} style={{ fontSize:7, color:"rgba(255,255,255,0.3)", textAlign:"center", cursor:"pointer", marginTop:4 }}>cambiar imagen</div>
+                        <div onClick={()=>fileRefs.current[i]?.click()} style={{ fontSize:7, color:"#98A2B3", textAlign:"center", cursor:"pointer", marginTop:4 }}>cambiar imagen</div>
                       </div>
                     ) : t.imagenPreview ? (
                       <div>
                         <img src={t.imagenPreview} alt="" style={{ width:94, height:80, objectFit:"contain" }}/>
-                        <div onClick={()=>fileRefs.current[i]?.click()} style={{ fontSize:7, color:"rgba(255,255,255,0.3)", textAlign:"center", cursor:"pointer", marginTop:4 }}>cambiar</div>
+                        <div onClick={()=>fileRefs.current[i]?.click()} style={{ fontSize:7, color:"#98A2B3", textAlign:"center", cursor:"pointer", marginTop:4 }}>cambiar</div>
                       </div>
                     ) : (
                       <div onClick={()=>fileRefs.current[i]?.click()} style={{ textAlign:"center", cursor:"pointer" }}>
@@ -719,7 +719,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
         {/* JUGADORES */}
         <div style={panel}>
           <div style={panelTitle}>Plantilla — {categoria}</div>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", marginBottom:10 }}>Deportistas convocados para esta sesión</div>
+          <div style={{ fontSize:9, color:"#98A2B3", marginBottom:10 }}>Deportistas convocados para esta sesión</div>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
             <span style={{ fontSize:9, color:"#1D9E75" }}>{selectedPlayers.length} seleccionados</span>
             <div style={{ display:"flex", gap:10 }}>
@@ -753,7 +753,7 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
           <div style={panelTitle}>Material de sesión</div>
           {materiales.map((m,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
-              <div style={{ flex:1, fontSize:11, color:"rgba(255,255,255,0.7)", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", padding:"5px 10px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{m.nombre}</div>
+              <div style={{ flex:1, fontSize:11, color:"#1F1F1D", background:"#FFFFFF", border:"1px solid #D8D0C8", padding:"5px 10px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{m.nombre}</div>
               <input type="number" value={m.cantidad} onChange={e=>updateMaterialQty(i,+e.target.value)} min={1} style={{ ...inp, width:52, textAlign:"center", padding:"5px 4px" }}/>
               <span onClick={()=>removeMaterial(i)} style={{ fontSize:11, color:"#E24B4A", cursor:"pointer", padding:"0 4px" }}>✕</span>
             </div>
@@ -763,16 +763,16 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
             <div style={{ position:"relative", marginBottom:6 }}>
               <input value={newMat} onChange={e=>{setNewMat(e.target.value);setShowMatRec(true);}} onBlur={()=>setTimeout(()=>setShowMatRec(false),150)} placeholder="Nombre del material..." style={inp}/>
               {showMatRec && newMat && (
-                <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#111", border:"1px solid rgba(255,255,255,0.12)", zIndex:20, maxHeight:160, overflowY:"auto" }}>
+                <div style={{ position:"absolute", top:"100%", left:0, right:0, background:"#FFFFFF", border:"1px solid #D8D0C8", zIndex:20, maxHeight:160, overflowY:"auto" }}>
                   {MATERIALES_COMUNES.filter(m=>m.toLowerCase().includes(newMat.toLowerCase())).map(m=>(
-                    <div key={m} onMouseDown={()=>{setNewMat(m);setShowMatRec(false);}} style={{ padding:"6px 10px", fontSize:11, color:"rgba(255,255,255,0.6)", cursor:"pointer", borderBottom:"1px solid rgba(255,255,255,0.05)" }}>{m}</div>
+                    <div key={m} onMouseDown={()=>{setNewMat(m);setShowMatRec(false);}} style={{ padding:"6px 10px", fontSize:11, color:"#1F1F1D", cursor:"pointer", borderBottom:"1px solid #F6F1EA" }}>{m}</div>
                   ))}
                 </div>
               )}
             </div>
             <div style={{ display:"flex", gap:6 }}>
               <input type="number" value={newMatQty} onChange={e=>setNewMatQty(+e.target.value)} min={1} placeholder="Cant." style={{ ...inp, width:70 }}/>
-              <div onClick={addMaterial} style={{ flex:1, background:"#1D9E75", color:"white", padding:"7px 12px", fontSize:10, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", textAlign:"center" }}>+ Registrar</div>
+              <div onClick={addMaterial} style={{ flex:1, background:"#1D9E75", color:"#1F1F1D", padding:"7px 12px", fontSize:10, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", textAlign:"center" }}>+ Registrar</div>
             </div>
           </div>
         </div>
@@ -786,11 +786,11 @@ export default function Planificacion({ athletes, clubInfo, sessionCount }) {
           <textarea value={charla} onChange={e=>setCharla(e.target.value)} rows={3} placeholder="Mensaje motivacional, énfasis táctico, consignas del microciclo..." style={{ ...inp, resize:"none" }}/>
         </div>
 
-        <div onClick={()=>showToast(`Sesión ${sessionId} registrada`, "success")} style={{ background:"#1D9E75", color:"white", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
+        <div onClick={()=>showToast(`Sesión ${sessionId} registrada`, "success")} style={{ background:"#1D9E75", color:"#1F1F1D", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center" }}>
           Confirmar planificación →
         </div>
         <ExportPDFButton onClick={generarPDF} />
-        <div onClick={()=>showToast("Plantilla guardada", "info")} style={{ background:"transparent", border:"1px solid rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
+        <div onClick={()=>showToast("Plantilla guardada", "info")} style={{ background:"transparent", border:"1px solid #D8D0C8", color:"rgba(255,255,255,0.4)", padding:10, fontSize:10, textTransform:"uppercase", letterSpacing:"1.5px", cursor:"pointer", textAlign:"center", marginTop:6 }}>
           Guardar como plantilla base
         </div>
 

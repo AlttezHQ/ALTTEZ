@@ -9,7 +9,7 @@ import { PALETTE as C } from "../../shared/tokens/palette";
 import FieldInput from "../../shared/ui/FieldInput";
 
 const TYPE_ACCENTS = {
-  match:    { color: C.neon,    border: C.neonBorder,                 dim: C.neonDim   },
+  match:    { color: C.bronce,    border: C.bronceBorder,                 dim: C.bronceDim   },
   training: { color: C.purple,  border: "rgba(127,119,221,0.35)",     dim: "rgba(127,119,221,0.08)" },
   club:     { color: C.amber,   border: C.amberBorder,                dim: C.amberDim  },
 };
@@ -70,7 +70,7 @@ export default function CreateEventModal({ onClose, onSave }) {
         key="create-overlay"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+        style={{ position: "fixed", inset: 0, zIndex: 9000, background:"#FFFFFF", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
       />
       {/* Modal */}
       <motion.div
@@ -98,7 +98,7 @@ export default function CreateEventModal({ onClose, onSave }) {
           <div style={{ padding: "16px 20px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "2px", color: C.textHint, marginBottom: 4 }}>Nuevo evento</div>
-              <div style={{ fontSize: 15, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.3px" }}>Crear evento</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color:"#1F1F1D", textTransform: "uppercase", letterSpacing: "-0.3px" }}>Crear evento</div>
             </div>
             <button
               onClick={onClose}
@@ -166,7 +166,7 @@ export default function CreateEventModal({ onClose, onSave }) {
                 value={form.date}
                 onChange={e => set("date", e.target.value)}
                 error={errors.date}
-                style={{ colorScheme: "dark" }}
+                style={{ colorScheme: "light" }}
                 onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
                 onBlur={e => { e.target.style.borderColor = errors.date ? C.danger : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
               />
@@ -176,7 +176,7 @@ export default function CreateEventModal({ onClose, onSave }) {
                 value={form.time}
                 onChange={e => set("time", e.target.value)}
                 error={errors.time}
-                style={{ colorScheme: "dark" }}
+                style={{ colorScheme: "light" }}
                 onFocus={e => { e.target.style.borderColor = accent.color; e.target.style.boxShadow = `0 0 0 2px ${accent.color}22`; }}
                 onBlur={e => { e.target.style.borderColor = errors.time ? C.danger : "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
               />
@@ -208,7 +208,7 @@ export default function CreateEventModal({ onClose, onSave }) {
                     value={form.rival}
                     onChange={e => set("rival", e.target.value)}
                     placeholder="Atlético Sur"
-                    onFocus={e => { e.target.style.borderColor = C.neon; e.target.style.boxShadow = `0 0 0 2px ${C.neonDim}`; }}
+                    onFocus={e => { e.target.style.borderColor = C.bronce; e.target.style.boxShadow = `0 0 0 2px ${C.bronceDim}`; }}
                     onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
                   />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-3)" }}>
@@ -220,23 +220,23 @@ export default function CreateEventModal({ onClose, onSave }) {
                         style={{
                           width: "100%", textAlign: "left", cursor: "pointer", minHeight: 44,
                           display: "flex", alignItems: "center", gap: 8,
-                          background: form.esLocal ? C.neonDim : "rgba(255,255,255,0.04)",
-                          border: `1px solid ${form.esLocal ? C.neonBorder : "rgba(255,255,255,0.1)"}`,
+                          background: form.esLocal ? C.bronceDim : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${form.esLocal ? C.bronceBorder : "#D8D0C8"}`,
                           borderRadius: "var(--radius-md)",
-                          color: "white", fontSize: 12, padding: "8px 10px",
+                          color:"#1F1F1D", fontSize: 12, padding: "8px 10px",
                           transition: "all 150ms", fontFamily: "inherit",
                         }}
                       >
                         <span style={{
                           width: 14, height: 14, borderRadius: 3,
-                          border: `1.5px solid ${form.esLocal ? C.neon : "rgba(255,255,255,0.25)"}`,
-                          background: form.esLocal ? C.neon : "transparent",
+                          border: `1.5px solid ${form.esLocal ? C.bronce : "rgba(255,255,255,0.25)"}`,
+                          background: form.esLocal ? C.bronce : "transparent",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0, transition: "all 150ms",
                         }}>
-                          {form.esLocal && <span style={{ color: C.bgDark, fontSize: 9, fontWeight: 900, lineHeight: 1 }}>✓</span>}
+                          {form.esLocal && <span style={{ color: C.text, fontSize: 9, fontWeight: 900, lineHeight: 1 }}>✓</span>}
                         </span>
-                        <span style={{ color: form.esLocal ? C.neon : C.textMuted, fontSize: 11 }}>
+                        <span style={{ color: form.esLocal ? C.bronce : C.textMuted, fontSize: 11 }}>
                           {form.esLocal ? "Somos local" : "Visitante"}
                         </span>
                       </button>
@@ -250,7 +250,7 @@ export default function CreateEventModal({ onClose, onSave }) {
                       min={1}
                       max={50}
                       style={{ minHeight: 44 }}
-                      onFocus={e => { e.target.style.borderColor = C.neon; e.target.style.boxShadow = `0 0 0 2px ${C.neonDim}`; }}
+                      onFocus={e => { e.target.style.borderColor = C.bronce; e.target.style.boxShadow = `0 0 0 2px ${C.bronceDim}`; }}
                       onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; e.target.style.boxShadow = "none"; }}
                     />
                   </div>
@@ -265,7 +265,7 @@ export default function CreateEventModal({ onClose, onSave }) {
               onClick={onClose}
               style={{
                 flex: 1, padding: "11px 16px", minHeight: 44,
-                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                background:"#FFFFFF", border: "1px solid rgba(255,255,255,0.1)",
                 color: C.textMuted, fontSize: 10, fontWeight: 700,
                 textTransform: "uppercase", letterSpacing: "1px",
                 borderRadius: "var(--radius-md)", cursor: "pointer",

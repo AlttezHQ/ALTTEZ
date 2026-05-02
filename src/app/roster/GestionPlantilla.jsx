@@ -86,9 +86,9 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
       : hovered
         ? "linear-gradient(180deg, rgba(245,241,234,0.88), rgba(255,255,255,0.98))"
         : index % 2 === 0 ? "rgba(245,241,234,0.44)" : "transparent",
-    borderLeft:  isSelected ? `3px solid ${PALETTE.neon}` : "3px solid transparent",
+    borderLeft:  isSelected ? `3px solid ${PALETTE.bronce}` : "3px solid transparent",
     borderBottom:`1px solid ${PALETTE.border}`,
-    boxShadow:   isSelected ? `inset 0 0 0 1px ${PALETTE.neonBorder}` : "none",
+    boxShadow:   isSelected ? `inset 0 0 0 1px ${PALETTE.bronceBorder}` : "none",
     transition:  "background 150ms ease, box-shadow 150ms ease",
   };
 
@@ -108,7 +108,7 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
           height:              38,
         }}
       >
-        <div style={{ fontSize:10, color: isActive ? PALETTE.neon : PALETTE.textMuted, fontWeight:700, textTransform:"uppercase" }}>
+        <div style={{ fontSize:10, color: isActive ? PALETTE.bronce : PALETTE.textMuted, fontWeight:700, textTransform:"uppercase" }}>
           {athlete.posCode}
         </div>
         <div style={{ fontSize:12, fontWeight:700, color: isActive ? PALETTE.text : PALETTE.textMuted, textAlign:"center" }}>
@@ -130,7 +130,7 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
             {athlete.redCards || 0}
           </div>
         </div>
-        <div style={{ fontSize:11, color: (athlete.goals||0) > 0 ? PALETTE.neon : PALETTE.textMuted, textAlign:"center", fontWeight:700 }}>
+        <div style={{ fontSize:11, color: (athlete.goals||0) > 0 ? PALETTE.bronce : PALETTE.textMuted, textAlign:"center", fontWeight:700 }}>
           {athlete.goals || 0}
         </div>
         <div style={{ fontSize:9, color: statusStyle.color, textTransform:"uppercase", letterSpacing:"0.5px", textAlign:"right" }}>
@@ -156,9 +156,9 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
         {/* Position badge */}
         <div style={{
           fontSize:9, fontWeight:700, textTransform:"uppercase",
-          color: isActive ? PALETTE.neon : PALETTE.textMuted,
-          background: isActive ? `${PALETTE.neon}18` : PALETTE.bgDeep,
-          border: `1px solid ${isActive ? PALETTE.neonBorder : PALETTE.border}`,
+          color: isActive ? PALETTE.bronce : PALETTE.textMuted,
+          background: isActive ? `${PALETTE.bronce}18` : PALETTE.bgDeep,
+          border: `1px solid ${isActive ? PALETTE.bronceBorder : PALETTE.border}`,
           padding: "3px 6px", borderRadius:3, flexShrink:0, minWidth:32, textAlign:"center",
         }}>
           {athlete.posCode}
@@ -171,7 +171,7 @@ function PlayerRow({ athlete, isSelected, onSelect, index }) {
           </div>
           <div style={{ fontSize:9, color: PALETTE.textMuted, marginTop:2 }}>
             #{athlete.id}
-            {athlete.goals > 0 && <span style={{ color: PALETTE.neon, marginLeft:8 }}>{athlete.goals}G</span>}
+            {athlete.goals > 0 && <span style={{ color: PALETTE.bronce, marginLeft:8 }}>{athlete.goals}G</span>}
             {(athlete.yellowCards||0) > 0 && <span style={{ color:PALETTE.yellowCard, marginLeft:6 }}>T.A:{athlete.yellowCards}</span>}
           </div>
         </div>
@@ -282,7 +282,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
           <img
             src={getAvatarUrl(draft.photo)}
             alt={draft.name}
-            style={{ width:64, height:64, borderRadius:"50%", border:`2px solid ${editMode ? PALETTE.purple : PALETTE.neon}`, objectFit:"cover", display:"block", boxShadow: editMode ? `0 0 16px ${PALETTE.purpleVibrantGlow},0 4px 12px rgba(0,0,0,0.6)` : `0 0 16px rgba(57,255,20,0.35),0 4px 12px rgba(0,0,0,0.6)`, transition:"border-color 200ms, box-shadow 200ms" }}
+            style={{ width:64, height:64, borderRadius:"50%", border:`2px solid ${editMode ? PALETTE.purple : PALETTE.bronce}`, objectFit:"cover", display:"block", boxShadow: editMode ? `0 0 16px ${PALETTE.purpleVibrantGlow},0 4px 12px rgba(0,0,0,0.6)` : `0 0 16px rgba(57,255,20,0.35),0 4px 12px rgba(0,0,0,0.6)`, transition:"border-color 200ms, box-shadow 200ms" }}
           />
           {editMode && (
             <div style={{ position:"absolute", inset:0, borderRadius:"50%", background:"rgba(0,0,0,0.55)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2 }}>
@@ -529,7 +529,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
           {!editMode && (
             <div
               onClick={() => setEditMode(true)}
-              style={{ fontSize:9, color: PALETTE.neon, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", border:`1px solid ${PALETTE.neonBorder}`, padding:"3px 10px" }}
+              style={{ fontSize:9, color: PALETTE.bronce, textTransform:"uppercase", letterSpacing:"1px", cursor:"pointer", border:`1px solid ${PALETTE.bronceBorder}`, padding:"3px 10px" }}
             >
               Editar
             </div>
@@ -594,7 +594,7 @@ function PlayerEditPanel({ athlete, onUpdate, onClose }) {
         {/* Acciones de edición */}
         {editMode && (
           <div style={{ display:"flex", gap:8, marginTop:14 }}>
-            <Button onClick={handleSave} variant="primary" size="sm" accent={PALETTE.neon} style={{ flex:1 }}>
+            <Button onClick={handleSave} variant="primary" size="sm" accent={PALETTE.bronce} style={{ flex:1 }}>
               Guardar
             </Button>
             <Button onClick={handleCancel} variant="ghost" size="sm" accent={PALETTE.textMuted} style={{ flex:1 }}>
@@ -734,7 +734,7 @@ function AddAthleteModal({ onClose, onSave }) {
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
           border: "1px solid rgba(255,255,255,0.1)",
-          borderTop: `2px solid ${PALETTE.neon}`,
+          borderTop: `2px solid ${PALETTE.bronce}`,
           borderRadius: 10,
           width: "100%", maxWidth: 520,
           maxHeight: "calc(100vh - 48px)",
@@ -819,7 +819,7 @@ function AddAthleteModal({ onClose, onSave }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <FieldInput label="Fecha de nacimiento" type="date" value={draft.dob} onChange={set("dob")} style={{ colorScheme: "dark" }} />
+            <FieldInput label="Fecha de nacimiento" type="date" value={draft.dob} onChange={set("dob")} style={{ colorScheme: "light" }} />
             <FieldInput label="Contacto" type="text" placeholder="+57 300 0000000" value={draft.contacto} onChange={set("contacto")} />
           </div>
 
@@ -836,7 +836,7 @@ function AddAthleteModal({ onClose, onSave }) {
             onClick={handleSave}
             loading={saving}
             variant="primary"
-            accent={PALETTE.neon}
+            accent={PALETTE.bronce}
             style={{ flex: 1 }}
           >
             Confirmar registro
@@ -965,7 +965,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
     fontSize:      8,
     textTransform: "uppercase",
     letterSpacing: "1px",
-    color:         sortKey === key ? PALETTE.neon : PALETTE.textHint,
+    color:         sortKey === key ? PALETTE.bronce : PALETTE.textHint,
     cursor:        "pointer",
     fontWeight:    sortKey === key ? 700 : 400,
   });
@@ -986,7 +986,7 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
               <div
                 key={v}
                 onClick={() => setFilterStatus(v)}
-                style={{ fontSize:9, padding:"4px 10px", cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px", borderRadius:20, background: filterStatus===v ? PALETTE.neonDim : PALETTE.surface, border:`1px solid ${filterStatus===v ? PALETTE.neon : PALETTE.border}`, color: filterStatus===v ? PALETTE.neon : PALETTE.textMuted, boxShadow: "none", transition:"all 0.18s" }}
+                style={{ fontSize:9, padding:"4px 10px", cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.5px", borderRadius:20, background: filterStatus===v ? PALETTE.bronceDim : PALETTE.surface, border:`1px solid ${filterStatus===v ? PALETTE.bronce : PALETTE.border}`, color: filterStatus===v ? PALETTE.bronce : PALETTE.textMuted, boxShadow: "none", transition:"all 0.18s" }}
               >
                 {l}
               </div>
@@ -1014,12 +1014,12 @@ function PlayerListView({ athletes, onUpdateAthlete, onAddAthlete, onAddBulk }) 
             </motion.div>
             <motion.div
               onClick={() => setShowAddModal(true)}
-              whileHover={{ scale: 1.03, boxShadow: `0 0 12px ${PALETTE.neonGlow}` }}
+              whileHover={{ scale: 1.03, boxShadow: `0 0 12px ${PALETTE.bronceGlow}` }}
               whileTap={{ scale: 0.97 }}
               style={{
                 fontSize: 9, padding: "4px 14px", cursor: "pointer",
                 textTransform: "uppercase", letterSpacing: "1px",
-                background: PALETTE.neon,
+                background: PALETTE.bronce,
                 border: "none",
                 color: PALETTE.bgDark, borderRadius: 3, fontWeight: 700,
                 display: "flex", alignItems: "center", gap: 5,
@@ -1199,10 +1199,10 @@ function TacticalBoardView({ athletes }) {
             <div
               key={f}
               onClick={() => { setFormation(f); setSelectedIdx(null); }}
-              style={{ padding:"7px 10px", fontSize:11, color: formation===f ? PALETTE.neon : PALETTE.textMuted, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${PALETTE.border}`, background: formation===f ? PALETTE.neonDim : "transparent", borderLeft: formation===f ? `2px solid ${PALETTE.neon}` : "2px solid transparent", marginBottom:1 }}
+              style={{ padding:"7px 10px", fontSize:11, color: formation===f ? PALETTE.bronce : PALETTE.textMuted, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${PALETTE.border}`, background: formation===f ? PALETTE.bronceDim : "transparent", borderLeft: formation===f ? `2px solid ${PALETTE.bronce}` : "2px solid transparent", marginBottom:1 }}
             >
               {f}
-              {formation===f && <span style={{ fontSize:8, color: PALETTE.neon }}>●</span>}
+              {formation===f && <span style={{ fontSize:8, color: PALETTE.bronce }}>●</span>}
             </div>
           ))}
         </div>
@@ -1241,7 +1241,7 @@ function TacticalBoardView({ athletes }) {
                 fontSize: 9, padding: "4px 12px",
                 background: "transparent",
                 border: `1px solid rgba(255,255,255,0.18)`,
-                color: savingTactics ? PALETTE.neon : PALETTE.textMuted,
+                color: savingTactics ? PALETTE.bronce : PALETTE.textMuted,
                 cursor: "pointer", textTransform: "uppercase", letterSpacing: "1px",
                 display: "flex", alignItems: "center", gap: 5,
               }}
@@ -1254,7 +1254,7 @@ function TacticalBoardView({ athletes }) {
               whileTap={{ scale: 0.97 }}
               style={{
                 fontSize: 9, padding: "4px 12px",
-                background: PALETTE.neon, color: PALETTE.bgDark,
+                background: PALETTE.bronce, color: PALETTE.bgDark,
                 cursor: "pointer", textTransform: "uppercase",
                 letterSpacing: "1px", fontWeight: 700,
               }}
@@ -1320,14 +1320,14 @@ function TacticalBoardView({ athletes }) {
                   cursor:    "pointer",
                   zIndex:    5,
                   // Glow en selección
-                  filter:    isSelected ? `drop-shadow(0 0 6px ${PALETTE.neon})` : "none",
+                  filter:    isSelected ? `drop-shadow(0 0 6px ${PALETTE.bronce})` : "none",
                   transition:"filter 200ms",
                 }}
               >
                 <div style={{
                   width:      52,
                   background: "rgba(5,10,5,0.95)",
-                  border:     `${isSelected ? 2 : 1}px solid ${isSelected ? PALETTE.neon : "rgba(200,255,0,0.25)"}`,
+                  border:     `${isSelected ? 2 : 1}px solid ${isSelected ? PALETTE.bronce : "rgba(206, 137, 70,0.25)"}`,
                   overflow:   "hidden",
                   textAlign:  "center",
                 }}>
@@ -1340,7 +1340,7 @@ function TacticalBoardView({ athletes }) {
                     <div style={{ fontSize:7, color: PALETTE.text, textTransform:"uppercase", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                       {athlete.name.split(" ")[0]}
                     </div>
-                    <div style={{ fontSize:6, color: PALETTE.neon, textTransform:"uppercase", marginTop:1 }}>{position.posCode}</div>
+                    <div style={{ fontSize:6, color: PALETTE.bronce, textTransform:"uppercase", marginTop:1 }}>{position.posCode}</div>
                   </div>
                 </div>
               </div>
@@ -1357,10 +1357,10 @@ function TacticalBoardView({ athletes }) {
           <div style={{ padding:"14px 16px", borderBottom:`1px solid ${PALETTE.border}` }}>
             <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"2px", color: PALETTE.textHint, marginBottom:10 }}>Titular seleccionado</div>
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-              <img src={getAvatarUrl(selected.photo)} alt={selected.name} style={{ width:46, height:46, borderRadius:"50%", border:`2px solid ${PALETTE.neon}`, objectFit:"cover" }}/>
+              <img src={getAvatarUrl(selected.photo)} alt={selected.name} style={{ width:46, height:46, borderRadius:"50%", border:`2px solid ${PALETTE.bronce}`, objectFit:"cover" }}/>
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color: PALETTE.text, textTransform:"uppercase" }}>{selected.name}</div>
-                <div style={{ fontSize:9, color: PALETTE.neon, textTransform:"uppercase", marginTop:2 }}>{selected.pos}</div>
+                <div style={{ fontSize:9, color: PALETTE.bronce, textTransform:"uppercase", marginTop:2 }}>{selected.pos}</div>
               </div>
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
@@ -1370,7 +1370,7 @@ function TacticalBoardView({ athletes }) {
                 { label:"T. Rojas", value: selected.redCards   || 0, color: PALETTE.danger },
                 { label:"RPE prom.",value: selected.rpe        || "—" },
               ].map(m => (
-                <div key={m.label} style={{ background:"rgba(255,255,255,0.04)", padding:"6px 8px" }}>
+                <div key={m.label} style={{ background:"#FFFFFF", padding:"6px 8px" }}>
                   <div style={{ fontSize:7, color: PALETTE.textHint, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:2 }}>{m.label}</div>
                   <div style={{ fontSize:14, fontWeight:700, color: m.color || PALETTE.text }}>{m.value}</div>
                 </div>
@@ -1393,7 +1393,7 @@ function TacticalBoardView({ athletes }) {
             placeholder="Anotaciones del partido, instrucciones, presión alta, bloques defensivos..."
             style={{
               flex:       1,
-              background: "rgba(255,255,255,0.04)",
+              background:"#FFFFFF",
               border:     `1px solid ${PALETTE.border}`,
               padding:    "10px 12px",
               fontSize:   11,
@@ -1418,7 +1418,7 @@ function TacticalBoardView({ athletes }) {
             whileTap={{ scale: 0.98 }}
             style={{
               padding: 8, borderRadius: 3,
-              background: savingTactics ? `${PALETTE.neon}60` : PALETTE.neon,
+              background: savingTactics ? `${PALETTE.bronce}60` : PALETTE.bronce,
               color: PALETTE.bgDark, fontSize: 10, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "1px",
               cursor: savingTactics ? "not-allowed" : "pointer", textAlign: "center",
@@ -1440,7 +1440,7 @@ function TacticalBoardView({ athletes }) {
               padding: 8, borderRadius: 3,
               background: "transparent",
               border: `1px solid rgba(255,255,255,0.15)`,
-              color: exportingPDF ? PALETTE.neon : PALETTE.textMuted,
+              color: exportingPDF ? PALETTE.bronce : PALETTE.textMuted,
               fontSize: 10, textTransform: "uppercase", letterSpacing: "1px",
               cursor: exportingPDF ? "not-allowed" : "pointer", textAlign: "center",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -1448,7 +1448,7 @@ function TacticalBoardView({ athletes }) {
           >
             {exportingPDF ? (
               <>
-                <div style={{ width: 10, height: 10, borderStyle: "solid", borderWidth: 2, borderColor: `${PALETTE.neon} ${PALETTE.neon} ${PALETTE.neon} transparent`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div style={{ width: 10, height: 10, borderStyle: "solid", borderWidth: 2, borderColor: `${PALETTE.bronce} ${PALETTE.bronce} ${PALETTE.bronce} transparent`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Exportando...
               </>
             ) : "Exportar imagen"}
@@ -1513,8 +1513,8 @@ export default function GestionPlantilla({ clubId = "" }) {
               alignItems:     "center",
               cursor:         "pointer",
               borderRight:    `1px solid ${PALETTE.border}`,
-              borderBottom:   activeTab === key ? `2px solid ${PALETTE.neon}` : "2px solid transparent",
-              background:     activeTab === key ? PALETTE.neonDim : PALETTE.bgDeep,
+              borderBottom:   activeTab === key ? `2px solid ${PALETTE.bronce}` : "2px solid transparent",
+              background:     activeTab === key ? PALETTE.bronceDim : PALETTE.bgDeep,
               transition:     "all 150ms",
             }}
           >

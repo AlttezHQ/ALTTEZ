@@ -385,7 +385,7 @@ function PlayerDetailOverlay({ starter, allAthletes, historial, onClose, onSwapS
           <div style={{ fontSize:8, color:C.textHint, textTransform:"uppercase", letterSpacing:"1px", marginBottom:6 }}>Alternativas</div>
           {similar.map(a => (
             <div key={a.id} onClick={()=>onSwapSimilar(a)}
-              style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", cursor:"pointer", background:"rgba(255,255,255,0.03)", border:`1px solid rgba(255,255,255,0.06)`, borderRadius:6, marginBottom:3, transition:"all 0.12s" }}
+              style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", cursor:"pointer", background:"#F6F1EA", border:`1px solid rgba(255,255,255,0.06)`, borderRadius:6, marginBottom:3, transition:"all 0.12s" }}
               onMouseEnter={e=>e.currentTarget.style.background="rgba(139,92,246,0.08)"}
               onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"}>
               <div style={{ width:22, height:22, borderRadius:"50%", overflow:"hidden", border:`1px solid rgba(255,255,255,0.1)` }}>

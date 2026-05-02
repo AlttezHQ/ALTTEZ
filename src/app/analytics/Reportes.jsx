@@ -67,7 +67,7 @@ export function Reportes({ onNavigate }) {
 
   const kpiCards = [
     { label: "Sesiones totales",    value: historial.length,   color: C.green,  dest: "entrenamiento", sparkValues: sparkSesiones,  trend: historial.length > 1 ? 1 : 0, trendDisplay: historial.length > 0 ? `+${Math.min(historial.length, 3)} esta semana` : "Sin sesiones" },
-    { label: "Asistencia promedio", value: asistenciaPct + "%", color: C.neon,   dest: "calendario",    sparkValues: sparkAsistencia, trend: calcTrend(sparkAsistencia), trendDisplay: asistenciaPct >= 75 ? "Buen nivel" : "Mejorar" },
+    { label: "Asistencia promedio", value: asistenciaPct + "%", color: C.bronce,   dest: "calendario",    sparkValues: sparkAsistencia, trend: calcTrend(sparkAsistencia), trendDisplay: asistenciaPct >= 75 ? "Buen nivel" : "Mejorar" },
     { label: "Partidos jugados",    value: matchStats.played,   color: C.purple, dest: "partidos",      sparkValues: [matchStats.won, matchStats.drawn, matchStats.lost].filter(v => v > 0), trend: matchStats.won > matchStats.lost ? 1 : matchStats.won < matchStats.lost ? -1 : 0, trendDisplay: `${matchStats.won}G ${matchStats.drawn}E ${matchStats.lost}P` },
     { label: "Plantilla activa",    value: athletes.length,     color: C.amber,  dest: "plantilla",     sparkValues: athletes.length > 0 ? [athletes.filter(a => a.status === "P").length, athletes.filter(a => a.status === "A").length, athletes.filter(a => a.status === "L").length].filter(v => v >= 0) : [], trend: 0, trendDisplay: `${athletes.filter(a => a.status === "L").length} en recuperacion` },
   ];
@@ -90,8 +90,7 @@ export function Reportes({ onNavigate }) {
               overflow: "hidden",
             }}
           >
-            {/* Ambient glow */}
-            <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: kpi.color, opacity: 0.04, filter: "blur(20px)", pointerEvents: "none" }} />
+            
 
             <SectionLabel style={{ marginBottom: "var(--sp-2)", fontSize: "var(--fs-tag)", letterSpacing: "var(--ls-caps-lg)" }}>{kpi.label}</SectionLabel>
             <div style={{ fontSize: "var(--fs-kpi-md)", fontWeight: "var(--fw-bold)", color: kpi.color, lineHeight: 1, marginBottom: "var(--sp-2)" }}>{kpi.value}</div>

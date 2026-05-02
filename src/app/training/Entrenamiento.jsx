@@ -250,7 +250,7 @@ export default function Entrenamiento({ clubId = "" }) {
           { label:"Presentes",     value: stats.presentes, color: PALETTE.success },
           { label:"Ausentes",      value: stats.ausentes,  color: PALETTE.danger  },
           { label:"RPE promedio",  value: stats.rpeAvg,    color: PALETTE.amber   },
-          { label:"Sesión",        value: `#${(historial[0]?.num || 0) + 1}`, color: PALETTE.blueHi },
+          { label:"Sesión",        value: `#${(historial[0]?.num || 0) + 1}`, color: PALETTE.bronceHi },
         ].map((m,i) => (
           <div
             key={i}
@@ -340,8 +340,8 @@ export default function Entrenamiento({ clubId = "" }) {
                   <button
                     onClick={() => handleGuardar(nota, tipo)}
                     style={{
-                      background: `linear-gradient(180deg, ${PALETTE.blue} 0%, ${PALETTE.blue} 60%, ${PALETTE.blueDeep} 100%)`,
-                      color: "white",
+                      background: `linear-gradient(180deg, ${PALETTE.bronce} 0%, ${PALETTE.bronce} 60%, ${PALETTE.bronceDeep} 100%)`,
+                      color:"#1F1F1D",
                       fontSize: 10,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -350,8 +350,8 @@ export default function Entrenamiento({ clubId = "" }) {
                       cursor: "pointer",
                       whiteSpace: "nowrap",
                       borderRadius: 10,
-                      border: `1px solid ${PALETTE.blue}`,
-                      boxShadow: "0 10px 22px rgba(201,151,58,0.22)",
+                      border: `1px solid ${PALETTE.bronce}`,
+                      boxShadow: "0 10px 22px rgba(206, 137, 70,0.22)",
                     }}
                   >
                     Cerrar sesión →
@@ -509,11 +509,11 @@ export default function Entrenamiento({ clubId = "" }) {
                     <div style={{ fontSize:11, fontWeight:600, color:PALETTE.purple, textTransform:"uppercase", letterSpacing:"1.5px" }}>
                       {week.label}
                     </div>
-                    <div style={{ fontSize:9, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1px", marginTop:2 }}>
+                    <div style={{ fontSize:9, color:"#667085", textTransform:"uppercase", letterSpacing:"1px", marginTop:2 }}>
                       {week.sessions.length} sesión{week.sessions.length !== 1 ? "es" : ""} · RPE prom: {weekRpeAvg}
                     </div>
                   </div>
-                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>{isCollapsed ? "▶" : "▼"}</div>
+                  <div style={{ fontSize:11, color:"#98A2B3" }}>{isCollapsed ? "▶" : "▼"}</div>
                 </div>
                 {/* Sessions inside week */}
                 {!isCollapsed && week.sessions.map((s, i) => {
@@ -535,7 +535,7 @@ export default function Entrenamiento({ clubId = "" }) {
                         onClick={() => setExpandedHist(isExpanded ? null : globalIdx)}
                         style={{
                           background:"rgba(0,0,0,0.6)",
-                          border:"1px solid rgba(255,255,255,0.07)",
+                          border:"1px solid #D8D0C8",
                           borderLeft:`3px solid ${tipoColor}`,
                           padding:"12px 16px",
                           display:"flex",
@@ -548,15 +548,15 @@ export default function Entrenamiento({ clubId = "" }) {
                       >
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                            <div style={{ fontSize:13, fontWeight:600, color:"white" }}>Sesion #{s.num} — {s.fecha}</div>
+                            <div style={{ fontSize:13, fontWeight:600, color:"#1F1F1D" }}>Sesion #{s.num} — {s.fecha}</div>
                             <div style={{ fontSize:9, fontWeight:600, textTransform:"uppercase", letterSpacing:"1px", color:tipoColor, padding:"2px 6px", border:`1px solid ${tipoColor}33`, borderRadius:4 }}>{s.tipo || "Sin tipo"}</div>
                           </div>
-                          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:3, display:"flex", gap:12 }}>
+                          <div style={{ fontSize:10, color:"#667085", marginTop:3, display:"flex", gap:12 }}>
                             <span>{s.presentes}/{s.total} presentes ({asistPct}%)</span>
                             <span>RPE: <span style={{ color:rpeColor, fontWeight:600 }}>{s.rpeAvg ?? "—"}</span></span>
                           </div>
                         </div>
-                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginLeft:12 }}>{isExpanded ? "▲" : "▼"}</div>
+                        <div style={{ fontSize:11, color:"#98A2B3", marginLeft:12 }}>{isExpanded ? "▲" : "▼"}</div>
                       </div>
 
                       {/* Expanded: reporte de sesion completo */}
@@ -569,7 +569,7 @@ export default function Entrenamiento({ clubId = "" }) {
                               { lbl:"Tipo", val: s.tipo || "Sin tipo", color: tipoColor },
                               { lbl:"Asistencia", val: `${asistPct}%`, color: asistPct >= 75 ? PALETTE.green : PALETTE.amber },
                               { lbl:"RPE promedio", val: s.rpeAvg ?? "—", color: rpeColor },
-                              { lbl:"Presentes", val: `${s.presentes}/${s.total}`, color: "white" },
+                              { lbl:"Presentes", val: `${s.presentes}/${s.total}`, color:"#1F1F1D" },
                             ].map((stat, si) => (
                               <div key={si}>
                                 <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:3 }}>{stat.lbl}</div>
@@ -603,7 +603,7 @@ export default function Entrenamiento({ clubId = "" }) {
                                         className="ent-athlete-rpe-row"
                                         style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", borderRadius:6, background:"rgba(0,0,0,0.3)" }}
                                       >
-                                        <div style={{ fontSize:11, color:"rgba(255,255,255,0.6)", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                                        <div style={{ fontSize:11, color:"#1F1F1D", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                                           {athlete ? athlete.name : `#${athleteId}`}
                                         </div>
                                         <div style={{ display:"flex", alignItems:"center", gap:5 }}>
@@ -700,7 +700,7 @@ export default function Entrenamiento({ clubId = "" }) {
           {
             label: "Sesiones totales",
             value: totalSesiones,
-            color: "white",
+            color:"#1F1F1D",
             spark: sparkSesiones,
             hint: `${totalSesiones} sesion${totalSesiones !== 1 ? "es" : ""} registrada${totalSesiones !== 1 ? "s" : ""}`,
           },
@@ -726,8 +726,7 @@ export default function Entrenamiento({ clubId = "" }) {
                     overflow:"hidden",
                   }}
                 >
-                  {/* Ambient glow */}
-                  <div style={{ position:"absolute", top:-16, right:-16, width:60, height:60, borderRadius:"50%", background: m.color === "white" ? "rgba(23,26,28,0.12)" : m.color, opacity:0.08, filter:"blur(16px)", pointerEvents:"none" }} />
+                  
                   <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:PALETTE.textMuted, marginBottom:8 }}>{m.label}</div>
                   <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1, marginBottom:8 }}>{m.value}</div>
                   <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:4 }}>

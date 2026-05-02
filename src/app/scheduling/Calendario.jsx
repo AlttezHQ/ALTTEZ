@@ -176,7 +176,7 @@ function EventBadge({ event, onClick, isSelected }) {
         fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px",
         padding: "2px 6px", borderRadius: 3,
         background: isSelected ? def.color : def.colorDim,
-        color: isSelected ? C.bgDark : def.color,
+        color: isSelected ? C.text : def.color,
         border: `1px solid ${def.border}`,
         cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         maxWidth: "100%",
@@ -280,7 +280,7 @@ export default function Calendario({ clubId = "" }) {
           <button
             onClick={prevMonth}
             style={{ background: "none", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "4px 10px", fontSize: 12, transition: "border-color 150ms, color 150ms" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.neon; e.currentTarget.style.color = C.neon; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.bronce; e.currentTarget.style.color = C.bronce; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMuted; }}
           >‹</button>
 
@@ -290,7 +290,7 @@ export default function Calendario({ clubId = "" }) {
             transition={{ duration: 0.2 }}
             style={{ display: "flex", alignItems: "baseline", gap: 8 }}
           >
-            <span style={{ fontSize: 18, fontWeight: 900, color: "white", textTransform: "uppercase", letterSpacing: "-0.5px" }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color:"#1F1F1D", textTransform: "uppercase", letterSpacing: "-0.5px" }}>
               {MONTHS_ES[month]}
             </span>
             <span style={{ fontSize: 12, color: C.textMuted, fontWeight: 500 }}>{year}</span>
@@ -299,13 +299,13 @@ export default function Calendario({ clubId = "" }) {
           <button
             onClick={nextMonth}
             style={{ background: "none", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", padding: "4px 10px", fontSize: 12, transition: "border-color 150ms, color 150ms" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.neon; e.currentTarget.style.color = C.neon; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.bronce; e.currentTarget.style.color = C.bronce; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMuted; }}
           >›</button>
 
           <button
             onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth()); setSelected(null); }}
-            style={{ background: "none", border: `1px solid ${C.neonBorder}`, color: C.neon, cursor: "pointer", padding: "4px 10px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}
+            style={{ background: "none", border: `1px solid ${C.bronceBorder}`, color: C.bronce, cursor: "pointer", padding: "4px 10px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}
           >
             Hoy
           </button>
@@ -324,7 +324,7 @@ export default function Calendario({ clubId = "" }) {
         {/* Contador + Crear */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 9, color: C.textMuted, textTransform: "uppercase", letterSpacing: "1px" }}>
-            <span style={{ color: "white", fontWeight: 700 }}>{events.length}</span> eventos este mes
+            <span style={{ color:"#1F1F1D", fontWeight: 700 }}>{events.length}</span> eventos este mes
             {hasCustom && <span style={{ marginLeft: 6, fontSize: 8, color: C.purple }}>(propios)</span>}
           </div>
 
@@ -386,12 +386,12 @@ export default function Calendario({ clubId = "" }) {
                   style={{
                     minHeight: 72, padding: 5,
                     background: hasSelectedEvent
-                      ? "rgba(200,255,0,0.06)"
+                      ? "rgba(206, 137, 70,0.06)"
                       : today_ ? "rgba(127,119,221,0.08)"
                       : isCurrentMonth ? "rgba(255,255,255,0.02)"
                       : "transparent",
                     border: hasSelectedEvent
-                      ? `1px solid ${C.neonBorder}`
+                      ? `1px solid ${C.bronceBorder}`
                       : today_ ? `1px solid rgba(127,119,221,0.3)`
                       : `1px solid ${C.border}`,
                     cursor: dayEvents.length > 0 ? "pointer" : "default",
@@ -463,7 +463,7 @@ export default function Calendario({ clubId = "" }) {
                       </div>
                       <div style={{ width: 1, height: 30, background: C.border, flexShrink: 0 }} />
                       <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color:"#1F1F1D", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {ev.title}
                         </div>
                         <div style={{ fontSize: 9, color: C.textMuted }}>

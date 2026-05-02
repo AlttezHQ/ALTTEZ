@@ -220,7 +220,7 @@ export default function MiClub() {
               background: saved
                 ? `linear-gradient(135deg,${C.green},#047857)`
                 : `linear-gradient(135deg,${C.greenBright},#00cc6a)`,
-              color: saved ? "white" : C.bgDark,
+              color: saved ? "white" : C.text,
               boxShadow: saved
                 ? `0 4px 16px ${C.greenBorder}`
                 : `0 4px 16px rgba(0,255,136,0.35)`,

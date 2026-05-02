@@ -303,7 +303,7 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
       width: "100%", maxWidth: 760,
       background: "rgba(14,14,22,0.98)",
       border: "1px solid rgba(255,255,255,0.1)",
-      borderTop: `3px solid ${C.neon}`,
+      borderTop: `3px solid ${C.bronce}`,
       borderRadius: 14,
       padding: 28,
       boxShadow: `0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(57,255,20,0.06)`,
@@ -351,7 +351,7 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
             style={{
-              border: `2px dashed ${dragOver ? C.neon : "rgba(255,255,255,0.15)"}`,
+              border: `2px dashed ${dragOver ? C.bronce : "rgba(255,255,255,0.15)"}`,
               borderRadius: 10,
               padding: "40px 24px",
               textAlign: "center",
@@ -363,12 +363,12 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
             <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.5 }}>
               {/* Upload icon SVG */}
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style={{ margin: "0 auto", display: "block" }}>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke={dragOver ? C.neon : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round"/>
-                <polyline points="17 8 12 3 7 8" stroke={dragOver ? C.neon : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <line x1="12" y1="3" x2="12" y2="15" stroke={dragOver ? C.neon : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke={dragOver ? C.bronce : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round"/>
+                <polyline points="17 8 12 3 7 8" stroke={dragOver ? C.bronce : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="12" y1="3" x2="12" y2="15" stroke={dragOver ? C.bronce : "rgba(255,255,255,0.4)"} strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: dragOver ? C.neon : "white", marginBottom: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: dragOver ? C.bronce : "white", marginBottom: 6 }}>
               {dragOver ? "Suelta el archivo aquí" : "Arrastra tu archivo CSV aquí"}
             </div>
             <div style={{ fontSize: 11, color: C.textMuted }}>
@@ -413,8 +413,8 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
             {[...VALID_POS_CODES].map(code => (
               <span key={code} style={{
                 fontSize: 9, fontWeight: 700, letterSpacing: "0.5px",
-                color: C.neon, background: `${C.neon}12`,
-                border: `1px solid ${C.neon}30`,
+                color: C.bronce, background: `${C.bronce}12`,
+                border: `1px solid ${C.bronce}30`,
                 padding: "2px 7px", borderRadius: 4,
               }}>
                 {code}
@@ -434,7 +434,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
         <div style={{ ...s.panel, alignItems: "center", justifyContent: "center", gap: 16 }}>
           <div style={{
             width: 40, height: 40,
-            border: `3px solid ${C.neon}`, borderTop: "3px solid transparent",
+            border: `3px solid ${C.bronce}`, borderTop: "3px solid transparent",
             borderRadius: "50%", animation: "spin 0.8s linear infinite",
           }} />
           <div style={{ fontSize: 13, color: "white", fontWeight: 600 }}>
@@ -457,8 +457,8 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
         <div style={{ ...s.panel, alignItems: "center", justifyContent: "center", gap: 16 }}>
           <div style={{ fontSize: 44 }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke={C.neon} strokeWidth="1.5"/>
-              <path d="M7 12l4 4 6-7" stroke={C.neon} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="12" cy="12" r="10" stroke={C.bronce} strokeWidth="1.5"/>
+              <path d="M7 12l4 4 6-7" stroke={C.bronce} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, color: "white", textTransform: "uppercase", letterSpacing: "-0.3px" }}>
@@ -472,7 +472,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
             style={{
               marginTop: 8, padding: "10px 32px",
               fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.5px",
-              background: C.neon, color: "#0a0a0f",
+              background: C.bronce, color: "#0a0a0f",
               border: "none", borderRadius: 6, cursor: "pointer",
             }}
           >
@@ -495,7 +495,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
               Vista previa — {fileName}
             </div>
             <div style={{ display: "flex", gap: 16, marginTop: 6 }}>
-              <span style={{ fontSize: 10, color: C.neon, fontWeight: 700 }}>
+              <span style={{ fontSize: 10, color: C.bronce, fontWeight: 700 }}>
                 {validCount} válidos
               </span>
               {invalidCount > 0 && (
@@ -542,7 +542,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
           <div style={{ overflowY: "auto", flex: 1, borderRadius: 8, border: "1px solid rgba(255,255,255,0.07)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", position: "sticky", top: 0 }}>
+                <tr style={{ background:"#FFFFFF", position: "sticky", top: 0 }}>
                   {["#", "Nombre", "Posición", "Cód.", "Nacimiento", "Contacto", "Estado"].map(h => (
                     <th key={h} style={{
                       padding: "8px 12px", textAlign: "left",
@@ -576,9 +576,9 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
                       <span style={{
                         fontSize: 9, fontWeight: 700, padding: "2px 6px",
                         borderRadius: 3,
-                        background: row._valid ? `${C.neon}15` : "rgba(239,68,68,0.15)",
-                        color: row._valid ? C.neon : "#f87171",
-                        border: `1px solid ${row._valid ? `${C.neon}30` : "rgba(239,68,68,0.3)"}`,
+                        background: row._valid ? `${C.bronce}15` : "rgba(239,68,68,0.15)",
+                        color: row._valid ? C.bronce : "#f87171",
+                        border: `1px solid ${row._valid ? `${C.bronce}30` : "rgba(239,68,68,0.3)"}`,
                       }}>
                         {row.posCode || "?"}
                       </span>
@@ -587,7 +587,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
                     <td style={{ padding: "7px 12px", color: C.textMuted }}>{row.contact || "—"}</td>
                     <td style={{ padding: "7px 12px" }}>
                       {row._valid ? (
-                        <span style={{ fontSize: 9, color: C.neon }}>OK</span>
+                        <span style={{ fontSize: 9, color: C.bronce }}>OK</span>
                       ) : (
                         <span style={{ fontSize: 9, color: "#f87171" }} title={row._errors.join("\n")}>
                           Error ({row._errors.length})
@@ -621,7 +621,7 @@ Luis Torres,Defensa Central,CB,2000-11-30,3157654321`}
             style={{
               padding: "9px 24px", fontSize: 11, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "1.5px",
-              background: validCount > 0 ? C.neon : "rgba(255,255,255,0.1)",
+              background: validCount > 0 ? C.bronce : "rgba(255,255,255,0.1)",
               color: validCount > 0 ? "#0a0a0f" : C.textHint,
               border: "none", borderRadius: 6,
               cursor: validCount > 0 ? "pointer" : "not-allowed",
