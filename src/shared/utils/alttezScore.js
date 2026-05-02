@@ -173,7 +173,7 @@
  *   tarjetaRoja: number      // 3.0 — penalizacion severa (inferioridad numerica)
  * }}
  */
-export const ELEVATE_WEIGHTS = {
+export const ALTTEZ_WEIGHTS = {
   goles:          2.0,
   asistencias:    1.5,
   recuperaciones: 0.3,
@@ -211,13 +211,13 @@ export const ELEVATE_WEIGHTS = {
  */
 export function calcALTTEZScore({ goles, asistencias, recuperaciones, duelosGanados, minutosJugados, tarjeta }) {
   const raw =
-    (goles * ELEVATE_WEIGHTS.goles) +
-    (asistencias * ELEVATE_WEIGHTS.asistencias) +
-    (recuperaciones * ELEVATE_WEIGHTS.recuperaciones) +
-    (duelosGanados * ELEVATE_WEIGHTS.duelosGanados) +
-    ((minutosJugados / 90) * ELEVATE_WEIGHTS.minutos) -
-    (tarjeta === "amarilla" ? ELEVATE_WEIGHTS.tarjetaAmarilla : 0) -
-    (tarjeta === "roja" ? ELEVATE_WEIGHTS.tarjetaRoja : 0);
+    (goles * ALTTEZ_WEIGHTS.goles) +
+    (asistencias * ALTTEZ_WEIGHTS.asistencias) +
+    (recuperaciones * ALTTEZ_WEIGHTS.recuperaciones) +
+    (duelosGanados * ALTTEZ_WEIGHTS.duelosGanados) +
+    ((minutosJugados / 90) * ALTTEZ_WEIGHTS.minutos) -
+    (tarjeta === "amarilla" ? ALTTEZ_WEIGHTS.tarjetaAmarilla : 0) -
+    (tarjeta === "roja" ? ALTTEZ_WEIGHTS.tarjetaRoja : 0);
 
   return Number(Math.max(0, Math.min(10, raw)).toFixed(1));
 }
