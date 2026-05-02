@@ -601,7 +601,7 @@ export default function PortalLayout() {
     el.id = "portal-layout-styles";
     el.textContent = `
       .portal-footer-link { transition: color 0.18s ease; }
-      .portal-footer-link:hover { color: #C9973A !important; }
+      .portal-footer-link:hover { color: #CE8946 !important; }
     `;
     document.head.appendChild(el);
     return () => el.remove();

@@ -218,8 +218,8 @@ export default function Contacto() {
         transition: border-color 150ms ease, color 150ms ease;
       }
       .channel-btn:hover {
-        border-color: #C9973A;
-        color: #C9973A;
+        border-color: #CE8946;
+        color: #CE8946;
       }
       .wa-btn {
         padding: 13px 22px;
@@ -239,7 +239,7 @@ export default function Contacto() {
         cursor: pointer;
       }
       .wa-btn:hover {
-        border-color: #C9973A;
+        border-color: #CE8946;
       }
     `;
     document.head.appendChild(style);
@@ -358,7 +358,7 @@ export default function Contacto() {
               >
                 <Card>
                   <BorderBeam
-                    colorFrom="rgba(201,151,58,0.50)"
+                    colorFrom="rgba(206, 137, 70,0.50)"
                     colorTo="rgba(245,194,102,0.50)"
                     duration={8}
                     borderWidth={1.5}

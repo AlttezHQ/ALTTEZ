@@ -107,7 +107,7 @@ function CRMPreview() {
             <div key={i} style={{
               width: 26, height: 26, borderRadius: 7,
               display: "flex", alignItems: "center", justifyContent: "center",
-              background: i === 1 ? "rgba(201,151,58,0.90)" : "transparent",
+              background: i === 1 ? "rgba(206, 137, 70,0.90)" : "transparent",
             }}>
               <Icon size={12} color={i === 1 ? "#FFFFFF" : "rgba(255,255,255,0.35)"} strokeWidth={1.5} />
             </div>
@@ -127,8 +127,8 @@ function CRMPreview() {
                 <div key={p.name} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "5px 8px", borderRadius: 8,
-                  background: i === 1 ? "rgba(201,151,58,0.09)" : "#F7F6F3",
-                  border: i === 1 ? "1px solid rgba(201,151,58,0.22)" : "1px solid transparent",
+                  background: i === 1 ? "rgba(206, 137, 70,0.09)" : "#F7F6F3",
+                  border: i === 1 ? "1px solid rgba(206, 137, 70,0.22)" : "1px solid transparent",
                 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{
@@ -145,7 +145,7 @@ function CRMPreview() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 50, height: 3, borderRadius: 2, background: "#E5E7EB", overflow: "hidden" }}>
-                      <div style={{ width: `${p.pct}%`, height: "100%", background: "#C9973A" }} />
+                      <div style={{ width: `${p.pct}%`, height: "100%", background: "#CE8946" }} />
                     </div>
                     <span style={{ fontSize: 8, fontWeight: 700, color: "#0F0F0F" }}>{p.pct}%</span>
                   </div>
@@ -163,7 +163,7 @@ function CRMPreview() {
               {BAR_DATA.map((v, i) => (
                 <div key={i} style={{
                   flex: 1, borderRadius: "3px 3px 0 0",
-                  background: i === BAR_DATA.length - 1 ? "#C9973A" : "rgba(201,151,58,0.28)",
+                  background: i === BAR_DATA.length - 1 ? "#CE8946" : "rgba(206, 137, 70,0.28)",
                   height: `${(v / 100) * 100}%`,
                 }} />
               ))}
@@ -181,7 +181,7 @@ function CRMPreview() {
           {/* ALTTEZ Score */}
           <div style={{ padding: "8px 10px", borderRadius: 10, background: "#F7F6F3", border: "1px solid rgba(0,0,0,0.06)" }}>
             <div style={{ fontSize: 7, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.8px" }}>ALTTEZ Score</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#C9973A", lineHeight: 1.1, marginTop: 2 }}>18</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#CE8946", lineHeight: 1.1, marginTop: 2 }}>18</div>
           </div>
 
           {/* Calendario */}
@@ -194,7 +194,7 @@ function CRMPreview() {
               {CAL_DAYS.map((d, i) => (
                 <div key={i} style={{
                   fontSize: 6.5, textAlign: "center", borderRadius: 3, padding: "1px 0",
-                  background: d === 18 ? "#C9973A" : "transparent",
+                  background: d === 18 ? "#CE8946" : "transparent",
                   color: d === 18 ? "white" : d ? "#0F0F0F" : "transparent",
                   fontWeight: d === 18 ? 800 : 400,
                 }}>{d || ""}</div>
@@ -209,7 +209,7 @@ function CRMPreview() {
               <div style={{ position: "relative", width: 42, height: 42, flexShrink: 0 }}>
                 <svg viewBox="0 0 44 44" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
                   <circle cx="22" cy="22" r={R} fill="none" stroke="#E5E7EB" strokeWidth="4.5" />
-                  <circle cx="22" cy="22" r={R} fill="none" stroke="#C9973A" strokeWidth="4.5"
+                  <circle cx="22" cy="22" r={R} fill="none" stroke="#CE8946" strokeWidth="4.5"
                     strokeDasharray={`${0.72 * CIRC} ${CIRC}`} strokeLinecap="round" />
                 </svg>
                 <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 800, color: "#0F0F0F" }}>72%</span>
@@ -219,7 +219,7 @@ function CRMPreview() {
           </div>
 
           {/* Pagos del mes */}
-          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(201,151,58,0.09)", border: "1px solid rgba(201,151,58,0.22)" }}>
+          <div style={{ padding: "8px 10px", borderRadius: 10, background: "rgba(206, 137, 70,0.09)", border: "1px solid rgba(206, 137, 70,0.22)" }}>
             <div style={{ fontSize: 7, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.8px" }}>Pagos del mes</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: "#0F0F0F", marginTop: 2 }}>$24,500</div>
             <div style={{ fontSize: 7, color: "#16A34A", fontWeight: 600, marginTop: 1 }}>12 al día</div>
@@ -380,7 +380,7 @@ export default function SportsCRMPage() {
               }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8,
-                  background: B.primarySoft, border: "1px solid rgba(201,151,58,0.18)",
+                  background: B.primarySoft, border: "1px solid rgba(206, 137, 70,0.18)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <img src="/branding/alttez-symbol-transparent.png" alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
@@ -420,11 +420,11 @@ export default function SportsCRMPage() {
             >
               <div style={{
                 width: 28, height: 28, borderRadius: 8, marginBottom: 10,
-                background: "rgba(201,151,58,0.10)",
-                border: "1px solid rgba(201,151,58,0.15)",
+                background: "rgba(206, 137, 70,0.10)",
+                border: "1px solid rgba(206, 137, 70,0.15)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <Icon size={14} color="#C9973A" strokeWidth={1.75} />
+                <Icon size={14} color="#CE8946" strokeWidth={1.75} />
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: B.text, marginBottom: 3 }}>{label}</div>
               <div style={{ fontSize: 10, color: B.textMuted, lineHeight: 1.5 }}>{body}</div>
@@ -445,7 +445,7 @@ export default function SportsCRMPage() {
         }}>
           {TRUST.map(({ Icon, label, body }) => (
             <div key={label} style={{ display: "flex", alignItems: "start", gap: 10, padding: "10px 12px" }}>
-              <Icon size={16} color="#C9973A" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 1 }} />
+              <Icon size={16} color="#CE8946" strokeWidth={1.75} style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: B.text, marginBottom: 2 }}>{label}</div>
                 <div style={{ fontSize: 10, color: B.textMuted, lineHeight: 1.5 }}>{body}</div>

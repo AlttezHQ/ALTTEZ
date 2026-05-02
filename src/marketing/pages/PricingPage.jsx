@@ -19,7 +19,7 @@ export default function PricingPage() {
             <div style={{
               display: "inline-block",
               padding: "6px 14px", borderRadius: 999,
-              background: B.primarySoft, border: `1px solid rgba(201,151,58,0.25)`,
+              background: B.primarySoft, border: `1px solid rgba(206, 137, 70,0.25)`,
               color: B.primary, fontSize: 10, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "1.6px", marginBottom: 24,
             }}>

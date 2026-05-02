@@ -5,8 +5,8 @@ import { BookOpen, Compass, Layers } from "lucide-react";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
 const COPPER      = B.primary;
-const COPPER_SOFT = "rgba(201,151,58,0.09)";
-const COPPER_BDR  = "rgba(201,151,58,0.20)";
+const COPPER_SOFT = "rgba(206, 137, 70,0.09)";
+const COPPER_BDR  = "rgba(206, 137, 70,0.20)";
 
 const STATUS_MAP = {
   Disponible:   { dot: "#2f9666", text: "#1a7a50", bg: "rgba(47,150,102,0.08)",  bdr: "rgba(47,150,102,0.20)" },
@@ -60,7 +60,7 @@ export default function EcosystemSection() {
       }
       .eco-cta:hover {
         background: #F6EFE7 !important;
-        border-color: rgba(201,151,58,0.30) !important;
+        border-color: rgba(206, 137, 70,0.30) !important;
         color: #8B6020 !important;
       }
       @media (max-width: 1100px) {

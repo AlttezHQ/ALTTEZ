@@ -38,7 +38,7 @@ export default function HeroSection() {
         gap: 8px;
         padding: 10px 14px;
         border-radius: 999px;
-        border: 1px solid rgba(201,151,58,0.18);
+        border: 1px solid rgba(206, 137, 70,0.18);
         background: rgba(255,255,255,0.82);
         color: ${B.text};
         font-size: 11px;
@@ -84,9 +84,9 @@ export default function HeroSection() {
       }
       .hz-btn-primary {
         border: 1px solid rgba(183,131,45,0.28);
-        background: linear-gradient(135deg, #C9973A 0%, #B7832D 100%);
+        background: linear-gradient(135deg, #CE8946 0%, #A66F38 100%);
         color: #fff;
-        box-shadow: 0 16px 32px rgba(201,151,58,0.22);
+        box-shadow: 0 16px 32px rgba(206, 137, 70,0.22);
       }
       .hz-btn-secondary {
         border: 1px solid ${B.border};
@@ -120,7 +120,7 @@ export default function HeroSection() {
         padding: 28px;
         border-radius: 30px;
         background: linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(245,241,234,0.74) 100%);
-        border: 1px solid rgba(201,151,58,0.14);
+        border: 1px solid rgba(206, 137, 70,0.14);
         box-shadow: 0 28px 72px rgba(23,26,28,0.10);
       }
       .hz-stage {
@@ -177,9 +177,9 @@ export default function HeroSection() {
         padding: "44px 32px 92px",
         fontFamily: F.body,
         background: `
-          radial-gradient(circle at 10% 12%, rgba(201,151,58,0.10), transparent 26%),
-          radial-gradient(circle at 88% 16%, rgba(201,151,58,0.12), transparent 22%),
-          linear-gradient(180deg, #FAFAF8 0%, #F8F4EE 56%, #FAFAF8 100%)
+          radial-gradient(circle at 10% 12%, rgba(206, 137, 70,0.10), transparent 26%),
+          radial-gradient(circle at 88% 16%, rgba(206, 137, 70,0.12), transparent 22%),
+          linear-gradient(180deg, #F6F1EA 0%, #F8F4EE 56%, #F6F1EA 100%)
         `,
       }}
     >
@@ -257,7 +257,7 @@ export default function HeroSection() {
                     width: 260,
                     height: 260,
                     borderRadius: "50%",
-                    background: "radial-gradient(circle, rgba(201,151,58,0.18) 0%, transparent 72%)",
+                    background: "radial-gradient(circle, rgba(206, 137, 70,0.18) 0%, transparent 72%)",
                     filter: "blur(10px)",
                   }}
                 />

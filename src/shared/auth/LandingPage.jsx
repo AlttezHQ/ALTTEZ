@@ -38,9 +38,9 @@ const PAGE_BG = {
   alignItems: "center",
   justifyContent: "center",
   background: `
-    radial-gradient(circle at 12% 12%, rgba(201,151,58,0.10), transparent 24%),
-    radial-gradient(circle at 88% 18%, rgba(201,151,58,0.12), transparent 22%),
-    linear-gradient(180deg, #FAFAF8 0%, #F5F1EA 100%)
+    radial-gradient(circle at 12% 12%, rgba(206, 137, 70,0.10), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(206, 137, 70,0.12), transparent 22%),
+    linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)
   `,
   padding: "40px 24px",
   position: "relative",
@@ -445,7 +445,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               minHeight: 52,
               borderRadius: 14,
               border: "none",
-              background: loading || !consentData || !consentGuardian ? "#E8DCC4" : "linear-gradient(135deg, #C9973A 0%, #B7832D 100%)",
+              background: loading || !consentData || !consentGuardian ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
               color: loading || !consentData || !consentGuardian ? PALETTE.textMuted : "#FFFFFF",
               fontSize: 12,
               fontWeight: 800,
@@ -528,7 +528,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               minHeight: 50,
               borderRadius: 14,
               border: "none",
-              background: loading ? "#E8DCC4" : "linear-gradient(135deg, #C9973A 0%, #B7832D 100%)",
+              background: loading ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
               color: loading ? PALETTE.textMuted : "#FFFFFF",
               fontSize: 12,
               fontWeight: 800,

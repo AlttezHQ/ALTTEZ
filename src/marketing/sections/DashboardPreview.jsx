@@ -4,7 +4,7 @@ import {
   FileText, Home, MapPin, MessageCircle, Settings, Users, Wallet, XCircle, Activity,
 } from "lucide-react";
 
-const COPPER = "#C9973A";
+const COPPER = "#CE8946";
 const SIDEBAR_BG = "#111719";
 
 const MENU = [
@@ -32,7 +32,7 @@ const LINE_COORDS = "16,96 50,72 84,78 118,51 152,62 186,42 220,33 254,20";
 // ─── SVG Player Headshots ─────────────────────────────────────────────────────
 
 const HEADSHOT_CFG = [
-  { skin: "#c8a47c", hair: "#1a0800", jersey: "#1c2b4a", accent: "#c9973a" },
+  { skin: "#c8a47c", hair: "#1a0800", jersey: "#1c2b4a", accent: "#CE8946" },
   { skin: "#b8956e", hair: "#2d1400", jersey: "#111719", accent: "#e0e0e0" },
   { skin: "#8a6040", hair: "#0a0a0a", jersey: "#143020", accent: "#22c55e" },
   { skin: "#d4aa7d", hair: "#7b4a18", jersey: "#7b1818", accent: "#ffffff" },
@@ -57,7 +57,7 @@ function PlayerHeadshotSVG({ index = 0, size = 36 }) {
         d={`M ${cx - size * 0.11} ${size * 0.625} Q ${cx} ${size * 0.655} ${cx + size * 0.11} ${size * 0.625}`}
         fill="none" stroke={cfg.accent} strokeWidth="1" opacity="0.55" clipPath={`url(#${id})`}
       />
-      <circle cx={cx} cy={cx} r={cx - 0.8} fill="none" stroke="rgba(201,151,58,0.38)" strokeWidth="1.5" />
+      <circle cx={cx} cy={cx} r={cx - 0.8} fill="none" stroke="rgba(206, 137, 70,0.38)" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -66,7 +66,7 @@ function PlayerHeadshot({ index = 0, size = 36, imgSrc }) {
   const [failed, setFailed] = useState(false);
   if (!imgSrc || failed) return <PlayerHeadshotSVG index={index} size={size} />;
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "1.5px solid rgba(201,151,58,0.38)", boxSizing: "border-box" }}>
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", flexShrink: 0, border: "1.5px solid rgba(206, 137, 70,0.38)", boxSizing: "border-box" }}>
       <img
         src={imgSrc}
         alt=""
@@ -100,11 +100,11 @@ function AlttezShield({ width = 36, height = 42 }) {
       {/* Copper border */}
       <path d="M20 2L4 8V23C4 33 11.5 41 20 45C28.5 41 36 33 36 23V8L20 2Z" fill="none" stroke="url(#at-brd)" strokeWidth="1.8" strokeLinejoin="round" />
       {/* Inner frame */}
-      <path d="M20 5.5L7 10.5V23C7 31.5 13 38.5 20 41.5C27 38.5 33 31.5 33 23V10.5L20 5.5Z" fill="none" stroke="rgba(201,151,58,0.22)" strokeWidth="0.65" strokeLinejoin="round" />
+      <path d="M20 5.5L7 10.5V23C7 31.5 13 38.5 20 41.5C27 38.5 33 31.5 33 23V10.5L20 5.5Z" fill="none" stroke="rgba(206, 137, 70,0.22)" strokeWidth="0.65" strokeLinejoin="round" />
       {/* Top copper band */}
       <path d="M20 2L4 8V12L20 6L36 12V8L20 2Z" fill={COPPER} opacity="0.72" clipPath="url(#at-clip)" />
       {/* Horizontal divider */}
-      <line x1="6.5" y1="19.5" x2="33.5" y2="19.5" stroke="rgba(201,151,58,0.30)" strokeWidth="0.7" />
+      <line x1="6.5" y1="19.5" x2="33.5" y2="19.5" stroke="rgba(206, 137, 70,0.30)" strokeWidth="0.7" />
       {/* AT monogram */}
       <text x="20" y="33.5" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="12" fontWeight="900" fontFamily="system-ui,-apple-system,sans-serif" letterSpacing="-0.5">AT</text>
       {/* Bottom accent */}
@@ -164,7 +164,7 @@ function InnerCard({ children, style }) {
 function CardHead({ title, sub }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: "#171a1c", lineHeight: 1.2 }}>{title}</div>
+      <div style={{ fontSize: 11, fontWeight: 800, color: "#1F1F1D", lineHeight: 1.2 }}>{title}</div>
       <div style={{ fontSize: 8.5, color: "#a0a0a0", marginTop: 2 }}>{sub}</div>
     </div>
   );
@@ -176,7 +176,7 @@ function PlayerListCard() {
   return (
     <InnerCard>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: "#171a1c" }}>Plantel activo</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "#1F1F1D" }}>Plantel activo</span>
         <span style={{ fontSize: 8, color: "#bbb" }}>24 jugadores</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -185,11 +185,11 @@ function PlayerListCard() {
             <span style={{ fontSize: 8, fontWeight: 700, color: "#aaa" }}>{p.n}</span>
             <PlayerHeadshot index={i} size={36} imgSrc={p.img} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: "#171a1c", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "#1F1F1D", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
               <div style={{ fontSize: 7, color: "#bbb" }}>{p.role}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: "#171a1c", display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
+              <div style={{ fontSize: 9, fontWeight: 800, color: "#1F1F1D", display: "flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
                 {p.pct}
                 <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
               </div>
@@ -198,7 +198,7 @@ function PlayerListCard() {
           </div>
         ))}
       </div>
-      <button style={{ marginTop: 10, width: "100%", textAlign: "center", fontSize: 8.5, fontWeight: 700, color: "#171a1c", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+      <button style={{ marginTop: 10, width: "100%", textAlign: "center", fontSize: 8.5, fontWeight: 700, color: "#1F1F1D", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
         Ver plantel completo →
       </button>
     </InnerCard>
@@ -253,7 +253,7 @@ function TrainingLoadCard() {
   return (
     <InnerCard>
       <CardHead title="Carga de entrenamiento" sub="Últimos 7 días" />
-      <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em", color: "#171a1c", lineHeight: 1 }}>↑18%</div>
+      <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em", color: "#1F1F1D", lineHeight: 1 }}>↑18%</div>
       <div style={{ fontSize: 8, color: "#bbb", marginBottom: 4 }}>vs semana anterior</div>
       <svg viewBox="0 0 270 112" style={{ width: "100%", height: 72, overflow: "visible", display: "block" }}>
         <defs>
@@ -288,10 +288,10 @@ function PerformanceCard() {
         <div style={{ position: "relative", width: 60, height: 60, flexShrink: 0 }}>
           <svg viewBox="0 0 60 60" width={60} height={60} style={{ transform: "rotate(-90deg)" }}>
             <circle cx="30" cy="30" r={r} fill="none" stroke="#ede8e2" strokeWidth="7" />
-            <circle cx="30" cy="30" r={r} fill="none" stroke="#171a1c" strokeWidth="7" strokeDasharray={`${circ * 0.72} ${circ * 0.28}`} strokeLinecap="round" />
+            <circle cx="30" cy="30" r={r} fill="none" stroke="#1F1F1D" strokeWidth="7" strokeDasharray={`${circ * 0.72} ${circ * 0.28}`} strokeLinecap="round" />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 12, fontWeight: 900, color: "#171a1c" }}>72%</span>
+            <span style={{ fontSize: 12, fontWeight: 900, color: "#1F1F1D" }}>72%</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -311,7 +311,7 @@ function AttendanceCard() {
   return (
     <InnerCard>
       <CardHead title="Asistencia a entrenos" sub="Esta semana" />
-      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", color: "#171a1c", lineHeight: 1 }}>92%</div>
+      <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", color: "#1F1F1D", lineHeight: 1 }}>92%</div>
       <div style={{ fontSize: 8, color: "#bbb", marginBottom: 10 }}>Promedio de asistencia</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: maxH + 16 }}>
         {bars.map((h, i) => (
@@ -390,9 +390,9 @@ export function FloatingBarCard() {
       padding: "13px",
       boxShadow: "0 22px 52px rgba(0,0,0,0.13), 0 5px 14px rgba(0,0,0,0.08)",
       border: "1px solid rgba(0,0,0,0.06)",
-      borderLeft: "2.5px solid rgba(201,151,58,0.45)",
+      borderLeft: "2.5px solid rgba(206, 137, 70,0.45)",
     }}>
-      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#171a1c" }}>Carga de entrenamiento</div>
+      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#1F1F1D" }}>Carga de entrenamiento</div>
       <div style={{ fontSize: 7.5, color: "#bbb", marginBottom: 10 }}>Últimas 4 semanas</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60 }}>
         {bars.map((h, i) => (
@@ -417,9 +417,9 @@ export function FloatingDonutCard() {
       padding: "13px",
       boxShadow: "0 16px 40px rgba(0,0,0,0.09), 0 3px 10px rgba(0,0,0,0.06)",
       border: "1px solid rgba(0,0,0,0.06)",
-      borderTop: "2.5px solid rgba(201,151,58,0.40)",
+      borderTop: "2.5px solid rgba(206, 137, 70,0.40)",
     }}>
-      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#171a1c", marginBottom: 10 }}>Pagos del mes</div>
+      <div style={{ fontSize: 9.5, fontWeight: 800, color: "#1F1F1D", marginBottom: 10 }}>Pagos del mes</div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ position: "relative", width: 58, height: 58, flexShrink: 0 }}>
           <svg viewBox="0 0 60 60" width={58} height={58} style={{ transform: "rotate(-90deg)" }}>
@@ -429,7 +429,7 @@ export function FloatingDonutCard() {
             <circle cx="30" cy="30" r={r} fill="none" stroke="#e45858" strokeWidth="7" strokeDasharray={`${overdue} ${circ - overdue}`} strokeDashoffset={`${-(paid + pending)}`} strokeLinecap="butt" />
           </svg>
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-            <div style={{ fontSize: 8, fontWeight: 900, color: "#171a1c", textAlign: "center" }}>€20.770</div>
+            <div style={{ fontSize: 8, fontWeight: 900, color: "#1F1F1D", textAlign: "center" }}>€20.770</div>
             <div style={{ fontSize: 6.5, color: "#bbb" }}>Total</div>
           </div>
         </div>
@@ -482,7 +482,7 @@ export default function DashboardPreview() {
           </nav>
           <div style={{ marginTop: "auto", borderRadius: 9, border: "1px solid rgba(255,255,255,0.07)", padding: "9px 10px", background: "rgba(255,255,255,0.03)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 7, background: "#14191c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 900, color: "white", border: `1px solid rgba(201,151,58,0.35)`, flexShrink: 0 }}>AT</div>
+              <div style={{ width: 26, height: 26, borderRadius: 7, background: "#14191c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 900, color: "white", border: `1px solid rgba(206, 137, 70,0.35)`, flexShrink: 0 }}>AT</div>
               <div>
                 <div style={{ fontSize: 8.5, fontWeight: 700, color: "white", lineHeight: 1.2 }}>Club Alttez FC</div>
                 <div style={{ fontSize: 7, color: "rgba(255,255,255,0.38)" }}>Temporada 24/25</div>
@@ -495,12 +495,12 @@ export default function DashboardPreview() {
         <main style={{ background: "#fbfaf8", padding: "18px" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
-              <h3 style={{ fontSize: 15, fontWeight: 900, letterSpacing: "-0.03em", color: "#171a1c", margin: 0 }}>Bienvenido, Entrenador</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 900, letterSpacing: "-0.03em", color: "#1F1F1D", margin: 0 }}>Bienvenido, Entrenador</h3>
               <p style={{ fontSize: 8.5, color: "#a0a0a0", margin: "3px 0 0" }}>Aquí tienes un resumen completo de tu club.</p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <Bell style={{ width: 13, height: 13, color: "#999" }} />
-              <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, rgba(201,151,58,0.3), rgba(201,151,58,0.6))`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: COPPER, border: "2px solid white" }}>E</div>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: `linear-gradient(135deg, rgba(206, 137, 70,0.3), rgba(206, 137, 70,0.6))`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 900, color: COPPER, border: "2px solid white" }}>E</div>
               <div>
                 <div style={{ fontSize: 8.5, fontWeight: 700 }}>Entrenador</div>
                 <div style={{ fontSize: 7, color: "#bbb" }}>Staff</div>

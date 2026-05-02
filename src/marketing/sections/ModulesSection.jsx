@@ -57,7 +57,7 @@ export default function ModulesSection() {
         transition: color 0.18s ease, gap 0.18s ease;
       }
       .mod-ver-mas:hover {
-        color: #C9973A !important;
+        color: #CE8946 !important;
       }
       @media (max-width: 1100px) {
         .mod-grid { grid-template-columns: repeat(3, 1fr) !important; }
@@ -134,7 +134,7 @@ export default function ModulesSection() {
               <div style={{
                 width: 64, height: 64, borderRadius: 14,
                 background: "#FBF5EA",
-                border: "1.5px solid rgba(201,151,58,0.22)",
+                border: "1.5px solid rgba(206, 137, 70,0.22)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 marginBottom: 20, flexShrink: 0,
               }}>
