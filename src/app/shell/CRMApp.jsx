@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../../shared/store/useStore";
 import FieldBackground from "../../shared/ui/FieldBackground";
 import ErrorBoundary from "../../shared/ui/ErrorBoundary";
@@ -341,62 +342,71 @@ export function CRMApp() {
       {/* Padding bottom compensa el banner del DemoGate (52px) en modo demo */}
       <div style={{ position:"relative", zIndex:2, paddingBottom: mode === "demo" ? 60 : 0 }}>
         <Suspense fallback={<LoadingFallback />}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeModule}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              style={{ width: "100%", minHeight: "100vh" }}
+            >
+              {activeModule === "home" && (
+                <ErrorBoundary>
+                  <Home onNavigate={navigateTo} mode={mode} onLogout={handleLogout} userRole={userRole} onExportBackup={() => { exportBackupJSON(); showToast("Backup descargado correctamente", "success"); }} />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "home" && (
-            <ErrorBoundary>
-              <Home onNavigate={navigateTo} mode={mode} onLogout={handleLogout} userRole={userRole} onExportBackup={() => { exportBackupJSON(); showToast("Backup descargado correctamente", "success"); }} />
-            </ErrorBoundary>
-          )}
+              {activeModule === "entrenamiento" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Entrenamiento" />
+                  <Entrenamiento clubId={authProfile?.club_id || ""} />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "entrenamiento" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Entrenamiento" />
-              <Entrenamiento clubId={authProfile?.club_id || ""} />
-            </ErrorBoundary>
-          )}
+              {activeModule === "plantilla" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Gestion de plantilla" />
+                  <GestionPlantilla clubId={authProfile?.club_id || ""} />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "plantilla" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Gestion de plantilla" />
-              <GestionPlantilla clubId={authProfile?.club_id || ""} />
-            </ErrorBoundary>
-          )}
+              {activeModule === "miclub" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Mi club" />
+                  <MiClub />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "miclub" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Mi club" />
-              <MiClub />
-            </ErrorBoundary>
-          )}
+              {activeModule === "admin" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Administracion" accent={C.purple} accentBg="rgba(127,119,221,0.08)" />
+                  <Administracion />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "admin" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Administracion" accent={C.purple} accentBg="rgba(127,119,221,0.08)" />
-              <Administracion />
-            </ErrorBoundary>
-          )}
+              {activeModule === "calendario" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Calendario" accent={C.bronce} accentBg="rgba(206, 137, 70,0.05)" />
+                  <Calendario clubId={authProfile?.club_id || ""} />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "calendario" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Calendario" accent={C.neon} accentBg="rgba(200,255,0,0.05)" />
-              <Calendario clubId={authProfile?.club_id || ""} />
-            </ErrorBoundary>
-          )}
+              {activeModule === "partidos" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Match Center" accent={C.bronce} accentBg="rgba(206, 137, 70,0.05)" />
+                  <MatchCenter clubId={authProfile?.club_id || ""} />
+                </ErrorBoundary>
+              )}
 
-          {activeModule === "partidos" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Match Center" accent={C.neon} accentBg="rgba(200,255,0,0.05)" />
-              <MatchCenter clubId={authProfile?.club_id || ""} />
-            </ErrorBoundary>
-          )}
-
-          {activeModule === "reportes" && (
-            <ErrorBoundary>
-              <_MiniTopbarLocal title="Reportes" />
-              <Reportes onNavigate={navigateTo} />
-            </ErrorBoundary>
-          )}
-
+              {activeModule === "reportes" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Reportes" />
+                  <Reportes onNavigate={navigateTo} />
+                </ErrorBoundary>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </Suspense>
       </div>
     </div>

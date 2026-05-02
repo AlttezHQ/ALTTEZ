@@ -68,7 +68,7 @@ function ConversionModal({ onClose, onRegister }) {
             width: 220,
             height: 220,
             borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(201,151,58,0.18) 0%, rgba(201,151,58,0) 72%)",
+            background: "radial-gradient(circle, rgba(206, 137, 70,0.18) 0%, rgba(206, 137, 70,0) 72%)",
             pointerEvents: "none",
           }}
         />
@@ -87,14 +87,14 @@ function ConversionModal({ onClose, onRegister }) {
           }}
         >
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.4-4.6 2.4.9-5.2-3.8-3.7 5.2-.8L12 3Z" stroke="#C9973A" strokeWidth="1.6" strokeLinejoin="round" fill="rgba(201,151,58,0.14)" />
+            <path d="M12 3l2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.4-4.6 2.4.9-5.2-3.8-3.7 5.2-.8L12 3Z" stroke="#CE8946" strokeWidth="1.6" strokeLinejoin="round" fill="rgba(206, 137, 70,0.14)" />
           </svg>
         </div>
 
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: "#B7832D" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: "#A66F38" }}>
           DEMO EXPIRADO
         </div>
-        <h2 style={{ margin: "12px 0 12px", fontSize: "clamp(24px, 4vw, 30px)", lineHeight: 1.08, color: "#171A1C" }}>
+        <h2 style={{ margin: "12px 0 12px", fontSize: "clamp(24px, 4vw, 30px)", lineHeight: 1.08, color: "#1F1F1D" }}>
           Ya viste el potencial.
           <br />
           Ahora hazlo tuyo.
@@ -113,7 +113,7 @@ function ConversionModal({ onClose, onRegister }) {
             <div key={item} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#F4E7CF", border: "1px solid #E4C98C", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
-                  <path d="M1.5 4l1.8 1.8L6.5 2.7" stroke="#C9973A" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M1.5 4l1.8 1.8L6.5 2.7" stroke="#CE8946" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <span style={{ fontSize: 14, color: "#475467" }}>{item}</span>
@@ -122,7 +122,7 @@ function ConversionModal({ onClose, onRegister }) {
         </div>
 
         <motion.button
-          whileHover={{ scale: 1.02, boxShadow: "0 16px 34px rgba(201,151,58,0.24)" }}
+          whileHover={{ scale: 1.02, boxShadow: "0 16px 34px rgba(206, 137, 70,0.24)" }}
           whileTap={{ scale: 0.98 }}
           onClick={onRegister}
           style={{
@@ -132,7 +132,7 @@ function ConversionModal({ onClose, onRegister }) {
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.08em",
-            background: "#C9973A",
+            background: "#CE8946",
             color: "#FFFFFF",
             border: "none",
             borderRadius: 12,
@@ -196,7 +196,7 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
           textTransform: "uppercase",
           letterSpacing: "2px",
           background: "#FFF8EB",
-          color: "#B7832D",
+          color: "#A66F38",
           border: "1px solid #E4C98C",
           borderRadius: 999,
           flexShrink: 0,
@@ -224,7 +224,7 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
             height: "100%",
             background: expired
               ? "linear-gradient(90deg, #D89A2B, #D95C5C)"
-              : "linear-gradient(90deg, #C9973A, #E3B868)",
+              : "linear-gradient(90deg, #CE8946, #E3B868)",
             borderRadius: 999,
           }}
         />
@@ -238,7 +238,7 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
           <span
             style={{
               fontWeight: 700,
-              color: secondsLeft < 120 ? "#B7832D" : "#171A1C",
+              color: secondsLeft < 120 ? "#A66F38" : "#1F1F1D",
               fontFamily: "monospace",
             }}
           >
@@ -248,7 +248,7 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
       </div>
 
       <motion.button
-        whileHover={{ scale: 1.02, boxShadow: "0 14px 28px rgba(201,151,58,0.22)" }}
+        whileHover={{ scale: 1.02, boxShadow: "0 14px 28px rgba(206, 137, 70,0.22)" }}
         whileTap={{ scale: 0.97 }}
         onClick={onRegister}
         style={{
@@ -257,7 +257,7 @@ function DemoBanner({ secondsLeft, onRegister, onClose, expired }) {
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "1px",
-          background: "#C9973A",
+          background: "#CE8946",
           color: "#FFFFFF",
           border: "none",
           borderRadius: 8,
