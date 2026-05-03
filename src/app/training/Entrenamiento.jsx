@@ -1,20 +1,32 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  Activity,
+  AlertCircle,
+  BarChart3,
+  Calendar,
+  ClipboardCheck,
+  Clock,
+  Save,
+  Search,
+  TrendingUp,
+  UserCheck,
+  Users,
+  UserX,
+} from "lucide-react";
 import Planificacion from "./Planificacion";
 import { getAvatarUrl as PHOTO } from "../../shared/utils/helpers";
 import { PALETTE } from "../../shared/tokens/palette";
 import { sanitizeNote } from "../../shared/utils/sanitize";
 import EmptyState from "../../shared/ui/EmptyState";
-import SessionLiveHeader from "../../shared/ui/SessionLiveHeader";
 import TabBar from "../../shared/ui/TabBar";
 import { showToast } from "../../shared/ui/Toast";
 import { useStore } from "../../shared/store/useStore";
-import { calcStats, buildSesion } from "../../shared/services/storageService";
+import { buildSesion } from "../../shared/services/storageService";
 import { takeHealthSnapshot } from "../../shared/services/healthService";
 import useSupabaseSync from "../../shared/hooks/useSupabaseSync";
 import WellnessCheckIn from "../../shared/ui/WellnessCheckIn";
 import { calcSaludActual } from "../../shared/utils/rpeEngine";
-import { getWellnessStatus } from "../../shared/types/wellnessTypes";
 import GlassPanel  from "../../shared/ui/GlassPanel";
 import SectionLabel from "../../shared/ui/SectionLabel";
 
@@ -57,8 +69,11 @@ function groupByWeek(sessions) {
 /* ── Colores por tipo de tarea (Feature C) ── */
 const TIPO_COLORS = {
   "Táctica": PALETTE.purple,
+  "Tactica": PALETTE.purple,
   "Físico": PALETTE.amber,
+  "Fisico": PALETTE.amber,
   "Recuperación": PALETTE.green,
+  "Recuperacion": PALETTE.green,
   "Partido": PALETTE.danger,
   "Partido interno": PALETTE.danger,
 };
@@ -85,6 +100,290 @@ function MiniSparkBars({ values, color, height = 24, width = 52 }) {
   );
 }
 
+const STATUS_META = {
+  P: { label: "Presente", plural: "Presentes", color: PALETTE.success, soft: "#EAF7F0", border: "rgba(47,165,111,0.24)", Icon: UserCheck },
+  A: { label: "Ausente", plural: "Ausentes", color: PALETTE.danger, soft: "#FDECEC", border: "rgba(217,92,92,0.24)", Icon: UserX },
+  L: { label: "Lesionado", plural: "Lesionados", color: PALETTE.amber, soft: "#FFF5E0", border: "rgba(216,154,43,0.28)", Icon: AlertCircle },
+};
+
+const FILTER_OPTIONS = [
+  { key: "all", label: "Todos" },
+  { key: "P", label: "Presentes" },
+  { key: "A", label: "Ausentes" },
+  { key: "L", label: "Lesionados" },
+];
+
+function formatShortName(name = "") {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return name;
+  return `${parts[0]} ${parts[1][0]}.`;
+}
+
+function LiveSessionPanel({ tipo, todayLabel, elapsedLabel, summary, sessionActive }) {
+  const kpis = [
+    { label: "Tiempo", value: elapsedLabel, Icon: Clock, color: PALETTE.bronce },
+    { label: "RPE Reg.", value: `${summary.conRpe}/${summary.presentes}`, Icon: TrendingUp, color: PALETTE.success },
+    { label: "RPE Prom.", value: summary.rpeAvg, Icon: BarChart3, color: PALETTE.amber },
+    { label: "Sin RPE", value: summary.sinRpe, Icon: Users, color: PALETTE.bronce },
+  ];
+
+  return (
+    <section className="ent-live-card" aria-label="Sesión en curso">
+      <div className="ent-live-header">
+        <div className="ent-live-title-group">
+          <span className={`ent-live-badge ${sessionActive ? "is-live" : ""}`}>
+            <span />
+            EN VIVO
+          </span>
+          <div>
+            <h1>Sesión en curso</h1>
+            <p>{tipo} <span aria-hidden="true">·</span> {todayLabel}</p>
+          </div>
+        </div>
+        <div className="ent-live-clock">
+          <Clock size={16} aria-hidden="true" />
+          <span>La sesión comenzó hace <strong>{elapsedLabel}</strong> min</span>
+        </div>
+      </div>
+      <div className="ent-live-kpis">
+        {kpis.map(({ label, value, Icon, color }) => (
+          <div key={label} className="ent-live-kpi">
+            <span className="ent-live-kpi-icon" style={{ color, borderColor: `${color}55`, background: `${color}12` }}>
+              <Icon size={20} strokeWidth={1.9} aria-hidden="true" />
+            </span>
+            <div>
+              <span>{label}</span>
+              <strong style={{ color }}>{value}</strong>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SummaryCard({ label, value, detail, color, Icon }) {
+  return (
+    <article className="ent-summary-card">
+      <span className="ent-summary-icon" style={{ color, background: `${color}12`, borderColor: `${color}33` }}>
+        <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        {detail && <small>{detail}</small>}
+      </div>
+    </article>
+  );
+}
+
+function SessionControls({ todayLabel, tipo, setTipo, onClose }) {
+  return (
+    <div className="ent-tab-actions">
+      <span className="ent-date-chip">
+        <Calendar size={15} aria-hidden="true" />
+        {todayLabel}
+      </span>
+      <select
+        value={tipo}
+        onChange={e=>setTipo(e.target.value)}
+        className="ent-select"
+        aria-label="Tipo de sesión"
+      >
+        {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
+      </select>
+      <button className="ent-close-session" onClick={onClose}>
+        <Save size={15} aria-hidden="true" />
+        Cerrar sesión
+      </button>
+    </div>
+  );
+}
+
+function FilterPill({ option, active, count, onClick }) {
+  return (
+    <button
+      className={`ent-filter-pill ${active ? "is-active" : ""}`}
+      onClick={onClick}
+      type="button"
+    >
+      <span className={`ent-filter-dot ent-filter-dot-${option.key}`} />
+      {option.label}
+      <small>{count}</small>
+    </button>
+  );
+}
+
+function AthleteCard({ athlete, index, setStatus, setRpe, onWellness }) {
+  const meta = STATUS_META[athlete.status] || STATUS_META.P;
+  const presente = athlete.status === "P";
+  const rpeValue = athlete.rpe ?? "";
+  const rpeTone = athlete.rpe ? RPE_COLOR(athlete.rpe) : PALETTE.textMuted;
+
+  const handleRpeChange = (event) => {
+    const next = event.target.value;
+    if (!next && athlete.rpe != null) {
+      setRpe(index, athlete.rpe);
+      return;
+    }
+    if (next) setRpe(index, Number(next));
+  };
+
+  return (
+    <article
+      className={`ent-athlete-card ent-athlete-${athlete.status}`}
+      style={{ "--status-color": meta.color, "--status-soft": meta.soft, "--status-border": meta.border }}
+    >
+      <div className="ent-athlete-photo">
+        <img src={PHOTO(athlete.photo)} alt={athlete.name} loading="lazy" />
+        <span className="ent-athlete-status">
+          <meta.Icon size={13} aria-hidden="true" />
+          {meta.label}
+        </span>
+        {presente && (
+          <button
+            className="ent-wellness-btn"
+            onClick={(event) => { event.stopPropagation(); onWellness(); }}
+            title="Check-in wellness"
+            type="button"
+            aria-label={`Abrir check-in wellness de ${athlete.name}`}
+          >
+            <Activity size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      <div className="ent-athlete-body">
+        <div className="ent-athlete-name-row">
+          <div>
+            <h3 title={athlete.name}>{formatShortName(athlete.name)}</h3>
+            <p>{athlete.posCode || "POS"} · {athlete.pos || "Sin posición"}</p>
+          </div>
+          <span className="ent-rpe-value" style={{ color: rpeTone }}>{athlete.rpe ?? "-"}</span>
+        </div>
+
+        <div className="ent-status-switch" aria-label={`Estado de ${athlete.name}`}>
+          {[
+            ["P", "P", STATUS_META.P],
+            ["A", "A", STATUS_META.A],
+            ["L", "L", STATUS_META.L],
+          ].map(([status, label, statusMeta]) => (
+            <button
+              key={status}
+              type="button"
+              className={athlete.status === status ? "is-active" : ""}
+              onClick={() => setStatus(index, status)}
+              style={athlete.status === status ? { background: statusMeta.soft, color: statusMeta.color, borderColor: statusMeta.border } : undefined}
+              aria-pressed={athlete.status === status}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="ent-rpe-control">
+          <label htmlFor={`rpe-${athlete.id}`}>RPE</label>
+          {presente ? (
+            <select id={`rpe-${athlete.id}`} value={rpeValue} onChange={handleRpeChange} aria-label={`RPE de ${athlete.name}`}>
+              <option value="">-</option>
+              {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          ) : (
+            <span>-</span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function SessionSidePanel({ summary }) {
+  const total = Math.max(summary.total, 1);
+  const presentPct = Math.round((summary.presentes / total) * 100);
+  const absentPct = Math.round((summary.ausentes / total) * 100);
+  const injuredPct = Math.round((summary.lesionados / total) * 100);
+  const rpeNumber = Number(summary.rpeAvg);
+  const rpePct = Number.isFinite(rpeNumber) ? Math.min(Math.max(rpeNumber / 10, 0), 1) : 0;
+  const rpeLabel = Number.isFinite(rpeNumber)
+    ? rpeNumber >= 8 ? "Alta" : rpeNumber >= 5 ? "Moderada" : "Baja"
+    : "Sin registro";
+
+  return (
+    <aside className="ent-session-side" aria-label="Resumen de la sesión">
+      <div className="ent-side-head">
+        <h2>Resumen de la sesión</h2>
+      </div>
+
+      <section className="ent-side-section">
+        <h3>Asistencia</h3>
+        <div className="ent-attendance-block">
+          <div
+            className="ent-donut"
+            style={{
+              background: `conic-gradient(${PALETTE.success} 0 ${presentPct}%, ${PALETTE.danger} ${presentPct}% ${presentPct + absentPct}%, ${PALETTE.amber} ${presentPct + absentPct}% 100%)`,
+            }}
+            aria-hidden="true"
+          >
+            <span>{summary.total}</span>
+          </div>
+          <div className="ent-attendance-legend">
+            {[
+              ["Presentes", summary.presentes, presentPct, PALETTE.success],
+              ["Ausentes", summary.ausentes, absentPct, PALETTE.danger],
+              ["Lesionados", summary.lesionados, injuredPct, PALETTE.amber],
+            ].map(([label, value, pct, color]) => (
+              <div key={label}>
+                <span style={{ background: color }} />
+                <strong>{label}</strong>
+                <small>{value} ({pct}%)</small>
+              </div>
+            ))}
+            <p>Total {summary.total}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="ent-side-section">
+        <h3>Carga (RPE)</h3>
+        <div className="ent-rpe-meter">
+          <div className="ent-rpe-meter-track">
+            <span style={{ width: `${rpePct * 100}%`, background: Number(summary.rpeAvg) >= 8 ? PALETTE.danger : PALETTE.bronce }} />
+          </div>
+          <strong>{summary.rpeAvg}</strong>
+          <small>{rpeLabel}</small>
+          <p>Promedio de presentes</p>
+        </div>
+      </section>
+
+      <section className="ent-side-section">
+        <h3>Distribución de RPE</h3>
+        <div className="ent-rpe-bars">
+          {summary.rpeDistribution.map(bucket => {
+            const height = Math.max((bucket.count / summary.maxRpeBucket) * 72, bucket.count ? 10 : 2);
+            return (
+              <div key={bucket.label}>
+                <strong>{bucket.count}</strong>
+                <span style={{ height }} />
+                <small>{bucket.label}</small>
+              </div>
+            );
+          })}
+        </div>
+        <p className="ent-side-footnote">N de deportistas</p>
+      </section>
+
+      {summary.sinRpe > 0 && (
+        <div className="ent-rpe-alert">
+          <AlertCircle size={17} aria-hidden="true" />
+          <div>
+            <strong>{summary.sinRpe} deportistas sin RPE registrado</strong>
+            <span>Recuerda registrar el RPE al final.</span>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
 export default function Entrenamiento({ clubId = "" }) {
   const athletes = useStore(state => state.athletes);
   const setAthletes = useStore(state => state.setAthletes);
@@ -92,8 +391,6 @@ export default function Entrenamiento({ clubId = "" }) {
   const setHistorial = useStore(state => state.setHistorial);
   const clubInfo = useStore(state => state.clubInfo);
   const addWellnessLog = useStore(state => state.addWellnessLog);
-  const wellnessLogs = useStore(state => state.wellnessLogs);
-  const stats = calcStats(athletes, historial);
   const { syncSession, syncHealthSnapshots } = useSupabaseSync();
 
   const handleGuardar = (n, t) => {
@@ -112,6 +409,8 @@ export default function Entrenamiento({ clubId = "" }) {
   const [tab, setTab] = useState("sesion");
   const [tipo, setTipo] = useState("Táctica");
   const [nota, setNota] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedHist, setExpandedHist] = useState(null);
   const [collapsedWeeks, setCollapsedWeeks] = useState({});
 
@@ -210,97 +509,103 @@ export default function Entrenamiento({ clubId = "" }) {
     setWellnessTarget(null);
   };
 
+  const sessionSummary = useMemo(() => {
+    const presentes = athletes.filter(a => a.status === "P");
+    const ausentes = athletes.filter(a => a.status === "A");
+    const lesionados = athletes.filter(a => a.status === "L");
+    const withRpe = presentes.filter(a => a.rpe != null);
+    const rpeValues = withRpe.map(a => Number(a.rpe)).filter(Number.isFinite);
+    const rpeAvg = rpeValues.length
+      ? (rpeValues.reduce((acc, value) => acc + value, 0) / rpeValues.length).toFixed(1)
+      : "—";
+    const buckets = [
+      { label: "1-3", count: rpeValues.filter(v => v >= 1 && v <= 3).length },
+      { label: "4-5", count: rpeValues.filter(v => v >= 4 && v <= 5).length },
+      { label: "6-7", count: rpeValues.filter(v => v >= 6 && v <= 7).length },
+      { label: "8-9", count: rpeValues.filter(v => v >= 8 && v <= 9).length },
+      { label: "10", count: rpeValues.filter(v => v === 10).length },
+    ];
+
+    return {
+      presentes: presentes.length,
+      ausentes: ausentes.length,
+      lesionados: lesionados.length,
+      total: athletes.length,
+      conRpe: withRpe.length,
+      sinRpe: presentes.length - withRpe.length,
+      rpeAvg,
+      rpeDistribution: buckets,
+      maxRpeBucket: Math.max(...buckets.map(bucket => bucket.count), 1),
+      nextSession: (historial[0]?.num || 0) + 1,
+    };
+  }, [athletes, historial]);
+
+  const visibleAthletes = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return athletes
+      .map((athlete, index) => ({ athlete, index }))
+      .filter(({ athlete }) => statusFilter === "all" || athlete.status === statusFilter)
+      .filter(({ athlete }) => {
+        if (!q) return true;
+        return `${athlete.name} ${athlete.pos} ${athlete.posCode}`.toLowerCase().includes(q);
+      });
+  }, [athletes, searchTerm, statusFilter]);
+
+  const filterCounts = useMemo(() => ({
+    all: athletes.length,
+    P: sessionSummary.presentes,
+    A: sessionSummary.ausentes,
+    L: sessionSummary.lesionados,
+  }), [athletes.length, sessionSummary]);
+
+  const todayLabel = new Date().toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "long" });
+  const presentPct = sessionSummary.total ? Math.round((sessionSummary.presentes / sessionSummary.total) * 100) : 0;
+  const absentPct = sessionSummary.total ? Math.round((sessionSummary.ausentes / sessionSummary.total) * 100) : 0;
+
   // inp → usar className="field-input" directamente
 
   return (
-    <div style={{ background: PALETTE.bg, minHeight: "100%", color: PALETTE.text }}>
-      {/* ── SESIÓN ACTIVA — Broadcast Live Header ── */}
-      {sessionActive && (() => {
-        const presentes = athletes.filter(a => a.status === "P");
-        const conRpe = presentes.filter(a => a.rpe != null).length;
-        const sinRpe = presentes.length - conRpe;
-        const rpeAvg = conRpe > 0
-          ? (presentes.filter(a => a.rpe != null).reduce((s, a) => s + a.rpe, 0) / conRpe).toFixed(1)
-          : "—";
-        return (
-          <div style={{ padding: "14px 20px 0" }}>
-            <SessionLiveHeader
-              isLive
-              title="Sesión en curso"
-              subtitle={`${tipo} · ${new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}`}
-              kpis={[
-                { label: "Tiempo", value: fmtElapsed(elapsed), accent: "white" },
-                { label: "RPE reg.", value: `${conRpe}/${presentes.length}`, accent: PALETTE.success },
-                { label: "RPE prom", value: rpeAvg, accent: rpeAvg === "—" ? PALETTE.textMuted : PALETTE.amber },
-                { label: "Sin RPE", value: sinRpe, accent: sinRpe > 0 ? PALETTE.amber : PALETTE.textMuted },
-              ]}
-            />
-          </div>
-        );
-      })()}
+    <div className="ent-page">
+      <LiveSessionPanel
+        tipo={tipo}
+        todayLabel={todayLabel}
+        elapsedLabel={fmtElapsed(elapsed)}
+        summary={sessionSummary}
+        sessionActive={sessionActive}
+      />
 
-      {/* MÉTRICAS — Broadcast stat strip */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
-        gap: 10,
-        padding: "14px 20px",
-      }}>
-        {[
-          { label:"Presentes",     value: stats.presentes, color: PALETTE.success },
-          { label:"Ausentes",      value: stats.ausentes,  color: PALETTE.danger  },
-          { label:"RPE promedio",  value: stats.rpeAvg,    color: PALETTE.amber   },
-          { label:"Sesión",        value: `#${(historial[0]?.num || 0) + 1}`, color: PALETTE.bronceHi },
-        ].map((m,i) => (
-          <div
-            key={i}
-            style={{
-              position: "relative",
-              padding: "14px 16px",
-              background: PALETTE.surface,
-              border: `1px solid ${PALETTE.border}`,
-              borderRadius: 16,
-              boxShadow: "0 14px 28px rgba(23,26,28,0.07)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Top sweep */}
-            <span style={{
-              position: "absolute", top: 0, left: 0, right: 0, height: 2,
-              background: `linear-gradient(90deg, ${m.color}00 0%, ${m.color} 25%, ${m.color} 75%, ${m.color}00 100%)`,
-              opacity: 0.85,
-            }} />
-            {/* Corner accent */}
-            <span style={{
-              position: "absolute", top: 7, left: 7, width: 5, height: 5,
-              borderTop: `1.5px solid ${m.color}`, borderLeft: `1.5px solid ${m.color}`, opacity: 0.8,
-            }} />
-
-            <div style={{
-              fontSize: 10, fontWeight: 700,
-              color: PALETTE.textMuted,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              marginBottom: 8,
-              paddingLeft: 10,
-            }}>
-              {m.label}
-            </div>
-            <div style={{
-              fontSize: 28, fontWeight: 900,
-              color: PALETTE.text,
-              lineHeight: 1,
-              fontVariantNumeric: "tabular-nums",
-              letterSpacing: "-0.5px",
-            }}>
-              {m.value}
-            </div>
-          </div>
-        ))}
+      <div className="ent-summary-grid">
+        <SummaryCard
+          label="Presentes"
+          value={sessionSummary.presentes}
+          detail={`${presentPct}% del total`}
+          color={PALETTE.success}
+          Icon={UserCheck}
+        />
+        <SummaryCard
+          label="Ausentes"
+          value={sessionSummary.ausentes}
+          detail={`${absentPct}% del total`}
+          color={PALETTE.danger}
+          Icon={UserX}
+        />
+        <SummaryCard
+          label="RPE promedio"
+          value={sessionSummary.rpeAvg}
+          detail="Carga moderada"
+          color={PALETTE.amber}
+          Icon={Activity}
+        />
+        <SummaryCard
+          label="Sesión"
+          value={`#${sessionSummary.nextSession}`}
+          detail="Temporada actual"
+          color={PALETTE.bronce}
+          Icon={Calendar}
+        />
       </div>
 
-      {/* SUBTABS — Broadcast beam */}
-      <div className="entrenamiento-tabs" style={{ padding: "0 16px", background: PALETTE.bgDeep, borderTop: `1px solid ${PALETTE.border}`, borderBottom: `1px solid ${PALETTE.border}` }}>
+      <div className="entrenamiento-tabs">
         {(() => {
           const TAB_MAP = [
             ["sesion", "Sesión de hoy"],
@@ -312,6 +617,9 @@ export default function Entrenamiento({ clubId = "" }) {
           const activeLabel = TAB_MAP.find(([k]) => k === tab)?.[1];
           return (
             <TabBar
+              className="ent-tabs-bar"
+              style={{ flexWrap: "wrap" }}
+              scrollable
               tabs={labels}
               active={activeLabel}
               onChange={(label) => {
@@ -319,44 +627,12 @@ export default function Entrenamiento({ clubId = "" }) {
                 if (entry) setTab(entry[0]);
               }}
               rightSlot={tab === "sesion" ? (
-                <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 4px" }}>
-                  <div style={{
-                    fontSize: 9,
-                    color: PALETTE.textMuted,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.12em",
-                    fontWeight: 700,
-                  }}>
-                    {new Date().toLocaleDateString("es-CO",{weekday:"short",day:"numeric",month:"short"})}
-                  </div>
-                  <select
-                    value={tipo}
-                    onChange={e=>setTipo(e.target.value)}
-                    className="field-input"
-                    style={{ width:"auto", fontSize:"var(--fs-caption)", padding:"4px 10px" }}
-                  >
-                    {["Táctica","Físico","Recuperación","Partido interno"].map(t=><option key={t}>{t}</option>)}
-                  </select>
-                  <button
-                    onClick={() => handleGuardar(nota, tipo)}
-                    style={{
-                      background: `linear-gradient(180deg, ${PALETTE.bronce} 0%, ${PALETTE.bronce} 60%, ${PALETTE.bronceDeep} 100%)`,
-                      color:"#1F1F1D",
-                      fontSize: 10,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.12em",
-                      padding: "7px 16px",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      borderRadius: 10,
-                      border: `1px solid ${PALETTE.bronce}`,
-                      boxShadow: "0 10px 22px rgba(206, 137, 70,0.22)",
-                    }}
-                  >
-                    Cerrar sesión →
-                  </button>
-                </div>
+                <SessionControls
+                  todayLabel={todayLabel}
+                  tipo={tipo}
+                  setTipo={setTipo}
+                  onClose={() => handleGuardar(nota, tipo)}
+                />
               ) : null}
             />
           );
@@ -365,109 +641,72 @@ export default function Entrenamiento({ clubId = "" }) {
 
       {/* SESIÓN DE HOY — CARTAS */}
       {tab === "sesion" && (
-        <div style={{ padding:16 }}>
-          {athletes.length === 0 ? (
-            <EmptyState
-              icon={
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke={PALETTE.purpleVibrant} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              }
-              title="Plantilla lista para el registro"
-              subtitle="Ajusta el estado de cada deportista (P/A/L) y registra el RPE para activar el seguimiento de carga"
-              compact
-            />
-          ) : (
-          <>
-          <div style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"0.12em", color:PALETTE.textMuted, marginBottom:12 }}>
-            Marca el estado de cada deportista y registra la percepcion de esfuerzo (RPE)
-          </div>
-          <div className="entrenamiento-grid" style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, marginBottom:20 }}>
-            {athletes.map((a, i) => {
-              const presente = a.status === "P";
-              const ausente = a.status === "A";
-              const lesionado = a.status === "L";
-              const borderColor = presente ? PALETTE.green : ausente ? PALETTE.danger : lesionado ? PALETTE.amber : PALETTE.border;
-              const bgColor = presente ? "linear-gradient(180deg, #FFFFFF 0%, #F8F5EF 100%)" : ausente ? "linear-gradient(180deg, #FFF7F7 0%, #FBECEC 100%)" : lesionado ? "linear-gradient(180deg, #FFF9F0 0%, #F8EFD8 100%)" : "linear-gradient(180deg, #FFFFFF 0%, #F8F5EF 100%)";
-              const opacity = 1;
-              const photoBg = ausente || lesionado ? "555" : "059669";
-              return (
-                <div key={a.id} style={{ cursor:"pointer", opacity }}>
-                  <div style={{ background:bgColor, border:`1px solid ${borderColor}`, overflow:"hidden", boxShadow:"0 12px 28px rgba(23,26,28,0.08)", borderRadius:16 }}>
-                    <div style={{ height:4, background:borderColor }}/>
-                    <div style={{ position:"relative" }}>
-                      <img src={PHOTO(a.photo, photoBg)} alt="" style={{ width:"100%", height:80, objectFit:"cover", objectPosition:"top", display:"block" }}/>
-                      {(ausente || lesionado) && (
-                        <div style={{ position:"absolute", inset:0, background:"rgba(250,250,248,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.1em", padding:"4px 10px", border:`1px solid ${borderColor}`, color:borderColor, background: ausente ? PALETTE.dangerDim : PALETTE.amberDim, borderRadius:999 }}>
-                            {ausente ? "Ausente" : "Lesionado"}
-                          </div>
-                        </div>
-                      )}
-                      {presente && (
-                        <div
-                          onClick={(e) => { e.stopPropagation(); setWellnessTarget({ athlete: a, index: i }); }}
-                          style={{
-                            position: "absolute",
-                            top: 4,
-                            right: 4,
-                            width: 20,
-                            height: 20,
-                            borderRadius: "50%",
-                            background: PALETTE.violetAccent,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            fontSize: 10,
-                            zIndex: 2,
-                          }}
-                          title="Check-in Wellness"
-                        >
-                          ✚
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ padding:"6px 8px 4px" }}>
-                      <div style={{ fontSize:10, fontWeight:700, color:PALETTE.text, textTransform:"uppercase", letterSpacing:"0.03em", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{a.name.split(" ")[0]} {a.name.split(" ")[1]?.[0]}.</div>
-                      <div style={{ fontSize:8, color:PALETTE.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginTop:1 }}>{a.posCode}</div>
-                    </div>
-                    <div style={{ display:"flex", gap:1, padding:"0 6px 6px" }}>
-                      {[["P",PALETTE.green,"white"],["A",PALETTE.danger,"white"],["L",PALETTE.amber,"#1a0f00"]].map(([s,bg,tc]) => (
-                        <div key={s} onClick={() => setStatus(i, s)} style={{ flex:1, fontSize:8, padding:"3px 0", textAlign:"center", cursor:"pointer", textTransform:"uppercase", background: a.status===s ? bg : "rgba(255,255,255,0.05)", color: a.status===s ? tc : "rgba(255,255,255,0.3)" }}>
-                          {s}
-                        </div>
-                      ))}
-                    </div>
-                    {presente && (
-                      <div style={{ padding:"4px 6px 8px", borderTop:"1px solid rgba(255,255,255,0.06)" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", fontSize:7, color:"rgba(255,255,255,0.25)", textTransform:"uppercase", letterSpacing:"1px", marginBottom:4 }}>
-                          <span>RPE</span>
-                          <span style={{ color: a.rpe ? RPE_COLOR(a.rpe) : "rgba(255,255,255,0.25)" }}>{a.rpe || "—"}</span>
-                        </div>
-                        <div style={{ display:"flex", gap:2 }}>
-                          {[1,2,3,4,5,6,7,8,9,10].map(n => {
-                            const rpeGrad = n <= 3 ? "linear-gradient(135deg,#1d9e75,#059669)" : n <= 7 ? "linear-gradient(135deg,#ef9f27,#d97706)" : "linear-gradient(135deg,#e24b4a,#dc2626)";
-                            return (
-                              <div key={n} onClick={() => setRpe(i,n)} style={{ flex:1, height:16, display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, cursor:"pointer", background: a.rpe===n ? rpeGrad : "rgba(255,255,255,0.06)", color: a.rpe===n ? "white" : "rgba(255,255,255,0.3)", border:`1px solid ${a.rpe===n ? RPE_COLOR(n) : "rgba(255,255,255,0.08)"}`, boxShadow: a.rpe===n ? `0 0 6px ${RPE_COLOR(n)}66` : "none", fontWeight: a.rpe===n ? 700 : 400, transition:"background 120ms,box-shadow 120ms" }}>
-                                {n}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+        <div className="ent-session-shell">
+          <main className="ent-session-main">
+            {athletes.length === 0 ? (
+              <EmptyState
+                icon={<ClipboardCheck size={32} color={PALETTE.bronce} strokeWidth={1.7} />}
+                title="Plantilla lista para el registro"
+                subtitle="Ajusta el estado de cada deportista (P/A/L) y registra el RPE para activar el seguimiento de carga"
+                compact
+              />
+            ) : (
+              <>
+                <div className="ent-session-toolbar">
+                  <div>
+                    <p>Marca el estado de cada deportista y registra la percepción de esfuerzo (RPE)</p>
                   </div>
+                  <label className="ent-search-box">
+                    <Search size={16} aria-hidden="true" />
+                    <input
+                      value={searchTerm}
+                      onChange={event => setSearchTerm(event.target.value)}
+                      placeholder="Buscar deportista..."
+                      aria-label="Buscar deportista"
+                    />
+                  </label>
                 </div>
-              );
-            })}
-          </div>
-          <div style={{ background:"linear-gradient(135deg,rgba(20,20,30,0.92),rgba(10,10,20,0.96))", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", border:`1px solid rgba(255,255,255,0.06)`, borderLeft:`3px solid ${PALETTE.green}`, borderRadius:8, padding:"10px 14px", boxShadow:"0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03)" }}>
-            <textarea value={nota} onChange={e=>setNota(sanitizeNote(e.target.value))} placeholder="Observaciones tecnicas: objetivos trabajados, incidencias o directivas para el cuerpo tecnico..." rows={2} className="field-input" style={{ background:"transparent", border:"none", resize:"none", lineHeight:1.6, boxShadow:"none" }} maxLength={500}/>
-          </div>
-          </>
-          )}
+
+                <div className="ent-filter-row" aria-label="Filtros de estado">
+                  {FILTER_OPTIONS.map(option => (
+                    <FilterPill
+                      key={option.key}
+                      option={option}
+                      active={statusFilter === option.key}
+                      count={filterCounts[option.key]}
+                      onClick={() => setStatusFilter(option.key)}
+                    />
+                  ))}
+                </div>
+
+                <div className="ent-athletes-grid">
+                  {visibleAthletes.map(({ athlete, index }) => (
+                    <AthleteCard
+                      key={athlete.id}
+                      athlete={athlete}
+                      index={index}
+                      setStatus={setStatus}
+                      setRpe={setRpe}
+                      onWellness={() => setWellnessTarget({ athlete, index })}
+                    />
+                  ))}
+                </div>
+
+                <label className="ent-notes-card">
+                  <span>Observaciones técnicas</span>
+                  <textarea
+                    value={nota}
+                    onChange={e=>setNota(sanitizeNote(e.target.value))}
+                    placeholder="Objetivos trabajados, incidencias o directivas para el cuerpo técnico..."
+                    rows={2}
+                    maxLength={500}
+                  />
+                </label>
+              </>
+            )}
+          </main>
+
+          {athletes.length > 0 && <SessionSidePanel summary={sessionSummary} />}
         </div>
       )}
 

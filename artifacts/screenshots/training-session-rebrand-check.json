@@ -1,0 +1,50 @@
+[
+  {
+    "width": 1440,
+    "height": 900,
+    "path": "artifacts/screenshots/training-session-rebrand-1440.png",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "bodyScrollWidth": 1440,
+    "bodyClientWidth": 1440,
+    "title": "",
+    "hasSidePanel": false,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "path": "artifacts/screenshots/training-session-rebrand-1280.png",
+    "scrollWidth": 1280,
+    "clientWidth": 1280,
+    "bodyScrollWidth": 1280,
+    "bodyClientWidth": 1280,
+    "title": "",
+    "hasSidePanel": false,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "path": "artifacts/screenshots/training-session-rebrand-768.png",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "bodyScrollWidth": 768,
+    "bodyClientWidth": 768,
+    "title": "",
+    "hasSidePanel": false,
+    "horizontalOverflow": false
+  },
+  {
+    "width": 430,
+    "height": 932,
+    "path": "artifacts/screenshots/training-session-rebrand-430.png",
+    "scrollWidth": 430,
+    "clientWidth": 430,
+    "bodyScrollWidth": 430,
+    "bodyClientWidth": 430,
+    "title": "",
+    "hasSidePanel": false,
+    "horizontalOverflow": false
+  }
+]
