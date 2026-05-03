@@ -25,12 +25,11 @@ import { useStore } from "../../shared/store/useStore";
 import { buildSesion } from "../../shared/services/storageService";
 import { takeHealthSnapshot } from "../../shared/services/healthService";
 import useSupabaseSync from "../../shared/hooks/useSupabaseSync";
-import WellnessCheckIn from "../../shared/ui/WellnessCheckIn";
+import WellnessDrawer from "../../shared/ui/WellnessDrawer";
 import { calcSaludActual } from "../../shared/utils/rpeEngine";
 import GlassPanel  from "../../shared/ui/GlassPanel";
 import SectionLabel from "../../shared/ui/SectionLabel";
 
-// Responsive CSS y keyframes movidos a index.css
 const RPE_COLOR = (v) => v <= 3 ? PALETTE.green : v <= 8 ? PALETTE.amber : PALETTE.danger;
 
 /* ── Helper: agrupa sesiones del historial por semana ISO ── */
@@ -64,9 +63,7 @@ function groupByWeek(sessions) {
   return weeks;
 }
 
-// @keyframes elv_pulse movido a index.css
-
-/* ── Colores por tipo de tarea (Feature C) ── */
+/* ── Colores por tipo de tarea ── */
 const TIPO_COLORS = {
   "Táctica": PALETTE.purple,
   "Tactica": PALETTE.purple,
@@ -78,7 +75,7 @@ const TIPO_COLORS = {
   "Partido interno": PALETTE.danger,
 };
 
-/* ── Mini sparkline de barras — SVG inline, sin librería ── */
+/* ── Mini sparkline de barras ── */
 function MiniSparkBars({ values, color, height = 24, width = 52 }) {
   if (!values || values.length === 0) return null;
   const max = Math.max(...values, 1);
@@ -107,10 +104,11 @@ const STATUS_META = {
 };
 
 const FILTER_OPTIONS = [
-  { key: "all", label: "Todos" },
-  { key: "P", label: "Presentes" },
-  { key: "A", label: "Ausentes" },
-  { key: "L", label: "Lesionados" },
+  { key: "all",    label: "Todos" },
+  { key: "P",      label: "Presentes" },
+  { key: "A",      label: "Ausentes" },
+  { key: "L",      label: "Lesionados" },
+  { key: "sinRpe", label: "Sin RPE" },
 ];
 
 function formatShortName(name = "") {
@@ -121,10 +119,12 @@ function formatShortName(name = "") {
 
 function LiveSessionPanel({ tipo, todayLabel, elapsedLabel, summary, sessionActive }) {
   const kpis = [
-    { label: "Tiempo", value: elapsedLabel, Icon: Clock, color: PALETTE.bronce },
-    { label: "RPE Reg.", value: `${summary.conRpe}/${summary.presentes}`, Icon: TrendingUp, color: PALETTE.success },
-    { label: "RPE Prom.", value: summary.rpeAvg, Icon: BarChart3, color: PALETTE.amber },
-    { label: "Sin RPE", value: summary.sinRpe, Icon: Users, color: PALETTE.bronce },
+    { label: "Tiempo",    value: elapsedLabel,                         Icon: Clock,      color: PALETTE.bronce  },
+    { label: "RPE Reg.",  value: `${summary.conRpe}/${summary.presentes}`, Icon: TrendingUp, color: PALETTE.success },
+    { label: "RPE Prom.", value: summary.rpeAvg,                       Icon: BarChart3,  color: PALETTE.amber   },
+    { label: "Sin RPE",   value: summary.sinRpe,                       Icon: Users,      color: PALETTE.bronce  },
+    { label: "Presentes", value: summary.presentes,                    Icon: UserCheck,  color: PALETTE.success },
+    { label: "Ausentes",  value: summary.ausentes,                     Icon: UserX,      color: PALETTE.danger  },
   ];
 
   return (
@@ -214,43 +214,31 @@ function FilterPill({ option, active, count, onClick }) {
   );
 }
 
-function AthleteCard({ athlete, index, setStatus, setRpe, onWellness }) {
-  const meta = STATUS_META[athlete.status] || STATUS_META.P;
-  const presente = athlete.status === "P";
-  const rpeValue = athlete.rpe ?? "";
-  const rpeTone = athlete.rpe ? RPE_COLOR(athlete.rpe) : PALETTE.textMuted;
-
-  const handleRpeChange = (event) => {
-    const next = event.target.value;
-    if (!next && athlete.rpe != null) {
-      setRpe(index, athlete.rpe);
-      return;
-    }
-    if (next) setRpe(index, Number(next));
-  };
+/* ── AthleteCard: simplified — all editing via drawer ── */
+function AthleteCard({ athlete, isSelected, wellnessScore, onClick }) {
+  const meta     = STATUS_META[athlete.status] || STATUS_META.P;
+  const rpeColor = athlete.rpe ? RPE_COLOR(athlete.rpe) : PALETTE.textMuted;
+  const wsColor  = wellnessScore
+    ? (wellnessScore >= 70 ? "#2FA56F" : wellnessScore >= 40 ? "#D89A2B" : "#D95C5C")
+    : "#98A2B3";
 
   return (
     <article
-      className={`ent-athlete-card ent-athlete-${athlete.status}`}
+      role="button"
+      tabIndex={0}
+      className={`ent-athlete-card ent-athlete-${athlete.status}${isSelected ? " is-selected" : ""}`}
       style={{ "--status-color": meta.color, "--status-soft": meta.soft, "--status-border": meta.border }}
+      onClick={onClick}
+      onKeyDown={e => e.key === "Enter" && onClick?.()}
+      aria-label={`${athlete.name}, ${meta.label}. Abrir panel de detalle`}
+      aria-pressed={isSelected}
     >
       <div className="ent-athlete-photo">
         <img src={PHOTO(athlete.photo)} alt={athlete.name} loading="lazy" />
         <span className="ent-athlete-status">
-          <meta.Icon size={13} aria-hidden="true" />
+          <meta.Icon size={12} aria-hidden="true" />
           {meta.label}
         </span>
-        {presente && (
-          <button
-            className="ent-wellness-btn"
-            onClick={(event) => { event.stopPropagation(); onWellness(); }}
-            title="Check-in wellness"
-            type="button"
-            aria-label={`Abrir check-in wellness de ${athlete.name}`}
-          >
-            <Activity size={15} aria-hidden="true" />
-          </button>
-        )}
       </div>
       <div className="ent-athlete-body">
         <div className="ent-athlete-name-row">
@@ -258,38 +246,15 @@ function AthleteCard({ athlete, index, setStatus, setRpe, onWellness }) {
             <h3 title={athlete.name}>{formatShortName(athlete.name)}</h3>
             <p>{athlete.posCode || "POS"} · {athlete.pos || "Sin posición"}</p>
           </div>
-          <span className="ent-rpe-value" style={{ color: rpeTone }}>{athlete.rpe ?? "-"}</span>
-        </div>
-
-        <div className="ent-status-switch" aria-label={`Estado de ${athlete.name}`}>
-          {[
-            ["P", "P", STATUS_META.P],
-            ["A", "A", STATUS_META.A],
-            ["L", "L", STATUS_META.L],
-          ].map(([status, label, statusMeta]) => (
-            <button
-              key={status}
-              type="button"
-              className={athlete.status === status ? "is-active" : ""}
-              onClick={() => setStatus(index, status)}
-              style={athlete.status === status ? { background: statusMeta.soft, color: statusMeta.color, borderColor: statusMeta.border } : undefined}
-              aria-pressed={athlete.status === status}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="ent-rpe-control">
-          <label htmlFor={`rpe-${athlete.id}`}>RPE</label>
-          {presente ? (
-            <select id={`rpe-${athlete.id}`} value={rpeValue} onChange={handleRpeChange} aria-label={`RPE de ${athlete.name}`}>
-              <option value="">-</option>
-              {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          ) : (
-            <span>-</span>
+          {athlete.rpe != null && (
+            <span className="ent-rpe-value" style={{ color: rpeColor }}>{athlete.rpe}</span>
           )}
+        </div>
+        <div className="ent-card-footer">
+          <span className="ent-card-footer-lbl">Wellness</span>
+          <span className="ent-card-wellness-num" style={{ color: wsColor }}>
+            {wellnessScore ?? "—"}
+          </span>
         </div>
       </div>
     </article>
@@ -385,12 +350,13 @@ function SessionSidePanel({ summary }) {
 }
 
 export default function Entrenamiento({ clubId = "" }) {
-  const athletes = useStore(state => state.athletes);
+  const athletes    = useStore(state => state.athletes);
   const setAthletes = useStore(state => state.setAthletes);
-  const historial = useStore(state => state.historial);
+  const historial   = useStore(state => state.historial);
   const setHistorial = useStore(state => state.setHistorial);
-  const clubInfo = useStore(state => state.clubInfo);
+  const clubInfo    = useStore(state => state.clubInfo);
   const addWellnessLog = useStore(state => state.addWellnessLog);
+  const wellnessLogs   = useStore(state => state.wellnessLogs);
   const { syncSession, syncHealthSnapshots } = useSupabaseSync();
 
   const handleGuardar = (n, t) => {
@@ -406,15 +372,15 @@ export default function Entrenamiento({ clubId = "" }) {
     if (snapshots?.length) syncHealthSnapshots(snapshots);
   };
 
-  const [tab, setTab] = useState("sesion");
-  const [tipo, setTipo] = useState("Táctica");
-  const [nota, setNota] = useState("");
+  const [tab, setTab]                 = useState("sesion");
+  const [tipo, setTipo]               = useState("Táctica");
+  const [nota, setNota]               = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm]   = useState("");
   const [expandedHist, setExpandedHist] = useState(null);
   const [collapsedWeeks, setCollapsedWeeks] = useState({});
 
-  /* ── Feature B: elapsed timer ── */
+  /* ── Elapsed timer ── */
   const [elapsed, setElapsed] = useState(0);
   const sessionActive = athletes.some(a => a.status === "P" && a.rpe != null);
 
@@ -437,12 +403,11 @@ export default function Entrenamiento({ clubId = "" }) {
     return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  /* ── Feature A: historial agrupado ── */
+  /* ── Historial agrupado ── */
   const weekGroups = useMemo(() => groupByWeek(historial), [historial]);
-
   const toggleWeek = (key) => setCollapsedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
 
-  /* ── Feature C: estadísticas por tipo ── */
+  /* ── Estadísticas por tipo ── */
   const tipoStats = useMemo(() => {
     const counts = {};
     const total = historial.length || 1;
@@ -455,67 +420,78 @@ export default function Entrenamiento({ clubId = "" }) {
       .sort((a, b) => b.count - a.count);
   }, [historial]);
 
-  const setStatus = (i, s) => {
-    const u = [...athletes];
-    u[i] = { ...u[i], status: s, rpe: s !== "P" ? null : u[i].rpe };
-    setAthletes(u);
-  };
-
-  /** Verifica si un atleta está AUSENTE en el calendario RSVP para hoy */
+  /* ── RSVP absent check ── */
   const isRsvpAbsent = useCallback((athleteId) => {
     if (!athleteId) return false;
     const cid = clubId || "demo";
     const today = new Date().toISOString().slice(0, 10);
-    // Buscar cualquier clave de ausencia para hoy
     for (let k = 0; k < localStorage.length; k++) {
       const key = localStorage.key(k);
       if (key?.startsWith(`alttez_rsvp_absent_${cid}_`) && key.endsWith(`_${athleteId}`) && localStorage.getItem(key) === "1") {
-        // Extraer fecha del eventId para verificar si es hoy
         if (key.includes(today)) return true;
       }
     }
     return false;
   }, [clubId]);
 
-  const setRpe = (i, val) => {
-    const a = athletes[i];
-    if (isRsvpAbsent(a?.id)) {
-      showToast("Deportista marcado como AUSENTE en el calendario. No es posible registrar RPE.", "warning");
-      return;
-    }
-    const u = [...athletes];
-    u[i] = { ...u[i], rpe: u[i].rpe === val ? null : val };
-    setAthletes(u);
-  };
-
-  const [wellnessTarget, setWellnessTarget] = useState(null); // { athlete, index }
-  const [healthFeedback, setHealthFeedback] = useState(null); // { athleteName, salud, riskLevel, color }
+  /* ── Drawer state ── */
+  const [selectedAthleteIdx, setSelectedAthleteIdx] = useState(null);
+  const [healthFeedback, setHealthFeedback] = useState(null);
   const feedbackTimerRef = useRef(null);
 
-  const handleWellnessSubmit = (log) => {
-    addWellnessLog(log);
-    const athlete = wellnessTarget?.athlete;
-    if (athlete) {
-      const result = calcSaludActual(athlete.rpe, historial, athlete.id);
-      setHealthFeedback({
-        athleteName: athlete.name.split(" ")[0],
-        salud: result.salud,
-        riskLevel: result.riskLevel,
-        color: result.color,
-      });
-      if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
-      feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
+  /* ── Wellness score map (latest log per athlete) ── */
+  const wellnessScoreMap = useMemo(() => {
+    const map = {};
+    wellnessLogs.forEach(log => {
+      if (!(log.athlete_id in map)) {
+        map[log.athlete_id] = Math.round(log.wellness_score ?? 0);
+      }
+    });
+    return map;
+  }, [wellnessLogs]);
+
+  /* ── Save from drawer (save + navigate) ── */
+  const handleDrawerSaveAndNext = (idx, log, newRpe, newStatus, nextIdx) => {
+    const athlete = athletes[idx];
+    if (!athlete) return;
+
+    let effectiveRpe = newStatus === "P" ? newRpe : null;
+    if (newStatus === "P" && newRpe != null && isRsvpAbsent(athlete.id)) {
+      showToast("Deportista marcado como AUSENTE en el calendario. No es posible registrar RPE.", "warning");
+      effectiveRpe = null;
     }
-    setWellnessTarget(null);
+
+    const updated = [...athletes];
+    updated[idx] = { ...updated[idx], status: newStatus, rpe: effectiveRpe };
+    setAthletes(updated);
+    addWellnessLog(log);
+
+    const result = calcSaludActual(effectiveRpe, historial, athlete.id);
+    setHealthFeedback({
+      athleteName: athlete.name.split(" ")[0],
+      salud: result.salud,
+      riskLevel: result.riskLevel,
+      color: result.color,
+    });
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
+
+    if (nextIdx != null && athletes[nextIdx]) {
+      setSelectedAthleteIdx(nextIdx);
+    } else {
+      setSelectedAthleteIdx(null);
+      if (nextIdx === null) showToast("Todos los deportistas registrados", "success");
+    }
   };
 
+  /* ── Session summary ── */
   const sessionSummary = useMemo(() => {
-    const presentes = athletes.filter(a => a.status === "P");
-    const ausentes = athletes.filter(a => a.status === "A");
+    const presentes  = athletes.filter(a => a.status === "P");
+    const ausentes   = athletes.filter(a => a.status === "A");
     const lesionados = athletes.filter(a => a.status === "L");
-    const withRpe = presentes.filter(a => a.rpe != null);
-    const rpeValues = withRpe.map(a => Number(a.rpe)).filter(Number.isFinite);
-    const rpeAvg = rpeValues.length
+    const withRpe    = presentes.filter(a => a.rpe != null);
+    const rpeValues  = withRpe.map(a => Number(a.rpe)).filter(Number.isFinite);
+    const rpeAvg     = rpeValues.length
       ? (rpeValues.reduce((acc, value) => acc + value, 0) / rpeValues.length).toFixed(1)
       : "—";
     const buckets = [
@@ -523,20 +499,19 @@ export default function Entrenamiento({ clubId = "" }) {
       { label: "4-5", count: rpeValues.filter(v => v >= 4 && v <= 5).length },
       { label: "6-7", count: rpeValues.filter(v => v >= 6 && v <= 7).length },
       { label: "8-9", count: rpeValues.filter(v => v >= 8 && v <= 9).length },
-      { label: "10", count: rpeValues.filter(v => v === 10).length },
+      { label: "10",  count: rpeValues.filter(v => v === 10).length },
     ];
-
     return {
-      presentes: presentes.length,
-      ausentes: ausentes.length,
-      lesionados: lesionados.length,
-      total: athletes.length,
-      conRpe: withRpe.length,
-      sinRpe: presentes.length - withRpe.length,
+      presentes:    presentes.length,
+      ausentes:     ausentes.length,
+      lesionados:   lesionados.length,
+      total:        athletes.length,
+      conRpe:       withRpe.length,
+      sinRpe:       presentes.length - withRpe.length,
       rpeAvg,
       rpeDistribution: buckets,
-      maxRpeBucket: Math.max(...buckets.map(bucket => bucket.count), 1),
-      nextSession: (historial[0]?.num || 0) + 1,
+      maxRpeBucket: Math.max(...buckets.map(b => b.count), 1),
+      nextSession:  (historial[0]?.num || 0) + 1,
     };
   }, [athletes, historial]);
 
@@ -544,7 +519,11 @@ export default function Entrenamiento({ clubId = "" }) {
     const q = searchTerm.trim().toLowerCase();
     return athletes
       .map((athlete, index) => ({ athlete, index }))
-      .filter(({ athlete }) => statusFilter === "all" || athlete.status === statusFilter)
+      .filter(({ athlete }) => {
+        if (statusFilter === "all")    return true;
+        if (statusFilter === "sinRpe") return athlete.status === "P" && athlete.rpe == null;
+        return athlete.status === statusFilter;
+      })
       .filter(({ athlete }) => {
         if (!q) return true;
         return `${athlete.name} ${athlete.pos} ${athlete.posCode}`.toLowerCase().includes(q);
@@ -552,17 +531,16 @@ export default function Entrenamiento({ clubId = "" }) {
   }, [athletes, searchTerm, statusFilter]);
 
   const filterCounts = useMemo(() => ({
-    all: athletes.length,
-    P: sessionSummary.presentes,
-    A: sessionSummary.ausentes,
-    L: sessionSummary.lesionados,
+    all:    athletes.length,
+    P:      sessionSummary.presentes,
+    A:      sessionSummary.ausentes,
+    L:      sessionSummary.lesionados,
+    sinRpe: sessionSummary.sinRpe,
   }), [athletes.length, sessionSummary]);
 
-  const todayLabel = new Date().toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "long" });
-  const presentPct = sessionSummary.total ? Math.round((sessionSummary.presentes / sessionSummary.total) * 100) : 0;
-  const absentPct = sessionSummary.total ? Math.round((sessionSummary.ausentes / sessionSummary.total) * 100) : 0;
-
-  // inp → usar className="field-input" directamente
+  const todayLabel  = new Date().toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "long" });
+  const presentPct  = sessionSummary.total ? Math.round((sessionSummary.presentes / sessionSummary.total) * 100) : 0;
+  const absentPct   = sessionSummary.total ? Math.round((sessionSummary.ausentes  / sessionSummary.total) * 100) : 0;
 
   return (
     <div className="ent-page">
@@ -575,45 +553,21 @@ export default function Entrenamiento({ clubId = "" }) {
       />
 
       <div className="ent-summary-grid">
-        <SummaryCard
-          label="Presentes"
-          value={sessionSummary.presentes}
-          detail={`${presentPct}% del total`}
-          color={PALETTE.success}
-          Icon={UserCheck}
-        />
-        <SummaryCard
-          label="Ausentes"
-          value={sessionSummary.ausentes}
-          detail={`${absentPct}% del total`}
-          color={PALETTE.danger}
-          Icon={UserX}
-        />
-        <SummaryCard
-          label="RPE promedio"
-          value={sessionSummary.rpeAvg}
-          detail="Carga moderada"
-          color={PALETTE.amber}
-          Icon={Activity}
-        />
-        <SummaryCard
-          label="Sesión"
-          value={`#${sessionSummary.nextSession}`}
-          detail="Temporada actual"
-          color={PALETTE.bronce}
-          Icon={Calendar}
-        />
+        <SummaryCard label="Presentes"    value={sessionSummary.presentes} detail={`${presentPct}% del total`} color={PALETTE.success} Icon={UserCheck} />
+        <SummaryCard label="Ausentes"     value={sessionSummary.ausentes}  detail={`${absentPct}% del total`}  color={PALETTE.danger}  Icon={UserX}     />
+        <SummaryCard label="RPE promedio" value={sessionSummary.rpeAvg}    detail="Carga moderada"             color={PALETTE.amber}   Icon={Activity}  />
+        <SummaryCard label="Sesión"       value={`#${sessionSummary.nextSession}`} detail="Temporada actual"  color={PALETTE.bronce}  Icon={Calendar}  />
       </div>
 
       <div className="entrenamiento-tabs">
         {(() => {
           const TAB_MAP = [
-            ["sesion", "Sesión de hoy"],
-            ["planificacion", "Planificación"],
-            ["historial", "Historial"],
-            ["analisis", "Análisis"],
+            ["sesion",       "Jugadores"],
+            ["planificacion","Planificación"],
+            ["historial",    "Historial"],
+            ["analisis",     "Análisis"],
           ];
-          const labels = TAB_MAP.map(([, l]) => l);
+          const labels     = TAB_MAP.map(([, l]) => l);
           const activeLabel = TAB_MAP.find(([k]) => k === tab)?.[1];
           return (
             <TabBar
@@ -639,15 +593,15 @@ export default function Entrenamiento({ clubId = "" }) {
         })()}
       </div>
 
-      {/* SESIÓN DE HOY — CARTAS */}
+      {/* ── SESIÓN DE HOY ── */}
       {tab === "sesion" && (
-        <div className="ent-session-shell">
+        <div className={`ent-session-shell${selectedAthleteIdx !== null ? " has-drawer" : ""}`}>
           <main className="ent-session-main">
             {athletes.length === 0 ? (
               <EmptyState
                 icon={<ClipboardCheck size={32} color={PALETTE.bronce} strokeWidth={1.7} />}
                 title="Plantilla lista para el registro"
-                subtitle="Ajusta el estado de cada deportista (P/A/L) y registra el RPE para activar el seguimiento de carga"
+                subtitle="Haz clic en un deportista para registrar su asistencia, wellness y RPE"
                 compact
               />
             ) : (
@@ -684,10 +638,9 @@ export default function Entrenamiento({ clubId = "" }) {
                     <AthleteCard
                       key={athlete.id}
                       athlete={athlete}
-                      index={index}
-                      setStatus={setStatus}
-                      setRpe={setRpe}
-                      onWellness={() => setWellnessTarget({ athlete, index })}
+                      isSelected={selectedAthleteIdx === index}
+                      wellnessScore={wellnessScoreMap[athlete.id] ?? null}
+                      onClick={() => setSelectedAthleteIdx(index)}
                     />
                   ))}
                 </div>
@@ -706,7 +659,22 @@ export default function Entrenamiento({ clubId = "" }) {
             )}
           </main>
 
-          {athletes.length > 0 && <SessionSidePanel summary={sessionSummary} />}
+          <AnimatePresence mode="wait">
+            {selectedAthleteIdx !== null ? (
+              <WellnessDrawer
+                key="wellness-drawer"
+                athlete={athletes[selectedAthleteIdx]}
+                athleteIdx={selectedAthleteIdx}
+                visibleAthletes={visibleAthletes}
+                clubId={clubId}
+                onClose={() => setSelectedAthleteIdx(null)}
+                onSaveAndNext={handleDrawerSaveAndNext}
+                onSelect={setSelectedAthleteIdx}
+              />
+            ) : athletes.length > 0 ? (
+              <SessionSidePanel key="side-panel" summary={sessionSummary} />
+            ) : null}
+          </AnimatePresence>
         </div>
       )}
 
@@ -714,7 +682,7 @@ export default function Entrenamiento({ clubId = "" }) {
         <Planificacion athletes={athletes} clubInfo={clubInfo} sessionCount={historial.length} />
       )}
 
-      {/* ── Feature A: Historial agrupado por semana/microciclo ── */}
+      {/* ── Historial agrupado por semana/microciclo ── */}
       {tab === "historial" && (
         <div style={{ padding:16 }}>
           {weekGroups.length === 0 && (
@@ -739,7 +707,6 @@ export default function Entrenamiento({ clubId = "" }) {
               : "—";
             return (
               <div key={week.key} style={{ marginBottom:8 }}>
-                {/* Week header */}
                 <div
                   onClick={() => toggleWeek(week.key)}
                   style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 16px", background:`linear-gradient(135deg,${PALETTE.violetDim},rgba(124,58,237,0.04))`, borderLeft:`3px solid ${PALETTE.purple}`, cursor:"pointer", marginBottom:2, boxShadow:"0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)", borderRadius:"0 6px 6px 0" }}
@@ -754,7 +721,6 @@ export default function Entrenamiento({ clubId = "" }) {
                   </div>
                   <div style={{ fontSize:11, color:"#98A2B3" }}>{isCollapsed ? "▶" : "▼"}</div>
                 </div>
-                {/* Sessions inside week */}
                 {!isCollapsed && week.sessions.map((s, i) => {
                   const globalIdx = `${week.key}-${i}`;
                   const isExpanded = expandedHist === globalIdx;
@@ -762,13 +728,10 @@ export default function Entrenamiento({ clubId = "" }) {
                   const rpeNum = Number(s.rpeAvg);
                   const rpeColor = isNaN(rpeNum) ? "rgba(255,255,255,0.3)" : rpeNum <= 3 ? PALETTE.green : rpeNum <= 7 ? PALETTE.amber : PALETTE.danger;
                   const tipoColor = TIPO_COLORS[s.tipo] || "rgba(255,255,255,0.4)";
-
-                  // Atletas con RPE individual guardado en la sesion
                   const rpeEntries = s.rpeByAthlete ? Object.entries(s.rpeByAthlete) : [];
 
                   return (
                     <div key={globalIdx} style={{ marginLeft:12 }}>
-                      {/* Session row header */}
                       <div
                         className="ent-session-header"
                         onClick={() => setExpandedHist(isExpanded ? null : globalIdx)}
@@ -798,17 +761,14 @@ export default function Entrenamiento({ clubId = "" }) {
                         <div style={{ fontSize:11, color:"#98A2B3", marginLeft:12 }}>{isExpanded ? "▲" : "▼"}</div>
                       </div>
 
-                      {/* Expanded: reporte de sesion completo */}
                       {isExpanded && (
                         <div style={{ background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderLeft:`3px solid ${tipoColor}33`, padding:16, marginBottom:4, marginLeft:0 }}>
-
-                          {/* Fila de stats de sesion */}
                           <div style={{ display:"flex", gap:20, marginBottom:16, flexWrap:"wrap" }}>
                             {[
-                              { lbl:"Tipo", val: s.tipo || "Sin tipo", color: tipoColor },
-                              { lbl:"Asistencia", val: `${asistPct}%`, color: asistPct >= 75 ? PALETTE.green : PALETTE.amber },
-                              { lbl:"RPE promedio", val: s.rpeAvg ?? "—", color: rpeColor },
-                              { lbl:"Presentes", val: `${s.presentes}/${s.total}`, color:"#1F1F1D" },
+                              { lbl:"Tipo",        val: s.tipo || "Sin tipo",    color: tipoColor },
+                              { lbl:"Asistencia",  val: `${asistPct}%`,          color: asistPct >= 75 ? PALETTE.green : PALETTE.amber },
+                              { lbl:"RPE promedio",val: s.rpeAvg ?? "—",         color: rpeColor },
+                              { lbl:"Presentes",   val: `${s.presentes}/${s.total}`, color:"#1F1F1D" },
                             ].map((stat, si) => (
                               <div key={si}>
                                 <div style={{ fontSize:8, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:3 }}>{stat.lbl}</div>
@@ -816,16 +776,12 @@ export default function Entrenamiento({ clubId = "" }) {
                               </div>
                             ))}
                           </div>
-
-                          {/* Observaciones / nota */}
                           <div style={{ marginBottom: rpeEntries.length > 0 ? 16 : 0 }}>
                             <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:6 }}>Observaciones</div>
                             <div style={{ fontSize:12, color: s.nota ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)", fontStyle: s.nota ? "normal" : "italic", lineHeight:1.5 }}>
                               {s.nota || "Sin observaciones registradas."}
                             </div>
                           </div>
-
-                          {/* RPE individual por atleta */}
                           {rpeEntries.length > 0 && (
                             <div>
                               <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"1px", color:"rgba(255,255,255,0.25)", marginBottom:8 }}>RPE individual</div>
@@ -833,17 +789,13 @@ export default function Entrenamiento({ clubId = "" }) {
                                 {rpeEntries
                                   .sort((a, b) => Number(b[1]) - Number(a[1]))
                                   .map(([athleteId, rpe]) => {
-                                    const athlete = athletes.find(a => String(a.id) === String(athleteId));
+                                    const ath = athletes.find(a => String(a.id) === String(athleteId));
                                     const rpeVal = Number(rpe);
                                     const barColor = rpeVal <= 3 ? PALETTE.green : rpeVal <= 7 ? PALETTE.amber : PALETTE.danger;
                                     return (
-                                      <div
-                                        key={athleteId}
-                                        className="ent-athlete-rpe-row"
-                                        style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", borderRadius:6, background:"rgba(0,0,0,0.3)" }}
-                                      >
+                                      <div key={athleteId} style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 8px", borderRadius:6, background:"rgba(0,0,0,0.3)" }}>
                                         <div style={{ fontSize:11, color:"#1F1F1D", flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                                          {athlete ? athlete.name : `#${athleteId}`}
+                                          {ath ? ath.name : `#${athleteId}`}
                                         </div>
                                         <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                                           <div style={{ width:40, height:3, background:"rgba(255,255,255,0.08)", borderRadius:2, overflow:"hidden" }}>
@@ -857,8 +809,6 @@ export default function Entrenamiento({ clubId = "" }) {
                               </div>
                             </div>
                           )}
-
-                          {/* Guardado en */}
                           {s.savedAt && (
                             <div style={{ marginTop:12, fontSize:9, color:"rgba(255,255,255,0.15)" }}>
                               Guardado: {new Date(s.savedAt).toLocaleString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}
@@ -875,22 +825,20 @@ export default function Entrenamiento({ clubId = "" }) {
         </div>
       )}
 
-      {/* ── ANÁLISIS tab — datos reales desde localStorage/historial ── */}
+      {/* ── ANÁLISIS ── */}
       {tab === "analisis" && (() => {
-        /* Metricas calculadas desde datos reales */
-        const totalSesiones = historial.length;
-        const sesionesConRpe = historial.filter(s => s.rpeAvg != null && s.rpeAvg !== "—");
-        const rpeGlobal = sesionesConRpe.length > 0
+        const totalSesiones    = historial.length;
+        const sesionesConRpe   = historial.filter(s => s.rpeAvg != null && s.rpeAvg !== "—");
+        const rpeGlobal        = sesionesConRpe.length > 0
           ? (sesionesConRpe.reduce((s, h) => s + Number(h.rpeAvg), 0) / sesionesConRpe.length).toFixed(1)
           : "—";
-        const picoRpe = sesionesConRpe.length > 0
+        const picoRpe          = sesionesConRpe.length > 0
           ? Math.max(...sesionesConRpe.map(h => Number(h.rpeAvg))).toFixed(1)
           : "—";
         const asistenciaGlobal = totalSesiones > 0
           ? Math.round((historial.reduce((s, h) => s + h.presentes, 0) / historial.reduce((s, h) => s + h.total, 0)) * 100)
           : 0;
 
-        /* Agrupacion tecnico vs fisico con RPE promedio por categoria */
         const categorias = {
           "Tecnico/Tactico": { tipos: ["Táctica", "Tactica"], count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.purple },
           "Fisico":          { tipos: ["Físico", "Fisico"],   count: 0, rpeSum: 0, rpeN: 0, color: PALETTE.amber },
@@ -908,9 +856,8 @@ export default function Entrenamiento({ clubId = "" }) {
         });
         const maxCount = Math.max(...Object.values(categorias).map(c => c.count), 1);
 
-        // Sparkline data: ultimas 8 sesiones para tendencia visual
-        const last8 = historial.slice(0, 8).reverse();
-        const sparkAsist = last8.map(s => s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0);
+        const last8       = historial.slice(0, 8).reverse();
+        const sparkAsist  = last8.map(s => s.total > 0 ? Math.round((s.presentes / s.total) * 100) : 0);
         const sparkRpeArr = last8.map(s => Number(s.rpeAvg) || 0);
         const sparkSesiones = last8.map((_, i) => i + 1);
 
@@ -947,25 +894,12 @@ export default function Entrenamiento({ clubId = "" }) {
 
         return (
           <div style={{ padding:16 }}>
-            {/* KPIs interactivas con sparklines */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, marginBottom:16 }}>
               {kpiItems.map((m, i) => (
-                <div
-                  key={i}
-                  className="ent-kpi-card"
+                <div key={i} className="ent-kpi-card"
                   onClick={() => setTab("historial")}
-                  style={{
-                    background: PALETTE.surface,
-                    border:`1px solid ${PALETTE.border}`,
-                    borderRadius:16,
-                    padding:14,
-                    boxShadow:"0 14px 28px rgba(23,26,28,0.08)",
-                    cursor:"pointer",
-                    position:"relative",
-                    overflow:"hidden",
-                  }}
+                  style={{ background: PALETTE.surface, border:`1px solid ${PALETTE.border}`, borderRadius:16, padding:14, boxShadow:"0 14px 28px rgba(23,26,28,0.08)", cursor:"pointer", position:"relative", overflow:"hidden" }}
                 >
-                  
                   <div style={{ fontSize:9, textTransform:"uppercase", letterSpacing:"0.12em", color:PALETTE.textMuted, marginBottom:8 }}>{m.label}</div>
                   <div style={{ fontSize:24, fontWeight:700, color:m.color, lineHeight:1, marginBottom:8 }}>{m.value}</div>
                   <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:4 }}>
@@ -981,7 +915,6 @@ export default function Entrenamiento({ clubId = "" }) {
               ))}
             </div>
 
-            {/* Grafico de barras verticales: Tecnico vs Fisico vs Competitivo vs Recuperacion */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
               <GlassPanel padding="md">
                 <SectionLabel style={{ marginBottom:16 }}>Distribucion por categoria</SectionLabel>
@@ -999,7 +932,6 @@ export default function Entrenamiento({ clubId = "" }) {
                 </div>
               </GlassPanel>
 
-              {/* RPE promedio por categoria */}
               <GlassPanel padding="md">
                 <SectionLabel style={{ marginBottom:16 }}>RPE promedio por categoria</SectionLabel>
                 <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-around", height:120, gap:8 }}>
@@ -1019,7 +951,6 @@ export default function Entrenamiento({ clubId = "" }) {
               </GlassPanel>
             </div>
 
-            {/* Barras horizontales por tipo detallado */}
             <GlassPanel padding="md">
               <SectionLabel style={{ marginBottom:14 }}>Detalle por tipo de tarea</SectionLabel>
               {tipoStats.length === 0 && (
@@ -1045,38 +976,6 @@ export default function Entrenamiento({ clubId = "" }) {
           </div>
         );
       })()}
-
-      {/* ── Wellness Check-in Overlay ── */}
-      <AnimatePresence>
-        {wellnessTarget && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(23,26,28,0.28)",
-              backdropFilter: "blur(6px)",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onClick={() => setWellnessTarget(null)}
-          >
-            <div onClick={e => e.stopPropagation()}>
-              <WellnessCheckIn
-                athleteId={wellnessTarget.athlete.id}
-                athleteName={wellnessTarget.athlete.name}
-                clubId={clubId}
-                onSubmit={handleWellnessSubmit}
-                onClose={() => setWellnessTarget(null)}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Health Feedback Toast ── */}
       <AnimatePresence>
@@ -1104,16 +1003,11 @@ export default function Entrenamiento({ clubId = "" }) {
               minWidth: 240,
             }}
           >
-            {/* Health gauge mini */}
             <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
+              width: 44, height: 44, borderRadius: "50%",
               border: `3px solid ${healthFeedback.color}`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
               flexShrink: 0,
               background: `${healthFeedback.color}12`,
             }}>
@@ -1126,9 +1020,9 @@ export default function Entrenamiento({ clubId = "" }) {
                 {healthFeedback.athleteName} — Bateria actualizada
               </div>
               <div style={{ fontSize: 9, color: healthFeedback.color, textTransform: "uppercase", letterSpacing: "1px", marginTop: 2 }}>
-                {healthFeedback.riskLevel === "optimo" ? "Estado optimo" :
-                 healthFeedback.riskLevel === "precaucion" ? "Precaucion" :
-                 healthFeedback.riskLevel === "riesgo" ? "En riesgo" : "Sin datos"}
+                {healthFeedback.riskLevel === "optimo"    ? "Estado optimo"  :
+                 healthFeedback.riskLevel === "precaucion" ? "Precaucion"     :
+                 healthFeedback.riskLevel === "riesgo"     ? "En riesgo"      : "Sin datos"}
               </div>
             </div>
           </motion.div>
@@ -1137,6 +1031,3 @@ export default function Entrenamiento({ clubId = "" }) {
     </div>
   );
 }
-
-
-
