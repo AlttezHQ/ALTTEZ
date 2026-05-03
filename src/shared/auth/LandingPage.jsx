@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, Trophy, Globe, Layers, ShieldCheck, Monitor, User, ArrowRight, Star } from "lucide-react";
+import { Users, Trophy, Globe, Layers, ShieldCheck, Monitor, User, UserPlus, ArrowRight, Star } from "lucide-react";
 import { PALETTE } from "../tokens/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 import { ROLES } from "../constants/roles";
@@ -9,6 +9,8 @@ import { isSupabaseReady } from "../lib/supabase";
 
 const BRAND_SYMBOL = "/branding/alttez-symbol-transparent.png";
 const EASE = [0.22, 1, 0.36, 1];
+const SPRING = { type: "spring", stiffness: 360, damping: 28 };
+const SPRING_FAST = { type: "spring", stiffness: 400, damping: 28 };
 const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
 
 const CU = "#C9973A";
@@ -159,91 +161,118 @@ function TopBack({ onClick, label = "Volver al inicio" }) {
 
 function MiniCRMPreview() {
   return (
-    <div
-      className="ldg-crm-preview"
-      style={{
-        width: 310, flexShrink: 0,
-        borderRadius: 12, overflow: "hidden",
-        border: "1px solid #E9E2D7",
-        boxShadow: "0 14px 40px rgba(23,26,28,0.16)",
-        background: "#F6F1EA",
-        pointerEvents: "none", userSelect: "none",
-      }}
+    <motion.div
+      animate={{ y: [0, -6, 0] }}
+      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      style={{ flexShrink: 0 }}
     >
-      {/* Navbar */}
-      <div style={{ background: "#FAFAF8", borderBottom: "1px solid #E9E2D7", padding: "5px 8px", display: "flex", alignItems: "center", gap: 4 }}>
-        <div style={{ width: 13, height: 13, background: "#171A1C", borderRadius: 3, flexShrink: 0 }} />
-        <span style={{ fontSize: 7.5, fontWeight: 900, letterSpacing: "-0.04em", color: "#171A1C", marginRight: 4 }}>ALTTEZ</span>
-        {["Inicio", "Entrenamiento", "Plantilla", "Calendario", "Reportes", "Mi Club"].map(t => (
-          <span key={t} style={{ fontSize: 5.5, color: "#8A8580", marginRight: 3 }}>{t}</span>
-        ))}
-        <div style={{ marginLeft: "auto", width: 16, height: 16, borderRadius: 999, background: "#C9973A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 6, color: "#fff", fontWeight: 800 }}>AD</span>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ display: "flex", height: 198 }}>
-        {/* Sidebar */}
-        <div style={{ width: 26, background: "#FAFAF8", borderRight: "1px solid #E9E2D7", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 10, gap: 8 }}>
-          {[true, false, false, false, false].map((active, i) => (
-            <div key={i} style={{ width: 14, height: 14, borderRadius: 4, background: active ? "#C9973A" : "#E9E2D7" }} />
+      <div
+        className="ldg-crm-preview"
+        style={{
+          width: 310, flexShrink: 0,
+          borderRadius: 12, overflow: "hidden",
+          border: "1px solid #E9E2D7",
+          boxShadow: "0 14px 40px rgba(23,26,28,0.16)",
+          background: "#F6F1EA",
+          pointerEvents: "none", userSelect: "none",
+        }}
+      >
+        {/* Navbar */}
+        <div style={{ background: "#FAFAF8", borderBottom: "1px solid #E9E2D7", padding: "5px 8px", display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ width: 13, height: 13, background: "#171A1C", borderRadius: 3, flexShrink: 0 }} />
+          <span style={{ fontSize: 7.5, fontWeight: 900, letterSpacing: "-0.04em", color: "#171A1C", marginRight: 4 }}>ALTTEZ</span>
+          {["Inicio", "Entrenamiento", "Plantilla", "Calendario", "Reportes", "Mi Club"].map(t => (
+            <span key={t} style={{ fontSize: 5.5, color: "#8A8580", marginRight: 3 }}>{t}</span>
           ))}
+          <span style={{ marginLeft: "auto", fontSize: 5.5, color: "#8A8580", marginRight: 4 }}>DEMO</span>
+          <div style={{ width: 16, height: 16, borderRadius: 999, background: "#C9973A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: 6, color: "#fff", fontWeight: 800 }}>AD</span>
+          </div>
         </div>
 
-        {/* Main */}
-        <div style={{ flex: 1, padding: "8px", overflow: "hidden" }}>
-          <div style={{ fontSize: 7, fontWeight: 800, color: "#171A1C", marginBottom: 1 }}>Hola, Águilas de Lucero</div>
-          <div style={{ fontSize: 5.5, color: "#8A8580", marginBottom: 7 }}>Temporada 2025–26</div>
-
-          {/* KPIs */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3, marginBottom: 7 }}>
-            {[["18","Plantilla"],["7","Partidos"],["5","Sesiones"],["82%","Asistencia"]].map(([v,l]) => (
-              <div key={l} style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 3px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 800, color: "#171A1C" }}>{v}</div>
-                <div style={{ fontSize: 4.5, color: "#8A8580" }}>{l}</div>
-              </div>
+        {/* Body */}
+        <div style={{ display: "flex", height: 198 }}>
+          {/* Sidebar */}
+          <div style={{ width: 26, background: "#FAFAF8", borderRight: "1px solid #E9E2D7", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 10, gap: 8 }}>
+            {[true, false, false, false, false].map((active, i) => (
+              <div key={i} style={{ width: 14, height: 14, borderRadius: 4, background: active ? "#C9973A" : "#E9E2D7" }} />
             ))}
           </div>
 
-          {/* Module cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginBottom: 7 }}>
-            {[["Entrenamiento","Carga y sesiones"],["Gestión Plantilla","Roles y contratos"]].map(([t,s]) => (
-              <div key={t} style={{ borderRadius: 6, background: "linear-gradient(150deg,#1C1C1A,#2A2A28)", padding: "7px 6px" }}>
-                <div style={{ fontSize: 6, fontWeight: 800, color: "#fff" }}>{t}</div>
-                <div style={{ fontSize: 4.5, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{s}</div>
-                <div style={{ marginTop: 5, fontSize: 5.5, color: "#C9973A", fontWeight: 700 }}>Entrar →</div>
-              </div>
-            ))}
-          </div>
+          {/* Main */}
+          <div style={{ flex: 1, padding: "8px", overflow: "hidden" }}>
+            <div style={{ fontSize: 7, fontWeight: 800, color: "#171A1C", marginBottom: 1 }}>Hola, Águilas de Lucero</div>
+            <div style={{ fontSize: 5.5, color: "#8A8580", marginBottom: 7 }}>Temporada 2025–26</div>
 
-          {/* Próximo evento */}
-          <div style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px", display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
-            <div style={{ width: 16, height: 16, borderRadius: 4, background: "#F6F1EA", border: "1px solid #E9E2D7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 7, color: "#C9973A" }}>◆</span>
-            </div>
-            <div style={{ overflow: "hidden" }}>
-              <div style={{ fontSize: 4.5, color: "#8A8580", textTransform: "uppercase", letterSpacing: "0.04em" }}>PRÓXIMO EVENTO</div>
-              <div style={{ fontSize: 5.5, fontWeight: 700, color: "#171A1C", whiteSpace: "nowrap" }}>Águilas vs Deportivo Sur · Sáb 10 May</div>
-            </div>
-          </div>
-
-          {/* Financial */}
-          <div style={{ background: "linear-gradient(135deg,#F6F1EA,#FDFDFB)", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px" }}>
-            <div style={{ fontSize: 5, color: "#8A8580", marginBottom: 3 }}>Salud financiera del club</div>
-            <div style={{ display: "flex", gap: 3 }}>
-              {["Resumen general","Indicadores clave"].map(t => (
-                <span key={t} style={{ fontSize: 4.5, color: "#8A8580", background: "#fff", border: "1px solid #E9E2D7", borderRadius: 3, padding: "2px 4px" }}>{t}</span>
+            {/* KPIs */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3, marginBottom: 7 }}>
+              {[["18","Plantilla","Jugadores"],["7","Partidos","Próximos"],["5","Sesiones","Esta semana"],["82%","Asistencia","Promedio de"]].map(([v,l,s]) => (
+                <div key={l} style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 3px", textAlign: "center" }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: "#171A1C" }}>{v}</div>
+                  <div style={{ fontSize: 4, color: "#8A8580" }}>{s}</div>
+                  <div style={{ fontSize: 4.5, color: "#8A8580", fontWeight: 600 }}>{l}</div>
+                </div>
               ))}
             </div>
+
+            {/* Module cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginBottom: 7 }}>
+              {[
+                ["Entrenamiento","Planifica sesiones, ejercicios y cargas de trabajo.","Entrar →"],
+                ["Gestión de plantilla","Roles, contratos y planificación deportiva.","Ver plantilla →"],
+              ].map(([t,s,cta]) => (
+                <div key={t} style={{ borderRadius: 6, background: "linear-gradient(150deg,#1C1C1A,#2A2A28)", padding: "7px 6px" }}>
+                  <div style={{ fontSize: 6, fontWeight: 800, color: "#fff" }}>{t}</div>
+                  <div style={{ fontSize: 4.5, color: "rgba(255,255,255,0.55)", marginTop: 1, lineHeight: 1.4 }}>{s}</div>
+                  <div style={{ marginTop: 5, fontSize: 5.5, color: "#C9973A", fontWeight: 700 }}>{cta}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Próximo evento */}
+            <div style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px", display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
+              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#F6F1EA", border: "1px solid #E9E2D7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 7, color: "#C9973A" }}>◆</span>
+              </div>
+              <div style={{ overflow: "hidden", flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: 4.5, color: "#8A8580", textTransform: "uppercase", letterSpacing: "0.04em" }}>Partido amistoso</div>
+                  <div style={{ fontSize: 4.5, color: "#C9973A", fontWeight: 600 }}>Ver calendario →</div>
+                </div>
+                <div style={{ fontSize: 5.5, fontWeight: 700, color: "#171A1C", whiteSpace: "nowrap" }}>ÁGUILAS DE LUCERO vs DEPORTIVO SUR</div>
+                <div style={{ fontSize: 4.5, color: "#8A8580" }}>Sáb 10 May · 17:00h · Campo A</div>
+              </div>
+            </div>
+
+            {/* Financial */}
+            <div style={{ background: "linear-gradient(135deg,#F6F1EA,#FDFDFB)", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px", display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#fff", border: "1px solid #E9E2D7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 7, color: "#C9973A" }}>$</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 5, color: "#8A8580", fontWeight: 600 }}>Salud financiera del club</div>
+                <div style={{ display: "flex", gap: 3, marginTop: 2 }}>
+                  {["Resumen general","Indicadores clave"].map(t => (
+                    <span key={t} style={{ fontSize: 4.5, color: "#8A8580", background: "#fff", border: "1px solid #E9E2D7", borderRadius: 3, padding: "2px 4px" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 // ── Mini club list (Clubes card) ──────────────────────────────────────────────
+
+const CLUB_AVATARS = [
+  { bg: "rgba(201,151,58,0.18)", color: CU },
+  { bg: "rgba(47,165,111,0.18)", color: "#2FA56F" },
+  { bg: "rgba(91,139,245,0.18)", color: "#5B8BF5" },
+  { bg: "rgba(217,92,92,0.18)", color: "#D95C5C" },
+];
 
 function MiniClubList() {
   return (
@@ -254,9 +283,17 @@ function MiniClubList() {
         ["Deportivo Sur","Inferiores"],
         ["Unión Deportiva","Juveniles"],
         ["Escuela Central","Escuelita"],
-      ].map(([name, cat]) => (
+      ].map(([name, cat], i) => (
         <div key={name} style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "#F6F1EA", border: `1px solid ${PALETTE.border}`, flexShrink: 0 }} />
+          <div style={{
+            width: 24, height: 24, borderRadius: 7,
+            background: CLUB_AVATARS[i].bg,
+            border: `1px solid ${CLUB_AVATARS[i].color}44`,
+            flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: CLUB_AVATARS[i].color }}>{name[0]}</span>
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: PALETTE.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
             <div style={{ fontSize: 9.5, color: PALETTE.textMuted }}>{cat}</div>
@@ -271,17 +308,23 @@ function MiniClubList() {
 
 // ── Mini fixture (Torneos card) ───────────────────────────────────────────────
 
+const MATCH_AVATARS = [
+  [{ bg: "rgba(201,151,58,0.18)", color: CU }, { bg: "rgba(47,165,111,0.18)", color: "#2FA56F" }],
+  [{ bg: "rgba(91,139,245,0.18)", color: "#5B8BF5" }, { bg: "rgba(217,92,92,0.18)", color: "#D95C5C" }],
+  [{ bg: "rgba(47,165,111,0.18)", color: "#2FA56F" }, { bg: "rgba(201,151,58,0.18)", color: CU }],
+];
+
 function MiniFixture() {
   return (
     <div className="ldg-mini-fixture" style={{ width: 192, flexShrink: 0 }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 8 }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: PALETTE.text, lineHeight: 1.3 }}>Apertura 2024 · Cat. Sub 14</div>
-        <span style={{ fontSize: 9.5, color: CU, fontWeight: 700, whiteSpace: "nowrap", cursor: "pointer" }}>Ver torneo ↗</span>
+        <span style={{ fontSize: 9.5, color: CU, fontWeight: 700, whiteSpace: "nowrap", cursor: "pointer" }}>Ver torneo público ↗</span>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", borderBottom: `1px solid ${PALETTE.border}`, marginBottom: 7 }}>
-        {["Próximos partidos","Resultados","Tabla"].map((t, i) => (
+        {["Próximos partidos","Resultados","Tabla de posiciones"].map((t, i) => (
           <div key={t} style={{
             fontSize: 8.5, fontWeight: i === 0 ? 700 : 400,
             color: i === 0 ? CU : PALETTE.textMuted,
@@ -295,19 +338,23 @@ function MiniFixture() {
 
       {/* Matches */}
       {[
-        ["Club Atlético Norte","Deportivo Sur","Sáb 10/05"],
-        ["Unión Deportiva","Escuela Central","Sáb 10/05"],
-        ["Juventud FC","Deportivo Centro","Dom 11/05"],
-      ].map(([home, away, date]) => (
+        ["C","Club Atlético Norte","D","Deportivo Sur","Sáb 10/05","17:00"],
+        ["U","Unión Deportiva","E","Escuela Central","Sáb 10/05","17:00"],
+        ["J","Juventud FC","DC","Deportivo Centro","Dom 11/05","09:00"],
+      ].map(([hi, home, ai, away, date, time], idx) => (
         <div key={home} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
-          <div style={{ width: 16, height: 16, borderRadius: 4, background: "#F6F1EA", border: `1px solid ${PALETTE.border}`, flexShrink: 0 }} />
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: MATCH_AVATARS[idx][0].bg, border: `1px solid ${MATCH_AVATARS[idx][0].color}44`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 6.5, fontWeight: 800, color: MATCH_AVATARS[idx][0].color }}>{hi}</span>
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 9.5, fontWeight: 600, color: PALETTE.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {home} <span style={{ color: PALETTE.textMuted, fontWeight: 400 }}>vs</span> {away}
             </div>
-            <div style={{ fontSize: 8.5, color: PALETTE.textMuted }}>{date}</div>
+            <div style={{ fontSize: 8.5, color: PALETTE.textMuted }}>{date} · {time}</div>
           </div>
-          <div style={{ width: 16, height: 16, borderRadius: 4, background: "#F6F1EA", border: `1px solid ${PALETTE.border}`, flexShrink: 0 }} />
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: MATCH_AVATARS[idx][1].bg, border: `1px solid ${MATCH_AVATARS[idx][1].color}44`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 6.5, fontWeight: 800, color: MATCH_AVATARS[idx][1].color }}>{ai}</span>
+          </div>
         </div>
       ))}
       <div style={{ marginTop: 8, fontSize: 10, color: CU, fontWeight: 700, cursor: "pointer" }}>Ver fixture completo →</div>
@@ -395,6 +442,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
+            whileHover={{ boxShadow: "0 32px 80px rgba(23,26,28,0.13)" }}
             transition={{ duration: 0.58, ease: EASE }}
             className="ldg-card"
             style={{
@@ -414,14 +462,18 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               </div>
             </div>
 
-            {/* Badge */}
+            {/* Badge with pulsing dot */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 7,
               padding: "6px 12px", borderRadius: 999,
               background: CU_SOFT, border: `1px solid ${CU_BORDER}`,
               color: PALETTE.text, fontSize: 10.5, fontWeight: 700, marginBottom: 20,
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: CU, flexShrink: 0 }} />
+              <motion.span
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.55, 1] }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                style={{ width: 6, height: 6, borderRadius: "50%", background: CU, flexShrink: 0, display: "inline-block" }}
+              />
               Nuevo ecosistema ALTTEZ
             </div>
 
@@ -439,40 +491,53 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               <MiniCRMPreview />
             </div>
 
-            {/* Module chips */}
+            {/* Module chips — staggered */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
               {[
                 [<Users size={14} key="u" />, "Clubes", "Planifica, entrena y administra cada área del club con una visión integral."],
                 [<Trophy size={14} key="t" />, "Torneos", "Crea competiciones, gestiona partidos, resultados y tablas en tiempo real."],
                 [<Globe size={14} key="g" />, "Vista pública", "Calendarios, resultados y estadísticas con identidad profesional."],
-              ].map(([icon, title, copy]) => (
-                <div key={title} style={{ padding: "13px 11px", borderRadius: 14, background: "#FFFDFC", border: `1px solid ${PALETTE.border}` }}>
+              ].map(([icon, title, copy], i) => (
+                <motion.div
+                  key={title}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: 0.28 + i * 0.08, ease: EASE }}
+                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(23,26,28,0.09)" }}
+                  style={{ padding: "13px 11px", borderRadius: 14, background: "#FFFDFC", border: `1px solid ${PALETTE.border}`, cursor: "default" }}
+                >
                   <div style={{ color: CU, marginBottom: 7 }}>{icon}</div>
                   <div style={{ fontSize: 11.5, fontWeight: 800, color: PALETTE.text, marginBottom: 4 }}>{title}</div>
                   <div style={{ fontSize: 10.5, color: PALETTE.textMuted, lineHeight: 1.55 }}>{copy}</div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            {/* Benefits bar */}
+            {/* Benefits bar — staggered */}
             <div style={{ paddingTop: 16, borderTop: `1px solid ${PALETTE.border}`, display: "flex" }}>
               {[
                 [<Layers size={12} key="l" />, "2 módulos", "Clubes y Torneos"],
                 [<ShieldCheck size={12} key="s" />, "Gestión centralizada", "Datos y procesos unificados"],
                 [<Monitor size={12} key="m" />, "Vista pública profesional", "Transparencia y comunicación"],
               ].map(([icon, title, sub], i) => (
-                <div key={title} style={{
-                  flex: 1, display: "flex", alignItems: "center", gap: 8,
-                  paddingLeft: i > 0 ? 14 : 0,
-                  borderLeft: i > 0 ? `1px solid ${PALETTE.border}` : "none",
-                  marginLeft: i > 0 ? 14 : 0,
-                }}>
+                <motion.div
+                  key={title}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.45 + i * 0.09, ease: EASE }}
+                  style={{
+                    flex: 1, display: "flex", alignItems: "center", gap: 8,
+                    paddingLeft: i > 0 ? 14 : 0,
+                    borderLeft: i > 0 ? `1px solid ${PALETTE.border}` : "none",
+                    marginLeft: i > 0 ? 14 : 0,
+                  }}
+                >
                   <div style={{ color: CU, flexShrink: 0 }}>{icon}</div>
                   <div>
                     <div style={{ fontSize: 10.5, fontWeight: 800, color: PALETTE.text }}>{title}</div>
                     <div style={{ fontSize: 9.5, color: PALETTE.textMuted }}>{sub}</div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -487,13 +552,19 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
           >
 
             {/* ALTTEZ Clubes */}
-            <div style={{
-              padding: "22px 20px",
-              borderRadius: 22,
-              background: "#FFFFFF",
-              border: `1px solid ${PALETTE.border}`,
-              boxShadow: "0 16px 44px rgba(23,26,28,0.08)",
-            }}>
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.52, delay: 0.10, ease: EASE }}
+              whileHover={{ y: -3, boxShadow: "0 24px 56px rgba(23,26,28,0.12)" }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "#FFFFFF",
+                border: `1px solid ${PALETTE.border}`,
+                boxShadow: "0 16px 44px rgba(23,26,28,0.08)",
+              }}
+            >
               <div className="ldg-card-inner" style={{ display: "flex", gap: 18 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: CU, marginBottom: 7 }}>
@@ -511,44 +582,67 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button
+                    <motion.button
                       onClick={onDemo}
+                      whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
                       style={{ flex: 1, minHeight: 38, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
                     >
                       Explorar demo →
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
                       onClick={() => setStep("register")}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                      whileHover={{ y: -1, borderColor: CU, color: CU }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                     >
-                      Registrar club
-                    </button>
+                      <UserPlus size={12} /> Registrar club
+                    </motion.button>
                   </div>
                 </div>
                 <MiniClubList />
               </div>
-            </div>
+            </motion.div>
 
             {/* ALTTEZ Torneos — highlighted */}
-            <div style={{
-              padding: "22px 20px",
-              borderRadius: 22,
-              background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,248,244,0.97) 100%)",
-              border: `1.5px solid ${CU_BORDER}`,
-              boxShadow: `0 16px 44px ${CU_SOFT}, 0 8px 24px rgba(23,26,28,0.06)`,
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              {/* MÓDULO DESTACADO badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.52, delay: 0.18, ease: EASE }}
+              whileHover={{ y: -3, boxShadow: `0 24px 56px rgba(201,151,58,0.22), 0 8px 24px rgba(23,26,28,0.08)` }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,248,244,0.97) 100%)",
+                border: `1.5px solid ${CU_BORDER}`,
+                boxShadow: `0 16px 44px ${CU_SOFT}, 0 8px 24px rgba(23,26,28,0.06)`,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Subtle copper shimmer accent */}
               <div style={{
-                position: "absolute", top: 13, right: 13,
-                fontSize: 8.5, fontWeight: 800, letterSpacing: "0.08em",
-                color: CU, background: "rgba(244,231,207,0.85)",
-                border: `1px solid ${CU_BORDER}`, borderRadius: 999,
-                padding: "3px 9px", display: "flex", alignItems: "center", gap: 4,
-              }}>
+                position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                background: `linear-gradient(90deg, transparent, ${CU}, transparent)`,
+                opacity: 0.6,
+              }} />
+
+              {/* MÓDULO DESTACADO badge */}
+              <motion.div
+                animate={{ opacity: [0.85, 1, 0.85] }}
+                transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                style={{
+                  position: "absolute", top: 13, right: 13,
+                  fontSize: 8.5, fontWeight: 800, letterSpacing: "0.08em",
+                  color: CU, background: "rgba(244,231,207,0.92)",
+                  border: `1px solid ${CU_BORDER}`, borderRadius: 999,
+                  padding: "3px 9px", display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
                 <Star size={8} fill="currentColor" /> MÓDULO DESTACADO
-              </div>
+              </motion.div>
 
               <div className="ldg-card-inner" style={{ display: "flex", gap: 18 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -567,28 +661,39 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                     ))}
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button
+                    <motion.button
                       onClick={onDemo}
+                      whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
                       style={{ flex: 1, minHeight: 38, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
                     >
                       Explorar demo →
-                    </button>
+                    </motion.button>
                     {/* TODO: navigate to /torneos/piloto when Torneos module ships */}
-                    <button
+                    <motion.button
                       onClick={() => navigate("/contacto")}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1.5px solid ${CU_BORDER}`, background: "transparent", color: CU, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                      whileHover={{ y: -1, background: CU_SOFT }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1.5px solid ${CU_BORDER}`, background: "transparent", color: CU, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                     >
                       Solicitar piloto
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
                 <MiniFixture />
               </div>
-            </div>
+            </motion.div>
 
             {/* Ya tengo cuenta */}
             {isSupabaseReady && (
-              <button
+              <motion.button
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.52, delay: 0.26, ease: EASE }}
+                whileHover={{ y: -2, boxShadow: "0 12px 32px rgba(23,26,28,0.10)", borderColor: CU_BORDER }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setStep("login")}
                 style={{
                   display: "flex", alignItems: "center", gap: 14,
@@ -611,8 +716,13 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                   <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: PALETTE.text }}>Ya tengo cuenta</div>
                   <div style={{ fontSize: 12, color: PALETTE.textMuted }}>Ingresar a mi espacio ALTTEZ</div>
                 </div>
-                <ArrowRight size={18} color={CU} />
-              </button>
+                <motion.div
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <ArrowRight size={18} color={CU} />
+                </motion.div>
+              </motion.button>
             )}
           </motion.div>
         </div>
