@@ -183,7 +183,7 @@ export function CRMApp() {
   const handleRegister = useCallback(async (form) => {
     // 1. Registrar en Supabase Auth (si disponible)
     if (isSupabaseReady && form.email && form.password) {
-      const { user, error } = await signUp({
+      const { user, session, error } = await signUp({
         email: form.email,
         password: form.password,
         fullName: form.entrenador || form.nombre,
@@ -193,8 +193,10 @@ export function CRMApp() {
         showToast(error, "error");
         return;
       }
-      if (user) {
+      // Sin sesión = email confirmation requerido; el usuario debe confirmar antes de continuar
+      if (!session) {
         showToast("Cuenta creada. Revisa tu correo para confirmar el acceso.", "info");
+        return;
       }
     }
 
@@ -215,11 +217,17 @@ export function CRMApp() {
     setActiveModule("home");
     setMode("production");
 
-    // 3. Crear club en Supabase y vincular al profile
+    // 3. Crear club en Supabase, vincular profile y cargar authProfile
     if (isSupabaseReady) {
       const clubId = await sbCreateClub(form, "production");
       if (clubId) {
         await linkProfileToClub(clubId);
+        const profile = await getProfile();
+        if (profile) {
+          setAuthProfile(profile);
+          setClubId(profile.club_id);
+          setHealthClubId(profile.club_id);
+        }
         showToast("Club registrado y sincronizado en la nube.", "info");
       }
     }

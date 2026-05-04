@@ -53,7 +53,7 @@ export async function signUp({ email, password, fullName, role = "admin" }) {
     return { user: null, error: msg };
   }
 
-  return { user: data.user, error: null };
+  return { user: data.user, session: data.session, error: null };
 }
 
 // ════════════════════════════════════════════════
