@@ -250,6 +250,7 @@ function MiniFixture() {
 export default function LandingPage({ onRegister, onLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState("landing");
+  const [source, setSource] = useState(null); // null | "torneos"
   const [form, setForm] = useState({
     nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
     temporada: "2025-26", categorias: "", campo: "",
@@ -268,7 +269,10 @@ export default function LandingPage({ onRegister, onLogin }) {
 
   const validateAndSubmit = async () => {
     const errs = {};
-    REQUIRED_FIELDS.forEach((k) => {
+    const requiredFields = source === "torneos"
+      ? ["nombre", "ciudad"]
+      : REQUIRED_FIELDS;
+    requiredFields.forEach((k) => {
       if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
     });
     const cleanEmail = sanitizeEmail(form.email);
@@ -294,6 +298,7 @@ export default function LandingPage({ onRegister, onLogin }) {
         consent_at: new Date().toISOString(),
         consent_version: "1.0",
         guardian_consent: consentGuardian,
+        redirectPath: source === "torneos" ? "/torneos" : undefined,
       });
       setLoading(false);
     }
@@ -307,7 +312,11 @@ export default function LandingPage({ onRegister, onLogin }) {
     setErrors(errs);
     if (Object.keys(errs).length === 0 && onLogin) {
       setLoading(true);
-      await onLogin({ email: cleanEmail, password: loginForm.password });
+      await onLogin({
+        email: cleanEmail,
+        password: loginForm.password,
+        redirectPath: source === "torneos" ? "/torneos" : undefined,
+      });
       setLoading(false);
     }
   };
@@ -385,7 +394,7 @@ export default function LandingPage({ onRegister, onLogin }) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <motion.button
-                      onClick={() => setStep("register")}
+                      onClick={() => { setSource(null); setStep("register"); }}
                       whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
@@ -394,7 +403,7 @@ export default function LandingPage({ onRegister, onLogin }) {
                       <UserPlus size={12} /> Registrar club
                     </motion.button>
                     <motion.button
-                      onClick={() => setStep("login")}
+                      onClick={() => { setSource(null); setStep("login"); }}
                       whileHover={{ y: -1, borderColor: CU, color: CU }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
@@ -464,16 +473,16 @@ export default function LandingPage({ onRegister, onLogin }) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <motion.button
-                      onClick={() => setStep("register")}
+                      onClick={() => { setSource("torneos"); setStep("register"); }}
                       whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
                       style={{ flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     >
-                      <UserPlus size={12} /> Registrar club
+                      <UserPlus size={12} /> Registrar
                     </motion.button>
                     <motion.button
-                      onClick={() => setStep("login")}
+                      onClick={() => { setSource("torneos"); setStep("login"); }}
                       whileHover={{ y: -1, borderColor: CU, color: CU }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
@@ -519,48 +528,71 @@ export default function LandingPage({ onRegister, onLogin }) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
             <BrandSymbol />
             <div>
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Registrar club</div>
-              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Datos operativos y acceso principal</div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>
+                {source === "torneos" ? "Registrar en Torneos" : "Registrar club"}
+              </div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>
+                {source === "torneos" ? "Datos del organizador y acceso" : "Datos operativos y acceso principal"}
+              </div>
             </div>
           </div>
 
-          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Nombre del club *" error={errors.nombre}>
-              <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Águilas del Lucero" maxLength={60} />
-            </FieldGroup>
-            <FieldGroup label="Disciplina" error={null}>
-              <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
-                {["Futbol", "Futsal", "Baloncesto", "Voleibol", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </FieldGroup>
-          </div>
-
-          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Ciudad *" error={errors.ciudad}>
-              <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
-            </FieldGroup>
-            <FieldGroup label="Director técnico *" error={errors.entrenador}>
-              <input style={mkInput(errors.entrenador)} value={form.entrenador} onChange={(e) => updateField("entrenador", sanitizeText(e.target.value))} placeholder="Nombre completo" maxLength={60} />
-            </FieldGroup>
-          </div>
-
-          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Categoría principal *" error={errors.categorias}>
-              <input style={mkInput(errors.categorias)} value={form.categorias} onChange={(e) => updateField("categorias", sanitizeText(e.target.value))} placeholder="Ej: Sub-17" maxLength={30} />
-            </FieldGroup>
-            <FieldGroup label="Temporada" error={null}>
-              <input style={mkInput(false)} value={form.temporada} onChange={(e) => updateField("temporada", e.target.value)} placeholder="2025-26" maxLength={10} />
-            </FieldGroup>
-          </div>
-
-          <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <FieldGroup label="Campo / Cancha" error={null}>
-              <input style={mkInput(false)} value={form.campo} onChange={(e) => updateField("campo", sanitizeText(e.target.value))} placeholder="Ej: Estadio Sur" maxLength={60} />
-            </FieldGroup>
-            <FieldGroup label="Teléfono" error={null}>
-              <input style={mkInput(false)} value={form.telefono} onChange={(e) => updateField("telefono", sanitizePhone(e.target.value))} placeholder="300 123 4567" maxLength={20} />
-            </FieldGroup>
-          </div>
+          {source === "torneos" ? (
+            /* ── Torneos registration form ── */
+            <>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Nombre del organizador *" error={errors.nombre}>
+                  <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Liga Norte" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Ciudad *" error={errors.ciudad}>
+                  <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
+                </FieldGroup>
+              </div>
+              <FieldGroup label="Deporte principal" error={null}>
+                <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
+                  {["Fútbol", "Futsal", "Baloncesto", "Voleibol", "Rugby", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </FieldGroup>
+            </>
+          ) : (
+            /* ── Clubes registration form ── */
+            <>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Nombre del club *" error={errors.nombre}>
+                  <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Águilas del Lucero" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Disciplina" error={null}>
+                  <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
+                    {["Futbol", "Futsal", "Baloncesto", "Voleibol", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Ciudad *" error={errors.ciudad}>
+                  <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Director técnico *" error={errors.entrenador}>
+                  <input style={mkInput(errors.entrenador)} value={form.entrenador} onChange={(e) => updateField("entrenador", sanitizeText(e.target.value))} placeholder="Nombre completo" maxLength={60} />
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Categoría principal *" error={errors.categorias}>
+                  <input style={mkInput(errors.categorias)} value={form.categorias} onChange={(e) => updateField("categorias", sanitizeText(e.target.value))} placeholder="Ej: Sub-17" maxLength={30} />
+                </FieldGroup>
+                <FieldGroup label="Temporada" error={null}>
+                  <input style={mkInput(false)} value={form.temporada} onChange={(e) => updateField("temporada", e.target.value)} placeholder="2025-26" maxLength={10} />
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Campo / Cancha" error={null}>
+                  <input style={mkInput(false)} value={form.campo} onChange={(e) => updateField("campo", sanitizeText(e.target.value))} placeholder="Ej: Estadio Sur" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Teléfono" error={null}>
+                  <input style={mkInput(false)} value={form.telefono} onChange={(e) => updateField("telefono", sanitizePhone(e.target.value))} placeholder="300 123 4567" maxLength={20} />
+                </FieldGroup>
+              </div>
+            </>
+          )}
 
           <div style={{ marginTop: 6, paddingTop: 18, borderTop: `1px solid ${PALETTE.border}` }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 12 }}>Cuenta de acceso</div>
@@ -574,11 +606,13 @@ export default function LandingPage({ onRegister, onLogin }) {
             </div>
           </div>
 
-          <FieldGroup label="Tu rol en el club" error={errors.role}>
-            <select style={{ ...mkInput(errors.role), cursor: "pointer" }} value={form.role} onChange={(e) => updateField("role", e.target.value)}>
-              {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key}>{r.label}</option>)}
-            </select>
-          </FieldGroup>
+          {source !== "torneos" && (
+            <FieldGroup label="Tu rol en el club" error={errors.role}>
+              <select style={{ ...mkInput(errors.role), cursor: "pointer" }} value={form.role} onChange={(e) => updateField("role", e.target.value)}>
+                {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key}>{r.label}</option>)}
+              </select>
+            </FieldGroup>
+          )}
 
           <div style={{ marginTop: 8, padding: "18px", borderRadius: 18, background: "#FFFCF7", border: `1px solid ${PALETTE.border}` }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 10 }}>Autorización de datos</div>
@@ -594,34 +628,38 @@ export default function LandingPage({ onRegister, onLogin }) {
             </label>
             {errors.consentData && <div style={{ fontSize: 10, color: PALETTE.danger, marginBottom: 10 }}>{errors.consentData}</div>}
 
-            <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-              <input type="checkbox" checked={consentGuardian} onChange={(e) => { setConsentGuardian(e.target.checked); if (errors.consentGuardian) setErrors((p) => { const n = { ...p }; delete n.consentGuardian; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
-              <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
-                Certifico la autorización de padres o tutores si se registran menores de edad.
-              </span>
-            </label>
-            {errors.consentGuardian && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 8 }}>{errors.consentGuardian}</div>}
+            {source !== "torneos" && (
+              <>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <input type="checkbox" checked={consentGuardian} onChange={(e) => { setConsentGuardian(e.target.checked); if (errors.consentGuardian) setErrors((p) => { const n = { ...p }; delete n.consentGuardian; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
+                  <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
+                    Certifico la autorización de padres o tutores si se registran menores de edad.
+                  </span>
+                </label>
+                {errors.consentGuardian && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 8 }}>{errors.consentGuardian}</div>}
+              </>
+            )}
           </div>
 
           <button
             onClick={validateAndSubmit}
-            disabled={loading || !consentData || !consentGuardian}
+            disabled={loading || !consentData || (source !== "torneos" && !consentGuardian)}
             style={{
               width: "100%",
               marginTop: 20,
               minHeight: 52,
               borderRadius: 14,
               border: "none",
-              background: loading || !consentData || !consentGuardian ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
-              color: loading || !consentData || !consentGuardian ? PALETTE.textMuted : "#FFFFFF",
+              background: (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
+              color: (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? PALETTE.textMuted : "#FFFFFF",
               fontSize: 12,
               fontWeight: 800,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              cursor: loading ? "wait" : (!consentData || !consentGuardian) ? "not-allowed" : "pointer",
+              cursor: loading ? "wait" : (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Registrando club..." : "Confirmar registro"}
+            {loading ? "Registrando..." : source === "torneos" ? "Crear cuenta en Torneos" : "Confirmar registro"}
           </button>
 
           {isSupabaseReady && (

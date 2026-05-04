@@ -186,7 +186,7 @@ export function CRMApp() {
       const { user, error } = await signUp({
         email: form.email,
         password: form.password,
-        fullName: form.entrenador,
+        fullName: form.entrenador || form.nombre,
         role: form.role || "admin",
       });
       if (error) {
@@ -196,6 +196,12 @@ export function CRMApp() {
       if (user) {
         showToast("Cuenta creada. Revisa tu correo para confirmar el acceso.", "info");
       }
+    }
+
+    // Torneos flow: skip CRM state setup, navigate directly
+    if (form.redirectPath) {
+      navigate(form.redirectPath);
+      return;
     }
 
     // 2. Configurar estado local (offline-first)
@@ -219,9 +225,10 @@ export function CRMApp() {
     }
   }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
 
-  const handleLogin = useCallback(async ({ email, password }) => {
+  const handleLogin = useCallback(async ({ email, password, redirectPath }) => {
     if (!isSupabaseReady) {
       showToast("Supabase no disponible — usa modo demo", "warning");
+      if (redirectPath) navigate(redirectPath);
       return;
     }
     const { user, error } = await signIn(email, password);
@@ -230,7 +237,14 @@ export function CRMApp() {
       return;
     }
 
-    // Cargar profile y club_id
+    // Non-CRM destination: skip CRM state setup
+    if (redirectPath) {
+      showToast(`Bienvenido`, "success");
+      navigate(redirectPath);
+      return;
+    }
+
+    // Cargar profile y club_id (CRM only)
     const profile = await getProfile();
     if (!profile?.club_id) {
       showToast("No se encontro un club vinculado a esta cuenta. Contacta al administrador.", "warning");
@@ -243,7 +257,7 @@ export function CRMApp() {
     setMode("production");
     setActiveModule("home");
     showToast(`Bienvenido, ${profile.full_name || user.email}`, "success");
-  }, [setSession, setMode]);
+  }, [setSession, setMode, navigate]);
 
   const handleLogout = useCallback(async () => {
     // Cerrar sesion Supabase Auth
