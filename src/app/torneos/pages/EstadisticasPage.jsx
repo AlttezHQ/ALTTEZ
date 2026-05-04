@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart2 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
+import { calcularPosiciones } from "../utils/fixturesEngine";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 
@@ -78,26 +79,25 @@ function TablaPosiciones({ posiciones, titulo }) {
 }
 
 export default function EstadisticasPage({ onGoTorneos }) {
-  const torneoActivoId       = useTorneosStore(s => s.torneoActivoId);
-  const getTorneoById        = useTorneosStore(s => s.getTorneoById);
-  const getPosiciones        = useTorneosStore(s => s.getPosicionesByTorneo);
-  const getEquipos           = useTorneosStore(s => s.getEquiposByTorneo);
-  const getPartidos          = useTorneosStore(s => s.getPartidosByTorneo);
+  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
+  const allTorneos     = useTorneosStore(s => s.torneos);
+  const allEquipos     = useTorneosStore(s => s.equipos);
+  const allPartidos    = useTorneosStore(s => s.partidos);
 
   if (!torneoActivoId) {
     return <ModuleEmptyState icon={BarChart2} title="Selecciona un torneo" subtitle="Abre un torneo para ver sus estadísticas." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
   }
 
-  const torneo   = getTorneoById(torneoActivoId);
-  const equipos  = getEquipos(torneoActivoId);
-  const partidos = getPartidos(torneoActivoId);
+  const torneo      = allTorneos.find(t => t.id === torneoActivoId) ?? null;
+  const equipos     = allEquipos.filter(e => e.torneoId === torneoActivoId);
+  const partidos    = allPartidos.filter(p => p.torneoId === torneoActivoId);
   const finalizados = partidos.filter(p => p.estado === "finalizado").length;
 
   if (!equipos.length) {
     return <ModuleEmptyState icon={BarChart2} title="Sin equipos" subtitle="Agrega equipos y registra resultados para ver la tabla de posiciones." />;
   }
 
-  const posiciones = getPosiciones(torneoActivoId);
+  const posiciones = calcularPosiciones(partidos, equipos);
 
   // Para grupos_playoffs, agrupar por grupo
   const grupos = torneo?.formato === "grupos_playoffs"

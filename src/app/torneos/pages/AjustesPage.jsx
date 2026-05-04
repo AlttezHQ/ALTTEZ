@@ -20,11 +20,11 @@ const SPORTS  = ["Fútbol", "Básquet", "Vóleibol", "Tenis", "Pádel", "Rugby",
 
 export default function AjustesPage({ onGoTorneos }) {
   const torneoActivoId   = useTorneosStore(s => s.torneoActivoId);
-  const getTorneoById    = useTorneosStore(s => s.getTorneoById);
+  const allTorneos       = useTorneosStore(s => s.torneos);
   const actualizarTorneo = useTorneosStore(s => s.actualizarTorneo);
   const publicarTorneo   = useTorneosStore(s => s.publicarTorneo);
 
-  const torneo = getTorneoById(torneoActivoId);
+  const torneo = allTorneos.find(t => t.id === torneoActivoId) ?? null;
 
   const [form, setForm]     = useState({ nombre: "", deporte: "", fechaInicio: "" });
   const [saved, setSaved]   = useState(false);

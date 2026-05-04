@@ -104,7 +104,9 @@ function ImportModal({ onClose }) {
 
 export default function TorneosApp() {
   const navigate = useNavigate();
-  const torneoActivo = useTorneosStore(s => s.getTorneoActivo?.() ?? null);
+  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
+  const torneos        = useTorneosStore(s => s.torneos);
+  const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
   const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
@@ -142,6 +144,7 @@ export default function TorneosApp() {
                   onCreate={handleCreate}
                   onImport={handleImport}
                   onInfoClick={goTo}
+                  onNavigate={goTo}
                 />
               </motion.div>
             )}

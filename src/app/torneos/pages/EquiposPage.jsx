@@ -21,11 +21,11 @@ const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 export default function EquiposPage({ onGoTorneos }) {
   const torneoActivoId   = useTorneosStore(s => s.torneoActivoId);
-  const getEquipos       = useTorneosStore(s => s.getEquiposByTorneo);
+  const allTorneos       = useTorneosStore(s => s.torneos);
+  const allEquipos       = useTorneosStore(s => s.equipos);
   const agregarEquipo    = useTorneosStore(s => s.agregarEquipo);
   const actualizarEquipo = useTorneosStore(s => s.actualizarEquipo);
   const eliminarEquipo   = useTorneosStore(s => s.eliminarEquipo);
-  const getTorneoById    = useTorneosStore(s => s.getTorneoById);
 
   const [nuevonombre, setNuevonombre] = useState("");
   const [editId, setEditId]     = useState(null);
@@ -35,8 +35,8 @@ export default function EquiposPage({ onGoTorneos }) {
     return <ModuleEmptyState icon={Users} title="Selecciona un torneo" subtitle="Abre un torneo desde la lista para gestionar sus equipos." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
   }
 
-  const torneo = getTorneoById(torneoActivoId);
-  const equipos = getEquipos(torneoActivoId);
+  const torneo  = allTorneos.find(t => t.id === torneoActivoId) ?? null;
+  const equipos = allEquipos.filter(e => e.torneoId === torneoActivoId);
 
   const handleAgregar = () => {
     const nombre = nuevonombre.trim();

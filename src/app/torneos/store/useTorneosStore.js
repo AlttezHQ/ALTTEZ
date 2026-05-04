@@ -1,70 +1,37 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calcularPosiciones } from "../utils/fixturesEngine";
+import { autoSchedule } from "../utils/schedulingEngine";
 
-/**
- * @typedef {Object} Torneo
- * @property {string} id
- * @property {string} nombre
- * @property {string} deporte
- * @property {"todos_contra_todos"|"eliminacion"|"grupos_playoffs"} formato
- * @property {"borrador"|"activo"|"finalizado"} estado
- * @property {string} fechaInicio
- * @property {string|null} fechaFin
- * @property {string} slug
- * @property {number} numGrupos
- * @property {boolean} publicado
- * @property {string} createdAt
- * @property {string} updatedAt
- */
-
-/**
- * @typedef {Object} Equipo
- * @property {string} id
- * @property {string} torneoId
- * @property {string} nombre
- * @property {string|null} escudo
- * @property {string|null} color
- * @property {string|null} grupo
- * @property {string} createdAt
- */
-
-/**
- * @typedef {Object} Partido
- * @property {string} id
- * @property {string} torneoId
- * @property {"grupos"|"octavos"|"cuartos"|"semis"|"final"|"tercer_puesto"} fase
- * @property {number} ronda
- * @property {string|null} grupo
- * @property {string|null} equipoLocalId
- * @property {string|null} equipoVisitaId
- * @property {number|null} golesLocal
- * @property {number|null} golesVisita
- * @property {"programado"|"en_curso"|"finalizado"} estado
- * @property {string|null} fechaHora
- * @property {string|null} lugar
- * @property {number} orden
- * @property {string} createdAt
- */
-
-const ID = () => crypto.randomUUID();
+const ID  = () => crypto.randomUUID();
 const NOW = () => new Date().toISOString();
+
+const DEFAULT_SCHEDULING = {
+  diasDisponibles: [6, 0],
+  horaInicio:  "10:00",
+  horaFin:     "22:00",
+  duracionMin:  90,
+  descansoDias: 2,
+  maxPartidosDia: 3,
+};
 
 const FORMAT_MAP = {
   "Todos contra todos": "todos_contra_todos",
   "Eliminación directa": "eliminacion",
-  "Grupos + Playoffs": "grupos_playoffs",
-  "Mixto": "grupos_playoffs",
+  "Grupos + Playoffs":   "grupos_playoffs",
+  "Mixto":               "grupos_playoffs",
 };
 
 export const useTorneosStore = create(
   persist(
     (set, get) => ({
-      torneos: [],
-      equipos: [],
+      torneos:  [],
+      equipos:  [],
       partidos: [],
+      sedes:    [],
+      arbitros: [],
       torneoActivoId: null,
-      wizardDraft: null,
+      wizardDraft:    null,
 
       // ── Torneos ──────────────────────────────────────────────────────────
 
@@ -72,17 +39,18 @@ export const useTorneosStore = create(
         const formato = FORMAT_MAP[data.formato] ?? data.formato ?? "todos_contra_todos";
         const torneo = {
           id: ID(),
-          nombre: data.nombre || "Sin nombre",
-          deporte: data.deporte || "Fútbol",
+          nombre:     data.nombre  || "Sin nombre",
+          deporte:    data.deporte || "Fútbol",
           formato,
-          estado: "borrador",
-          fechaInicio: data.fecha || null,
-          fechaFin: null,
-          slug: generarSlug(data.nombre || "torneo"),
-          numGrupos: data.numGrupos || 2,
-          publicado: false,
-          createdAt: NOW(),
-          updatedAt: NOW(),
+          estado:     "borrador",
+          fechaInicio: data.fecha  || null,
+          fechaFin:    null,
+          slug:        generarSlug(data.nombre || "torneo"),
+          numGrupos:   data.numGrupos || 2,
+          publicado:   false,
+          schedulingConfig: { ...DEFAULT_SCHEDULING },
+          createdAt:   NOW(),
+          updatedAt:   NOW(),
         };
         set(s => ({ torneos: [...s.torneos, torneo], torneoActivoId: torneo.id }));
         return torneo;
@@ -90,15 +58,19 @@ export const useTorneosStore = create(
 
       actualizarTorneo(id, patch) {
         set(s => ({
-          torneos: s.torneos.map(t => t.id === id ? { ...t, ...patch, updatedAt: NOW() } : t),
+          torneos: s.torneos.map(t =>
+            t.id === id ? { ...t, ...patch, updatedAt: NOW() } : t
+          ),
         }));
       },
 
       eliminarTorneo(id) {
         set(s => ({
-          torneos:  s.torneos.filter(t => t.id !== id),
-          equipos:  s.equipos.filter(e => e.torneoId !== id),
-          partidos: s.partidos.filter(p => p.torneoId !== id),
+          torneos:   s.torneos.filter(t => t.id !== id),
+          equipos:   s.equipos.filter(e => e.torneoId !== id),
+          partidos:  s.partidos.filter(p => p.torneoId !== id),
+          sedes:     s.sedes.filter(se => se.torneoId !== id),
+          arbitros:  s.arbitros.filter(a => a.torneoId !== id),
           torneoActivoId: s.torneoActivoId === id ? null : s.torneoActivoId,
         }));
       },
@@ -115,16 +87,49 @@ export const useTorneosStore = create(
         }));
       },
 
+      actualizarSchedulingConfig(torneoId, patch) {
+        set(s => ({
+          torneos: s.torneos.map(t =>
+            t.id === torneoId
+              ? { ...t, schedulingConfig: { ...t.schedulingConfig, ...patch }, updatedAt: NOW() }
+              : t
+          ),
+        }));
+      },
+
+      // ── Sedes ────────────────────────────────────────────────────────────
+
+      agregarSede(torneoId, { nombre, direccion = "" }) {
+        const sede = { id: ID(), torneoId, nombre, direccion, createdAt: NOW() };
+        set(s => ({ sedes: [...s.sedes, sede] }));
+        return sede;
+      },
+
+      eliminarSede(sedeId) {
+        set(s => ({ sedes: s.sedes.filter(se => se.id !== sedeId) }));
+      },
+
+      // ── Árbitros ─────────────────────────────────────────────────────────
+
+      agregarArbitro(torneoId, { nombre, contacto = "" }) {
+        const arbitro = { id: ID(), torneoId, nombre, contacto, createdAt: NOW() };
+        set(s => ({ arbitros: [...s.arbitros, arbitro] }));
+        return arbitro;
+      },
+
+      eliminarArbitro(arbitroId) {
+        set(s => ({ arbitros: s.arbitros.filter(a => a.id !== arbitroId) }));
+      },
+
       // ── Equipos ──────────────────────────────────────────────────────────
 
       agregarEquipo(torneoId, data) {
         const equipo = {
-          id: ID(),
-          torneoId,
+          id: ID(), torneoId,
           nombre: data.nombre || "Equipo",
           escudo: data.escudo ?? null,
-          color: data.color ?? null,
-          grupo: data.grupo ?? null,
+          color:  data.color  ?? null,
+          grupo:  data.grupo  ?? null,
           createdAt: NOW(),
         };
         set(s => ({ equipos: [...s.equipos, equipo] }));
@@ -133,8 +138,7 @@ export const useTorneosStore = create(
 
       agregarEquipos(torneoId, nombres) {
         const nuevos = nombres
-          .map(n => n.trim())
-          .filter(Boolean)
+          .map(n => n.trim()).filter(Boolean)
           .map(nombre => ({
             id: ID(), torneoId, nombre,
             escudo: null, color: null, grupo: null, createdAt: NOW(),
@@ -180,6 +184,28 @@ export const useTorneosStore = create(
         set(s => ({ partidos: s.partidos.map(p => p.id === id ? { ...p, ...patch } : p) }));
       },
 
+      autoSchedulePartidos(torneoId) {
+        const s        = get();
+        const torneo   = s.torneos.find(t => t.id === torneoId);
+        if (!torneo) return;
+
+        const partidos = s.partidos.filter(p => p.torneoId === torneoId);
+        const equipos  = s.equipos.filter(e => e.torneoId === torneoId);
+        const sedes    = s.sedes.filter(se => se.torneoId === torneoId);
+        const arbitros = s.arbitros.filter(a => a.torneoId === torneoId);
+
+        const patches = autoSchedule({ partidos, equipos, sedes, arbitros, torneo });
+
+        set(s2 => ({
+          partidos: s2.partidos.map(p => {
+            const patch = patches.find(pt => pt.id === p.id);
+            return patch ? { ...p, ...patch } : p;
+          }),
+        }));
+
+        return patches.length;
+      },
+
       // ── Wizard draft ─────────────────────────────────────────────────────
 
       setWizardDraft(data) {
@@ -190,7 +216,7 @@ export const useTorneosStore = create(
         set({ wizardDraft: null });
       },
 
-      // ── Selectores ───────────────────────────────────────────────────────
+      // ── Selectors ────────────────────────────────────────────────────────
 
       getTorneoById(id) {
         return get().torneos.find(t => t.id === id) ?? null;
@@ -216,6 +242,14 @@ export const useTorneosStore = create(
         const partidos = get().partidos.filter(p => p.torneoId === torneoId);
         const equipos  = get().equipos.filter(e => e.torneoId === torneoId);
         return calcularPosiciones(partidos, equipos);
+      },
+
+      getSedesByTorneo(torneoId) {
+        return get().sedes.filter(s => s.torneoId === torneoId);
+      },
+
+      getArbitrosByTorneo(torneoId) {
+        return get().arbitros.filter(a => a.torneoId === torneoId);
       },
 
       getTorneoActivo() {

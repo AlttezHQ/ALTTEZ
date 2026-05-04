@@ -29,12 +29,12 @@ const FORMATO_LABELS = {
 };
 
 export default function TorneosListPage({ onCreate, onAbrir }) {
-  const torneos       = useTorneosStore(s => s.torneos);
-  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
+  const torneos         = useTorneosStore(s => s.torneos);
+  const allEquipos      = useTorneosStore(s => s.equipos);
+  const allPartidos     = useTorneosStore(s => s.partidos);
+  const torneoActivoId  = useTorneosStore(s => s.torneoActivoId);
   const setTorneoActivo = useTorneosStore(s => s.setTorneoActivo);
   const eliminarTorneo  = useTorneosStore(s => s.eliminarTorneo);
-  const getEquiposByTorneo = useTorneosStore(s => s.getEquiposByTorneo);
-  const getPartidosByTorneo = useTorneosStore(s => s.getPartidosByTorneo);
 
   if (torneos.length === 0) {
     return (
@@ -87,8 +87,8 @@ export default function TorneosListPage({ onCreate, onAbrir }) {
         {torneos.map((t, i) => {
           const cfg = ESTADO_CONFIG[t.estado] ?? ESTADO_CONFIG.borrador;
           const EstadoIcon = cfg.icon;
-          const equiposCount  = getEquiposByTorneo(t.id).length;
-          const partidosCount = getPartidosByTorneo(t.id).length;
+          const equiposCount  = allEquipos.filter(e => e.torneoId === t.id).length;
+          const partidosCount = allPartidos.filter(p => p.torneoId === t.id).length;
           const isActivo = t.id === torneoActivoId;
 
           return (
