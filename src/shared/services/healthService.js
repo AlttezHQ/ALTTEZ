@@ -61,6 +61,7 @@
  */
 
 import { calcSaludActual } from "../utils/rpeEngine";
+import { insertHealthSnapshots as syncToSupabase } from "./supabaseService";
 
 const STORAGE_KEY_BASE = "alttez_healthSnapshots";
 const MAX_SNAPSHOTS = 500;
@@ -172,6 +173,11 @@ export function takeHealthSnapshot(athletes, historial, sessionNum) {
   const existing = getSnapshots();
   const updated = [...existing, ...newSnapshots];
   saveSnapshots(updated);
+
+  // Async sync to Supabase — fire-and-forget, localStorage is source of truth
+  if (newSnapshots.length) {
+    syncToSupabase(newSnapshots).catch(() => {/* offline — localStorage already saved */});
+  }
 
   return newSnapshots;
 }

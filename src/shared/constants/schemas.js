@@ -133,6 +133,25 @@ export const ENTITIES = {
     relationships: [],
   },
 
+  HealthSnapshot: {
+    storageKey: "alttez_healthSnapshots",
+    description: "Fotografia del estado de salud de un atleta al cierre de una sesion. Generado por calcSaludActual().",
+    fields: {
+      athleteId:   { type: "number",      required: true,  description: "FK -> Athlete.id",                         constraints: "integer > 0" },
+      athleteName: { type: "string",      required: true,  description: "Nombre del atleta (desnormalizado)",        constraints: "non-empty" },
+      fecha:       { type: "string",      required: true,  description: "ISO 8601 del momento del snapshot",         constraints: "ISO datetime" },
+      sessionNum:  { type: "number",      required: true,  description: "FK -> Sesion.num",                          constraints: "integer > 0" },
+      salud:       { type: "number",      required: true,  description: "Indice de salud [0-100]",                   constraints: "integer 0..100" },
+      riskLevel:   { type: "string",      required: true,  description: "Nivel de riesgo (semaforo)",                constraints: "enum: optimo | precaucion | riesgo | sin_datos" },
+      rpeAvg7d:    { type: "number|null", required: false, description: "RPE promedio ultimos 7 dias del atleta",    constraints: "null | number 1..10" },
+      rpeActual:   { type: "number|null", required: false, description: "RPE reportado en la sesion del snapshot",   constraints: "null | integer 1..10" },
+    },
+    relationships: [
+      "HealthSnapshot.athleteId -> Athlete.id",
+      "HealthSnapshot.sessionNum -> Sesion.num",
+    ],
+  },
+
   Finanzas: {
     storageKey: "alttez_finanzas",
     description: "Contenedor raiz de datos financieros. Agrupa pagos y movimientos.",

@@ -46,7 +46,7 @@ function extractSchemaModelEntities() {
 // ═══════════════════════════════════════════════════════════
 
 function extractSchemasJsEntities() {
-  const schemasPath = join(ROOT, 'src/constants/schemas.js');
+  const schemasPath = join(ROOT, 'src/shared/constants/schemas.js');
   const source = readFileSync(schemasPath, 'utf8');
 
   // Find: export const ENTITIES = { ... }
@@ -130,7 +130,7 @@ function normalize(name) {
 // MAIN
 // ═══════════════════════════════════════════════════════════
 
-console.log('\nElevate Sports — Schema Drift Detector');
+console.log('\nALTTEZ — Schema Drift Detector');
 console.log('━'.repeat(45));
 
 let schemaModelEntities, schemasJsEntities, sqlTables;

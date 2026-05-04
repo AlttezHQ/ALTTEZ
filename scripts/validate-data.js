@@ -42,9 +42,9 @@ function fail(label, reason) {
 }
 
 // ── Load source files ──
-const initialStatesPath = join(ROOT, 'src/constants/initialStates.js');
-const schemasPath        = join(ROOT, 'src/constants/schemas.js');
-const elevateScorePath   = join(ROOT, 'src/utils/elevateScore.js');
+const initialStatesPath = join(ROOT, 'src/shared/constants/initialStates.js');
+const schemasPath        = join(ROOT, 'src/shared/constants/schemas.js');
+const elevateScorePath   = join(ROOT, 'src/shared/utils/alttezScore.js');
 
 const initialStatesSource = readFileSync(initialStatesPath, 'utf8');
 const schemasSource        = readFileSync(schemasPath, 'utf8');
@@ -115,7 +115,7 @@ function extractObjectLiteral(source, varName) {
 
 // ── Extract data ──
 
-console.log('\nElevate Sports — Data Quality Validator');
+console.log('\nALTTEZ — Data Quality Validator');
 console.log('━'.repeat(45));
 
 let DEMO_ATHLETES, DEMO_HISTORIAL, DEMO_MATCH_STATS, STORAGE_KEYS, DEMO_MATCH_REPORTS;

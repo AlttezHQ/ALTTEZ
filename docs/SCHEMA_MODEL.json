@@ -1,85 +1,95 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Elevate Sports — Schema Model v1.0",
-  "description": "Esquema relacional para todas las entidades del CRM deportivo. Single source of truth para persistencia en localStorage (fase actual) y migración futura a Supabase.",
-  "version": "1.0.0",
+  "title": "ALTTEZ — Schema Model v2.0",
+  "description": "Esquema relacional para todas las entidades del CRM deportivo ALTTEZ. Single source of truth para persistencia en Supabase (principal) y localStorage (cache offline-first).",
+  "version": "2.0.0",
   "author": "@Data (Mateo-Data_Engine)",
-  "storageBackend": "localStorage",
+  "storageBackend": "supabase + localStorage (write-through, offline-first)",
   "entities": {
     "Athlete": {
-      "storageKey": "elevate_athletes",
+      "supabaseTable": "athletes",
+      "storageKey": "alttez_athletes",
       "description": "Jugador registrado en el plantel. Unidad base del sistema.",
       "primaryKey": "id",
       "fields": {
-        "id":        { "type": "integer",      "required": true,  "unique": true,  "autoIncrement": true, "description": "Identificador unico" },
-        "name":      { "type": "string",       "required": true,  "minLength": 1,  "description": "Nombre completo" },
-        "pos":       { "type": "string",       "required": true,  "description": "Posicion legible (Delantero, Defensa, Mediocampista, Portero)" },
-        "posCode":   { "type": "string",       "required": true,  "pattern": "^[A-Z]{2,3}$", "description": "Codigo corto (ST, CM, GK, LB, RB, CB, LW, RW)" },
-        "dob":       { "type": "string",       "required": true,  "format": "date", "description": "Fecha nacimiento ISO YYYY-MM-DD" },
-        "contact":   { "type": "string",       "required": false, "description": "Telefono de contacto" },
-        "status":    { "type": "string",       "required": true,  "enum": ["P", "A", "L"], "description": "P=Presente, A=Ausente, L=Lesionado" },
-        "rpe":       { "type": ["integer","null"], "required": false, "minimum": 1, "maximum": 10, "description": "Ultimo RPE registrado" },
-        "photo":     { "type": "string",       "required": false, "description": "Slug de foto" },
-        "available": { "type": "boolean",      "required": true,  "description": "Disponible para convocatoria (derivado de status)" }
+        "id":                    { "type": "integer",         "required": true,  "unique": true,  "autoIncrement": true, "description": "Identificador unico (BIGINT en Supabase)" },
+        "clubId":                { "type": "string",          "required": true,  "description": "UUID del club propietario (FK -> clubs.id)" },
+        "name":                  { "type": "string",          "required": true,  "minLength": 1,  "description": "Nombre del jugador" },
+        "pos":                   { "type": "string",          "required": true,  "description": "Posicion legible (Delantero, Defensa, Mediocampista, Portero)" },
+        "posCode":               { "type": "string",          "required": true,  "pattern": "^[A-Z]{2,3}$", "description": "Codigo corto (ST, CM, GK, LB, RB, CB, LW, RW)" },
+        "dob":                   { "type": "string",          "required": false, "format": "date", "description": "Fecha nacimiento ISO YYYY-MM-DD" },
+        "contact":               { "type": "string",          "required": false, "description": "Telefono de contacto" },
+        "status":                { "type": "string",          "required": true,  "enum": ["P", "A", "L"], "description": "P=Presente, A=Ausente, L=Lesionado" },
+        "rpe":                   { "type": ["integer","null"], "required": false, "minimum": 1, "maximum": 10, "description": "Ultimo RPE registrado" },
+        "photo":                 { "type": "string",          "required": false, "description": "Slug de foto" },
+        "available":             { "type": "boolean",         "required": true,  "description": "Disponible para convocatoria (derivado: status !== L && !== A)" },
+        "apellido":              { "type": "string",          "required": false, "description": "Apellido del jugador" },
+        "numeroDorsal":          { "type": "integer",         "required": false, "description": "Numero de camiseta" },
+        "documentoIdentidad":    { "type": "string",          "required": false, "description": "Documento de identidad (unique por club)" },
+        "contactoEmergencia":    { "type": "string",          "required": false, "description": "Contacto de emergencia" }
       },
       "relationships": {
-        "pagos": { "type": "oneToMany", "target": "Pago", "foreignKey": "athleteId" }
+        "pagos":          { "type": "oneToMany", "target": "Pago",           "foreignKey": "athleteId" },
+        "healthSnapshots":{ "type": "oneToMany", "target": "HealthSnapshot", "foreignKey": "athleteId" },
+        "wellnessLogs":   { "type": "oneToMany", "target": "WellnessLog",    "foreignKey": "athleteId" }
       }
     },
 
     "Sesion": {
-      "storageKey": "elevate_historial",
+      "supabaseTable": "sessions",
+      "storageKey": "alttez_historial",
       "description": "Registro historico de una sesion de entrenamiento.",
       "primaryKey": "num",
       "fields": {
-        "num":          { "type": "integer",                  "required": true,  "unique": true, "autoIncrement": true, "description": "Numero secuencial" },
-        "fecha":        { "type": "string",                   "required": true,  "minLength": 1, "description": "Fecha formateada legible (e.g. 'Mar 18 Mar')" },
-        "presentes":    { "type": "integer",                  "required": true,  "minimum": 0,   "description": "Jugadores presentes" },
-        "total":        { "type": "integer",                  "required": true,  "minimum": 0,   "description": "Total jugadores en plantilla" },
-        "rpeAvg":       { "type": ["number","string","null"], "required": false, "description": "RPE promedio del equipo (null o '—' si no hay datos)" },
-        "rpeByAthlete": { "type": ["object","null"],          "required": false, "description": "Mapa athleteId -> RPE individual. Keys son strings o numeros. Introducido en rpeEngine v2.0 para per-athlete tracking." },
-        "savedAt":      { "type": ["string","null"],          "required": false, "format": "date-time", "description": "ISO 8601 timestamp del guardado. Usado por rpeEngine para filtrar ventana de 7 dias. Null en sesiones legacy." },
-        "tipo":         { "type": "string",                   "required": true,  "enum": ["Tactica","Fisico","Recuperacion","Partido","Partido interno","Sesion"], "description": "Tipo de sesion (valores normalizados, sin duplicados ni typos)" },
-        "nota":         { "type": "string",                   "required": false, "description": "Nota del entrenador" }
+        "num":              { "type": "integer",                  "required": true,  "unique": true,  "autoIncrement": true, "description": "Numero secuencial" },
+        "fecha":            { "type": "string",                   "required": true,  "minLength": 1,  "description": "Fecha formateada legible (ej. 'Mar 18 Mar')" },
+        "presentes":        { "type": "integer",                  "required": true,  "minimum": 0,    "description": "Jugadores presentes" },
+        "total":            { "type": "integer",                  "required": true,  "minimum": 0,    "description": "Total jugadores en plantilla" },
+        "rpeAvg":           { "type": ["number","string","null"], "required": false, "description": "RPE promedio del equipo (null o '—' si no hay datos)" },
+        "rpeByAthlete":     { "type": ["object","null"],          "required": false, "description": "Mapa athleteId -> RPE individual. Introducido en rpeEngine v2.0." },
+        "savedAt":          { "type": ["string","null"],          "required": false, "format": "date-time", "description": "ISO 8601 timestamp del guardado. Usado por rpeEngine para ventana de 7 dias." },
+        "tipo":             { "type": "string",                   "required": true,  "enum": ["Tactica","Fisico","Recuperacion","Partido","Partido interno","Sesion"], "description": "Tipo de sesion" },
+        "nota":             { "type": "string",                   "required": false, "description": "Nota del entrenador" },
+        "duracionMinutos":  { "type": ["integer","null"],         "required": false, "minimum": 1,    "description": "Duracion de la sesion en minutos. Requerido para calcular session-load = RPE x duracion (Foster et al., 2001)." }
       },
-      "constraints": [
-        "presentes <= total"
-      ]
+      "constraints": ["presentes <= total"]
     },
 
     "HealthSnapshot": {
-      "storageKey": "elevate_healthSnapshots",
-      "description": "Estado de salud calculado por el motor RPE para un atleta en un momento dado. Generado automaticamente por calcSaludActual() tras cada sesion guardada.",
+      "supabaseTable": "health_snapshots",
+      "storageKey": "alttez_healthSnapshots",
+      "description": "Fotografia del estado de salud de un atleta al cierre de una sesion. Generado por calcSaludActual() en rpeEngine.",
       "primaryKey": ["athleteId", "sessionNum"],
       "fields": {
-        "athleteId":   { "type": "integer",            "required": true,  "description": "FK -> Athlete.id" },
+        "athleteId":   { "type": "integer",            "required": true,  "description": "FK -> athletes.id" },
         "athleteName": { "type": "string",             "required": true,  "description": "Nombre legible (desnormalizado para display rapido)" },
-        "fecha":       { "type": "string",             "required": true,  "format": "date-time", "description": "ISO 8601 del snapshot (= Sesion.savedAt)" },
-        "sessionNum":  { "type": "integer",            "required": true,  "description": "FK -> Sesion.num — sesion que genero este snapshot" },
+        "fecha":       { "type": "string",             "required": true,  "format": "date-time", "description": "ISO 8601 del snapshot (= sesion.savedAt)" },
+        "sessionNum":  { "type": "integer",            "required": true,  "description": "FK -> sessions.num — sesion que genero el snapshot" },
         "salud":       { "type": "integer",            "required": true,  "minimum": 0, "maximum": 100, "description": "Indice de salud [0-100]. Formula: clamp(100 - rpeAvg7d*10, 0, 100)" },
-        "riskLevel":   { "type": "string",             "required": true,  "enum": ["optimo","precaucion","riesgo","sin_datos"], "description": "Clasificacion semaforo. optimo: salud>=50 | precaucion: 25-49 | riesgo: <25" },
-        "rpeAvg7d":    { "type": ["number","null"],    "required": false, "description": "Promedio de RPE del atleta en los ultimos 7 dias (ventana deslizante, max 7 sesiones)" },
-        "rpeActual":   { "type": ["integer","null"],   "required": false, "minimum": 1, "maximum": 10, "description": "RPE reportado en la sesion que genero este snapshot. Puede ser null si el atleta no reporto." }
+        "riskLevel":   { "type": "string",             "required": true,  "enum": ["optimo","precaucion","riesgo","sin_datos"], "description": "Clasificacion semaforo. optimo: >=50 | precaucion: 25-49 | riesgo: <25" },
+        "rpeAvg7d":    { "type": ["number","null"],    "required": false, "description": "Promedio RPE del atleta en los ultimos 7 dias (max 7 sesiones)" },
+        "rpeActual":   { "type": ["integer","null"],   "required": false, "minimum": 1, "maximum": 10, "description": "RPE reportado en la sesion que genero este snapshot" }
       },
       "relationships": {
-        "athlete":  { "type": "manyToOne", "target": "Athlete", "foreignKey": "athleteId" },
-        "sesion":   { "type": "manyToOne", "target": "Sesion",  "foreignKey": "sessionNum" }
+        "athlete": { "type": "manyToOne", "target": "Athlete",  "foreignKey": "athleteId" },
+        "sesion":  { "type": "manyToOne", "target": "Sesion",   "foreignKey": "sessionNum" }
       },
       "notes": [
-        "Generado por calcSaludActual() en rpeEngine.js",
-        "El array se persiste en elevate_healthSnapshots (localStorage) o tabla health_snapshots (Supabase)",
-        "Para ACWR se necesitan >= 4 semanas de datos — planificado para v3.0"
+        "Generado por calcSaludActual() en rpeEngine.js al cerrar sesion",
+        "Persistido en localStorage (alttez_healthSnapshots_{clubId}) + Supabase async (migration 011+)",
+        "MAX_SNAPSHOTS = 500 por club (FIFO)"
       ]
     },
 
     "Pago": {
-      "storageKey": "elevate_finanzas.pagos",
+      "supabaseTable": "payments",
+      "storageKey": "alttez_finanzas (nested: finanzas.pagos)",
       "description": "Pago mensual de un jugador.",
       "primaryKey": ["athleteId", "mes"],
       "fields": {
-        "athleteId": { "type": "integer",          "required": true,  "description": "FK -> Athlete.id" },
+        "athleteId": { "type": "integer",          "required": true,  "description": "FK -> athletes.id" },
         "mes":       { "type": "string",           "required": true,  "pattern": "^\\d{4}-\\d{2}$", "description": "Mes YYYY-MM" },
-        "monto":     { "type": "integer",          "required": true,  "minimum": 1, "description": "Monto en COP" },
+        "monto":     { "type": "integer",          "required": true,  "minimum": 1, "description": "Monto en COP (default 80000)" },
         "estado":    { "type": "string",           "required": true,  "enum": ["pendiente", "pagado", "parcial"], "description": "Estado del pago" },
         "fechaPago": { "type": ["string","null"],  "required": false, "format": "date", "description": "Fecha ISO del pago o null" }
       },
@@ -89,21 +99,23 @@
     },
 
     "Movimiento": {
-      "storageKey": "elevate_finanzas.movimientos",
+      "supabaseTable": "movements",
+      "storageKey": "alttez_finanzas (nested: finanzas.movimientos)",
       "description": "Movimiento financiero (ingreso o egreso).",
       "primaryKey": "id",
       "fields": {
         "id":       { "type": "integer", "required": true,  "unique": true,  "autoIncrement": true, "description": "ID unico" },
         "tipo":     { "type": "string",  "required": true,  "enum": ["ingreso", "egreso"], "description": "Tipo" },
-        "concepto": { "type": "string",  "required": true,  "minLength": 1, "description": "Descripcion" },
-        "monto":    { "type": "number",  "required": true,  "minimum": 1, "description": "Monto en COP" },
+        "concepto": { "type": "string",  "required": true,  "minLength": 1,  "description": "Descripcion" },
+        "monto":    { "type": "number",  "required": true,  "minimum": 1,    "description": "Monto en COP" },
         "fecha":    { "type": "string",  "required": true,  "format": "date", "description": "Fecha ISO YYYY-MM-DD" }
       }
     },
 
     "MatchStats": {
-      "storageKey": "elevate_matchStats",
-      "description": "Estadisticas acumuladas de partidos.",
+      "supabaseTable": "match_stats",
+      "storageKey": "alttez_matchStats",
+      "description": "Estadisticas acumuladas de partidos. Una fila por club (UNIQUE club_id).",
       "fields": {
         "played":       { "type": "integer", "required": true, "minimum": 0 },
         "won":          { "type": "integer", "required": true, "minimum": 0 },
@@ -113,44 +125,179 @@
         "goalsAgainst": { "type": "integer", "required": true, "minimum": 0 },
         "points":       { "type": "integer", "required": true, "minimum": 0 }
       },
-      "constraints": [
-        "played == won + drawn + lost"
-      ]
+      "constraints": ["played == won + drawn + lost"]
     },
 
     "ClubInfo": {
-      "storageKey": "elevate_clubInfo",
+      "supabaseTable": "clubs",
+      "storageKey": "alttez_clubInfo",
       "description": "Configuracion general del club.",
       "fields": {
-        "nombre":      { "type": "string",   "required": true },
-        "disciplina":  { "type": "string",   "required": true },
-        "ciudad":      { "type": "string",   "required": true },
-        "entrenador":  { "type": "string",   "required": true },
-        "temporada":   { "type": "string",   "required": true },
+        "nombre":      { "type": "string",   "required": true  },
+        "disciplina":  { "type": "string",   "required": true  },
+        "ciudad":      { "type": "string",   "required": true  },
+        "entrenador":  { "type": "string",   "required": true  },
+        "temporada":   { "type": "string",   "required": true  },
         "categorias":  { "type": "array",    "items": "string", "required": true, "minItems": 1 },
         "campos":      { "type": "array",    "items": "string", "required": true },
         "descripcion": { "type": "string",   "required": false },
         "telefono":    { "type": "string",   "required": false },
-        "email":       { "type": "string",   "required": false }
+        "email":       { "type": "string",   "required": false },
+        "mode":        { "type": "string",   "required": false, "enum": ["demo","production"] }
       }
+    },
+
+    "Finanzas": {
+      "supabaseTable": "payments + movements (composite)",
+      "storageKey": "alttez_finanzas",
+      "description": "Contenedor raiz de datos financieros en localStorage. En Supabase se mapea a las tablas payments y movements por separado.",
+      "fields": {
+        "pagos":       { "type": "Pago[]",       "required": true, "description": "Lista de pagos mensuales" },
+        "movimientos": { "type": "Movimiento[]", "required": true, "description": "Lista de movimientos financieros" }
+      }
+    },
+
+    "Profile": {
+      "supabaseTable": "profiles",
+      "storageKey": null,
+      "description": "Perfil de usuario autenticado. Creado automaticamente por trigger handle_new_user() al signup.",
+      "primaryKey": "id",
+      "fields": {
+        "id":              { "type": "string",          "required": true,  "description": "UUID del usuario (FK -> auth.users.id)" },
+        "clubId":          { "type": ["string","null"], "required": false, "description": "UUID del club asignado. Inmutable via UPDATE (solo via RPC)" },
+        "role":            { "type": "string",          "required": true,  "enum": ["admin","coach","staff"], "description": "Rol en el club. Inmutable via UPDATE." },
+        "fullName":        { "type": "string",          "required": false, "description": "Nombre completo del usuario" },
+        "consentAt":       { "type": ["string","null"], "required": false, "format": "date-time", "description": "Timestamp de aceptacion de terminos (Ley 1581/2012)" },
+        "consentVersion":  { "type": ["string","null"], "required": false, "description": "Version de terminos aceptada" },
+        "guardianConsent": { "type": "boolean",         "required": false, "description": "Consentimiento tutor para menores" }
+      },
+      "notes": ["club_id y role son inmutables via UPDATE por politica RLS (migration 006)"]
+    },
+
+    "TacticalData": {
+      "supabaseTable": "tactical_data",
+      "storageKey": null,
+      "description": "Datos tacticos del club. Una fila por club (UNIQUE club_id).",
+      "primaryKey": "id",
+      "fields": {
+        "clubId":       { "type": "string", "required": true,  "description": "UUID del club (UNIQUE)" },
+        "rolesData":    { "type": "object", "required": false, "description": "JSONB con formaciones y roles de jugadores" },
+        "instructions": { "type": "string", "required": false, "description": "Instrucciones tacticas en texto" },
+        "tactics":      { "type": "string", "required": false, "description": "Nombre/esquema tactico activo" }
+      }
+    },
+
+    "WellnessLog": {
+      "supabaseTable": "wellness_logs",
+      "storageKey": null,
+      "description": "Registro diario de bienestar del atleta (sueno, fatiga, estres, DOMS).",
+      "primaryKey": "id",
+      "fields": {
+        "clubId":         { "type": "string",          "required": true,  "description": "UUID del club" },
+        "athleteId":      { "type": "integer",         "required": true,  "description": "FK -> athletes.id (BIGINT — migration 012 corrige tipo TEXT original)" },
+        "loggedAt":       { "type": "string",          "required": true,  "format": "date-time", "description": "Timestamp del registro" },
+        "sleepQuality":   { "type": "integer",         "required": true,  "minimum": 1, "maximum": 5, "description": "Calidad del sueno (1-5)" },
+        "fatigueLevel":   { "type": "integer",         "required": true,  "minimum": 1, "maximum": 5, "description": "Nivel de fatiga (1-5)" },
+        "stressLevel":    { "type": "integer",         "required": true,  "minimum": 1, "maximum": 5, "description": "Nivel de estres (1-5)" },
+        "domsLevel":      { "type": "integer",         "required": true,  "minimum": 1, "maximum": 5, "description": "Dolor muscular DOMS (1-5)" },
+        "notes":          { "type": ["string","null"],  "required": false, "description": "Notas adicionales" },
+        "wellnessScore":  { "type": "number",          "required": false, "description": "Score calculado de bienestar (0-100)" }
+      },
+      "relationships": {
+        "athlete": { "type": "manyToOne", "target": "Athlete", "foreignKey": "athleteId" }
+      },
+      "notes": ["FK athlete_id agregado en migration 012 (era TEXT sin FK)"]
+    },
+
+    "BulkUploadLog": {
+      "supabaseTable": "bulk_upload_logs",
+      "storageKey": null,
+      "description": "Auditoria de importaciones masivas de atletas via CSV.",
+      "primaryKey": "id",
+      "fields": {
+        "clubId":       { "type": "string",  "required": true  },
+        "uploadedBy":   { "type": "string",  "required": true,  "description": "Nombre del usuario que subio el archivo" },
+        "fileName":     { "type": "string",  "required": true  },
+        "totalRows":    { "type": "integer", "required": true  },
+        "validRows":    { "type": "integer", "required": true  },
+        "invalidRows":  { "type": "integer", "required": true  },
+        "status":       { "type": "string",  "required": true,  "enum": ["success","partial","failed"] },
+        "errorDetails": { "type": "object",  "required": false, "description": "JSONB con detalles de filas invalidas" }
+      }
+    },
+
+    "EventRSVP": {
+      "supabaseTable": "event_rsvp",
+      "storageKey": null,
+      "description": "Confirmacion de asistencia publica a eventos del club. Upsert via RPC submit_rsvp() (SECURITY DEFINER).",
+      "primaryKey": "id",
+      "fields": {
+        "clubId":      { "type": "string", "required": true  },
+        "eventId":     { "type": "string", "required": true,  "description": "ID del evento (texto libre, generado por app)" },
+        "athleteName": { "type": "string", "required": true,  "description": "Nombre del atleta que confirma (sanitizado, 2-80 chars)" },
+        "status":      { "type": "string", "required": true,  "enum": ["confirmed","absent","maybe"] },
+        "respondedAt": { "type": "string", "required": false, "format": "date-time" }
+      },
+      "constraints": ["UNIQUE (club_id, event_id, athlete_name)"],
+      "notes": ["INSERT/UPDATE solo via RPC submit_rsvp() con validacion. SELECT autenticado por club_id."]
     }
   },
 
-  "relationshipDiagram": [
-    "Athlete 1──N Pago    (athleteId -> Athlete.id)",
-    "Athlete *──* Sesion  (status P al guardar -> presentes count)",
-    "Finanzas { pagos: Pago[], movimientos: Movimiento[] }"
-  ],
+  "supabaseTables": {
+    "clubs":             "ClubInfo",
+    "athletes":          "Athlete",
+    "sessions":          "Sesion",
+    "payments":          "Pago (parte de Finanzas)",
+    "movements":         "Movimiento (parte de Finanzas)",
+    "match_stats":       "MatchStats",
+    "health_snapshots":  "HealthSnapshot",
+    "tactical_data":     "TacticalData",
+    "profiles":          "Profile",
+    "user_sessions":     "legacy RBAC — supersedido por profiles.role",
+    "bulk_upload_logs":  "BulkUploadLog",
+    "event_rsvp":        "EventRSVP",
+    "wellness_logs":     "WellnessLog"
+  },
 
   "localStorageKeys": {
-    "elevate_athletes":       "Athlete[]",
-    "elevate_historial":      "Sesion[]",
-    "elevate_finanzas":       "{ pagos: Pago[], movimientos: Movimiento[] }",
-    "elevate_clubInfo":       "ClubInfo",
-    "elevate_matchStats":     "MatchStats",
-    "elevate_healthSnapshots":"HealthSnapshot[]",
-    "elevate_club_id":        "string — UUID o 'demo'. Identifica el club activo en sesion.",
-    "elevate_roles_v2":       "{ [userId: string]: 'admin' | 'coach' | 'viewer' }",
-    "elevate_mode":           "'demo' | 'real'"
+    "alttez_athletes":                    "Athlete[]",
+    "alttez_historial":                   "Sesion[]",
+    "alttez_finanzas":                    "{ pagos: Pago[], movimientos: Movimiento[] }",
+    "alttez_clubInfo":                    "ClubInfo",
+    "alttez_matchStats":                  "MatchStats",
+    "alttez_healthSnapshots_{clubId}":    "HealthSnapshot[] (max 500, FIFO)",
+    "alttez_club_id":                     "string — UUID del club activo",
+    "alttez_schema_version":              "string — version de migracion de schema (ej. '2.0.0')",
+    "alttez_mode":                        "'demo' | 'production'",
+    "alttez-store":                       "Zustand persist payload con checksum SHA-256"
+  },
+
+  "relationshipDiagram": [
+    "Athlete 1──N Pago             (athleteId -> Athlete.id)",
+    "Athlete 1──N HealthSnapshot   (athleteId -> Athlete.id)",
+    "Athlete 1──N WellnessLog      (athleteId -> Athlete.id)",
+    "Sesion  1──N HealthSnapshot   (sessionNum -> Sesion.num)",
+    "Club    1──1 MatchStats        (club_id UNIQUE)",
+    "Club    1──1 TacticalData      (club_id UNIQUE)",
+    "Club    1──N EventRSVP         (club_id)",
+    "Club    1──N BulkUploadLog     (club_id)",
+    "auth.users 1──1 Profile        (trigger handle_new_user)",
+    "Profile    N──1 Club           (profiles.club_id -> clubs.id)"
+  ],
+
+  "migrations": {
+    "001_initial_schema":           "Core 9 tables con RLS permisivo",
+    "001_fix_clubs_rls":            "RLS clubs + RPC create_club_and_link_admin",
+    "002_auth_profiles_rls":        "Tabla profiles + trigger handle_new_user + get_my_club_id()",
+    "003_portal_services_journal":  "Tablas services y journal_entries (portal publico)",
+    "004_bulk_upload_athletes":     "Campos extra athletes + tabla bulk_upload_logs",
+    "005_fix_rls_consent":          "Campos consent Ley 1581/2012 + fix RLS bulk_upload_logs",
+    "006_fix_profiles_club_id_write": "Inmutabilidad de profiles.club_id y role via UPDATE",
+    "007_event_rsvp":               "Tabla event_rsvp (RSVP publico)",
+    "008_wellness_logs":            "Tabla wellness_logs",
+    "009_rebrand_alttez":           "UPDATE datos Elevate -> ALTTEZ en services/journal",
+    "010_rsvp_secure_rpc":          "RPC submit_rsvp con SECURITY DEFINER (cierra ataque superficie)",
+    "011_sessions_duracion_minutos":"Campo duracion_minutos nullable para calcular session-load",
+    "012_wellness_logs_athlete_fk": "Fix athlete_id TEXT -> BIGINT + FK con ON DELETE CASCADE"
   }
 }

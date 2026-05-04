@@ -129,7 +129,7 @@ function getPerformanceAlert(rpe, elevateScore) {
 // TEST SUITE
 // ═══════════════════════════════════════════════════════════
 
-console.log('\nElevate Sports — Algorithm Integrity Tests');
+console.log('\nALTTEZ — Algorithm Integrity Tests');
 console.log('━'.repeat(45));
 
 // ── calcSaludActual ──────────────────────────────────────────────────────
@@ -180,7 +180,7 @@ console.log(`\n${CYAN}calcSaludActual (rpeEngine v2.1)${RESET}`);
 }
 
 // ── calcElevateScore ─────────────────────────────────────────────────────
-console.log(`\n${CYAN}calcElevateScore (elevateScore v1.1)${RESET}`);
+console.log(`\n${CYAN}calcALTTEZScore (alttezScore v1.1)${RESET}`);
 
 // goles=2, asist=1, rec=3, duelos=5, min=90, tarjeta=ninguna
 // raw = 2*2.0 + 1*1.5 + 3*0.3 + 5*0.2 + 90/90*1.0
@@ -224,7 +224,7 @@ console.log(`\n${CYAN}calcElevateScore (elevateScore v1.1)${RESET}`);
 }
 
 // ── getPerformanceAlert ──────────────────────────────────────────────────
-console.log(`\n${CYAN}getPerformanceAlert (elevateScore v1.1)${RESET}`);
+console.log(`\n${CYAN}getPerformanceAlert (alttezScore v1.1)${RESET}`);
 
 // RPE 9 + score 8 → "critical"
 {
