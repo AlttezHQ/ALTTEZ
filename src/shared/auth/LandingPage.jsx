@@ -278,9 +278,9 @@ export default function LandingPage({ onRegister, onLogin }) {
     const cleanEmail = sanitizeEmail(form.email);
     if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) errs.email = "Email obligatorio y válido";
     if (!form.password || form.password.length < 6) errs.password = "Mínimo 6 caracteres";
-    if (!ROLES[form.role]) errs.role = "Rol inválido";
+    if (source !== "torneos" && !ROLES[form.role]) errs.role = "Rol inválido";
     if (!consentData) errs.consentData = "Debes aceptar la política de tratamiento de datos";
-    if (!consentGuardian) errs.consentGuardian = "Debes certificar la autorización parental";
+    if (source !== "torneos" && !consentGuardian) errs.consentGuardian = "Debes certificar la autorización parental";
     setErrors(errs);
 
     if (Object.keys(errs).length === 0) {
