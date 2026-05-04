@@ -193,6 +193,27 @@ export function onAuthStateChange(callback) {
 }
 
 // ════════════════════════════════════════════════
+// ELIMINAR CUENTA
+// ════════════════════════════════════════════════
+
+/**
+ * Elimina la cuenta del usuario autenticado actual.
+ * Llama al RPC delete_user() definido en la DB.
+ * @returns {Promise<{ error: string|null }>}
+ */
+export async function deleteAccount() {
+  if (!isSupabaseReady) return { error: "Supabase no disponible" };
+
+  const { error } = await supabase.rpc("delete_user");
+  if (error) {
+    reportError("Error eliminando cuenta", error);
+    return { error: mapAuthError(error) };
+  }
+  await supabase.auth.signOut();
+  return { error: null };
+}
+
+// ════════════════════════════════════════════════
 // ERROR MAPPING (mensajes en español)
 // ════════════════════════════════════════════════
 

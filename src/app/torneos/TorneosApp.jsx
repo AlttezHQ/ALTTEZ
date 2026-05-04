@@ -1,20 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, FileSpreadsheet, Tag } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
+import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
+import { signIn, signUp, signOut as authSignOut, deleteAccount, onAuthStateChange } from "../../shared/services/authService";
 
-import TorneosSidebar   from "./components/shared/TorneosSidebar";
-import TorneosHeader    from "./components/shared/TorneosHeader";
-import ModuleEmptyState from "./components/shared/ModuleEmptyState";
-import InicioPage       from "./pages/InicioPage";
-import TorneosListPage  from "./pages/TorneosListPage";
-import EquiposPage      from "./pages/EquiposPage";
-import FixturesPage     from "./pages/FixturesPage";
-import EstadisticasPage from "./pages/EstadisticasPage";
-import CalendarioPage   from "./pages/CalendarioPage";
-import AjustesPage      from "./pages/AjustesPage";
+import TorneosSidebar    from "./components/shared/TorneosSidebar";
+import TorneosHeader     from "./components/shared/TorneosHeader";
+import ModuleEmptyState  from "./components/shared/ModuleEmptyState";
+import InicioPage        from "./pages/InicioPage";
+import TorneosListPage   from "./pages/TorneosListPage";
+import EquiposPage       from "./pages/EquiposPage";
+import FixturesPage      from "./pages/FixturesPage";
+import EstadisticasPage  from "./pages/EstadisticasPage";
+import CalendarioPage    from "./pages/CalendarioPage";
+import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
 
 const BG     = PALETTE.bg;
@@ -34,6 +36,174 @@ const PAGE_ANIM = {
   exit:       { opacity: 0, y: -6 },
   transition: { duration: 0.28, ease: EASE },
 };
+
+// ── Inline auth screen (login + register tabs) ─────────────────────────────
+
+function TorneosAuthScreen({ onAuthSuccess }) {
+  const [tab, setTab]     = useState("login");
+  const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg]     = useState(null);
+
+  const update = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (errors[k]) setErrors(p => { const n = { ...p }; delete n[k]; return n; });
+  };
+
+  const handleLogin = async () => {
+    const errs = {};
+    if (!form.email)    errs.email    = "Requerido";
+    if (!form.password) errs.password = "Requerido";
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setLoading(true);
+    const { user, error } = await signIn(form.email, form.password);
+    setLoading(false);
+    if (error) { setMsg({ type: "error", text: error }); return; }
+    onAuthSuccess(user);
+  };
+
+  const handleRegister = async () => {
+    const errs = {};
+    if (!form.nombre.trim())                       errs.nombre   = "Requerido";
+    if (!form.email)                               errs.email    = "Requerido";
+    if (!form.password || form.password.length < 6) errs.password = "Mínimo 6 caracteres";
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setLoading(true);
+    const { error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
+    setLoading(false);
+    if (error) { setMsg({ type: "error", text: error }); return; }
+    setMsg({ type: "success", text: "Cuenta creada. Revisa tu correo para confirmar el acceso, luego inicia sesión." });
+    setTab("login");
+    setForm(f => ({ ...f, password: "" }));
+  };
+
+  const inp = (hasErr) => ({
+    width: "100%", boxSizing: "border-box",
+    border: `1px solid ${hasErr ? PALETTE.danger : BORDER}`,
+    borderRadius: 10, padding: "11px 13px",
+    fontSize: 13, color: TEXT, fontFamily: FONT,
+    background: BG, outline: "none",
+  });
+
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+      background: `linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)`,
+      padding: "40px 24px",
+    }}>
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: EASE }}
+        style={{
+          width: "100%", maxWidth: 420,
+          background: CARD, borderRadius: 24,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          padding: "32px 28px", fontFamily: FONT,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
+          <Trophy size={20} color={CU} />
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.04em", color: TEXT }}>ALTTEZ Torneos</div>
+            <div style={{ fontSize: 10, color: MUTED }}>Gestor de torneos deportivos</div>
+          </div>
+        </div>
+
+        {/* Tab toggle */}
+        <div style={{ display: "flex", background: BG, borderRadius: 10, padding: 3, marginBottom: 20, border: `1px solid ${BORDER}` }}>
+          {[["login", "Iniciar sesión"], ["register", "Registrarse"]].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setTab(key); setErrors({}); setMsg(null); }}
+              style={{
+                flex: 1, padding: "8px 0", borderRadius: 8, border: "none",
+                background: tab === key ? CARD : "transparent",
+                color: tab === key ? CU : MUTED,
+                fontWeight: tab === key ? 700 : 500,
+                fontSize: 12, fontFamily: FONT, cursor: "pointer",
+                boxShadow: tab === key ? "0 2px 8px rgba(23,26,28,0.08)" : "none",
+                transition: "all 0.15s",
+              }}
+            >{label}</button>
+          ))}
+        </div>
+
+        {msg && (
+          <div style={{
+            marginBottom: 16, padding: "10px 14px", borderRadius: 8, fontSize: 12,
+            background: msg.type === "error" ? "rgba(220,38,38,0.08)" : CU_DIM,
+            color: msg.type === "error" ? PALETTE.danger : CU,
+            border: `1px solid ${msg.type === "error" ? "rgba(220,38,38,0.2)" : CU_BOR}`,
+          }}>{msg.text}</div>
+        )}
+
+        {tab === "login" ? (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>EMAIL</label>
+              <input style={inp(errors.email)} type="email" value={form.email}
+                onChange={e => update("email", e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+                placeholder="tu@email.com" />
+              {errors.email && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.email}</div>}
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONTRASEÑA</label>
+              <input style={inp(errors.password)} type="password" value={form.password}
+                onChange={e => update("password", e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+                placeholder="Tu contraseña" />
+              {errors.password && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.password}</div>}
+            </div>
+            <button onClick={handleLogin} disabled={loading} style={{
+              width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
+              background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
+              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
+              fontFamily: FONT, cursor: loading ? "wait" : "pointer",
+            }}>{loading ? "Verificando..." : "Ingresar"}</button>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>NOMBRE / ORGANIZACIÓN</label>
+              <input style={inp(errors.nombre)} value={form.nombre}
+                onChange={e => update("nombre", e.target.value)}
+                placeholder="Ej: Liga Norte" />
+              {errors.nombre && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.nombre}</div>}
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>EMAIL</label>
+              <input style={inp(errors.email)} type="email" value={form.email}
+                onChange={e => update("email", e.target.value)}
+                placeholder="tu@email.com" />
+              {errors.email && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.email}</div>}
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONTRASEÑA</label>
+              <input style={inp(errors.password)} type="password" value={form.password}
+                onChange={e => update("password", e.target.value)}
+                placeholder="Mínimo 6 caracteres" />
+              {errors.password && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.password}</div>}
+            </div>
+            <button onClick={handleRegister} disabled={loading} style={{
+              width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
+              background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
+              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
+              fontFamily: FONT, cursor: loading ? "wait" : "pointer",
+            }}>{loading ? "Creando cuenta..." : "Crear cuenta"}</button>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+// ── Import modal ──────────────────────────────────────────────────────────────
 
 function ImportModal({ onClose }) {
   return (
@@ -102,14 +272,35 @@ function ImportModal({ onClose }) {
   );
 }
 
+// ── Main app ──────────────────────────────────────────────────────────────────
+
 export default function TorneosApp() {
-  const navigate = useNavigate();
+  const navigate       = useNavigate();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
   const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
+
+  // undefined = checking, null = not authed, object = authed
+  const [authUser, setAuthUser] = useState(isSupabaseReady ? undefined : null);
+
+  useEffect(() => {
+    if (!isSupabaseReady) return;
+
+    // Check existing session
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setAuthUser(user ?? null);
+    });
+
+    // Subscribe to changes
+    const sub = onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN")  setAuthUser(session?.user ?? null);
+      if (event === "SIGNED_OUT") setAuthUser(null);
+    });
+    return () => sub.unsubscribe();
+  }, []);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
@@ -122,7 +313,36 @@ export default function TorneosApp() {
 
   const handleAbrirTorneo = () => setActiveModule("fixtures");
 
+  const handleLogout = async () => {
+    if (isSupabaseReady) await authSignOut();
+    navigate("/");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
+    const { error } = await deleteAccount();
+    if (error) { alert(error); return; }
+    navigate("/");
+  };
+
   const sidebarActive = activeModule === "crear" ? null : activeModule;
+
+  // Loading state while checking Supabase session
+  if (authUser === undefined) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG }}>
+        <div style={{ textAlign: "center", fontFamily: FONT }}>
+          <Trophy size={28} color={CU} style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 11, color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase" }}>Cargando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth gate — show login/register if no active session
+  if (authUser === null) {
+    return <TorneosAuthScreen onAuthSuccess={setAuthUser} />;
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, fontFamily: FONT }}>
@@ -133,7 +353,11 @@ export default function TorneosApp() {
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
-        <TorneosHeader onLogout={() => navigate("/")} />
+        <TorneosHeader
+          onLogout={handleLogout}
+          onDeleteAccount={handleDeleteAccount}
+          userName={authUser?.email ?? ""}
+        />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>
           <AnimatePresence mode="wait">
