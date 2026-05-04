@@ -306,7 +306,7 @@ export function CRMApp() {
         <OfflineBanner />
         <UpdateToast />
         <Suspense fallback={<LoadingFallback />}>
-          <LandingPage onDemo={handleDemo} onRegister={handleRegister} onLogin={handleLogin} />
+          <LandingPage onRegister={handleRegister} onLogin={handleLogin} />
         </Suspense>
       </div>
     );

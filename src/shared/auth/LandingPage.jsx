@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { User, UserPlus, ArrowRight, Star } from "lucide-react";
+import { UserPlus, Star, LogIn } from "lucide-react";
 import { PALETTE } from "../tokens/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 import { ROLES } from "../constants/roles";
@@ -247,7 +247,7 @@ function MiniFixture() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function LandingPage({ onDemo, onRegister, onLogin }) {
+export default function LandingPage({ onRegister, onLogin }) {
   const navigate = useNavigate();
   const [step, setStep] = useState("landing");
   const [form, setForm] = useState({
@@ -385,22 +385,22 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <motion.button
-                      onClick={onDemo}
+                      onClick={() => setStep("register")}
                       whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     >
-                      Explorar demo →
+                      <UserPlus size={12} /> Registrar club
                     </motion.button>
                     <motion.button
-                      onClick={() => setStep("register")}
+                      onClick={() => setStep("login")}
                       whileHover={{ y: -1, borderColor: CU, color: CU }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     >
-                      <UserPlus size={12} /> Registrar club
+                      <LogIn size={12} /> Iniciar sesión
                     </motion.button>
                   </div>
                 </div>
@@ -464,22 +464,22 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <motion.button
-                      onClick={() => navigate("/torneos")}
+                      onClick={() => setStep("register")}
                       whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer" }}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     >
-                      Explorar demo →
+                      <UserPlus size={12} /> Registrar club
                     </motion.button>
                     <motion.button
-                      onClick={() => navigate("/contacto")}
-                      whileHover={{ y: -1, background: CU_SOFT }}
+                      onClick={() => setStep("login")}
+                      whileHover={{ y: -1, borderColor: CU, color: CU }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
-                      style={{ flex: 1, minHeight: 38, borderRadius: 10, border: `1.5px solid ${CU_BORDER}`, background: "transparent", color: CU, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                     >
-                      Solicitar piloto
+                      <LogIn size={12} /> Iniciar sesión
                     </motion.button>
                   </div>
                 </div>
@@ -489,44 +489,6 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
 
           </div>
 
-          {/* ── YA TENGO CUENTA ── */}
-          {isSupabaseReady && (
-            <motion.button
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.52, delay: 0.26, ease: EASE }}
-              whileHover={{ y: -2, boxShadow: "0 12px 32px rgba(23,26,28,0.10)", borderColor: CU_BORDER }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setStep("login")}
-              style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "16px 20px", borderRadius: 18,
-                border: `1px solid ${PALETTE.border}`,
-                background: "rgba(255,255,255,0.84)",
-                cursor: "pointer", textAlign: "left",
-                width: "100%", boxSizing: "border-box",
-                boxShadow: "0 4px 16px rgba(23,26,28,0.05)",
-              }}
-            >
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "#F6F1EA", border: `1px solid ${PALETTE.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                <User size={18} color={CU} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: PALETTE.text }}>Ya tengo cuenta</div>
-                <div style={{ fontSize: 12, color: PALETTE.textMuted }}>Ingresar a mi espacio ALTTEZ</div>
-              </div>
-              <motion.div
-                animate={{ x: [0, 4, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <ArrowRight size={18} color={CU} />
-              </motion.div>
-            </motion.button>
-          )}
         </div>
       </Shell>
     );

@@ -3,34 +3,30 @@ import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import LandingPage from "../../shared/auth/LandingPage";
 
-// LandingPage usa useNavigate → necesita un Router provider
 const renderWithRouter = (ui) =>
   render(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe('LandingPage Component', () => {
-  it('renders landing step with both action cards', () => {
+  it('renders landing step with both product cards', () => {
     renderWithRouter(
-      <LandingPage onDemo={vi.fn()} onRegister={vi.fn()} onLogin={vi.fn()} />
+      <LandingPage onRegister={vi.fn()} onLogin={vi.fn()} />
     );
-    expect(screen.getByText('Explorar Demo')).toBeInTheDocument();
-    expect(screen.getByText('Registrar Club')).toBeInTheDocument();
+    expect(screen.getByText('Gestionar clubes')).toBeInTheDocument();
+    expect(screen.getByText('Gestionar torneos')).toBeInTheDocument();
   });
 
-  it('calls onDemo when the demo button is clicked', () => {
-    const onDemo = vi.fn();
+  it('shows register form when "Registrar club" is clicked', () => {
     renderWithRouter(
-      <LandingPage onDemo={onDemo} onRegister={vi.fn()} onLogin={vi.fn()} />
+      <LandingPage onRegister={vi.fn()} onLogin={vi.fn()} />
     );
-    fireEvent.click(screen.getByText('Explorar Demo'));
-    expect(onDemo).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: /registrar club/i }));
+    expect(screen.getByText('Registrar club', { selector: 'div' })).toBeInTheDocument();
   });
 
-  it('navigates to register step when "Registrar Club" is clicked', () => {
+  it('renders Iniciar sesión button in Clubes card', () => {
     renderWithRouter(
-      <LandingPage onDemo={vi.fn()} onRegister={vi.fn()} onLogin={vi.fn()} />
+      <LandingPage onRegister={vi.fn()} onLogin={vi.fn()} />
     );
-    fireEvent.click(screen.getByText('Registrar Club'));
-    // After click, register form should appear
-    expect(screen.getByText('Incorporar tu club')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
   });
 });
