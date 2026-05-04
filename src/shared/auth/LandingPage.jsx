@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Users, Trophy, Globe, Layers, ShieldCheck, Monitor, User, UserPlus, ArrowRight, Star } from "lucide-react";
+import { User, UserPlus, ArrowRight, Star } from "lucide-react";
 import { PALETTE } from "../tokens/palette";
 import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 import { ROLES } from "../constants/roles";
@@ -21,15 +21,6 @@ if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
   const s = document.createElement("style");
   s.id = "landing-kf";
   s.textContent = `
-    @media (max-width: 960px) {
-      .ldg-auth-shell {
-        grid-template-columns: 1fr !important;
-      }
-      .ldg-right-col {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-      }
-    }
     @media (max-width: 720px) {
       .ldg-form-row,
       .ldg-right-col {
@@ -154,114 +145,6 @@ function TopBack({ onClick, label = "Volver al inicio" }) {
     >
       ← {label}
     </button>
-  );
-}
-
-// ── Mini CRM product preview ──────────────────────────────────────────────────
-
-function MiniCRMPreview() {
-  return (
-    <motion.div
-      animate={{ y: [0, -6, 0] }}
-      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      style={{ flexShrink: 0 }}
-    >
-      <div
-        className="ldg-crm-preview"
-        style={{
-          width: 310, flexShrink: 0,
-          borderRadius: 12, overflow: "hidden",
-          border: "1px solid #E9E2D7",
-          boxShadow: "0 14px 40px rgba(23,26,28,0.16)",
-          background: "#F6F1EA",
-          pointerEvents: "none", userSelect: "none",
-        }}
-      >
-        {/* Navbar */}
-        <div style={{ background: "#FAFAF8", borderBottom: "1px solid #E9E2D7", padding: "5px 8px", display: "flex", alignItems: "center", gap: 4 }}>
-          <div style={{ width: 13, height: 13, background: "#171A1C", borderRadius: 3, flexShrink: 0 }} />
-          <span style={{ fontSize: 7.5, fontWeight: 900, letterSpacing: "-0.04em", color: "#171A1C", marginRight: 4 }}>ALTTEZ</span>
-          {["Inicio", "Entrenamiento", "Plantilla", "Calendario", "Reportes", "Mi Club"].map(t => (
-            <span key={t} style={{ fontSize: 5.5, color: "#8A8580", marginRight: 3 }}>{t}</span>
-          ))}
-          <span style={{ marginLeft: "auto", fontSize: 5.5, color: "#8A8580", marginRight: 4 }}>DEMO</span>
-          <div style={{ width: 16, height: 16, borderRadius: 999, background: "#C9973A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 6, color: "#fff", fontWeight: 800 }}>AD</span>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div style={{ display: "flex", height: 198 }}>
-          {/* Sidebar */}
-          <div style={{ width: 26, background: "#FAFAF8", borderRight: "1px solid #E9E2D7", display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 10, gap: 8 }}>
-            {[true, false, false, false, false].map((active, i) => (
-              <div key={i} style={{ width: 14, height: 14, borderRadius: 4, background: active ? "#C9973A" : "#E9E2D7" }} />
-            ))}
-          </div>
-
-          {/* Main */}
-          <div style={{ flex: 1, padding: "8px", overflow: "hidden" }}>
-            <div style={{ fontSize: 7, fontWeight: 800, color: "#171A1C", marginBottom: 1 }}>Hola, Águilas de Lucero</div>
-            <div style={{ fontSize: 5.5, color: "#8A8580", marginBottom: 7 }}>Temporada 2025–26</div>
-
-            {/* KPIs */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 3, marginBottom: 7 }}>
-              {[["18","Plantilla","Jugadores"],["7","Partidos","Próximos"],["5","Sesiones","Esta semana"],["82%","Asistencia","Promedio de"]].map(([v,l,s]) => (
-                <div key={l} style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 3px", textAlign: "center" }}>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: "#171A1C" }}>{v}</div>
-                  <div style={{ fontSize: 4, color: "#8A8580" }}>{s}</div>
-                  <div style={{ fontSize: 4.5, color: "#8A8580", fontWeight: 600 }}>{l}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Module cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3, marginBottom: 7 }}>
-              {[
-                ["Entrenamiento","Planifica sesiones, ejercicios y cargas de trabajo.","Entrar →"],
-                ["Gestión de plantilla","Roles, contratos y planificación deportiva.","Ver plantilla →"],
-              ].map(([t,s,cta]) => (
-                <div key={t} style={{ borderRadius: 6, background: "linear-gradient(150deg,#1C1C1A,#2A2A28)", padding: "7px 6px" }}>
-                  <div style={{ fontSize: 6, fontWeight: 800, color: "#fff" }}>{t}</div>
-                  <div style={{ fontSize: 4.5, color: "rgba(255,255,255,0.55)", marginTop: 1, lineHeight: 1.4 }}>{s}</div>
-                  <div style={{ marginTop: 5, fontSize: 5.5, color: "#C9973A", fontWeight: 700 }}>{cta}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Próximo evento */}
-            <div style={{ background: "#fff", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px", display: "flex", alignItems: "center", gap: 5, marginBottom: 5 }}>
-              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#F6F1EA", border: "1px solid #E9E2D7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 7, color: "#C9973A" }}>◆</span>
-              </div>
-              <div style={{ overflow: "hidden", flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 4.5, color: "#8A8580", textTransform: "uppercase", letterSpacing: "0.04em" }}>Partido amistoso</div>
-                  <div style={{ fontSize: 4.5, color: "#C9973A", fontWeight: 600 }}>Ver calendario →</div>
-                </div>
-                <div style={{ fontSize: 5.5, fontWeight: 700, color: "#171A1C", whiteSpace: "nowrap" }}>ÁGUILAS DE LUCERO vs DEPORTIVO SUR</div>
-                <div style={{ fontSize: 4.5, color: "#8A8580" }}>Sáb 10 May · 17:00h · Campo A</div>
-              </div>
-            </div>
-
-            {/* Financial */}
-            <div style={{ background: "linear-gradient(135deg,#F6F1EA,#FDFDFB)", border: "1px solid #E9E2D7", borderRadius: 5, padding: "4px 6px", display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#fff", border: "1px solid #E9E2D7", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 7, color: "#C9973A" }}>$</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 5, color: "#8A8580", fontWeight: 600 }}>Salud financiera del club</div>
-                <div style={{ display: "flex", gap: 3, marginTop: 2 }}>
-                  {["Resumen general","Indicadores clave"].map(t => (
-                    <span key={t} style={{ fontSize: 4.5, color: "#8A8580", background: "#fff", border: "1px solid #E9E2D7", borderRadius: 3, padding: "2px 4px" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
   );
 }
 
@@ -436,38 +319,27 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
       <Shell>
         <TopBack onClick={() => navigate("/")} />
 
-        <div className="ldg-auth-shell" style={{ display: "grid", gridTemplateColumns: "1.08fr 1fr", gap: 20, alignItems: "start" }}>
+        <div className="ldg-auth-shell" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 960, margin: "0 auto" }}>
 
-          {/* ── LEFT CARD ── */}
+          {/* ── COMPACT HEADER ── */}
           <motion.div
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            whileHover={{ boxShadow: "0 32px 80px rgba(23,26,28,0.13)" }}
-            transition={{ duration: 0.58, ease: EASE }}
-            className="ldg-card"
-            style={{
-              padding: "36px 34px 28px",
-              borderRadius: 28,
-              background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,250,248,0.96) 100%)",
-              border: `1px solid ${PALETTE.border}`,
-              boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
-            }}
+            transition={{ duration: 0.45, ease: EASE }}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 }}
           >
-            {/* Brand header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <BrandSymbol />
               <div>
-                <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.06em", color: PALETTE.text }}>ALTTEZ</div>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>ALTTEZ</div>
                 <div style={{ fontSize: 10.5, color: PALETTE.textMuted }}>Infraestructura operativa para clubes y torneos</div>
               </div>
             </div>
-
-            {/* Badge with pulsing dot */}
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 7,
               padding: "6px 12px", borderRadius: 999,
               background: CU_SOFT, border: `1px solid ${CU_BORDER}`,
-              color: PALETTE.text, fontSize: 10.5, fontWeight: 700, marginBottom: 20,
+              color: PALETTE.text, fontSize: 10.5, fontWeight: 700,
             }}>
               <motion.span
                 animate={{ scale: [1, 1.5, 1], opacity: [1, 0.55, 1] }}
@@ -476,80 +348,10 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               />
               Nuevo ecosistema ALTTEZ
             </div>
-
-            {/* Hero row: headline + preview */}
-            <div className="ldg-hero-row" style={{ display: "flex", gap: 24, alignItems: "flex-start", marginBottom: 24 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h1 style={{ margin: "0 0 14px", fontSize: "clamp(26px, 2.8vw, 42px)", lineHeight: 0.95, letterSpacing: "-0.07em", color: PALETTE.text }}>
-                  Una operación clara
-                  <br />para clubes y torneos.
-                </h1>
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7, color: PALETTE.textMuted }}>
-                  Explora el entorno demo, registra tu organización o inicia un piloto con una experiencia más editorial, profesional y modular.
-                </p>
-              </div>
-              <MiniCRMPreview />
-            </div>
-
-            {/* Module chips — staggered */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
-              {[
-                [<Users size={14} key="u" />, "Clubes", "Planifica, entrena y administra cada área del club con una visión integral."],
-                [<Trophy size={14} key="t" />, "Torneos", "Crea competiciones, gestiona partidos, resultados y tablas en tiempo real."],
-                [<Globe size={14} key="g" />, "Vista pública", "Calendarios, resultados y estadísticas con identidad profesional."],
-              ].map(([icon, title, copy], i) => (
-                <motion.div
-                  key={title}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.45, delay: 0.28 + i * 0.08, ease: EASE }}
-                  whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(23,26,28,0.09)" }}
-                  style={{ padding: "13px 11px", borderRadius: 14, background: "#FFFDFC", border: `1px solid ${PALETTE.border}`, cursor: "default" }}
-                >
-                  <div style={{ color: CU, marginBottom: 7 }}>{icon}</div>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: PALETTE.text, marginBottom: 4 }}>{title}</div>
-                  <div style={{ fontSize: 10.5, color: PALETTE.textMuted, lineHeight: 1.55 }}>{copy}</div>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Benefits bar — staggered */}
-            <div style={{ paddingTop: 16, borderTop: `1px solid ${PALETTE.border}`, display: "flex" }}>
-              {[
-                [<Layers size={12} key="l" />, "2 módulos", "Clubes y Torneos"],
-                [<ShieldCheck size={12} key="s" />, "Gestión centralizada", "Datos y procesos unificados"],
-                [<Monitor size={12} key="m" />, "Vista pública profesional", "Transparencia y comunicación"],
-              ].map(([icon, title, sub], i) => (
-                <motion.div
-                  key={title}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.45 + i * 0.09, ease: EASE }}
-                  style={{
-                    flex: 1, display: "flex", alignItems: "center", gap: 8,
-                    paddingLeft: i > 0 ? 14 : 0,
-                    borderLeft: i > 0 ? `1px solid ${PALETTE.border}` : "none",
-                    marginLeft: i > 0 ? 14 : 0,
-                  }}
-                >
-                  <div style={{ color: CU, flexShrink: 0 }}>{icon}</div>
-                  <div>
-                    <div style={{ fontSize: 10.5, fontWeight: 800, color: PALETTE.text }}>{title}</div>
-                    <div style={{ fontSize: 9.5, color: PALETTE.textMuted }}>{sub}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
           </motion.div>
 
-          {/* ── RIGHT COLUMN ── */}
-          <motion.div
-            className="ldg-right-col"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.58, delay: 0.07, ease: EASE }}
-            style={{ display: "flex", flexDirection: "column", gap: 14 }}
-          >
+          {/* ── MODULE CARDS ── */}
+          <div className="ldg-right-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
 
             {/* ALTTEZ Clubes */}
             <motion.div
@@ -662,7 +464,7 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <motion.button
-                      onClick={onDemo}
+                      onClick={() => navigate("/torneos")}
                       whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
                       whileTap={{ scale: 0.97 }}
                       transition={SPRING_FAST}
@@ -670,7 +472,6 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
                     >
                       Explorar demo →
                     </motion.button>
-                    {/* TODO: navigate to /torneos/piloto when Torneos module ships */}
                     <motion.button
                       onClick={() => navigate("/contacto")}
                       whileHover={{ y: -1, background: CU_SOFT }}
@@ -686,45 +487,46 @@ export default function LandingPage({ onDemo, onRegister, onLogin }) {
               </div>
             </motion.div>
 
-            {/* Ya tengo cuenta */}
-            {isSupabaseReady && (
-              <motion.button
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.52, delay: 0.26, ease: EASE }}
-                whileHover={{ y: -2, boxShadow: "0 12px 32px rgba(23,26,28,0.10)", borderColor: CU_BORDER }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setStep("login")}
-                style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "16px 20px", borderRadius: 18,
-                  border: `1px solid ${PALETTE.border}`,
-                  background: "rgba(255,255,255,0.84)",
-                  cursor: "pointer", textAlign: "left",
-                  width: "100%", boxSizing: "border-box",
-                  boxShadow: "0 4px 16px rgba(23,26,28,0.05)",
-                }}
+          </div>
+
+          {/* ── YA TENGO CUENTA ── */}
+          {isSupabaseReady && (
+            <motion.button
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.52, delay: 0.26, ease: EASE }}
+              whileHover={{ y: -2, boxShadow: "0 12px 32px rgba(23,26,28,0.10)", borderColor: CU_BORDER }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setStep("login")}
+              style={{
+                display: "flex", alignItems: "center", gap: 14,
+                padding: "16px 20px", borderRadius: 18,
+                border: `1px solid ${PALETTE.border}`,
+                background: "rgba(255,255,255,0.84)",
+                cursor: "pointer", textAlign: "left",
+                width: "100%", boxSizing: "border-box",
+                boxShadow: "0 4px 16px rgba(23,26,28,0.05)",
+              }}
+            >
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "#F6F1EA", border: `1px solid ${PALETTE.border}`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>
+                <User size={18} color={CU} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: PALETTE.text }}>Ya tengo cuenta</div>
+                <div style={{ fontSize: 12, color: PALETTE.textMuted }}>Ingresar a mi espacio ALTTEZ</div>
+              </div>
+              <motion.div
+                animate={{ x: [0, 4, 0] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: "#F6F1EA", border: `1px solid ${PALETTE.border}`,
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
-                  <User size={18} color={CU} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: PALETTE.text }}>Ya tengo cuenta</div>
-                  <div style={{ fontSize: 12, color: PALETTE.textMuted }}>Ingresar a mi espacio ALTTEZ</div>
-                </div>
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ArrowRight size={18} color={CU} />
-                </motion.div>
-              </motion.button>
-            )}
-          </motion.div>
+                <ArrowRight size={18} color={CU} />
+              </motion.div>
+            </motion.button>
+          )}
         </div>
       </Shell>
     );

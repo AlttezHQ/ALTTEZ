@@ -34,6 +34,9 @@ const ConfirmarAsistencia = lazy(() => import("./marketing/pages/ConfirmarAsiste
 // ── CRM Shell ──
 const CRMApp = lazy(() => import("./app/shell/CRMApp"));
 
+// ── ALTTEZ Torneos ──
+const TorneosApp = lazy(() => import("./app/torneos/TorneosApp"));
+
 // ── Conectar handlers de error al boot ──
 const _toastError = (msg) => showToast(msg, "error");
 setStorageErrorHandler(_toastError);
@@ -92,6 +95,8 @@ export default function App() {
         />
         {/* CRM App — sistema de gestion deportiva */}
         <Route path="/crm/*" element={<Suspense fallback={<LoadingFallback />}><CRMApp /></Suspense>} />
+        {/* ALTTEZ Torneos — producto independiente */}
+        <Route path="/torneos/*" element={<Suspense fallback={<LoadingFallback />}><TorneosApp /></Suspense>} />
       </Routes>
     </BrowserRouter>
   );
