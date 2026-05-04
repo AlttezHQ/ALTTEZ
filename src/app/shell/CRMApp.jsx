@@ -110,7 +110,7 @@ export function CRMApp() {
   const setClubInfo = useStore(state => state.setClubInfo);
   const setMatchStats = useStore(state => state.setMatchStats);
   const setFinanzas = useStore(state => state.setFinanzas);
-  const clearStore = useStore(state => state.clearStore);
+  const _clearStore = useStore(state => state.clearStore);
 
   // Auth state: perfil de Supabase (club_id + role)
   const [authProfile, setAuthProfile] = useState(null);
@@ -183,7 +183,7 @@ export function CRMApp() {
   const handleRegister = useCallback(async (form) => {
     // 1. Registrar en Supabase Auth (si disponible)
     if (isSupabaseReady && form.email && form.password) {
-      const { user, session, error } = await signUp({
+      const { session, error } = await signUp({
         email: form.email,
         password: form.password,
         fullName: form.entrenador || form.nombre,

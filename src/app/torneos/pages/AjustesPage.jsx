@@ -31,6 +31,7 @@ export default function AjustesPage({ onGoTorneos }) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (torneo) setForm({ nombre: torneo.nombre, deporte: torneo.deporte, fechaInicio: torneo.fechaInicio ?? "" });
   }, [torneoActivoId]);
 

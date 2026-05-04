@@ -36,7 +36,7 @@ import { useStore } from "../../shared/store/useStore";
 // Responsive CSS → index.css (.player-row-desktop, .plantilla-list-grid, etc.)
 import { FORMATIONS_VERTICAL as FORMATIONS } from "../../shared/constants/formations";
 import { getAvatarUrl, getStatusStyle } from "../../shared/utils/helpers";
-import { calcSaludActual, calcAthleteRisk, saludColor } from "../../shared/utils/rpeEngine";
+import { calcSaludActual, calcAthleteRisk } from "../../shared/utils/rpeEngine";
 import { sanitizeText, sanitizeTextFinal } from "../../shared/utils/sanitize";
 import { showToast } from "../../shared/ui/Toast";
 import { insertAthlete, bulkInsertAthletes, saveTacticalData } from "../../shared/services/supabaseService";

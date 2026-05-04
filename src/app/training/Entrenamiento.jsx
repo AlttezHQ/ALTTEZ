@@ -474,6 +474,7 @@ export default function Entrenamiento({ clubId = "" }) {
       color: result.color,
     });
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    // eslint-disable-next-line react-hooks/immutability
     feedbackTimerRef.current = setTimeout(() => setHealthFeedback(null), 3500);
 
     if (nextIdx != null && athletes[nextIdx]) {

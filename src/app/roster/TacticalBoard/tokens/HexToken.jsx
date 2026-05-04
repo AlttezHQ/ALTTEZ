@@ -21,7 +21,7 @@
 import { memo, useState } from "react";
 import { motion } from "framer-motion";
 import { PALETTE as C } from "../../../../shared/tokens/palette";
-import { getAvatarUrl as avatar, getStatusStyle } from "../../../../shared/utils/helpers";
+import { getAvatarUrl as avatar } from "../../../../shared/utils/helpers";
 import { saludColor } from "../../../../shared/utils/rpeEngine";
 
 /* ── hex path helpers ─────────────────────────────────────────────────────── */

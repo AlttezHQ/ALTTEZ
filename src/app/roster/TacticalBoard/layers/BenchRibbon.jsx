@@ -19,7 +19,7 @@ import { PALETTE as C } from "../../../../shared/tokens/palette";
 import { getAvatarUrl as avatar } from "../../../../shared/utils/helpers";
 import { saludColor } from "../../../../shared/utils/rpeEngine";
 
-function BenchCard({ bench, idx, saludVal, isDragged, isActivating, onPointerDown, accent }) {
+function BenchCard({ bench, _idx, saludVal, isDragged, isActivating, onPointerDown, accent }) {
   const a = bench.athlete;
   const dorsal = a?.dorsal ?? a?.number ?? "—";
   const ovr = a?.rating || 76;

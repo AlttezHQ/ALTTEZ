@@ -11,7 +11,6 @@ import { useStore } from "../../shared/store/useStore";
 import { getAvatarUrl } from "../../shared/utils/helpers";
 import { PALETTE } from "../../shared/tokens/palette";
 import { calcSaludActual } from "../../shared/utils/rpeEngine";
-import { getWellnessStatus } from "../../shared/types/wellnessTypes";
 import WellnessCheckIn from "../../shared/ui/WellnessCheckIn";
 
 export default function KioskMode() {
@@ -23,7 +22,7 @@ export default function KioskMode() {
   const session = useStore(state => state.session);
 
   const [selected, setSelected] = useState(null); // athlete
-  const [lastChecked, setLastChecked] = useState({}); // athleteId → timestamp
+  const [_lastChecked, setLastChecked] = useState({}); // athleteId → timestamp
 
   const presentAthletes = athletes.filter(a => a.status === "P");
 

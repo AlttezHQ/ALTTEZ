@@ -729,7 +729,7 @@ export default function TacticalBoardV9({ athletes = [], historial = [], clubId 
     setSelectedIdx(null);
   }, [selectedIdx, starters]);
 
-  const swapSimilar = useCallback((na) => {
+  const _swapSimilar = useCallback((na) => {
     const current = selectedIdx !== null ? starters[selectedIdx]?.athlete : null;
     setConfirmAction({
       title: "Cambiar jugador",

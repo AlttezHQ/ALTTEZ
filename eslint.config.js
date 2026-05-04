@@ -25,9 +25,11 @@ export default defineConfig([
     rules: {
       'no-unused-vars': ['error', {
         varsIgnorePattern: '^(?:[A-Z_].*|motion)$',
-        argsIgnorePattern: '^_',
+        argsIgnorePattern: '^(?:_|[A-Z_].*)',
+        caughtErrorsIgnorePattern: '^_',
         ignoreRestSiblings: true,
       }],
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
   {
@@ -49,7 +51,7 @@ export default defineConfig([
   {
     files: ['tools/agent-monitor/server/**/*.js', 'tools/agent-monitor/scripts/**/*.js'],
     languageOptions: {
-      sourceType: 'commonjs',
+      sourceType: 'module',
       globals: {
         ...globals.node,
       },
@@ -73,7 +75,24 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/components/Toast.jsx'],
+    files: ['src/tests/**/*.test.{js,jsx}', 'src/tests/**/*.spec.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        vi: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['src/shared/ui/Toast.jsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

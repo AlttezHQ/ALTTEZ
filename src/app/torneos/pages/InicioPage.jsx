@@ -117,7 +117,7 @@ function StatChip({ value, label }) {
   );
 }
 
-function ActiveDashboard({ torneo, equipos, partidos, sedes, onInfoClick, onNavigate }) {
+function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNavigate }) {
   const finalizados  = partidos.filter(p => p.estado === "finalizado").length;
   const programados  = partidos.filter(p => p.fechaHora).length;
   const schedPct     = partidos.length > 0 ? programados / partidos.length : 0;
