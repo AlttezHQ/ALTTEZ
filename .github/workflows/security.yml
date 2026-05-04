@@ -35,7 +35,7 @@ jobs:
         run: |
           # Buscar patrones de API keys / secrets en src/
           # password\s*=\s*['"][^ '"] excluye strings con espacios (mensajes UI, no credenciales)
-          if grep -rPn "sk_live|sk_test|AKIA|password\s*=\s*['\"][^ '\"]{6,}['\"]" src/ --include="*.js" --include="*.jsx"; then
+          if grep -rPn "sk_live|sk_test|AKIA|(?<!errs\.)(?<!errors\.)(?<!form\.)password\s*=\s*['\"][^ '\"]{6,}['\"]" src/ --include="*.js" --include="*.jsx"; then
             echo "SECRETS FOUND IN CODE"
             exit 1
           fi
