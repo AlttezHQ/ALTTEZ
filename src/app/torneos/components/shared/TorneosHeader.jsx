@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, User, LogOut, ChevronDown } from "lucide-react";
+import { Trophy, User, LogOut, Trash2, ChevronDown } from "lucide-react";
 import { PALETTE } from "../../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -13,7 +13,7 @@ const BORDER = PALETTE.border;
 const BG     = PALETTE.bg;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
-export default function TorneosHeader({ onLogout, userName = "" }) {
+export default function TorneosHeader({ onLogout, onDeleteAccount, userName = "" }) {
   const [open, setOpen] = useState(false);
 
   const displayName = userName.includes("@")
@@ -81,6 +81,19 @@ export default function TorneosHeader({ onLogout, userName = "" }) {
                   }}
                 >
                   <LogOut size={13} /> Cerrar sesión
+                </button>
+
+                <button
+                  onClick={() => { setOpen(false); onDeleteAccount?.(); }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 9,
+                    padding: "10px 14px", background: "none",
+                    border: "none", borderTop: `1px solid ${BORDER}`,
+                    cursor: "pointer", fontFamily: FONT, fontSize: 12,
+                    color: PALETTE.danger, textAlign: "left",
+                  }}
+                >
+                  <Trash2 size={13} /> Eliminar cuenta
                 </button>
               </motion.div>
             )}
