@@ -23,10 +23,11 @@ describe('LandingPage Component', () => {
     expect(screen.getByText('Registrar club', { selector: 'div' })).toBeInTheDocument();
   });
 
-  it('renders Iniciar sesión button in Clubes card', () => {
+  it('renders Iniciar sesión buttons (Clubes + Torneos cards)', () => {
     renderWithRouter(
       <LandingPage onRegister={vi.fn()} onLogin={vi.fn()} />
     );
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button', { name: /iniciar sesión/i });
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -6,7 +6,7 @@
  *  - TorneosAuthScreen: validación de formulario, llamadas correctas
  */
 
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -444,7 +444,7 @@ describe("TorneosAuthScreen — formulario de registro", () => {
 
   it("envía signUp con role='admin' hardcodeado", async () => {
     mockSignUp.mockResolvedValueOnce({
-      data: { user: { id: "u2" }, session: null },
+      data: { user: { id: "u2" }, session: { access_token: "tok" } },
       error: null,
     });
 
@@ -470,9 +470,39 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     });
   });
 
-  it("tras registro exitoso muestra mensaje y vuelve a tab login", async () => {
+  it("tras registro exitoso entra directo a la app sin pantalla intermedia", async () => {
+    const fakeUser = { id: "u2", email: "mi@liga.com" };
+    // signUp con sesión activa → entra directo, sin signIn extra
+    mockSignUp.mockResolvedValueOnce({
+      data: { user: fakeUser, session: { access_token: "tok" } },
+      error: null,
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
+      target: { value: "Mi Liga" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
+      target: { value: "mi@liga.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
+      target: { value: "pass123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
+
+    // App completa renderiza (InicioPage), sin "Revisa tu correo"
+    await waitFor(() => {
+      expect(screen.getByTestId("inicio-page")).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/revisa tu correo/i)).not.toBeInTheDocument();
+  });
+
+  it("si signUp no devuelve sesión, hace signIn inmediato y entra directo", async () => {
     mockSignUp.mockResolvedValueOnce({
       data: { user: { id: "u2" }, session: null },
+      error: null,
+    });
+    mockSignInWithPassword.mockResolvedValueOnce({
+      data: { user: { id: "u2", email: "mi@liga.com" }, session: { access_token: "tok" } },
       error: null,
     });
 
@@ -488,10 +518,14 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/revisa tu correo/i)).toBeInTheDocument();
+      expect(mockSignInWithPassword).toHaveBeenCalledWith({
+        email: "mi@liga.com",
+        password: "pass123",
+      });
     });
-    // Vuelve a tab login → botón "Ingresar" visible
-    expect(screen.getByRole("button", { name: /ingresar/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("inicio-page")).toBeInTheDocument();
+    });
   });
 
   it("muestra error si signUp falla (email duplicado)", async () => {

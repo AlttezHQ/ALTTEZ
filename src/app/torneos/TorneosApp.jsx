@@ -72,12 +72,17 @@ function TorneosAuthScreen({ onAuthSuccess }) {
     setErrors(errs);
     if (Object.keys(errs).length) return;
     setLoading(true);
-    const { error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
+    const { user, session, error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
+    if (error) { setLoading(false); setMsg({ type: "error", text: error }); return; }
+    // Sin pantalla intermedia: si no hay sesión post-signUp, hacer login inmediato y entrar directo.
+    let authedUser = user;
+    if (!session) {
+      const { user: signedInUser, error: signInError } = await signIn(form.email, form.password);
+      if (signInError) { setLoading(false); setMsg({ type: "error", text: signInError }); return; }
+      authedUser = signedInUser ?? user;
+    }
     setLoading(false);
-    if (error) { setMsg({ type: "error", text: error }); return; }
-    setMsg({ type: "success", text: "Cuenta creada. Revisa tu correo para confirmar el acceso, luego inicia sesión." });
-    setTab("login");
-    setForm(f => ({ ...f, password: "" }));
+    onAuthSuccess(authedUser);
   };
 
   const inp = (hasErr) => ({

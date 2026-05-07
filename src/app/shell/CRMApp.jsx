@@ -193,10 +193,14 @@ export function CRMApp() {
         showToast(error, "error");
         return;
       }
-      // Sin sesión = email confirmation requerido; el usuario debe confirmar antes de continuar
+      // Si signUp no estableció sesión (proyecto con email-confirm), intentar login inmediato
+      // para que el usuario entre directo a la interfaz sin pantalla intermedia.
       if (!session) {
-        showToast("Cuenta creada. Revisa tu correo para confirmar el acceso.", "info");
-        return;
+        const { error: signInError } = await signIn(form.email, form.password);
+        if (signInError) {
+          showToast(signInError, "error");
+          return;
+        }
       }
     }
 
