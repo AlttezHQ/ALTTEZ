@@ -145,8 +145,11 @@ export function CRMApp() {
     return () => sub.unsubscribe();
   }, []);
 
-  // Role: exclusivamente desde Supabase authProfile; demo siempre admin aislado
-  const userRole = mode === "demo" ? "admin" : (authProfile?.role ?? null);
+  // Role: demo siempre admin; sin Supabase configurado modo offline también admin
+  // (sin auth real no hay perfil que verificar). Con Supabase usa authProfile.
+  const userRole = mode === "demo" || (mode && !isSupabaseReady)
+    ? "admin"
+    : (authProfile?.role ?? null);
 
   // Navegacion con control de acceso por rol
   const navigateTo = useCallback((mod) => {

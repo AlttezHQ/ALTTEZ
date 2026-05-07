@@ -289,7 +289,10 @@ export default function TorneosApp() {
   const [showImport,   setShowImport]   = useState(false);
 
   // undefined = checking, null = not authed, object = authed
-  const [authUser, setAuthUser] = useState(isSupabaseReady ? undefined : null);
+  // Sin Supabase configurado: saltar gate de auth y entrar en modo local (placeholder user).
+  const [authUser, setAuthUser] = useState(
+    isSupabaseReady ? undefined : { id: "offline", email: "Modo offline" }
+  );
 
   useEffect(() => {
     if (!isSupabaseReady) return;
