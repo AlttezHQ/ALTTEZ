@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, FileSpreadsheet, Tag } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
-import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
-import { signIn, signUp, signOut as authSignOut, deleteAccount, onAuthStateChange } from "../../shared/services/authService";
+import { useAuth } from "../../shared/auth";
+import { validateTorneosInlineLogin, validateTorneosInlineRegister } from "../../shared/auth/authValidation";
+import { getPostLogoutRedirect } from "../../shared/auth/authRedirects";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -38,8 +38,10 @@ const PAGE_ANIM = {
 };
 
 // ── Inline auth screen (login + register tabs) ─────────────────────────────
+// Uses shared auth context + centralized validation.
 
-function TorneosAuthScreen({ onAuthSuccess }) {
+function TorneosAuthScreen() {
+  const auth = useAuth();
   const [tab, setTab]     = useState("login");
   const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -52,37 +54,30 @@ function TorneosAuthScreen({ onAuthSuccess }) {
   };
 
   const handleLogin = async () => {
-    const errs = {};
-    if (!form.email)    errs.email    = "Requerido";
-    if (!form.password) errs.password = "Requerido";
+    const { errors: errs, cleanData } = validateTorneosInlineLogin(form);
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (!cleanData) return;
     setLoading(true);
-    const { user, error } = await signIn(form.email, form.password);
+    const { error } = await auth.signIn(cleanData.email, cleanData.password);
     setLoading(false);
     if (error) { setMsg({ type: "error", text: error }); return; }
-    onAuthSuccess(user);
+    // Auth state update handled by AuthProvider listener
   };
 
   const handleRegister = async () => {
-    const errs = {};
-    if (!form.nombre.trim())                       errs.nombre   = "Requerido";
-    if (!form.email)                               errs.email    = "Requerido";
-    if (!form.password || form.password.length < 6) errs.password = "Mínimo 6 caracteres";
+    const { errors: errs, cleanData } = validateTorneosInlineRegister(form);
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (!cleanData) return;
     setLoading(true);
-    const { user, session, error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
+    const { error } = await auth.signUp({
+      email: cleanData.email,
+      password: cleanData.password,
+      fullName: cleanData.nombre,
+      role: "admin",
+    });
     if (error) { setLoading(false); setMsg({ type: "error", text: error }); return; }
-    // Sin pantalla intermedia: si no hay sesión post-signUp, hacer login inmediato y entrar directo.
-    let authedUser = user;
-    if (!session) {
-      const { user: signedInUser, error: signInError } = await signIn(form.email, form.password);
-      if (signInError) { setLoading(false); setMsg({ type: "error", text: signInError }); return; }
-      authedUser = signedInUser ?? user;
-    }
     setLoading(false);
-    onAuthSuccess(authedUser);
+    // Auth state update handled by AuthProvider listener
   };
 
   const inp = (hasErr) => ({
@@ -280,35 +275,13 @@ function ImportModal({ onClose }) {
 // ── Main app ──────────────────────────────────────────────────────────────────
 
 export default function TorneosApp() {
-  const navigate       = useNavigate();
+  const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
   const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
-
-  // undefined = checking, null = not authed, object = authed
-  // Sin Supabase configurado: saltar gate de auth y entrar en modo local (placeholder user).
-  const [authUser, setAuthUser] = useState(
-    isSupabaseReady ? undefined : { id: "offline", email: "Modo offline" }
-  );
-
-  useEffect(() => {
-    if (!isSupabaseReady) return;
-
-    // Check existing session
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setAuthUser(user ?? null);
-    });
-
-    // Subscribe to changes
-    const sub = onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN")  setAuthUser(session?.user ?? null);
-      if (event === "SIGNED_OUT") setAuthUser(null);
-    });
-    return () => sub.unsubscribe();
-  }, []);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
@@ -321,22 +294,24 @@ export default function TorneosApp() {
 
   const handleAbrirTorneo = () => setActiveModule("fixtures");
 
+  // Logout: limpiar sesión via AuthProvider. No navegar a "/".
+  // El auth gate de abajo mostrará TorneosAuthScreen automáticamente.
   const handleLogout = async () => {
-    if (isSupabaseReady) await authSignOut();
-    navigate("/");
+    await auth.signOut();
+    // Auth gate below will render TorneosAuthScreen when user becomes null
   };
 
   const handleDeleteAccount = async () => {
     if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
-    const { error } = await deleteAccount();
+    const { error } = await auth.deleteAccount();
     if (error) { alert(error); return; }
-    navigate("/");
+    // Auth gate below will render TorneosAuthScreen when user becomes null
   };
 
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
-  if (authUser === undefined) {
+  if (auth.loadingAuth) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG }}>
         <div style={{ textAlign: "center", fontFamily: FONT }}>
@@ -348,8 +323,8 @@ export default function TorneosApp() {
   }
 
   // Auth gate — show login/register if no active session
-  if (authUser === null) {
-    return <TorneosAuthScreen onAuthSuccess={setAuthUser} />;
+  if (!auth.isAuthenticated) {
+    return <TorneosAuthScreen />;
   }
 
   return (
@@ -364,7 +339,7 @@ export default function TorneosApp() {
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
-          userName={authUser?.email ?? ""}
+          userName={auth.user?.email ?? ""}
         />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>

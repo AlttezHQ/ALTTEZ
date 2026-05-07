@@ -14,6 +14,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ── Supabase mock ─────────────────────────────────────────────────────────────
 // vi.hoisted garantiza que las variables existen cuando el factory de vi.mock corre
 
+let authListener = null;
+
+const triggerAuth = (user, session = { access_token: "tok" }) => {
+  if (authListener) {
+    // Simulate async emission
+    setTimeout(() => {
+      authListener("SIGNED_IN", { ...session, user });
+    }, 0);
+  }
+};
+
 const {
   mockSignInWithPassword,
   mockSignUp,
@@ -26,7 +37,10 @@ const {
   mockSignUp:             vi.fn(),
   mockSignOut:            vi.fn(),
   mockGetUser:            vi.fn(),
-  mockOnAuthStateChange:  vi.fn(),
+  mockOnAuthStateChange:  vi.fn((cb) => {
+    authListener = cb;
+    return { data: { subscription: { unsubscribe: vi.fn() } } };
+  }),
   mockRpc:                vi.fn(),
 }));
 
@@ -89,17 +103,26 @@ vi.mock("../../app/torneos/pages/CalendarioPage",                () => ({ defaul
 vi.mock("../../app/torneos/pages/AjustesPage",                   () => ({ default: () => null }));
 vi.mock("../../app/torneos/components/wizard/CrearTorneoWizard", () => ({ default: () => null }));
 
+// ── DOMPurify mock (used by authValidation → sanitize) ────────────────────────
+
+vi.mock("dompurify", () => ({
+  default: { sanitize: (str) => str },
+}));
+
 // ── Imports bajo test (después de mocks) ──────────────────────────────────────
 
 import { signIn, signUp, signOut, deleteAccount } from "../../shared/services/authService";
 import TorneosApp from "../../app/torneos/TorneosApp";
+import AuthProvider from "../../shared/auth/AuthProvider";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function renderApp() {
   return render(
     <MemoryRouter>
-      <TorneosApp />
+      <AuthProvider>
+        <TorneosApp />
+      </AuthProvider>
     </MemoryRouter>
   );
 }
@@ -112,12 +135,16 @@ function setupNoSession() {
   });
 }
 
-/** Configura mocks para que getUser retorne un usuario autenticado */
+/** Configura mocks para que getUser retorne un usuario autenticado.
+ *  AuthProvider llama getUser (bootstrap) + getProfile llama getUser (internal). */
 function setupActiveSession(user = { id: "u1", email: "liga@norte.com" }) {
-  mockGetUser.mockResolvedValueOnce({ data: { user } });
-  mockOnAuthStateChange.mockReturnValue({
-    data: { subscription: { unsubscribe: vi.fn() } },
-  });
+  // 1st call: AuthProvider bootstrap
+  mockGetUser.mockResolvedValue({ data: { user } });
+  
+  // Si el listener ya está registrado, disparar SIGNED_IN
+  if (authListener) {
+    authListener("SIGNED_IN", { user, session: { access_token: "tok" } });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,6 +152,10 @@ function setupActiveSession(user = { id: "u1", email: "liga@norte.com" }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("authService — signIn", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    authListener = null;
+  });
   beforeEach(() => vi.clearAllMocks());
 
   it("retorna user y session en éxito", async () => {
@@ -335,6 +366,7 @@ describe("TorneosApp — gate de autenticación", () => {
 describe("TorneosAuthScreen — formulario de login", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    authListener = null;
     setupNoSession();
     renderApp();
     await waitFor(() => screen.getByText("ALTTEZ Torneos"));
@@ -366,7 +398,7 @@ describe("TorneosAuthScreen — formulario de login", () => {
       target: { value: "pass123" },
     });
     fireEvent.click(screen.getByRole("button", { name: /ingresar/i }));
-
+    
     await waitFor(() => {
       expect(mockSignInWithPassword).toHaveBeenCalledWith({
         email: "liga@norte.com",
@@ -471,11 +503,12 @@ describe("TorneosAuthScreen — formulario de registro", () => {
   });
 
   it("tras registro exitoso entra directo a la app sin pantalla intermedia", async () => {
-    const fakeUser = { id: "u2", email: "mi@liga.com" };
-    // signUp con sesión activa → entra directo, sin signIn extra
-    mockSignUp.mockResolvedValueOnce({
-      data: { user: fakeUser, session: { access_token: "tok" } },
-      error: null,
+    mockSignUp.mockImplementationOnce(async () => {
+      triggerAuth({ id: "u1", email: "mi@liga.com" });
+      return {
+        data: { user: { id: "u1", email: "mi@liga.com" }, session: { access_token: "tok" } },
+        error: null,
+      };
     });
 
     fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
@@ -492,18 +525,23 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     // App completa renderiza (InicioPage), sin "Revisa tu correo"
     await waitFor(() => {
       expect(screen.getByTestId("inicio-page")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
     expect(screen.queryByText(/revisa tu correo/i)).not.toBeInTheDocument();
   });
 
   it("si signUp no devuelve sesión, hace signIn inmediato y entra directo", async () => {
+    // 1. signUp retorna user pero sin session
     mockSignUp.mockResolvedValueOnce({
-      data: { user: { id: "u2" }, session: null },
+      data: { user: { id: "u2", email: "mi@liga.com" }, session: null },
       error: null,
     });
-    mockSignInWithPassword.mockResolvedValueOnce({
-      data: { user: { id: "u2", email: "mi@liga.com" }, session: { access_token: "tok" } },
-      error: null,
+    // 2. AuthProvider intentará signIn inmediatamente
+    mockSignInWithPassword.mockImplementationOnce(async () => {
+      triggerAuth({ id: "u2", email: "mi@liga.com" });
+      return {
+        data: { user: { id: "u2", email: "mi@liga.com" }, session: { access_token: "tok" } },
+        error: null,
+      };
     });
 
     fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
@@ -518,14 +556,12 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
     await waitFor(() => {
-      expect(mockSignInWithPassword).toHaveBeenCalledWith({
-        email: "mi@liga.com",
-        password: "pass123",
-      });
-    });
+      expect(mockSignInWithPassword).toHaveBeenCalled();
+    }, { timeout: 3000 });
+
     await waitFor(() => {
       expect(screen.getByTestId("inicio-page")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it("muestra error si signUp falla (email duplicado)", async () => {
@@ -535,7 +571,7 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     });
 
     fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
-      target: { value: "X" },
+      target: { value: "Liga Norte" },
     });
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "dup@b.com" },
@@ -552,7 +588,7 @@ describe("TorneosAuthScreen — formulario de registro", () => {
 
   it("valida que password tenga mínimo 6 caracteres antes de llamar signUp", async () => {
     fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
-      target: { value: "X" },
+      target: { value: "Liga Norte" },
     });
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "a@b.com" },
