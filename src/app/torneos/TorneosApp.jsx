@@ -5,7 +5,7 @@ import { Trophy, X, FileSpreadsheet, Tag } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
 import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
-import { signIn, signUp, signOut as authSignOut, deleteAccount, onAuthStateChange } from "../../shared/services/authService";
+import { signIn, signUp, signOut as authSignOut, onAuthStateChange } from "../../shared/services/authService";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -75,7 +75,7 @@ function TorneosAuthScreen({ onAuthSuccess }) {
     const { error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
     setLoading(false);
     if (error) { setMsg({ type: "error", text: error }); return; }
-    setMsg({ type: "success", text: "Cuenta creada. Revisa tu correo para confirmar el acceso, luego inicia sesión." });
+    setMsg({ type: "success", text: "Cuenta creada correctamente. Si Supabase solicita confirmación por correo, revisa tu email antes de iniciar sesión." });
     setTab("login");
     setForm(f => ({ ...f, password: "" }));
   };
@@ -318,13 +318,6 @@ export default function TorneosApp() {
     navigate("/");
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
-    const { error } = await deleteAccount();
-    if (error) { alert(error); return; }
-    navigate("/");
-  };
-
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
@@ -335,6 +328,39 @@ export default function TorneosApp() {
           <Trophy size={28} color={CU} style={{ marginBottom: 12 }} />
           <div style={{ fontSize: 11, color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase" }}>Cargando...</div>
         </div>
+      </div>
+    );
+  }
+
+  // Si Supabase no está configurado, mostrar mensaje claro
+  if (!isSupabaseReady) {
+    return (
+      <div style={{
+        minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
+        background: `linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)`,
+        padding: "40px 24px", fontFamily: FONT,
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: EASE }}
+          style={{
+            width: "100%", maxWidth: 420,
+            background: CARD, borderRadius: 24,
+            border: `1px solid ${BORDER}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+            padding: "32px 28px", fontFamily: FONT,
+            textAlign: "center",
+          }}
+        >
+          <Trophy size={32} color={CU} style={{ marginBottom: 16 }} />
+          <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginBottom: 8 }}>
+            Configuración pendiente
+          </div>
+          <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.5 }}>
+            El acceso a Torneos no está configurado en este entorno. Contacta al administrador.
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -355,7 +381,6 @@ export default function TorneosApp() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <TorneosHeader
           onLogout={handleLogout}
-          onDeleteAccount={handleDeleteAccount}
           userName={authUser?.email ?? ""}
         />
 

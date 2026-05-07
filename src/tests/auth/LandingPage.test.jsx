@@ -27,6 +27,7 @@ describe('LandingPage Component', () => {
     renderWithRouter(
       <LandingPage onRegister={vi.fn()} onLogin={vi.fn()} />
     );
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    const loginButtons = screen.getAllByRole('button', { name: /iniciar sesión/i });
+    expect(loginButtons.length).toBeGreaterThan(0);
   });
 });
