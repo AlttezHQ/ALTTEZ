@@ -37,6 +37,7 @@ const CRMApp = lazy(() => import("./app/shell/CRMApp"));
 
 // ── ALTTEZ Torneos ──
 const TorneosApp = lazy(() => import("./app/torneos/TorneosApp"));
+const PublicTorneoPage = lazy(() => import("./app/torneos/pages/PublicTorneoPage"));
 
 // ── Conectar handlers de error al boot ──
 const _toastError = (msg) => showToast(msg, "error");
@@ -99,6 +100,8 @@ export default function App() {
           <Route path="/crm/*" element={<Suspense fallback={<LoadingFallback />}><CRMApp /></Suspense>} />
           {/* ALTTEZ Torneos — producto independiente */}
           <Route path="/torneos/*" element={<Suspense fallback={<LoadingFallback />}><TorneosApp /></Suspense>} />
+          {/* Portal Publico de Torneos */}
+          <Route path="/t/:slug" element={<Suspense fallback={<LoadingFallback />}><PublicTorneoPage /></Suspense>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

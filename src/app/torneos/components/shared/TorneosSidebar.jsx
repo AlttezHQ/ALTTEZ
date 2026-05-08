@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trophy, Globe, Users, Tag, Calendar, BarChart2, Settings, Home, List } from "lucide-react";
+import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, CalendarPlus, Settings, LayoutDashboard } from "lucide-react";
 import { PALETTE } from "../../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -13,15 +13,15 @@ const BORDER = PALETTE.border;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
 const NAV_ITEMS = [
-  { id: "inicio",       icon: Home,      label: "Inicio" },
-  { id: "torneos",      icon: Trophy,    label: "Torneos" },
-  { id: "equipos",      icon: Users,     label: "Equipos" },
-  { id: "categorias",   icon: Tag,       label: "Categorías" },
-  { id: "calendario",   icon: Calendar,  label: "Calendario" },
-  { id: "estadisticas", icon: BarChart2, label: "Estadísticas" },
-  { id: "fixtures",     icon: List,      label: "Fixtures" },
-  { id: "publica",      icon: Globe,     label: "Vista pública" },
-  { id: "ajustes",      icon: Settings,  label: "Ajustes" },
+  { id: "inicio",       icon: LayoutDashboard, label: "Resumen" },
+  { id: "torneos",      icon: Trophy,          label: "Torneos" },
+  { id: "equipos",      icon: Shirt,           label: "Equipos" },
+  { id: "categorias",   icon: Network,         label: "Categorías" },
+  { id: "fixtures",     icon: CalendarDays,    label: "Fixture" },
+  { id: "resultados",   icon: BarChart2,       label: "Resultados" },
+  { id: "tabla",        icon: Table,           label: "Tabla" },
+  { id: "programacion", icon: CalendarPlus, label: "Programación" },
+  { id: "ajustes",      icon: Settings,        label: "Configuración" },
 ];
 
 export default function TorneosSidebar({ active, onNav, torneoActivo }) {

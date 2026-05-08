@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, Trophy, RefreshCw, X, Check } from "lucide-react";
+import { List, Trophy, RefreshCw, X, Check, BarChart2, CalendarPlus, Calendar, Share2, Clock } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
-import { generarFixture } from "../utils/fixturesEngine";
+import { generarFixture, calcularPosiciones } from "../utils/fixturesEngine";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
+import { showToast } from "../../../shared/ui/Toast";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -22,10 +23,12 @@ const SUCCESS = PALETTE.success ?? "#22C55E";
 const AMBER   = PALETTE.amber   ?? "#F59E0B";
 
 const ESTADO_CFG = {
-  programado: { label: "Programado",  color: HINT,    dot: HINT },
-  en_curso:   { label: "En curso",    color: AMBER,   dot: AMBER },
-  finalizado: { label: "Finalizado",  color: SUCCESS, dot: SUCCESS },
-  pendiente:  { label: "Pendiente",   color: HINT,    dot: HINT },
+  programado: { label: "Programado",  color: PALETTE.success, dot: PALETTE.success },
+  propuesto:  { label: "Propuesto",   color: HINT,            dot: HINT },
+  aplazado:   { label: "Aplazado",    color: PALETTE.error ?? "#EF4444", dot: PALETTE.error ?? "#EF4444" },
+  en_curso:   { label: "En curso",    color: AMBER,           dot: AMBER },
+  finalizado: { label: "Finalizado",  color: CU,              dot: CU },
+  pendiente:  { label: "Pendiente",   color: MUTED,           dot: MUTED },
 };
 
 const FASE_LABELS = {
@@ -228,7 +231,7 @@ function LigaView({ partidos, equipos, arbitros, onCardClick }) {
               {ps.map(p => (
                 <motion.div key={p.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: EASE }}>
                   <MatchCard partido={p} equipos={equipos} arbitros={arbitros}
-                    onClick={p.estado !== "finalizado" ? () => onCardClick(p) : undefined} />
+                    onClick={p.estado === "programado" ? () => onCardClick(p) : undefined} />
                 </motion.div>
               ))}
             </div>
@@ -269,7 +272,7 @@ function BracketView({ partidos, equipos, arbitros, onCardClick }) {
                 {ps.map(p => (
                   <MatchCard key={p.id} partido={p} equipos={equipos} arbitros={arbitros}
                     compact={true}
-                    onClick={p.estado !== "finalizado" && p.equipoLocalId && p.equipoVisitaId
+                    onClick={p.estado === "programado" && p.equipoLocalId && p.equipoVisitaId
                       ? () => onCardClick(p) : undefined} />
                 ))}
               </div>
@@ -285,7 +288,7 @@ function BracketView({ partidos, equipos, arbitros, onCardClick }) {
             <div style={{ padding: "0 4px" }}>
               {tercer.map(p => (
                 <MatchCard key={p.id} partido={p} equipos={equipos} arbitros={arbitros} compact={true}
-                  onClick={p.estado !== "finalizado" && p.equipoLocalId && p.equipoVisitaId ? () => onCardClick(p) : undefined} />
+                  onClick={p.estado === "programado" && p.equipoLocalId && p.equipoVisitaId ? () => onCardClick(p) : undefined} />
               ))}
             </div>
           </div>
@@ -337,7 +340,7 @@ function GruposView({ partidos, equipos, arbitros, onCardClick }) {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 8 }}>
                     {ps.map(p => (
                       <MatchCard key={p.id} partido={p} equipos={equipos} arbitros={arbitros}
-                        onClick={p.estado !== "finalizado" ? () => onCardClick(p) : undefined} />
+                        onClick={p.estado === "programado" ? () => onCardClick(p) : undefined} />
                     ))}
                   </div>
                 </div>
@@ -372,6 +375,7 @@ export default function FixturesPage({ onGoTorneos }) {
   const allArbitros        = useTorneosStore(s => s.arbitros);
   const setPartidos        = useTorneosStore(s => s.setPartidos);
   const registrarResultado = useTorneosStore(s => s.registrarResultado);
+  const autoSchedulePartidos = useTorneosStore(s => s.autoSchedulePartidos);
 
   const [modalPartido, setModalPartido] = useState(null);
 
@@ -397,6 +401,19 @@ export default function FixturesPage({ onGoTorneos }) {
     const ps = generarFixture(torneo, equipos);
     setPartidos(torneoActivoId, ps);
   };
+
+  const handleAutoProgramar = () => {
+    if (partidos.length === 0) {
+      handleGenerar(); // Generate first if none exist
+    }
+    autoSchedulePartidos(torneoActivoId);
+    showToast("Programación generada con éxito", "success");
+  };
+
+  const tabla = calcularPosiciones(partidos, equipos);
+  const activosCount = equipos.length;
+  const programadosCount = partidos.filter(p => p.estado === "programado" || p.estado === "propuesto").length;
+  const finalizadosCount = partidos.filter(p => p.estado === "finalizado").length;
 
   const handleSaveResult = (golesLocal, golesVisita) => {
     registrarResultado(modalPartido.id, golesLocal, golesVisita);
@@ -432,9 +449,102 @@ export default function FixturesPage({ onGoTorneos }) {
           }}
         >
           <RefreshCw size={13} />
-          {partidos.length > 0 ? "Regenerar fixture" : "Generar fixture"}
+          {partidos.length > 0 ? "Regenerar fixture" : "Generar fixture base"}
         </motion.button>
       </div>
+
+      {partidos.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, marginBottom: 40 }}>
+          {/* Left: Tabla de Posiciones */}
+          <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, boxShadow: ELEV, padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <BarChart2 size={18} color={CU} />
+                <span style={{ fontSize: 16, fontWeight: 700, color: TEXT }}>Tabla de posiciones</span>
+              </div>
+            </div>
+            
+            <div style={{ width: "100%", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "center" }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${BORDER}` }}>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600, width: 40 }}>Pos</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600, textAlign: "left" }}>Equipo</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600 }}>PJ</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600 }}>PG</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600 }}>PE</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600 }}>PP</th>
+                    <th style={{ padding: "12px 8px", color: MUTED, fontWeight: 600 }}>Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tabla.map((t, i) => (
+                    <tr key={t.equipoId} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <td style={{ padding: "12px 8px" }}>
+                        <div style={{ width: 24, height: 24, borderRadius: "50%", background: i < 3 ? CU : BG, color: i < 3 ? "#FFF" : TEXT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, margin: "0 auto" }}>{i + 1}</div>
+                      </td>
+                      <td style={{ padding: "12px 8px", textAlign: "left", fontWeight: 600, color: TEXT, display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: equipos.find(e => e.id === t.equipoId)?.color || CU }} />
+                        {t.nombre}
+                      </td>
+                      <td style={{ padding: "12px 8px" }}>{t.pj}</td>
+                      <td style={{ padding: "12px 8px" }}>{t.pg}</td>
+                      <td style={{ padding: "12px 8px" }}>{t.pe}</td>
+                      <td style={{ padding: "12px 8px" }}>{t.pp}</td>
+                      <td style={{ padding: "12px 8px", fontWeight: 800, color: CU }}>{t.pts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Right: Programación y Autogenerador */}
+          <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, boxShadow: ELEV, padding: 24, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              <Calendar size={18} color={TEXT} />
+              <span style={{ fontSize: 16, fontWeight: 700, color: TEXT }}>Programación Inteligente</span>
+            </div>
+            
+            <div style={{ background: BG, borderRadius: 12, padding: 20, textAlign: "center", marginBottom: 20, border: `1px solid ${BORDER}` }}>
+              <Calendar size={32} color={CU} style={{ margin: "0 auto 12px" }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: TEXT, marginBottom: 8 }}>Próxima fecha</div>
+              <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5, marginBottom: 16 }}>
+                El motor asignará automáticamente fechas y horas a los partidos pendientes, evitando superposiciones.
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                onClick={handleAutoProgramar}
+                style={{ width: "100%", padding: "12px", background: CU, color: "#FFF", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
+                <CalendarPlus size={16} /> Auto-programar Fixture
+              </motion.button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: "auto" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: MUTED, display: "flex", alignItems: "center", gap: 6 }}><List size={14}/> Equipos activos</span>
+                <span style={{ fontWeight: 700, color: TEXT }}>{activosCount}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: MUTED, display: "flex", alignItems: "center", gap: 6 }}><Clock size={14}/> Por jugar / Propuestos</span>
+                <span style={{ fontWeight: 700, color: TEXT }}>{programadosCount}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: MUTED, display: "flex", alignItems: "center", gap: 6 }}><Check size={14}/> Finalizados</span>
+                <span style={{ fontWeight: 700, color: TEXT }}>{finalizadosCount}</span>
+              </div>
+              
+              <motion.button
+                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                style={{ marginTop: 12, width: "100%", padding: "10px", background: "#25D36615", color: "#128C7E", borderRadius: 8, border: "1px solid #25D36630", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+              >
+                <Share2 size={14} /> Compartir propuesta a Clubes
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {partidos.length === 0 && (
         <div style={{ textAlign: "center", padding: "60px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>

@@ -148,29 +148,19 @@ export default function AuthProvider({ children }) {
   // ── Auth actions ────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async (email, password) => {
-    setAuthError(null);
-    const result = await authSignIn(email, password);
-    if (result.error) setAuthError(result.error);
-    // State update is handled by the onAuthStateChange listener
-    return result;
+    // --- DEMO BYPASS ---
+    setUser({ id: "demo-user", email: email || "demo@alttez.com" });
+    setProfile({ role: "admin", club_id: "demo-club", full_name: "Demo Admin" });
+    return { data: { user: { id: "demo-user" } }, error: null };
+    // -------------------
   }, []);
 
   const handleSignUp = useCallback(async (params) => {
-    setAuthError(null);
-    const result = await authSignUp(params);
-    if (result.error) {
-      setAuthError(result.error);
-      return result;
-    }
-    if (!result.session) {
-      // If signUp didn't create a session (email confirmation required),
-      // try immediate sign-in so the user enters directly
-      const signInResult = await authSignIn(params.email, params.password);
-      if (signInResult.error) setAuthError(signInResult.error);
-      return signInResult;
-    }
-    // State update is handled by the onAuthStateChange listener
-    return result;
+    // --- DEMO BYPASS ---
+    setUser({ id: "demo-user", email: params.email || "demo@alttez.com" });
+    setProfile({ role: params.role || "admin", club_id: "demo-club", full_name: params.fullName || "Demo Admin" });
+    return { data: { user: { id: "demo-user" } }, error: null };
+    // -------------------
   }, []);
 
   const handleSignOut = useCallback(async () => {

@@ -48,6 +48,16 @@ export const useTorneosStore = create(
           slug:        generarSlug(data.nombre || "torneo"),
           numGrupos:   data.numGrupos || 2,
           publicado:   false,
+          descripcion: "",
+          portada:     null,
+          perfil:      null,
+          contacto:    "",
+          premios:     "",
+          patrocinadores: [], // [{ id, nombre, logo }]
+          visibilidad: "publico", // publico | privado
+          reglamentoUrl: null,
+          seguidoresCount: 0,
+          vistasCount: 0,
           schedulingConfig: { ...DEFAULT_SCHEDULING },
           createdAt:   NOW(),
           updatedAt:   NOW(),
@@ -184,6 +194,63 @@ export const useTorneosStore = create(
         set(s => ({ partidos: s.partidos.map(p => p.id === id ? { ...p, ...patch } : p) }));
       },
 
+      reprogramarPartido(partidoId) {
+        // Logica para reescribir fixture en caso de aplazamiento.
+        // 1. Pone el actual en "aplazado"
+        // 2. Trae un partido futuro "propuesto" a la fecha del actual.
+        // 3. Empuja el actual hacia adelante (borrándole la fecha).
+        const s = get();
+        const partido = s.partidos.find(p => p.id === partidoId);
+        if (!partido) return false;
+
+        const torneoId = partido.torneoId;
+        const mismaRonda = s.partidos.filter(p => p.torneoId === torneoId && p.ronda === partido.ronda && p.id !== partidoId);
+        
+        // Busca un partido futuro (de rondas posteriores) que esté "propuesto"
+        const partidoFuturo = s.partidos.find(p => p.torneoId === torneoId && p.ronda > partido.ronda && p.estado === "propuesto");
+        
+        if (partidoFuturo) {
+          set(s2 => ({
+            partidos: s2.partidos.map(p => {
+              if (p.id === partidoId) {
+                return { ...p, estado: "aplazado", fechaHora: null, ronda: partidoFuturo.ronda };
+              }
+              if (p.id === partidoFuturo.id) {
+                return { ...p, fechaHora: partido.fechaHora, ronda: partido.ronda, estado: "propuesto" };
+              }
+              return p;
+            })
+          }));
+          return true;
+        } else {
+          // Solo lo aplaza
+          set(s2 => ({
+            partidos: s2.partidos.map(p => p.id === partidoId ? { ...p, estado: "aplazado", fechaHora: null } : p)
+          }));
+          return false;
+        }
+      },
+
+      reprogramarPartidoAvanzado(partidoOriginalId, partidoReemplazoId) {
+        const s = get();
+        const original = s.partidos.find(p => p.id === partidoOriginalId);
+        const reemplazo = s.partidos.find(p => p.id === partidoReemplazoId);
+        if (!original || !reemplazo) return false;
+
+        set(s2 => ({
+          partidos: s2.partidos.map(p => {
+            if (p.id === partidoOriginalId) {
+              return { ...p, estado: "aplazado", fechaHora: null };
+            }
+            if (p.id === partidoReemplazoId) {
+              return { ...p, estado: "programado", fechaHora: original.fechaHora, sedeId: original.sedeId, arbitroId: original.arbitroId };
+            }
+            return p;
+          })
+        }));
+        return true;
+      },
+
       autoSchedulePartidos(torneoId) {
         const s        = get();
         const torneo   = s.torneos.find(t => t.id === torneoId);
@@ -199,7 +266,8 @@ export const useTorneosStore = create(
         set(s2 => ({
           partidos: s2.partidos.map(p => {
             const patch = patches.find(pt => pt.id === p.id);
-            return patch ? { ...p, ...patch } : p;
+            // Cuando se autoprograma, su estado pasa a propuesto
+            return patch ? { ...p, ...patch, estado: "propuesto" } : p;
           }),
         }));
 

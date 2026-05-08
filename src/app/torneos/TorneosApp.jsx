@@ -18,6 +18,7 @@ import EstadisticasPage  from "./pages/EstadisticasPage";
 import CalendarioPage    from "./pages/CalendarioPage";
 import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
+import ProgramacionPage  from "./pages/ProgramacionPage";
 
 const BG     = PALETTE.bg;
 const CARD   = PALETTE.surface;
@@ -390,27 +391,31 @@ export default function TorneosApp() {
               </motion.div>
             )}
 
-            {activeModule === "calendario" && (
-              <motion.div key="calendario" {...PAGE_ANIM}>
-                <CalendarioPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
-            {activeModule === "estadisticas" && (
-              <motion.div key="estadisticas" {...PAGE_ANIM}>
-                <EstadisticasPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
             {activeModule === "fixtures" && (
               <motion.div key="fixtures" {...PAGE_ANIM}>
                 <FixturesPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
-            {activeModule === "publica" && (
-              <motion.div key="publica" {...PAGE_ANIM}>
-                <AjustesPage onGoTorneos={goTorneos} />
+            {activeModule === "resultados" && (
+              <motion.div key="resultados" {...PAGE_ANIM}>
+                <EstadisticasPage onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "tabla" && (
+              <motion.div key="tabla" {...PAGE_ANIM}>
+                <ModuleEmptyState
+                  icon={FileSpreadsheet}
+                  title="Tabla de posiciones"
+                  subtitle="La tabla se generará automáticamente a partir de los resultados."
+                />
+              </motion.div>
+            )}
+
+            {activeModule === "programacion" && (
+              <motion.div key="programacion" {...PAGE_ANIM}>
+                <ProgramacionPage />
               </motion.div>
             )}
 

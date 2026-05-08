@@ -4,6 +4,8 @@ import { Users, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
+import { uploadImage } from "../utils/storageHelper";
+import { showToast } from "../../../shared/ui/Toast";
 
 const CU     = PALETTE.bronce;
 const CU_DIM = PALETTE.bronceDim;
@@ -29,7 +31,14 @@ export default function EquiposPage({ onGoTorneos }) {
 
   const [nuevonombre, setNuevonombre] = useState("");
   const [editId, setEditId]     = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
   const [editNombre, setEditNombre] = useState("");
+  
+  // Jugadores form
+  const [nuevoJugador, setNuevoJugador] = useState({ nombre: "", dorsal: "" });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  
+  const dorsalInputRef = React.useRef(null);
 
   if (!torneoActivoId) {
     return <ModuleEmptyState icon={Users} title="Selecciona un torneo" subtitle="Abre un torneo desde la lista para gestionar sus equipos." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
@@ -92,8 +101,8 @@ export default function EquiposPage({ onGoTorneos }) {
         <div style={{ background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEV }}>
           <AnimatePresence>
             {equipos.map((eq, i) => (
+              <div key={eq.id}>
               <motion.div
-                key={eq.id}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 8 }}
@@ -123,7 +132,13 @@ export default function EquiposPage({ onGoTorneos }) {
                     style={{ flex: 1, border: `1px solid ${CU}`, borderRadius: 6, padding: "5px 10px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
                   />
                 ) : (
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: TEXT }}>{eq.nombre}</span>
+                  <div 
+                    onClick={() => setExpandedId(expandedId === eq.id ? null : eq.id)} 
+                    style={{ flex: 1, fontSize: 13, fontWeight: 500, color: TEXT, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    {eq.nombre}
+                    {expandedId === eq.id ? <span style={{ fontSize: 10, color: CU, fontWeight: 700 }}>OCULTAR DETALLES</span> : <span style={{ fontSize: 10, color: MUTED }}>VER DETALLES</span>}
+                  </div>
                 )}
 
                 {/* Grupo selector */}
@@ -161,6 +176,134 @@ export default function EquiposPage({ onGoTorneos }) {
                   )}
                 </div>
               </motion.div>
+              
+              {/* Expanded Area */}
+              {expandedId === eq.id && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }} 
+                  animate={{ height: "auto", opacity: 1 }} 
+                  exit={{ height: 0, opacity: 0 }}
+                  style={{ background: BG, borderBottom: `1px solid ${BORDER}`, overflow: "hidden" }}
+                >
+                  <div style={{ padding: "20px 24px", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 32 }}>
+                    
+                    {/* Left: Info General */}
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 16 }}>Información General</div>
+                      
+                      <div style={{ marginBottom: 16 }}>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: MUTED, marginBottom: 6 }}>Logo del Equipo</label>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                          {eq.logo && <img src={eq.logo} alt="Logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover" }} />}
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            disabled={uploadingLogo}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              setUploadingLogo(true);
+                              const url = await uploadImage(file, "logos");
+                              if (url) actualizarEquipo(eq.id, { logo: url });
+                              setUploadingLogo(false);
+                            }}
+                            style={{ flex: 1, fontSize: 12, color: TEXT, fontFamily: FONT }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: MUTED, marginBottom: 6 }}>Director Técnico (DT)</label>
+                        <input 
+                          type="text" 
+                          placeholder="Nombre del entrenador"
+                          value={eq.entrenador || ""}
+                          onChange={e => actualizarEquipo(eq.id, { entrenador: e.target.value })}
+                          style={{ width: "100%", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, color: TEXT, fontFamily: FONT, background: CARD, outline: "none", boxSizing: "border-box" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Right: Plantilla de Jugadores */}
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>Plantilla de Jugadores ({(eq.jugadores || []).length})</div>
+                      </div>
+                      
+                      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                        <input 
+                          ref={dorsalInputRef}
+                          type="text" placeholder="Dorsal (Ej. 10)" 
+                          value={nuevoJugador.dorsal} onChange={e => setNuevoJugador({ ...nuevoJugador, dorsal: e.target.value })}
+                          style={{ width: 80, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, color: TEXT, fontFamily: FONT, background: CARD, outline: "none" }}
+                        />
+                        <input 
+                          type="text" placeholder="Nombre del jugador" 
+                          value={nuevoJugador.nombre} onChange={e => setNuevoJugador({ ...nuevoJugador, nombre: e.target.value })}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && nuevoJugador.nombre) {
+                              const j = { id: crypto.randomUUID(), nombre: nuevoJugador.nombre, dorsal: nuevoJugador.dorsal };
+                              actualizarEquipo(eq.id, { jugadores: [...(eq.jugadores || []), j] });
+                              setNuevoJugador({ nombre: "", dorsal: "" });
+                              setTimeout(() => dorsalInputRef.current?.focus(), 50);
+                            }
+                          }}
+                          style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "8px 12px", fontSize: 12, color: TEXT, fontFamily: FONT, background: CARD, outline: "none" }}
+                        />
+                        <button 
+                          onClick={() => {
+                            if (!nuevoJugador.nombre) return;
+                            const j = { id: crypto.randomUUID(), nombre: nuevoJugador.nombre, dorsal: nuevoJugador.dorsal };
+                            actualizarEquipo(eq.id, { jugadores: [...(eq.jugadores || []), j] });
+                            setNuevoJugador({ nombre: "", dorsal: "" });
+                            setTimeout(() => dorsalInputRef.current?.focus(), 50);
+                          }}
+                          style={{ background: CU, color: "#FFF", border: "none", borderRadius: 6, padding: "0 14px", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 200, overflowY: "auto", paddingRight: 4 }}>
+                        {(eq.jugadores || []).length === 0 ? (
+                          <div style={{ fontSize: 12, color: MUTED, textAlign: "center", padding: "20px 0" }}>No hay jugadores registrados.</div>
+                        ) : (
+                          (eq.jugadores || []).map(j => (
+                            <div key={j.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 6, padding: "8px 12px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: CU, width: 20 }}>{j.dorsal || "-"}</span>
+                                <span style={{ fontSize: 12, fontWeight: 500, color: TEXT }}>{j.nombre}</span>
+                              </div>
+                              <button 
+                                onClick={() => {
+                                  actualizarEquipo(eq.id, { jugadores: eq.jugadores.filter(x => x.id !== j.id) });
+                                }}
+                                style={{ background: "transparent", border: "none", color: MUTED, cursor: "pointer", display: "flex", padding: 2 }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Footer Guardar */}
+                  <div style={{ padding: "16px 24px", background: CARD, borderTop: `1px solid ${BORDER}`, display: "flex", justifyContent: "flex-end" }}>
+                    <button 
+                      onClick={() => {
+                        setExpandedId(null);
+                        showToast("Equipo guardado", "success");
+                      }}
+                      style={{ background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <Check size={16} /> Guardar Cambios
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+              </div>
             ))}
           </AnimatePresence>
         </div>
