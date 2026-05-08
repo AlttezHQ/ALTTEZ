@@ -10,8 +10,12 @@ import { isSupabaseReady, supabase } from "../../../shared/lib/supabase";
 
 export async function saveTorneo(torneo) {
   if (!isSupabaseReady) return { ok: false };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "No authenticated user" };
+
   const { error } = await supabase.from("torneos").upsert({
     id:           torneo.id,
+    organizador_id: user.id,
     nombre:       torneo.nombre,
     deporte:      torneo.deporte,
     formato:      torneo.formato,
@@ -21,6 +25,15 @@ export async function saveTorneo(torneo) {
     slug:         torneo.slug,
     num_grupos:   torneo.numGrupos,
     publicado:    torneo.publicado,
+    descripcion:  torneo.descripcion,
+    portada:      torneo.portada,
+    perfil:       torneo.perfil,
+    contacto:     torneo.contacto,
+    premios:      torneo.premios,
+    patrocinadores: torneo.patrocinadores,
+    visibilidad:  torneo.visibilidad,
+    reglamento_url: torneo.reglamentoUrl,
+    updated_at:   new Date().toISOString(),
   });
   return { ok: !error, error };
 }
@@ -34,14 +47,29 @@ export async function deleteTorneoRemote(id) {
 // ── Equipos ───────────────────────────────────────────────────────────────────
 
 export async function saveEquipos(torneoId, equipos) {
-  if (!isSupabaseReady) return { ok: false };
+  if (!isSupabaseReady) return { ok: false, error: { message: "Supabase not configured" } };
+  
   const rows = equipos.map(e => ({
-    id: e.id, torneo_id: torneoId,
-    nombre: e.nombre, escudo: e.escudo,
-    color: e.color, grupo: e.grupo,
+    id: e.id,
+    torneo_id: torneoId,
+    nombre: e.nombre,
+    escudo: e.logo || e.escudo || null,
+    color: e.color || null,
+    grupo: e.grupo || null,
+    entrenador: e.entrenador || null,
+    delegado: e.delegado || null,
+    jugadores: Array.isArray(e.jugadores) ? e.jugadores : [],
   }));
-  const { error } = await supabase.from("torneo_equipos").upsert(rows);
-  return { ok: !error, error };
+
+  console.log("[svc] saveEquipos attempt:", rows);
+  const { data, error } = await supabase.from("torneo_equipos").upsert(rows);
+  
+  if (error) {
+    console.error("[svc] saveEquipos error:", error);
+    return { ok: false, error };
+  }
+  
+  return { ok: true, data };
 }
 
 // ── Partidos ──────────────────────────────────────────────────────────────────
@@ -59,6 +87,8 @@ export async function savePartidos(torneoId, partidos) {
     fecha_hora: p.fechaHora,
     lugar: p.lugar,
     orden: p.orden,
+    sede_id: p.sedeId,
+    arbitro_id: p.arbitroId,
   }));
   const { error } = await supabase.from("torneo_partidos").upsert(rows);
   return { ok: !error, error };
@@ -70,6 +100,48 @@ export async function updateResultado(partidoId, golesLocal, golesVisita) {
     .from("torneo_partidos")
     .update({ goles_local: golesLocal, goles_visita: golesVisita, estado: "finalizado" })
     .eq("id", partidoId);
+  return { ok: !error, error };
+}
+
+// ── Sedes ───────────────────────────────────────────────────────────────────
+
+export async function saveSedes(torneoId, sedes) {
+  if (!isSupabaseReady) return { ok: false };
+  const rows = sedes.map(s => ({
+    id: s.id, torneo_id: torneoId,
+    nombre: s.nombre, direccion: s.direccion
+  }));
+  const { error } = await supabase.from("torneo_sedes").upsert(rows);
+  return { ok: !error, error };
+}
+
+export async function deleteSedeRemote(id) {
+  if (!isSupabaseReady) return { ok: false };
+  const { error } = await supabase.from("torneo_sedes").delete().eq("id", id);
+  return { ok: !error, error };
+}
+
+// ── Árbitros ──────────────────────────────────────────────────────────────────
+
+export async function saveArbitros(torneoId, arbitros) {
+  if (!isSupabaseReady) return { ok: false };
+  const rows = arbitros.map(a => ({
+    id: a.id, torneo_id: torneoId,
+    nombre: a.nombre, contacto: a.contacto
+  }));
+  const { error } = await supabase.from("torneo_arbitros").upsert(rows);
+  return { ok: !error, error };
+}
+
+export async function deleteArbitroRemote(id) {
+  if (!isSupabaseReady) return { ok: false };
+  const { error } = await supabase.from("torneo_arbitros").delete().eq("id", id);
+  return { ok: !error, error };
+}
+
+export async function deleteEquipoRemote(id) {
+  if (!isSupabaseReady) return { ok: false };
+  const { error } = await supabase.from("torneo_equipos").delete().eq("id", id);
   return { ok: !error, error };
 }
 
@@ -103,6 +175,36 @@ export async function getTorneoPublico(slug) {
   };
 }
 
+export async function fetchAllTorneos() {
+  if (!isSupabaseReady) return [];
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: torneosRows } = await supabase
+    .from("torneos")
+    .select("*")
+    .eq("organizador_id", user.id);
+
+  if (!torneosRows) return [];
+
+  const results = [];
+  for (const t of torneosRows) {
+    const { data: equiposRows } = await supabase.from("torneo_equipos").select("*").eq("torneo_id", t.id);
+    const { data: partidosRows } = await supabase.from("torneo_partidos").select("*").eq("torneo_id", t.id);
+    const { data: sedesRows } = await supabase.from("torneo_sedes").select("*").eq("torneo_id", t.id);
+    const { data: arbitrosRows } = await supabase.from("torneo_arbitros").select("*").eq("torneo_id", t.id);
+
+    results.push({
+      torneo: mapTorneo(t),
+      equipos: (equiposRows ?? []).map(mapEquipo),
+      partidos: (partidosRows ?? []).map(mapPartido),
+      sedes: (sedesRows ?? []).map(mapSede),
+      arbitros: (arbitrosRows ?? []).map(mapArbitro),
+    });
+  }
+  return results;
+}
+
 // ── Mappers (snake_case → camelCase) ─────────────────────────────────────────
 
 function mapTorneo(r) {
@@ -110,12 +212,20 @@ function mapTorneo(r) {
     id: r.id, nombre: r.nombre, deporte: r.deporte, formato: r.formato,
     estado: r.estado, fechaInicio: r.fecha_inicio, fechaFin: r.fecha_fin,
     slug: r.slug, numGrupos: r.num_grupos, publicado: r.publicado,
+    descripcion: r.descripcion, portada: r.portada, perfil: r.perfil,
+    contacto: r.contacto, premios: r.premios, patrocinadores: r.patrocinadores,
+    visibilidad: r.visibilidad, reglamentoUrl: r.reglamento_url,
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
 
 function mapEquipo(r) {
-  return { id: r.id, torneoId: r.torneo_id, nombre: r.nombre, escudo: r.escudo, color: r.color, grupo: r.grupo, createdAt: r.created_at };
+  return { 
+    id: r.id, torneoId: r.torneo_id, nombre: r.nombre, 
+    logo: r.escudo, escudo: r.escudo, color: r.color, grupo: r.grupo, 
+    entrenador: r.entrenador, delegado: r.delegado, jugadores: r.jugadores ?? [],
+    createdAt: r.created_at 
+  };
 }
 
 function mapPartido(r) {
@@ -123,6 +233,16 @@ function mapPartido(r) {
     id: r.id, torneoId: r.torneo_id, fase: r.fase, ronda: r.ronda, grupo: r.grupo,
     equipoLocalId: r.equipo_local_id, equipoVisitaId: r.equipo_visita_id,
     golesLocal: r.goles_local, golesVisita: r.goles_visita, estado: r.estado,
-    fechaHora: r.fecha_hora, lugar: r.lugar, orden: r.orden, createdAt: r.created_at,
+    fechaHora: r.fecha_hora, lugar: r.lugar, orden: r.orden,
+    sedeId: r.sede_id, arbitroId: r.arbitro_id,
+    createdAt: r.created_at,
   };
+}
+
+function mapSede(r) {
+  return { id: r.id, torneoId: r.torneo_id, nombre: r.nombre, direccion: r.direccion };
+}
+
+function mapArbitro(r) {
+  return { id: r.id, torneoId: r.torneo_id, nombre: r.nombre, contacto: r.contacto };
 }

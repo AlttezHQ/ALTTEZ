@@ -63,16 +63,16 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
 
   const update = (key, val) => setData(d => ({ ...d, [key]: val }));
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < 4) { setStep(s => s + 1); return; }
     // Step 4: commit to store
-    const torneo  = crearTorneo(data);
+    const torneo  = await crearTorneo(data);
     const equipoNombres = data.equipos.filter(Boolean);
     if (equipoNombres.length) {
-      const equipos = agregarEquipos(torneo.id, equipoNombres);
+      const equipos = await agregarEquipos(torneo.id, equipoNombres);
       if (equipos.length >= 2) {
         const partidos = generarFixture(torneo, equipos);
-        setPartidos(torneo.id, partidos);
+        await setPartidos(torneo.id, partidos);
       }
     }
     onFinish?.();

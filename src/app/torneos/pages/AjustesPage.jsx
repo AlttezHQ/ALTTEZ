@@ -55,8 +55,8 @@ export default function AjustesPage({ onGoTorneos }) {
 
   const publicUrl = `${window.location.origin}/t/${torneo.slug}`;
 
-  const handleSave = () => {
-    actualizarTorneo(torneoActivoId, { ...form });
+  const handleSave = async () => {
+    await actualizarTorneo(torneoActivoId, { ...form });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -137,7 +137,7 @@ export default function AjustesPage({ onGoTorneos }) {
                   if (!file) return;
                   setUploading(u => ({ ...u, perfil: true }));
                   const url = await uploadImage(file, "perfil");
-                  if (url) actualizarTorneo(torneo.id, { perfil: url });
+                  if (url) await actualizarTorneo(torneo.id, { perfil: url });
                   setUploading(u => ({ ...u, perfil: false }));
                 }}
                 style={{ fontSize: 10, width: "100%" }}
@@ -155,7 +155,7 @@ export default function AjustesPage({ onGoTorneos }) {
                   if (!file) return;
                   setUploading(u => ({ ...u, portada: true }));
                   const url = await uploadImage(file, "portada");
-                  if (url) actualizarTorneo(torneo.id, { portada: url });
+                  if (url) await actualizarTorneo(torneo.id, { portada: url });
                   setUploading(u => ({ ...u, portada: false }));
                 }}
                 style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
@@ -233,7 +233,7 @@ export default function AjustesPage({ onGoTorneos }) {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   const url = await uploadImage(file, "docs");
-                  if (url) actualizarTorneo(torneo.id, { reglamentoUrl: url });
+                  if (url) await actualizarTorneo(torneo.id, { reglamentoUrl: url });
                 }}
                 style={{ fontSize: 10 }}
               />
@@ -253,7 +253,7 @@ export default function AjustesPage({ onGoTorneos }) {
           {torneo.patrocinadores?.map(s => (
             <div key={s.id} style={{ position: "relative", width: 60, height: 60, borderRadius: 8, border: `1px solid ${BORDER}`, background: `url(${s.logo}) center/contain no-repeat ${BG}` }}>
               <button 
-                onClick={() => actualizarTorneo(torneo.id, { patrocinadores: torneo.patrocinadores.filter(x => x.id !== s.id) })}
+                onClick={async () => await actualizarTorneo(torneo.id, { patrocinadores: torneo.patrocinadores.filter(x => x.id !== s.id) })}
                 style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#EF4444", color: "#FFF", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
               >
                 <Trash2 size={10} />
@@ -271,7 +271,7 @@ export default function AjustesPage({ onGoTorneos }) {
                 const url = await uploadImage(file, "sponsors");
                 if (url) {
                   const s = { id: Date.now().toString(), nombre: file.name, logo: url };
-                  actualizarTorneo(torneo.id, { patrocinadores: [...(torneo.patrocinadores || []), s] });
+                  await actualizarTorneo(torneo.id, { patrocinadores: [...(torneo.patrocinadores || []), s] });
                 }
               }}
             />
@@ -305,7 +305,7 @@ export default function AjustesPage({ onGoTorneos }) {
               </motion.button>
             </div>
             <button
-              onClick={() => actualizarTorneo(torneoActivoId, { publicado: false, estado: "borrador" })}
+              onClick={async () => await actualizarTorneo(torneoActivoId, { publicado: false, estado: "borrador" })}
               style={{ marginTop: 12, background: "none", border: "none", color: MUTED, fontSize: 11, fontFamily: FONT, cursor: "pointer", padding: 0 }}
             >
               Despublicar torneo
@@ -318,7 +318,7 @@ export default function AjustesPage({ onGoTorneos }) {
             </div>
             <motion.button
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-              onClick={() => publicarTorneo(torneoActivoId)}
+              onClick={async () => await publicarTorneo(torneoActivoId)}
               style={{ display: "flex", alignItems: "center", gap: 7, background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
             >
               <Globe size={14} />Publicar torneo

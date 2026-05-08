@@ -293,16 +293,16 @@ export default function ProgramacionPage() {
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              onClick={() => {
+              onClick={async () => {
                 if (form.estado === "aplazado") {
                   if (partidoReemplazoId) {
-                    reprogramarPartidoAvanzado(selectedPartidoId, partidoReemplazoId);
+                    await reprogramarPartidoAvanzado(selectedPartidoId, partidoReemplazoId);
                   } else {
-                    reprogramarPartido(selectedPartidoId);
+                    await reprogramarPartido(selectedPartidoId);
                   }
                 } else {
                   const d = new Date(form.fecha + "T" + (form.hora || "00:00") + ":00");
-                  actualizarPartido(selectedPartidoId, {
+                  await actualizarPartido(selectedPartidoId, {
                     fechaHora: d.toISOString(),
                     sedeId: form.sedeId,
                     arbitroId: form.arbitroId,

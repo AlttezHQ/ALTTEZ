@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, FileSpreadsheet, Tag } from "lucide-react";
+import { Trophy, X, FileSpreadsheet, Tag, Globe } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
 import { useAuth } from "../../shared/auth";
@@ -281,8 +281,17 @@ export default function TorneosApp() {
   const torneos        = useTorneosStore(s => s.torneos);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
+  const loadTorneos    = useTorneosStore(s => s.loadTorneosFromSupabase);
+
   const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
+
+  // Sync with Supabase on auth
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      loadTorneos();
+    }
+  }, [auth.isAuthenticated, loadTorneos]);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
@@ -413,9 +422,21 @@ export default function TorneosApp() {
               </motion.div>
             )}
 
-            {activeModule === "programacion" && (
-              <motion.div key="programacion" {...PAGE_ANIM}>
-                <ProgramacionPage />
+            {activeModule === "publica" && (
+              <motion.div key="publica" {...PAGE_ANIM}>
+                <ModuleEmptyState
+                  icon={Globe}
+                  title="Vista pública"
+                  subtitle="Configura la página pública para que los jugadores sigan el torneo."
+                  ctaLabel="Configurar"
+                  onCta={() => setActiveModule("ajustes")}
+                />
+              </motion.div>
+            )}
+
+            {activeModule === "calendario" && (
+              <motion.div key="calendario" {...PAGE_ANIM}>
+                <CalendarioPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

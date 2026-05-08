@@ -396,17 +396,17 @@ export default function FixturesPage({ onGoTorneos }) {
   const partidos = allPartidos.filter(p => p.torneoId === torneoActivoId && p.equipoLocalId && p.equipoVisitaId);
   const arbitros = allArbitros.filter(a => a.torneoId === torneoActivoId);
 
-  const handleGenerar = () => {
+  const handleGenerar = async () => {
     if (equipos.length < 2) return;
     const ps = generarFixture(torneo, equipos);
-    setPartidos(torneoActivoId, ps);
+    await setPartidos(torneoActivoId, ps);
   };
 
-  const handleAutoProgramar = () => {
+  const handleAutoProgramar = async () => {
     if (partidos.length === 0) {
-      handleGenerar(); // Generate first if none exist
+      await handleGenerar(); // Generate first if none exist
     }
-    autoSchedulePartidos(torneoActivoId);
+    await autoSchedulePartidos(torneoActivoId);
     showToast("Programación generada con éxito", "success");
   };
 
@@ -415,8 +415,8 @@ export default function FixturesPage({ onGoTorneos }) {
   const programadosCount = partidos.filter(p => p.estado === "programado" || p.estado === "propuesto").length;
   const finalizadosCount = partidos.filter(p => p.estado === "finalizado").length;
 
-  const handleSaveResult = (golesLocal, golesVisita) => {
-    registrarResultado(modalPartido.id, golesLocal, golesVisita);
+  const handleSaveResult = async (golesLocal, golesVisita) => {
+    await registrarResultado(modalPartido.id, golesLocal, golesVisita);
     setModalPartido(null);
   };
 

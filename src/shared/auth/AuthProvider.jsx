@@ -148,19 +148,11 @@ export default function AuthProvider({ children }) {
   // ── Auth actions ────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async (email, password) => {
-    // --- DEMO BYPASS ---
-    setUser({ id: "demo-user", email: email || "demo@alttez.com" });
-    setProfile({ role: "admin", club_id: "demo-club", full_name: "Demo Admin" });
-    return { data: { user: { id: "demo-user" } }, error: null };
-    // -------------------
+    return await authSignIn(email, password);
   }, []);
 
   const handleSignUp = useCallback(async (params) => {
-    // --- DEMO BYPASS ---
-    setUser({ id: "demo-user", email: params.email || "demo@alttez.com" });
-    setProfile({ role: params.role || "admin", club_id: "demo-club", full_name: params.fullName || "Demo Admin" });
-    return { data: { user: { id: "demo-user" } }, error: null };
-    // -------------------
+    return await authSignUp(params);
   }, []);
 
   const handleSignOut = useCallback(async () => {
