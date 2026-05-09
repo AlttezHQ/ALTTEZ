@@ -39,10 +39,17 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
     ? new Date(torneo.fechaInicio + "T00:00:00")
     : new Date();
 
-  // Build all valid dates (up to 365 days out)
+  const endDate = torneo.fechaFin
+    ? new Date(torneo.fechaFin + "T23:59:59")
+    : new Date(startDate.getTime() + 365 * DAY_MS);
+
+  // Build all valid dates (up to endDate)
   const validDates = [];
-  for (let i = 0; i < 365; i++) {
+  const limitDays = Math.min(365, Math.ceil((endDate - startDate) / DAY_MS) + 1);
+  
+  for (let i = 0; i < limitDays; i++) {
     const d = new Date(startDate.getTime() + i * DAY_MS);
+    if (d > endDate) break;
     if (cfg.diasDisponibles.includes(d.getDay())) {
       validDates.push(d);
     }

@@ -17,10 +17,7 @@ const NAV_ITEMS = [
   { id: "torneos",      icon: Trophy,          label: "Torneos" },
   { id: "equipos",      icon: Shirt,           label: "Equipos" },
   { id: "categorias",   icon: Network,         label: "Categorías" },
-  { id: "fixtures",     icon: CalendarDays,    label: "Fixture" },
-  { id: "calendario",   icon: CalendarPlus,    label: "Creación de partidos" },
-  { id: "resultados",   icon: BarChart2,       label: "Resultados" },
-  { id: "tabla",        icon: Table,           label: "Tabla" },
+  { id: "fixtures",     icon: CalendarDays,    label: "Gestión de Partidos" },
   { id: "publica",      icon: Globe,           label: "Vista pública" },
   { id: "ajustes",      icon: Settings,        label: "Configuración" },
 ];

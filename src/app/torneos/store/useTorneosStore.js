@@ -48,7 +48,7 @@ export const useTorneosStore = create(
           formato,
           estado:     "borrador",
           fechaInicio: data.fecha  || null,
-          fechaFin:    null,
+          fechaFin:    data.fechaFin || null,
           slug:        generarSlug(data.nombre || "torneo"),
           numGrupos:   data.numGrupos || 2,
           publicado:   false,

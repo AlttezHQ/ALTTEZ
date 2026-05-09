@@ -14,11 +14,9 @@ import InicioPage        from "./pages/InicioPage";
 import TorneosListPage   from "./pages/TorneosListPage";
 import EquiposPage       from "./pages/EquiposPage";
 import FixturesPage      from "./pages/FixturesPage";
-import EstadisticasPage  from "./pages/EstadisticasPage";
-import CalendarioPage    from "./pages/CalendarioPage";
 import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
-import ProgramacionPage  from "./pages/ProgramacionPage";
+import CategoriasPage    from "./pages/CategoriasPage";
 
 const BG     = PALETTE.bg;
 const CARD   = PALETTE.surface;
@@ -285,6 +283,7 @@ export default function TorneosApp() {
 
   const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
+  const [editingTorneo, setEditingTorneo] = useState(null);
 
   // Sync with Supabase on auth
   useEffect(() => {
@@ -296,11 +295,20 @@ export default function TorneosApp() {
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
 
-  const handleCreate  = () => setActiveModule("crear");
+  const handleCreate  = (torneo = null) => {
+    setEditingTorneo(torneo);
+    setActiveModule("crear");
+  };
   const handleImport  = () => setShowImport(true);
 
-  const handleWizardFinish = () => setActiveModule("torneos");
-  const handleWizardBack   = () => setActiveModule("inicio");
+  const handleWizardFinish = () => {
+    setEditingTorneo(null);
+    setActiveModule("torneos");
+  };
+  const handleWizardBack   = () => {
+    setEditingTorneo(null);
+    setActiveModule("inicio");
+  };
 
   const handleAbrirTorneo = () => setActiveModule("fixtures");
 
@@ -369,6 +377,7 @@ export default function TorneosApp() {
             {activeModule === "crear" && (
               <motion.div key="crear" {...PAGE_ANIM}>
                 <CrearTorneoWizard
+                  initialData={editingTorneo}
                   onFinish={handleWizardFinish}
                   onBack={handleWizardBack}
                 />
@@ -392,51 +401,13 @@ export default function TorneosApp() {
 
             {activeModule === "categorias" && (
               <motion.div key="categorias" {...PAGE_ANIM}>
-                <ModuleEmptyState
-                  icon={Tag}
-                  title="Sin categorías"
-                  subtitle="Define categorías para organizar tus torneos."
-                />
+                <CategoriasPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
             {activeModule === "fixtures" && (
               <motion.div key="fixtures" {...PAGE_ANIM}>
                 <FixturesPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
-            {activeModule === "resultados" && (
-              <motion.div key="resultados" {...PAGE_ANIM}>
-                <EstadisticasPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
-            {activeModule === "tabla" && (
-              <motion.div key="tabla" {...PAGE_ANIM}>
-                <ModuleEmptyState
-                  icon={FileSpreadsheet}
-                  title="Tabla de posiciones"
-                  subtitle="La tabla se generará automáticamente a partir de los resultados."
-                />
-              </motion.div>
-            )}
-
-            {activeModule === "publica" && (
-              <motion.div key="publica" {...PAGE_ANIM}>
-                <ModuleEmptyState
-                  icon={Globe}
-                  title="Vista pública"
-                  subtitle="Configura la página pública para que los jugadores sigan el torneo."
-                  ctaLabel="Configurar"
-                  onCta={() => setActiveModule("ajustes")}
-                />
-              </motion.div>
-            )}
-
-            {activeModule === "calendario" && (
-              <motion.div key="calendario" {...PAGE_ANIM}>
-                <CalendarioPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

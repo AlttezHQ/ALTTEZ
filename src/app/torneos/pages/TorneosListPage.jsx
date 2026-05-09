@@ -28,7 +28,7 @@ const FORMATO_LABELS = {
   grupos_playoffs:    "Grupos + Playoffs",
 };
 
-export default function TorneosListPage({ onCreate, onAbrir }) {
+export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
   const torneos         = useTorneosStore(s => s.torneos);
   const allEquipos      = useTorneosStore(s => s.equipos);
   const allPartidos     = useTorneosStore(s => s.partidos);
@@ -140,6 +140,13 @@ export default function TorneosListPage({ onCreate, onAbrir }) {
                   style={{ flex: 1, background: isActivo ? CU : CU_DIM, color: isActivo ? "#FFF" : CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
                 >
                   {isActivo ? "Abierto" : "Abrir"}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => onCreate(t)}
+                  style={{ width: 36, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                >
+                  <Plus size={13} color={MUTED} style={{ transform: "rotate(45deg)" }} />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02, background: "#FFF0F0" }} whileTap={{ scale: 0.97 }}

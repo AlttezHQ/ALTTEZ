@@ -50,15 +50,22 @@ function WizardStepper({ step }) {
   );
 }
 
-export default function CrearTorneoWizard({ onFinish, onBack }) {
-  const crearTorneo    = useTorneosStore(s => s.crearTorneo);
-  const agregarEquipos = useTorneosStore(s => s.agregarEquipos);
-  const setPartidos    = useTorneosStore(s => s.setPartidos);
+export default function CrearTorneoWizard({ onFinish, onBack, initialData = null }) {
+  const crearTorneo     = useTorneosStore(s => s.crearTorneo);
+  const actualizarTorneo = useTorneosStore(s => s.actualizarTorneo);
+  const agregarEquipos  = useTorneosStore(s => s.agregarEquipos);
+  const setPartidos     = useTorneosStore(s => s.setPartidos);
 
+  const isEditing = !!initialData;
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
-    nombre: "", deporte: "Fútbol", formato: "todos_contra_todos",
-    fecha: "", equipos: ["", ""], numGrupos: 2,
+    nombre: initialData?.nombre || "", 
+    deporte: initialData?.deporte || "Fútbol", 
+    formato: initialData?.formato || "todos_contra_todos",
+    fecha: initialData?.fechaInicio || "", 
+    fechaFin: initialData?.fechaFin || "",
+    equipos: ["", ""], 
+    numGrupos: initialData?.numGrupos || 2,
   });
 
   const update = (key, val) => setData(d => ({ ...d, [key]: val }));
@@ -66,13 +73,24 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
   const handleNext = async () => {
     if (step < 4) { setStep(s => s + 1); return; }
     // Step 4: commit to store
-    const torneo  = await crearTorneo(data);
-    const equipoNombres = data.equipos.filter(Boolean);
-    if (equipoNombres.length) {
-      const equipos = await agregarEquipos(torneo.id, equipoNombres);
-      if (equipos.length >= 2) {
-        const partidos = generarFixture(torneo, equipos);
-        await setPartidos(torneo.id, partidos);
+    if (isEditing) {
+      await actualizarTorneo(initialData.id, {
+        nombre: data.nombre,
+        deporte: data.deporte,
+        formato: data.formato,
+        fechaInicio: data.fecha,
+        fechaFin: data.fechaFin,
+        numGrupos: data.numGrupos
+      });
+    } else {
+      const torneo  = await crearTorneo(data);
+      const equipoNombres = data.equipos.filter(Boolean);
+      if (equipoNombres.length) {
+        const equipos = await agregarEquipos(torneo.id, equipoNombres);
+        if (equipos.length >= 2) {
+          const partidos = generarFixture(torneo, equipos);
+          await setPartidos(torneo.id, partidos);
+        }
       }
     }
     onFinish?.();
@@ -93,7 +111,7 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
         </span>
       </div>
 
-      <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em" }}>Crear torneo</h2>
+      <h2 style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em" }}>{isEditing ? "Editar torneo" : "Crear torneo"}</h2>
       <WizardStepper step={step} />
 
       <AnimatePresence mode="wait">
@@ -118,9 +136,14 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
                   {SPORTS.map(s => <option key={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="FECHA DE INICIO">
-                <input type="date" value={data.fecha} onChange={e => update("fecha", e.target.value)} style={inputStyle} />
-              </Field>
+              <div style={{ display: "flex", gap: 16 }}>
+                <Field label="FECHA DE INICIO" style={{ flex: 1 }}>
+                  <input type="date" value={data.fecha} onChange={e => update("fecha", e.target.value)} style={inputStyle} />
+                </Field>
+                <Field label="FECHA DE FIN" style={{ flex: 1 }}>
+                  <input type="date" value={data.fechaFin} onChange={e => update("fechaFin", e.target.value)} style={inputStyle} />
+                </Field>
+              </div>
             </div>
           )}
 
@@ -199,6 +222,7 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
                   { label: "Deporte",  value: data.deporte || "—" },
                   { label: "Formato",  value: FASE_OPTIONS.find(o => o.id === data.formato)?.label ?? "—" },
                   { label: "Inicio",   value: data.fecha   || "—" },
+                  { label: "Finalización", value: data.fechaFin || "—" },
                   { label: "Equipos",  value: `${data.equipos.filter(Boolean).length} equipos configurados` },
                 ].map(({ label, value }, i, arr) => (
                   <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "12px 16px", borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : "none" }}>
@@ -228,7 +252,7 @@ export default function CrearTorneoWizard({ onFinish, onBack }) {
             transition: "background 0.2s",
           }}
         >
-          {step < 4 ? <>Continuar <ArrowRight size={14} /></> : <>Crear torneo <CheckCircle size={14} /></>}
+          {step < 4 ? <>Continuar <ArrowRight size={14} /></> : <>{isEditing ? "Guardar cambios" : "Crear torneo"} <CheckCircle size={14} /></>}
         </motion.button>
         <button onClick={onBack} style={{ background: "none", border: "none", color: MUTED, fontSize: 12, fontFamily: FONT, cursor: "pointer", padding: "4px 0" }}>
           Guardar borrador
