@@ -41,6 +41,16 @@ export async function saveTorneo(torneo) {
   return { ok: !error, error };
 }
 
+export async function listMyTorneos() {
+  if (!isSupabaseReady) return { ok: false, torneos: [] };
+  const { data, error } = await supabase
+    .from("torneos")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) return { ok: false, torneos: [], error };
+  return { ok: true, torneos: (data ?? []).map(mapTorneo) };
+}
+
 export async function deleteTorneoRemote(id) {
   if (!isSupabaseReady) return { ok: false };
   const { error } = await supabase.from("torneos").delete().eq("id", id);

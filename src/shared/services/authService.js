@@ -34,26 +34,50 @@ function reportError(msg, error) {
  * @returns {Promise<{ user: Object|null, error: string|null }>}
  */
 export async function signUp({ email, password, fullName, role = "admin" }) {
-  if (!isSupabaseReady) return { user: null, error: "Supabase no disponible" };
+  if (!isSupabaseReady) return { user: null, session: null, requiresEmailConfirmation: false, error: "Supabase no disponible" };
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        role,
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+        },
       },
-    },
-  });
+    });
 
-  if (error) {
-    const msg = mapAuthError(error);
-    reportError(msg, error);
-    return { user: null, error: msg };
+    if (error) {
+      const msg = mapAuthError(error);
+      reportError(msg, error);
+      return { user: null, session: null, requiresEmailConfirmation: false, error: msg };
+    }
+
+    if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
+      return {
+        user: null,
+        session: null,
+        requiresEmailConfirmation: false,
+        error: "Ya existe una cuenta con ese email. Inicia sesión o recupera tu contraseña.",
+      };
+    }
+
+    return {
+      user: data.user,
+      session: data.session,
+      requiresEmailConfirmation: !data.session,
+      error: null,
+    };
+  } catch (error) {
+    reportError("No se pudo conectar con Supabase Auth", error);
+    return {
+      user: null,
+      session: null,
+      requiresEmailConfirmation: false,
+      error: "No se pudo conectar con Supabase Auth. Revisa Network, CORS, cache o conexión.",
+    };
   }
-
-  return { user: data.user, session: data.session, error: null };
 }
 
 // ════════════════════════════════════════════════
@@ -83,6 +107,34 @@ export async function signIn(email, password) {
   return { user: data.user, session: data.session, error: null };
 }
 
+/**
+ * Inicia autenticación OAuth con Google.
+ * @param {string} redirectTo - URL absoluta autorizada en Supabase.
+ * @returns {Promise<{ error: string|null }>}
+ */
+export async function signInWithGoogle(redirectTo) {
+  if (!isSupabaseReady) return { error: "Supabase no disponible" };
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error) {
+    const msg = mapAuthError(error);
+    reportError(msg, error);
+    return { error: msg };
+  }
+
+  return { error: null };
+}
+
 // ════════════════════════════════════════════════
 // LOGOUT
 // ════════════════════════════════════════════════
@@ -100,6 +152,49 @@ export async function signOut() {
     return false;
   }
   return true;
+}
+
+/**
+ * Envía email de recuperación de contraseña.
+ * @param {string} email
+ * @param {string} redirectTo
+ * @returns {Promise<{ error: string|null }>}
+ */
+export async function resetPasswordForEmail(email, redirectTo) {
+  if (!isSupabaseReady) return { error: "Supabase no disponible" };
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+
+  if (error) {
+    const msg = mapAuthError(error);
+    reportError(msg, error);
+    return { error: msg };
+  }
+
+  return { error: null };
+}
+
+/**
+ * Actualiza la contraseña del usuario autenticado por flujo de recovery.
+ * @param {string} newPassword
+ * @returns {Promise<{ error: string|null }>}
+ */
+export async function updatePassword(newPassword) {
+  if (!isSupabaseReady) return { error: "Supabase no disponible" };
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    const msg = mapAuthError(error);
+    reportError(msg, error);
+    return { error: msg };
+  }
+
+  return { error: null };
 }
 
 // ════════════════════════════════════════════════

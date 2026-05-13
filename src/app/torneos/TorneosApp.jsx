@@ -1,11 +1,25 @@
-import { useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, FileSpreadsheet, Tag, Globe } from "lucide-react";
+import { Trophy, X, FileSpreadsheet, Tag, Mail } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
-import { useAuth } from "../../shared/auth";
-import { validateTorneosInlineLogin, validateTorneosInlineRegister } from "../../shared/auth/authValidation";
-import { getPostLogoutRedirect } from "../../shared/auth/authRedirects";
+import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
+import {
+  signIn,
+  signUp,
+  signInWithGoogle,
+  signOut as authSignOut,
+  resetPasswordForEmail,
+  updatePassword,
+  deleteAccount,
+  getProfile,
+  onAuthStateChange,
+} from "../../shared/services/authService";
+import { showToast } from "../../shared/ui/Toast";
+import { validateForgotPasswordForm, validateLoginForm, validateRegisterForm, validateResetPasswordForm } from "./auth/authValidators";
+import { evaluatePasswordStrength, getPasswordRequirements } from "./auth/passwordStrength";
+import { listMyTorneos, saveTorneo } from "./services/torneosService";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -14,12 +28,10 @@ import InicioPage        from "./pages/InicioPage";
 import TorneosListPage   from "./pages/TorneosListPage";
 import EquiposPage       from "./pages/EquiposPage";
 import FixturesPage      from "./pages/FixturesPage";
+import EstadisticasPage  from "./pages/EstadisticasPage";
+import CalendarioPage    from "./pages/CalendarioPage";
 import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
-import CategoriasPage    from "./pages/CategoriasPage";
-import ProgramacionPage  from "./pages/ProgramacionPage";
-import EstadisticasPage  from "./pages/EstadisticasPage";
-import AlttezLoader      from "./components/shared/AlttezLoader";
 
 const BG     = PALETTE.bg;
 const CARD   = PALETTE.surface;
@@ -40,15 +52,52 @@ const PAGE_ANIM = {
 };
 
 // ── Inline auth screen (login + register tabs) ─────────────────────────────
-// Uses shared auth context + centralized validation.
 
-function TorneosAuthScreen() {
-  const auth = useAuth();
-  const [tab, setTab]     = useState("login");
-  const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
+function PasswordStrengthIndicator({ password, passwordStrength, compact = false }) {
+  if (!password) return null;
+
+  const isHigh = passwordStrength.level === "high";
+  const isMedium = passwordStrength.level === "medium";
+  const tone = isHigh ? CU : isMedium ? MUTED : PALETTE.danger;
+  const progressWidth = `${(passwordStrength.passed / passwordStrength.total) * 100}%`;
+
+  return (
+    <div style={{
+      marginTop: 8, padding: compact ? 10 : 12, borderRadius: 12,
+      background: isMedium ? CU_DIM : BG,
+      border: `1px solid ${BORDER}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: tone }}>
+          {passwordStrength.label}
+        </span>
+        <span style={{ fontSize: 10, color: MUTED }}>
+          {passwordStrength.passed}/{passwordStrength.total}
+        </span>
+      </div>
+      <div style={{ height: 4, borderRadius: 999, background: CARD, border: `1px solid ${BORDER}`, overflow: "hidden", marginBottom: 8 }}>
+        <div style={{ height: "100%", width: progressWidth, background: tone, transition: "width 0.18s ease" }} />
+      </div>
+        <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr 1fr" : "1fr 1fr", gap: "4px 10px" }}>
+        {getPasswordRequirements().map(req => {
+          const ok = passwordStrength.checks[req.key];
+          return (
+            <div key={req.key} style={{ fontSize: 10, color: ok ? CU : MUTED, lineHeight: 1.25 }}>
+              {ok ? "✓" : "•"} {req.label}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TorneosAuthScreen({ onAuthSuccess, recoveryMode, onRecoveryComplete, initialTab = "login" }) {
+  const [tab, setTab] = useState(recoveryMode ? "reset" : initialTab);
+  const [form, setForm] = useState({ nombre: "", email: "", password: "", confirmPassword: "", newPassword: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg]     = useState(null);
+  const [msg, setMsg] = useState(null);
 
   const update = (k, v) => {
     setForm(f => ({ ...f, [k]: v }));
@@ -56,31 +105,75 @@ function TorneosAuthScreen() {
   };
 
   const handleLogin = async () => {
-    const { errors: errs, cleanData } = validateTorneosInlineLogin(form);
+    const errs = validateLoginForm(form);
     setErrors(errs);
-    if (!cleanData) return;
+    if (Object.keys(errs).length) return;
     setLoading(true);
-    const { error } = await auth.signIn(cleanData.email, cleanData.password);
+    const { user, error } = await signIn(form.email, form.password);
     setLoading(false);
     if (error) { setMsg({ type: "error", text: error }); return; }
-    // Auth state update handled by AuthProvider listener
+    showToast("Sesión iniciada correctamente.", "success");
+    onAuthSuccess(user);
   };
 
   const handleRegister = async () => {
-    const { errors: errs, cleanData } = validateTorneosInlineRegister(form);
+    const errs = validateRegisterForm(form);
     setErrors(errs);
-    if (!cleanData) return;
+    if (Object.keys(errs).length) return;
     setLoading(true);
-    const { error } = await auth.signUp({
-      email: cleanData.email,
-      password: cleanData.password,
-      fullName: cleanData.nombre,
-      role: "admin",
-    });
-    if (error) { setLoading(false); setMsg({ type: "error", text: error }); return; }
+    const { user, session, requiresEmailConfirmation, error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
     setLoading(false);
-    // Auth state update handled by AuthProvider listener
+    if (error) { setMsg({ type: "error", text: error }); return; }
+    if (requiresEmailConfirmation || !session) {
+      setMsg({ type: "success", text: "Cuenta creada correctamente. Revisa tu email para confirmar la cuenta antes de iniciar sesión." });
+      setTab("login");
+      setForm(f => ({ ...f, password: "", confirmPassword: "" }));
+      return;
+    }
+    setMsg({ type: "success", text: "Cuenta creada correctamente. Sesión iniciada." });
+    showToast("Cuenta creada correctamente. Sesión iniciada.", "success");
+    onAuthSuccess(user);
   };
+
+  const handleForgotPassword = async () => {
+    const errs = validateForgotPasswordForm(form);
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setLoading(true);
+    await resetPasswordForEmail(form.email, `${window.location.origin}/torneos`);
+    setLoading(false);
+    setMsg({ type: "success", text: "Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña." });
+  };
+
+  const handleResetPassword = async () => {
+    const errs = validateResetPasswordForm(form, {
+      email: form.email,
+      nombre: form.nombre,
+    });
+    setErrors(errs);
+    if (Object.keys(errs).length) return;
+    setLoading(true);
+    const { error } = await updatePassword(form.newPassword);
+    setLoading(false);
+    if (error) { setMsg({ type: "error", text: error }); return; }
+    await authSignOut();
+    setMsg({ type: "success", text: "Contraseña actualizada correctamente. Ya puedes iniciar sesión." });
+    setForm(f => ({ ...f, password: "", newPassword: "", confirmPassword: "" }));
+    setTab("login");
+    onRecoveryComplete?.();
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    const { error } = await signInWithGoogle(`${window.location.origin}/torneos`);
+    setLoading(false);
+    if (error) setMsg({ type: "error", text: error });
+  };
+
+  const passwordStrength = evaluatePasswordStrength(tab === "reset" ? form.newPassword : form.password, {
+    email: form.email,
+    nombre: form.nombre,
+  });
 
   const inp = (hasErr) => ({
     width: "100%", boxSizing: "border-box",
@@ -89,6 +182,29 @@ function TorneosAuthScreen() {
     fontSize: 13, color: TEXT, fontFamily: FONT,
     background: BG, outline: "none",
   });
+
+  const field = (label, key, props = {}) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</label>
+      <input
+        style={inp(errors[key])}
+        value={form[key]}
+        onChange={e => update(key, e.target.value)}
+        {...props}
+      />
+      {errors[key] && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4 }}>{errors[key]}</div>}
+    </div>
+  );
+
+  const primaryButton = (label, onClick) => (
+    <button onClick={onClick} disabled={loading} style={{
+      width: "100%", minHeight: 52, borderRadius: 14, border: "none",
+      background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
+      color: loading ? MUTED : "#FFF", fontSize: 12, fontWeight: 800,
+      letterSpacing: "0.14em", textTransform: "uppercase",
+      fontFamily: FONT, cursor: loading ? "wait" : "pointer",
+    }}>{label}</button>
+  );
 
   return (
     <div style={{
@@ -101,23 +217,28 @@ function TorneosAuthScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: EASE }}
         style={{
-          width: "100%", maxWidth: 420,
-          background: CARD, borderRadius: 24,
+          width: "100%", maxWidth: tab === "register" ? 760 : 460,
+          background: CARD, borderRadius: 28,
           border: `1px solid ${BORDER}`,
           boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
-          padding: "32px 28px", fontFamily: FONT,
+          padding: "36px 34px", fontFamily: FONT,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
-          <Trophy size={20} color={CU} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 16, background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,241,234,0.96))", border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 28px rgba(23,26,28,0.08)" }}>
+            <Trophy size={22} color={CU} />
+          </div>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.04em", color: TEXT }}>ALTTEZ Torneos</div>
-            <div style={{ fontSize: 10, color: MUTED }}>Gestor de torneos deportivos</div>
+            <div style={{ fontSize: tab === "register" ? 28 : 24, fontWeight: 900, letterSpacing: "-0.05em", color: TEXT }}>
+              {tab === "register" ? "Registrar en Torneos" : tab === "forgot" ? "Recuperar contraseña" : tab === "reset" ? "Nueva contraseña" : "Iniciar sesión"}
+            </div>
+            <div style={{ fontSize: 11, color: MUTED }}>
+              {tab === "register" ? "Datos del organizador y acceso" : tab === "forgot" ? "Acceso seguro para organizadores" : tab === "reset" ? "Define una contraseña segura" : "Credenciales del organizador"}
+            </div>
           </div>
         </div>
 
-        {/* Tab toggle */}
-        <div style={{ display: "flex", background: BG, borderRadius: 10, padding: 3, marginBottom: 20, border: `1px solid ${BORDER}` }}>
+        {tab !== "forgot" && tab !== "reset" && <div style={{ display: "flex", background: BG, borderRadius: 12, padding: 3, marginBottom: 20, border: `1px solid ${BORDER}` }}>
           {[["login", "Iniciar sesión"], ["register", "Registrarse"]].map(([key, label]) => (
             <button
               key={key}
@@ -133,7 +254,7 @@ function TorneosAuthScreen() {
               }}
             >{label}</button>
           ))}
-        </div>
+        </div>}
 
         {msg && (
           <div style={{
@@ -144,62 +265,189 @@ function TorneosAuthScreen() {
           }}>{msg.text}</div>
         )}
 
-        {tab === "login" ? (
+        {tab === "login" && (
           <>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>EMAIL</label>
-              <input style={inp(errors.email)} type="email" value={form.email}
-                onChange={e => update("email", e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-                placeholder="tu@email.com" />
-              {errors.email && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.email}</div>}
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONTRASEÑA</label>
-              <input style={inp(errors.password)} type="password" value={form.password}
-                onChange={e => update("password", e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-                placeholder="Tu contraseña" />
-              {errors.password && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.password}</div>}
-            </div>
-            <button onClick={handleLogin} disabled={loading} style={{
-              width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
-              background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
-              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
-              fontFamily: FONT, cursor: loading ? "wait" : "pointer",
-            }}>{loading ? "Verificando..." : "Ingresar"}</button>
-          </>
-        ) : (
-          <>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>NOMBRE / ORGANIZACIÓN</label>
-              <input style={inp(errors.nombre)} value={form.nombre}
-                onChange={e => update("nombre", e.target.value)}
-                placeholder="Ej: Liga Norte" />
-              {errors.nombre && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.nombre}</div>}
-            </div>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>EMAIL</label>
-              <input style={inp(errors.email)} type="email" value={form.email}
-                onChange={e => update("email", e.target.value)}
-                placeholder="tu@email.com" />
-              {errors.email && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.email}</div>}
-            </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONTRASEÑA</label>
-              <input style={inp(errors.password)} type="password" value={form.password}
-                onChange={e => update("password", e.target.value)}
-                placeholder="Mínimo 6 caracteres" />
-              {errors.password && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.password}</div>}
-            </div>
-            <button onClick={handleRegister} disabled={loading} style={{
-              width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
-              background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
-              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
-              fontFamily: FONT, cursor: loading ? "wait" : "pointer",
-            }}>{loading ? "Creando cuenta..." : "Crear cuenta"}</button>
+            {field("Email", "email", { type: "email", placeholder: "tu@email.com", autoComplete: "email", onKeyDown: e => e.key === "Enter" && handleLogin() })}
+            {field("Contraseña", "password", { type: "password", placeholder: "Tu contraseña", autoComplete: "current-password", onKeyDown: e => e.key === "Enter" && handleLogin() })}
+            {primaryButton(loading ? "Verificando..." : "Ingresar a Torneos", handleLogin)}
+            <button onClick={handleGoogleLogin} disabled={loading} style={{ width: "100%", minHeight: 46, marginTop: 10, borderRadius: 14, border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: 12, fontWeight: 800, fontFamily: FONT, cursor: loading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Mail size={14} /> Continuar con Google
+            </button>
+            <div onClick={() => { setTab("forgot"); setErrors({}); setMsg(null); }} style={{ marginTop: 14, textAlign: "center", fontSize: 12, color: MUTED, cursor: "pointer" }}>¿Olvidaste tu contraseña?</div>
           </>
         )}
+
+        {tab === "register" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {field("Nombre / organización", "nombre", { placeholder: "Ej: Liga Norte", maxLength: 60 })}
+              {field("Email", "email", { type: "email", placeholder: "tu@email.com", autoComplete: "email", maxLength: 80 })}
+            </div>
+            <div style={{ marginTop: 6, paddingTop: 18, borderTop: `1px solid ${BORDER}` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: TEXT, marginBottom: 12 }}>Cuenta de acceso</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  {field("Contraseña", "password", { type: "password", placeholder: "Mínimo 10 caracteres", autoComplete: "new-password", maxLength: 72 })}
+                  <PasswordStrengthIndicator password={form.password} passwordStrength={passwordStrength} />
+                </div>
+                {field("Confirmar contraseña", "confirmPassword", { type: "password", placeholder: "Repite tu contraseña", autoComplete: "new-password", maxLength: 72 })}
+              </div>
+            </div>
+            <div style={{ marginTop: 8, padding: "18px", borderRadius: 18, background: "#FFFCF7", border: `1px solid ${BORDER}` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: TEXT, marginBottom: 10 }}>Autorización de datos</div>
+              <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
+                Al crear tu cuenta aceptas la Política de Tratamiento de Datos Personales para gestionar torneos y comunicaciones operativas.
+              </div>
+            </div>
+            <div style={{ marginTop: 20 }}>{primaryButton(loading ? "Creando cuenta..." : "Crear cuenta en Torneos", handleRegister)}</div>
+            <button onClick={handleGoogleLogin} disabled={loading} style={{ width: "100%", minHeight: 46, marginTop: 10, borderRadius: 14, border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: 12, fontWeight: 800, fontFamily: FONT, cursor: loading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Mail size={14} /> Continuar con Google
+            </button>
+          </>
+        )}
+
+        {tab === "forgot" && (
+          <>
+            {field("Email", "email", { type: "email", placeholder: "tu@email.com", autoComplete: "email" })}
+            {primaryButton(loading ? "Enviando..." : "Enviar instrucciones", handleForgotPassword)}
+            <div onClick={() => { setTab("login"); setErrors({}); setMsg(null); }} style={{ marginTop: 14, textAlign: "center", fontSize: 12, color: MUTED, cursor: "pointer" }}>Volver a iniciar sesión</div>
+          </>
+        )}
+
+        {tab === "reset" && (
+          <>
+            <div>
+              {field("Nueva contraseña", "newPassword", { type: "password", placeholder: "Mínimo 10 caracteres", autoComplete: "new-password", maxLength: 72 })}
+              <PasswordStrengthIndicator password={form.newPassword} passwordStrength={passwordStrength} />
+            </div>
+            {field("Confirmar contraseña", "confirmPassword", { type: "password", placeholder: "Repite tu contraseña", autoComplete: "new-password", maxLength: 72 })}
+            {primaryButton(loading ? "Actualizando..." : "Actualizar contraseña", handleResetPassword)}
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+function getPreferredDisplayName({ torneoActivo, torneos, profile, user }) {
+  const firstTorneo = torneos.find(t => t?.nombre?.trim());
+  return (
+    torneoActivo?.nombre?.trim() ||
+    firstTorneo?.nombre?.trim() ||
+    profile?.full_name?.trim() ||
+    user?.user_metadata?.full_name?.trim() ||
+    user?.user_metadata?.name?.trim() ||
+    user?.email ||
+    "Administrador"
+  );
+}
+
+function FirstLeagueOnboarding({ onCreate, onLogout }) {
+  const [form, setForm] = useState({ nombre: "", ciudad: "", deporte: "Fútbol" });
+  const [errors, setErrors] = useState({});
+  const sports = ["Fútbol", "Básquet", "Vóleibol", "Tenis", "Pádel", "Rugby", "Otro"];
+
+  const update = (key, value) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
+  };
+
+  const submit = () => {
+    const nextErrors = {};
+    if (!form.nombre.trim()) nextErrors.nombre = "Ingresa el nombre de la liga";
+    if (!form.ciudad.trim()) nextErrors.ciudad = "Ingresa la ciudad";
+    if (!form.deporte.trim()) nextErrors.deporte = "Selecciona un deporte";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    onCreate({
+      nombre: form.nombre.trim(),
+      ciudad: form.ciudad.trim(),
+      deporte: form.deporte,
+      formato: "todos_contra_todos",
+    });
+  };
+
+  const input = (hasError) => ({
+    width: "100%",
+    boxSizing: "border-box",
+    border: `1px solid ${hasError ? PALETTE.danger : BORDER}`,
+    borderRadius: 10,
+    padding: "11px 13px",
+    fontSize: 13,
+    color: TEXT,
+    fontFamily: FONT,
+    background: BG,
+    outline: "none",
+  });
+
+  const field = (label, key, control) => (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, fontWeight: 800, color: MUTED, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</label>
+      {control}
+      {errors[key] && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4 }}>{errors[key]}</div>}
+    </div>
+  );
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: `linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)`,
+      padding: "40px 24px",
+      fontFamily: FONT,
+    }}>
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: EASE }}
+        style={{
+          width: "100%",
+          maxWidth: 560,
+          background: CARD,
+          borderRadius: 28,
+          border: `1px solid ${BORDER}`,
+          boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          padding: "36px 34px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 16, background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,241,234,0.96))", border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 10px 28px rgba(23,26,28,0.08)" }}>
+            <Trophy size={22} color={CU} />
+          </div>
+          <div>
+            <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: TEXT }}>Crear tu primera liga</div>
+            <div style={{ fontSize: 12, color: MUTED }}>Configura el espacio inicial para gestionar tus torneos.</div>
+          </div>
+        </div>
+
+        {field("Nombre de la liga", "nombre", (
+          <input value={form.nombre} onChange={e => update("nombre", e.target.value)} placeholder="Ej: Liga Norte" maxLength={80} style={input(errors.nombre)} />
+        ))}
+
+        {field("Ciudad", "ciudad", (
+          <input value={form.ciudad} onChange={e => update("ciudad", e.target.value)} placeholder="Ej: Bogotá" maxLength={60} style={input(errors.ciudad)} />
+        ))}
+
+        {field("Deporte principal", "deporte", (
+          <select value={form.deporte} onChange={e => update("deporte", e.target.value)} style={{ ...input(errors.deporte), appearance: "none" }}>
+            {sports.map(sport => <option key={sport} value={sport}>{sport}</option>)}
+          </select>
+        ))}
+
+        <button onClick={submit} style={{
+          width: "100%", minHeight: 52, marginTop: 8, borderRadius: 14, border: "none",
+          background: `linear-gradient(135deg, ${CU}, #A66F38)`, color: "#FFF",
+          fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase",
+          fontFamily: FONT, cursor: "pointer",
+        }}>
+          Comenzar
+        </button>
+
+        <button onClick={onLogout} style={{ marginTop: 14, width: "100%", background: "none", border: "none", color: MUTED, fontSize: 12, fontFamily: FONT, cursor: "pointer" }}>
+          Cerrar sesión
+        </button>
       </motion.div>
     </div>
   );
@@ -277,76 +525,169 @@ function ImportModal({ onClose }) {
 // ── Main app ──────────────────────────────────────────────────────────────────
 
 export default function TorneosApp() {
-  const auth           = useAuth();
+  const navigate       = useNavigate();
+  const location       = useLocation();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
+  const crearTorneo    = useTorneosStore(s => s.crearTorneo);
+  const setTorneosFromRemote = useTorneosStore(s => s.setTorneosFromRemote);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
-  const loadTorneos    = useTorneosStore(s => s.loadTorneosFromSupabase);
-
-  const [activeModule, setActiveModule] = useState(() => {
-    return localStorage.getItem("torneos_active_module") || "inicio";
-  });
+  const [activeModule, setActiveModule] = useState("inicio");
   const [showImport,   setShowImport]   = useState(false);
-  const [editingTorneo, setEditingTorneo] = useState(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const initialAuthTab = new URLSearchParams(location.search).get("auth") === "register" ? "register" : "login";
 
-  // Persist activeModule
-  useEffect(() => {
-    localStorage.setItem("torneos_active_module", activeModule);
-  }, [activeModule]);
+  // undefined = checking, null = not authed, object = authed
+  const [authUser, setAuthUser] = useState(isSupabaseReady ? undefined : null);
+  const [authProfile, setAuthProfile] = useState(null);
+  const [torneosRemoteChecked, setTorneosRemoteChecked] = useState(!isSupabaseReady);
+  const oauthFeedbackShown = useRef(false);
 
-  // Sync with Supabase on auth
-  useEffect(() => {
-    if (auth.isAuthenticated) {
-      loadTorneos();
+  const hydrateRemoteTorneos = useCallback(async () => {
+    if (!isSupabaseReady) {
+      setTorneosRemoteChecked(true);
+      return;
     }
-  }, [auth.isAuthenticated, loadTorneos]);
+    const { ok, torneos: remoteTorneos } = await listMyTorneos();
+    if (ok && remoteTorneos.length > 0) setTorneosFromRemote(remoteTorneos);
+    setTorneosRemoteChecked(true);
+  }, [setTorneosFromRemote]);
+
+  useEffect(() => {
+    if (!isSupabaseReady) return;
+    const hasOAuthReturn = location.search.includes("code=") || location.hash.includes("access_token");
+
+    // Check existing session
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setAuthUser(user ?? null);
+      if (user) {
+        setTorneosRemoteChecked(false);
+        const profile = await getProfile();
+        setAuthProfile(profile);
+        await hydrateRemoteTorneos();
+        const provider = user.app_metadata?.provider;
+        if (hasOAuthReturn && provider === "google" && !oauthFeedbackShown.current) {
+          oauthFeedbackShown.current = true;
+          showToast("Sesión iniciada con Google.", "success");
+        }
+      }
+    });
+
+    // Subscribe to changes
+    const sub = onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setPasswordRecovery(true);
+        setAuthUser(null);
+        return;
+      }
+      if (event === "SIGNED_IN") {
+        const user = session?.user ?? null;
+        setAuthUser(user);
+        const profile = user ? await getProfile() : null;
+        setAuthProfile(profile);
+        if (user) {
+          setTorneosRemoteChecked(false);
+          await hydrateRemoteTorneos();
+        }
+        const provider = user?.app_metadata?.provider;
+        if (provider === "google" && !oauthFeedbackShown.current) {
+          oauthFeedbackShown.current = true;
+          showToast("Sesión iniciada con Google.", "success");
+        }
+      }
+      if (event === "SIGNED_OUT") {
+        setAuthUser(null);
+        setAuthProfile(null);
+        setTorneosRemoteChecked(true);
+      }
+    });
+    return () => sub.unsubscribe();
+  }, [hydrateRemoteTorneos, location.hash, location.search]);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
 
-  const handleCreate  = (torneo = null) => {
-    setEditingTorneo(torneo);
-    setActiveModule("crear");
-  };
+  const handleCreate  = () => setActiveModule("crear");
   const handleImport  = () => setShowImport(true);
 
-  const handleWizardFinish = () => {
-    setEditingTorneo(null);
-    setActiveModule("inicio");
-  };
-  const handleWizardBack   = () => {
-    setEditingTorneo(null);
-    setActiveModule("inicio");
-  };
+  const handleWizardFinish = () => setActiveModule("torneos");
+  const handleWizardBack   = () => setActiveModule("inicio");
 
   const handleAbrirTorneo = () => setActiveModule("fixtures");
 
-  // Logout: limpiar sesión via AuthProvider. No navegar a "/".
-  // El auth gate de abajo mostrará TorneosAuthScreen automáticamente.
+  const handleAuthSuccess = async (user) => {
+    setAuthUser(user);
+    const profile = await getProfile();
+    setAuthProfile(profile);
+    setTorneosRemoteChecked(false);
+    await hydrateRemoteTorneos();
+  };
+
+  const handleCreateFirstLeague = async (data) => {
+    const torneo = crearTorneo(data);
+    await saveTorneo(torneo);
+    setActiveModule("inicio");
+    showToast("Liga creada correctamente. Ya puedes gestionar tus torneos.", "success");
+  };
+
   const handleLogout = async () => {
-    await auth.signOut();
-    // Auth gate below will render TorneosAuthScreen when user becomes null
+    if (isSupabaseReady) await authSignOut();
+    setAuthProfile(null);
+    navigate("/");
   };
 
   const handleDeleteAccount = async () => {
     if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
-    const { error } = await auth.deleteAccount();
+    const { error } = await deleteAccount();
     if (error) { alert(error); return; }
-    // Auth gate below will render TorneosAuthScreen when user becomes null
+    navigate("/");
   };
 
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
-  if (auth.loadingAuth) {
-    return <AlttezLoader fullScreen />;
+  if (authUser === undefined || (authUser && !torneosRemoteChecked)) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG }}>
+        <div style={{ textAlign: "center", fontFamily: FONT }}>
+          <Trophy size={28} color={CU} style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 11, color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase" }}>Cargando...</div>
+        </div>
+      </div>
+    );
   }
 
   // Auth gate — show login/register if no active session
-  if (!auth.isAuthenticated) {
-    return <TorneosAuthScreen />;
+  if (authUser === null || passwordRecovery) {
+    return (
+      <TorneosAuthScreen
+        key={passwordRecovery ? "recovery" : "auth"}
+        onAuthSuccess={handleAuthSuccess}
+        recoveryMode={passwordRecovery}
+        initialTab={initialAuthTab}
+        onRecoveryComplete={() => {
+          setPasswordRecovery(false);
+          setAuthUser(null);
+        }}
+      />
+    );
+  }
+
+  const userDisplayName = getPreferredDisplayName({
+    torneoActivo,
+    torneos,
+    profile: authProfile,
+    user: authUser,
+  });
+
+  if (torneos.length === 0) {
+    return (
+      <FirstLeagueOnboarding
+        onCreate={handleCreateFirstLeague}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
@@ -355,15 +696,14 @@ export default function TorneosApp() {
         active={sidebarActive}
         onNav={goTo}
         torneoActivo={torneoActivo}
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
-          userName={auth.user?.email ?? ""}
+          userName={userDisplayName}
+          accountEmail={authUser?.email ?? ""}
         />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>
@@ -383,7 +723,6 @@ export default function TorneosApp() {
             {activeModule === "crear" && (
               <motion.div key="crear" {...PAGE_ANIM}>
                 <CrearTorneoWizard
-                  initialData={editingTorneo}
                   onFinish={handleWizardFinish}
                   onBack={handleWizardBack}
                 />
@@ -407,7 +746,23 @@ export default function TorneosApp() {
 
             {activeModule === "categorias" && (
               <motion.div key="categorias" {...PAGE_ANIM}>
-                <CategoriasPage onGoTorneos={goTorneos} onNavigate={goTo} />
+                <ModuleEmptyState
+                  icon={Tag}
+                  title="Sin categorías"
+                  subtitle="Define categorías para organizar tus torneos."
+                />
+              </motion.div>
+            )}
+
+            {activeModule === "calendario" && (
+              <motion.div key="calendario" {...PAGE_ANIM}>
+                <CalendarioPage onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "estadisticas" && (
+              <motion.div key="estadisticas" {...PAGE_ANIM}>
+                <EstadisticasPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
@@ -417,30 +772,15 @@ export default function TorneosApp() {
               </motion.div>
             )}
 
-            {activeModule === "ajustes" && (
-              <motion.div key="ajustes" {...PAGE_ANIM}>
+            {activeModule === "publica" && (
+              <motion.div key="publica" {...PAGE_ANIM}>
                 <AjustesPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
-            {activeModule === "programacion" && (
-              <motion.div key="programacion" {...PAGE_ANIM}>
-                <ProgramacionPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
-            {activeModule === "publica" && (
-              <motion.div key="publica" {...PAGE_ANIM}>
-                <div style={{ fontFamily: FONT, padding: 24 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Vista Pública</h2>
-                  <p style={{ color: MUTED, fontSize: 13 }}>La vista pública del torneo estará disponible cuando publiques el torneo desde Configuración.</p>
-                </div>
-              </motion.div>
-            )}
-
-            {activeModule === "estadisticas" && (
-              <motion.div key="estadisticas" {...PAGE_ANIM}>
-                <EstadisticasPage onGoTorneos={goTorneos} />
+            {activeModule === "ajustes" && (
+              <motion.div key="ajustes" {...PAGE_ANIM}>
+                <AjustesPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

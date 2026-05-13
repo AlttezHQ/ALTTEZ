@@ -13,12 +13,10 @@ const BORDER = PALETTE.border;
 const BG     = PALETTE.bg;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
-export default function TorneosHeader({ onLogout, onDeleteAccount, userName = "" }) {
+export default function TorneosHeader({ onLogout, onDeleteAccount, userName = "", accountEmail = "" }) {
   const [open, setOpen] = useState(false);
 
-  const displayName = userName.includes("@")
-    ? userName.split("@")[0]
-    : userName || "Administrador";
+  const displayName = userName || "Administrador";
 
   return (
     <div style={{
@@ -67,7 +65,7 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
                 <div style={{ padding: "10px 14px", borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ fontSize: 11, color: MUTED }}>Cuenta</div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {userName || "—"}
+                    {accountEmail || userName || "—"}
                   </div>
                 </div>
 

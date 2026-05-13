@@ -1,88 +1,984 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { UserPlus, Star, LogIn } from "lucide-react";
 import { PALETTE } from "../tokens/palette";
+import { sanitizeText, sanitizeTextFinal, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
+import { ROLES } from "../constants/roles";
+import { isSupabaseReady } from "../lib/supabase";
 
-// Components
-import AuthShell from "./components/AuthShell";
-import AuthHeader from "./components/AuthHeader";
-import AuthModuleCards from "./components/AuthModuleCards";
-import AuthLoginForm from "./components/AuthLoginForm";
-import AuthRegisterForm from "./components/AuthRegisterForm";
+const BRAND_SYMBOL = "/branding/alttez-symbol-transparent.png";
+const EASE = [0.22, 1, 0.36, 1];
+const SPRING = { type: "spring", stiffness: 360, damping: 28 };
+const SPRING_FAST = { type: "spring", stiffness: 400, damping: 28 };
+const REQUIRED_FIELDS = ["nombre", "ciudad", "entrenador", "categorias"];
 
-const CU = PALETTE.bronce;
+const CU = "#C9973A";
+const CU_BORDER = "rgba(201,151,58,0.28)";
+const CU_SOFT = "rgba(201,151,58,0.10)";
 
-/**
- * @component LandingPage
- * @description Punto de entrada principal para el ecosistema ALTTEZ.
- * Coordina el flujo de autenticación entre Landing, Login y Registro para los módulos de Clubes y Torneos.
- */
-export default function LandingPage() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState("landing"); // landing | login | register | recover
-  const [source, setSource] = useState(null); // null (clubes) | "torneos"
+if (typeof document !== "undefined" && !document.getElementById("landing-kf")) {
+  const s = document.createElement("style");
+  s.id = "landing-kf";
+  s.textContent = `
+    @media (max-width: 720px) {
+      .ldg-form-row,
+      .ldg-right-col {
+        grid-template-columns: 1fr !important;
+      }
+      .ldg-shell {
+        padding: 28px 18px 40px !important;
+      }
+      .ldg-card,
+      .ldg-panel {
+        padding: 24px 20px !important;
+      }
+      .ldg-hero-row {
+        flex-direction: column !important;
+      }
+      .ldg-crm-preview {
+        display: none !important;
+      }
+      .ldg-card-inner {
+        flex-direction: column !important;
+      }
+      .ldg-mini-list,
+      .ldg-mini-fixture {
+        display: none !important;
+      }
+    }
+  `;
+  document.head.appendChild(s);
+}
 
-  const handleAction = (newStep, newSource) => {
-    setStep(newStep);
-    setSource(newSource);
-  };
+const PAGE_BG = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: `
+    radial-gradient(circle at 12% 12%, rgba(201,151,58,0.08), transparent 24%),
+    radial-gradient(circle at 88% 18%, rgba(201,151,58,0.10), transparent 22%),
+    linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)
+  `,
+  padding: "40px 24px",
+  position: "relative",
+  overflow: "hidden",
+};
 
-  const goBack = () => {
-    if (step === "landing") navigate("/");
-    else setStep("landing");
-  };
+const GRID = {
+  position: "absolute",
+  inset: 0,
+  pointerEvents: "none",
+  backgroundImage: "linear-gradient(rgba(23,26,28,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(23,26,28,0.018) 1px, transparent 1px)",
+  backgroundSize: "60px 60px",
+  maskImage: "linear-gradient(180deg, rgba(0,0,0,0.52), transparent 92%)",
+};
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function BrandSymbol() {
   return (
-    <AuthShell maxWidth={step === "landing" ? 1240 : 960}>
-      
-      {/* Botón superior de retorno */}
-      <button
-        onClick={goBack}
-        style={{
-          border: "none", background: "none", padding: 0,
-          marginBottom: 18, cursor: "pointer",
-          color: CU, fontSize: 11, fontWeight: 700,
-          display: "flex", alignItems: "center", gap: 4,
-          position: "absolute", top: -30, left: 0
-        }}
-      >
-        ← {step === "landing" ? "Volver al inicio" : "Volver"}
-      </button>
-
-      {step === "landing" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <AuthHeader />
-          <AuthModuleCards onAction={handleAction} />
-        </div>
-      )}
-
-      {step === "login" && (
-        <AuthLoginForm 
-          source={source}
-          onRegisterClick={() => setStep("register")}
-          onRecoverClick={() => setStep("recover")}
-        />
-      )}
-
-      {step === "register" && (
-        <AuthRegisterForm 
-          source={source}
-          onLoginClick={() => setStep("login")}
-        />
-      )}
-
-      {step === "recover" && (
-        <div style={{ textAlign: 'center', padding: 40, background: '#fff', borderRadius: 20 }}>
-          <h2 style={{ color: PALETTE.text }}>Recuperar contraseña</h2>
-          <p style={{ color: PALETTE.textMuted }}>Módulo en desarrollo. Por ahora, contacta a soporte.</p>
-          <button 
-            onClick={() => setStep("login")}
-            style={{ marginTop: 20, padding: '10px 20px', borderRadius: 10, border: 'none', background: CU, color: '#fff', fontWeight: 700, cursor: 'pointer' }}
-          >
-            Volver al login
-          </button>
-        </div>
-      )}
-
-    </AuthShell>
+    <div style={{
+      width: 46, height: 46, borderRadius: 16,
+      background: "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,241,234,0.96))",
+      border: `1px solid ${PALETTE.border}`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 10px 28px rgba(23,26,28,0.08)",
+    }}>
+      <img src={BRAND_SYMBOL} alt="ALTTEZ" style={{ width: 24, height: 24, objectFit: "contain" }} />
+    </div>
   );
+}
+
+function FieldGroup({ label, error, children }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ display: "block", fontSize: 10, color: PALETTE.textMuted, marginBottom: 6, fontWeight: 600 }}>
+        {label}
+      </label>
+      {children}
+      {error && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4 }}>{error}</div>}
+    </div>
+  );
+}
+
+function mkInput(hasError) {
+  return {
+    width: "100%",
+    fontSize: 13,
+    padding: "11px 13px",
+    background: PALETTE.surface,
+    border: `1px solid ${hasError ? PALETTE.danger : PALETTE.border}`,
+    borderRadius: 12,
+    color: PALETTE.text,
+    fontFamily: "inherit",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+}
+
+function Shell({ children }) {
+  return (
+    <div style={PAGE_BG}>
+      <div style={GRID} />
+      <div
+        className="ldg-shell"
+        style={{ width: "100%", maxWidth: 1240, position: "relative", zIndex: 2 }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TopBack({ onClick, label = "Volver al inicio" }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: "none", background: "none", padding: 0,
+        marginBottom: 18, cursor: "pointer",
+        color: CU, fontSize: 11, fontWeight: 700,
+        display: "flex", alignItems: "center", gap: 4,
+      }}
+    >
+      ← {label}
+    </button>
+  );
+}
+
+// ── Mini club list (Clubes card) ──────────────────────────────────────────────
+
+const CLUB_AVATARS = [
+  { bg: "rgba(201,151,58,0.18)", color: CU },
+  { bg: "rgba(47,165,111,0.18)", color: "#2FA56F" },
+  { bg: "rgba(91,139,245,0.18)", color: "#5B8BF5" },
+  { bg: "rgba(217,92,92,0.18)", color: "#D95C5C" },
+];
+
+function MiniClubList() {
+  return (
+    <div className="ldg-mini-list" style={{ width: 176, flexShrink: 0 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: PALETTE.text, marginBottom: 8 }}>Clubes</div>
+      {[
+        ["Club Atlético Norte","Primera División"],
+        ["Deportivo Sur","Inferiores"],
+        ["Unión Deportiva","Juveniles"],
+        ["Escuela Central","Escuelita"],
+      ].map(([name, cat], i) => (
+        <div key={name} style={{ display: "flex", alignItems: "center", gap: 7, padding: "6px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: 7,
+            background: CLUB_AVATARS[i].bg,
+            border: `1px solid ${CLUB_AVATARS[i].color}44`,
+            flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: CLUB_AVATARS[i].color }}>{name[0]}</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: PALETTE.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{name}</div>
+            <div style={{ fontSize: 9.5, color: PALETTE.textMuted }}>{cat}</div>
+          </div>
+          <div style={{ fontSize: 9, color: "#2FA56F", fontWeight: 700, background: "#EAF7F0", padding: "2px 6px", borderRadius: 999, flexShrink: 0 }}>Activo</div>
+        </div>
+      ))}
+      <div style={{ marginTop: 8, fontSize: 10, color: CU, fontWeight: 700, cursor: "pointer" }}>Ver todos los clubes →</div>
+    </div>
+  );
+}
+
+// ── Mini fixture (Torneos card) ───────────────────────────────────────────────
+
+const MATCH_AVATARS = [
+  [{ bg: "rgba(201,151,58,0.18)", color: CU }, { bg: "rgba(47,165,111,0.18)", color: "#2FA56F" }],
+  [{ bg: "rgba(91,139,245,0.18)", color: "#5B8BF5" }, { bg: "rgba(217,92,92,0.18)", color: "#D95C5C" }],
+  [{ bg: "rgba(47,165,111,0.18)", color: "#2FA56F" }, { bg: "rgba(201,151,58,0.18)", color: CU }],
+];
+
+function MiniFixture() {
+  return (
+    <div className="ldg-mini-fixture" style={{ width: 192, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 8 }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: PALETTE.text, lineHeight: 1.3 }}>Apertura 2024 · Cat. Sub 14</div>
+        <span style={{ fontSize: 9.5, color: CU, fontWeight: 700, whiteSpace: "nowrap", cursor: "pointer" }}>Ver torneo público ↗</span>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", borderBottom: `1px solid ${PALETTE.border}`, marginBottom: 7 }}>
+        {["Próximos partidos","Resultados","Tabla de posiciones"].map((t, i) => (
+          <div key={t} style={{
+            fontSize: 8.5, fontWeight: i === 0 ? 700 : 400,
+            color: i === 0 ? CU : PALETTE.textMuted,
+            padding: "4px 7px",
+            borderBottom: i === 0 ? `2px solid ${CU}` : "2px solid transparent",
+            marginBottom: -1,
+            whiteSpace: "nowrap",
+          }}>{t}</div>
+        ))}
+      </div>
+
+      {/* Matches */}
+      {[
+        ["C","Club Atlético Norte","D","Deportivo Sur","Sáb 10/05","17:00"],
+        ["U","Unión Deportiva","E","Escuela Central","Sáb 10/05","17:00"],
+        ["J","Juventud FC","DC","Deportivo Centro","Dom 11/05","09:00"],
+      ].map(([hi, home, ai, away, date, time], idx) => (
+        <div key={home} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: MATCH_AVATARS[idx][0].bg, border: `1px solid ${MATCH_AVATARS[idx][0].color}44`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 6.5, fontWeight: 800, color: MATCH_AVATARS[idx][0].color }}>{hi}</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 600, color: PALETTE.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {home} <span style={{ color: PALETTE.textMuted, fontWeight: 400 }}>vs</span> {away}
+            </div>
+            <div style={{ fontSize: 8.5, color: PALETTE.textMuted }}>{date} · {time}</div>
+          </div>
+          <div style={{ width: 16, height: 16, borderRadius: 4, background: MATCH_AVATARS[idx][1].bg, border: `1px solid ${MATCH_AVATARS[idx][1].color}44`, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 6.5, fontWeight: 800, color: MATCH_AVATARS[idx][1].color }}>{ai}</span>
+          </div>
+        </div>
+      ))}
+      <div style={{ marginTop: 8, fontSize: 10, color: CU, fontWeight: 700, cursor: "pointer" }}>Ver fixture completo →</div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export default function LandingPage({ onRegister, onLogin, onGoogleLogin, onForgotPassword, onResetPassword, productScope = "ecosystem", initialStep, selectorOnly = false }) {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(initialStep || (productScope === "ecosystem" ? "landing" : "login"));
+  const [source, setSource] = useState(productScope === "torneos" ? "torneos" : null); // null | "torneos"
+  const [form, setForm] = useState({
+    nombre: "", disciplina: "Futbol", ciudad: "", entrenador: "",
+    temporada: "2025-26", categorias: "", campo: "",
+    telefono: "", email: "", role: "admin", password: "",
+  });
+  const [loginForm, setLoginForm] = useState({ email: "", password: "", newPassword: "", confirmPassword: "" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const [consentData, setConsentData] = useState(false);
+  const [consentGuardian, setConsentGuardian] = useState(false);
+  const isTorneos = source === "torneos";
+
+  const updateField = (key, val) => {
+    setForm((prev) => ({ ...prev, [key]: val }));
+    if (errors[key]) setErrors((prev) => { const next = { ...prev }; delete next[key]; return next; });
+  };
+
+  const validateAndSubmit = async () => {
+    const errs = {};
+    const requiredFields = source === "torneos"
+      ? ["nombre", "ciudad"]
+      : REQUIRED_FIELDS;
+    requiredFields.forEach((k) => {
+      if (!form[k] || !form[k].trim()) errs[k] = "Campo obligatorio";
+    });
+    const cleanEmail = sanitizeEmail(form.email);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) errs.email = "Email obligatorio y válido";
+    if (!form.password || form.password.length < 6) errs.password = "Mínimo 6 caracteres";
+    if (source !== "torneos" && !ROLES[form.role]) errs.role = "Rol inválido";
+    if (!consentData) errs.consentData = "Debes aceptar la política de tratamiento de datos";
+    if (source !== "torneos" && !consentGuardian) errs.consentGuardian = "Debes certificar la autorización parental";
+    setErrors(errs);
+
+    if (Object.keys(errs).length === 0) {
+      setLoading(true);
+      await onRegister({
+        ...form,
+        nombre: sanitizeTextFinal(form.nombre),
+        ciudad: sanitizeTextFinal(form.ciudad),
+        entrenador: sanitizeTextFinal(form.entrenador),
+        categorias: sanitizeTextFinal(form.categorias),
+        campo: sanitizeTextFinal(form.campo),
+        telefono: sanitizePhone(form.telefono),
+        email: cleanEmail,
+        password: form.password,
+        consent_at: new Date().toISOString(),
+        consent_version: "1.0",
+        guardian_consent: consentGuardian,
+        redirectPath: source === "torneos" ? "/torneos" : undefined,
+      });
+      setLoading(false);
+    }
+  };
+
+  const validateAndLogin = async () => {
+    const errs = {};
+    const cleanEmail = sanitizeEmail(loginForm.email);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) errs.email = "Email obligatorio y válido";
+    if (!loginForm.password) errs.password = "Ingresa tu contraseña";
+    setErrors(errs);
+    if (Object.keys(errs).length === 0 && onLogin) {
+      setLoading(true);
+      await onLogin({
+        email: cleanEmail,
+        password: loginForm.password,
+        redirectPath: source === "torneos" ? "/torneos" : undefined,
+      });
+      setLoading(false);
+    }
+  };
+
+  const validateAndForgotPassword = async () => {
+    const errs = {};
+    const cleanEmail = sanitizeEmail(loginForm.email);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) errs.email = "Email obligatorio y válido";
+    setErrors(errs);
+    if (Object.keys(errs).length || !onForgotPassword) return;
+
+    setLoading(true);
+    await onForgotPassword({ email: cleanEmail, redirectPath: isTorneos ? "/torneos" : "/crm" });
+    setLoading(false);
+    setMsg({ type: "success", text: "Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña." });
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!onGoogleLogin) return;
+    setLoading(true);
+    await onGoogleLogin({ redirectPath: isTorneos ? "/torneos" : "/crm" });
+    setLoading(false);
+  };
+
+  const backToEntry = () => {
+    setErrors({});
+    setMsg(null);
+    if (productScope === "ecosystem") setStep("landing");
+    else setStep("login");
+  };
+
+  const validateAndResetPassword = async () => {
+    const errs = {};
+    if (!loginForm.newPassword) errs.newPassword = "Requerido";
+    else if (loginForm.newPassword.length < 10) errs.newPassword = "Mínimo 10 caracteres";
+    if (!loginForm.confirmPassword) errs.confirmPassword = "Requerido";
+    else if (loginForm.newPassword !== loginForm.confirmPassword) errs.confirmPassword = "Las contraseñas no coinciden";
+    setErrors(errs);
+    if (Object.keys(errs).length || !onResetPassword) return;
+
+    setLoading(true);
+    const { error } = await onResetPassword({ password: loginForm.newPassword });
+    setLoading(false);
+    if (error) {
+      setMsg({ type: "error", text: error });
+      return;
+    }
+    setMsg({ type: "success", text: "Contraseña actualizada correctamente. Ya puedes iniciar sesión." });
+    setLoginForm((p) => ({ ...p, password: "", newPassword: "", confirmPassword: "" }));
+    setStep("login");
+  };
+
+  // ── LANDING ────────────────────────────────────────────────────────────────
+
+  if (step === "landing") {
+    return (
+      <Shell>
+        <TopBack onClick={() => navigate("/")} />
+
+        <div className="ldg-auth-shell" style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 960, margin: "0 auto" }}>
+
+          {/* ── COMPACT HEADER ── */}
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <BrandSymbol />
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>ALTTEZ</div>
+                <div style={{ fontSize: 10.5, color: PALETTE.textMuted }}>Infraestructura operativa para clubes y torneos</div>
+              </div>
+            </div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              padding: "6px 12px", borderRadius: 999,
+              background: CU_SOFT, border: `1px solid ${CU_BORDER}`,
+              color: PALETTE.text, fontSize: 10.5, fontWeight: 700,
+            }}>
+              <motion.span
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.55, 1] }}
+                transition={{ repeat: Infinity, duration: 2.2, ease: "easeInOut" }}
+                style={{ width: 6, height: 6, borderRadius: "50%", background: CU, flexShrink: 0, display: "inline-block" }}
+              />
+              Nuevo ecosistema ALTTEZ
+            </div>
+          </motion.div>
+
+          {/* ── MODULE CARDS ── */}
+          <div className="ldg-right-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+
+            {/* ALTTEZ Clubes */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.52, delay: 0.10, ease: EASE }}
+              whileHover={{ y: -3, boxShadow: "0 24px 56px rgba(23,26,28,0.12)" }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "#FFFFFF",
+                border: `1px solid ${PALETTE.border}`,
+                boxShadow: "0 16px 44px rgba(23,26,28,0.08)",
+              }}
+            >
+              <div className="ldg-card-inner" style={{ display: "flex", gap: 18 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: CU, marginBottom: 7 }}>
+                    ALTTEZ CLUBES
+                  </div>
+                  <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text, marginBottom: 8 }}>
+                    Gestionar clubes
+                  </div>
+                  <p style={{ margin: "0 0 11px", fontSize: 12, lineHeight: 1.65, color: PALETTE.textMuted }}>
+                    Administra la operación interna de tu club o escuela deportiva desde un entorno claro y profesional.
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 13 }}>
+                    {["Plantilla","Entrenamiento","Administración"].map(c => (
+                      <span key={c} style={{ fontSize: 10, fontWeight: 600, color: PALETTE.textMuted, background: "#F6F1EA", border: `1px solid ${PALETTE.border}`, borderRadius: 999, padding: "3px 8px" }}>{c}</span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <motion.button
+                      onClick={() => {
+                        if (selectorOnly) {
+                          navigate("/crm?auth=register");
+                          return;
+                        }
+                        setSource(null);
+                        setStep("register");
+                      }}
+                      whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    >
+                      <UserPlus size={12} /> Registrar club
+                    </motion.button>
+                    <motion.button
+                      onClick={() => {
+                        if (selectorOnly) {
+                          navigate("/crm");
+                          return;
+                        }
+                        setSource(null);
+                        setStep("login");
+                      }}
+                      whileHover={{ y: -1, borderColor: CU, color: CU }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    >
+                      <LogIn size={12} /> Iniciar sesión
+                    </motion.button>
+                  </div>
+                </div>
+                <MiniClubList />
+              </div>
+            </motion.div>
+
+            {/* ALTTEZ Torneos — highlighted */}
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.52, delay: 0.18, ease: EASE }}
+              whileHover={{ y: -3, boxShadow: `0 24px 56px rgba(201,151,58,0.22), 0 8px 24px rgba(23,26,28,0.08)` }}
+              style={{
+                padding: "22px 20px",
+                borderRadius: 22,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,248,244,0.97) 100%)",
+                border: `1.5px solid ${CU_BORDER}`,
+                boxShadow: `0 16px 44px ${CU_SOFT}, 0 8px 24px rgba(23,26,28,0.06)`,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Subtle copper shimmer accent */}
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: 2,
+                background: `linear-gradient(90deg, transparent, ${CU}, transparent)`,
+                opacity: 0.6,
+              }} />
+
+              {/* MÓDULO DESTACADO badge */}
+              <motion.div
+                animate={{ opacity: [0.85, 1, 0.85] }}
+                transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}
+                style={{
+                  position: "absolute", top: 13, right: 13,
+                  fontSize: 8.5, fontWeight: 800, letterSpacing: "0.08em",
+                  color: CU, background: "rgba(244,231,207,0.92)",
+                  border: `1px solid ${CU_BORDER}`, borderRadius: 999,
+                  padding: "3px 9px", display: "flex", alignItems: "center", gap: 4,
+                }}
+              >
+                <Star size={8} fill="currentColor" /> MÓDULO DESTACADO
+              </motion.div>
+
+              <div className="ldg-card-inner" style={{ display: "flex", gap: 18 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: "0.16em", textTransform: "uppercase", color: CU, marginBottom: 7 }}>
+                    ALTTEZ TORNEOS
+                  </div>
+                  <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text, marginBottom: 8 }}>
+                    Gestionar torneos
+                  </div>
+                  <p style={{ margin: "0 0 11px", fontSize: 12, lineHeight: 1.65, color: PALETTE.textMuted }}>
+                    Organiza torneos con fixture, resultados, tabla de posiciones y vista pública profesional.
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 13 }}>
+                    {["Fixture","Resultados","Tabla","Vista pública"].map(c => (
+                      <span key={c} style={{ fontSize: 10, fontWeight: 600, color: PALETTE.textMuted, background: "#F6F1EA", border: `1px solid ${CU_BORDER}`, borderRadius: 999, padding: "3px 8px" }}>{c}</span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <motion.button
+                      onClick={() => {
+                        if (selectorOnly) {
+                          navigate("/torneos?auth=register");
+                          return;
+                        }
+                        setSource("torneos");
+                        setStep("register");
+                      }}
+                      whileHover={{ y: -1, boxShadow: "0 12px 28px rgba(201,151,58,0.34)" }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: `linear-gradient(135deg,${CU},#A66F38)`, color: "#fff", fontSize: 11, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    >
+                      <UserPlus size={12} /> Registrar
+                    </motion.button>
+                    <motion.button
+                      onClick={() => {
+                        if (selectorOnly) {
+                          navigate("/torneos");
+                          return;
+                        }
+                        setSource("torneos");
+                        setStep("login");
+                      }}
+                      whileHover={{ y: -1, borderColor: CU, color: CU }}
+                      whileTap={{ scale: 0.97 }}
+                      transition={SPRING_FAST}
+                      style={{ flex: 1, minHeight: 40, borderRadius: 10, border: `1px solid ${PALETTE.border}`, background: "transparent", color: PALETTE.text, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                    >
+                      <LogIn size={12} /> Iniciar sesión
+                    </motion.button>
+                  </div>
+                </div>
+                <MiniFixture />
+              </div>
+            </motion.div>
+
+          </div>
+
+        </div>
+      </Shell>
+    );
+  }
+
+  // ── REGISTER ───────────────────────────────────────────────────────────────
+
+  if (step === "register") {
+    return (
+      <Shell>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.52, ease: EASE }}
+          className="ldg-panel"
+          style={{
+            maxWidth: 760,
+            margin: "0 auto",
+            padding: "36px 34px",
+            borderRadius: 28,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          }}
+        >
+          <TopBack onClick={backToEntry} label="Volver" />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>
+                {source === "torneos" ? "Registrar en Torneos" : "Registrar club"}
+              </div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>
+                {source === "torneos" ? "Datos del organizador y acceso" : "Datos operativos y acceso principal"}
+              </div>
+            </div>
+          </div>
+
+          {source === "torneos" ? (
+            /* ── Torneos registration form ── */
+            <>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Nombre del organizador *" error={errors.nombre}>
+                  <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Liga Norte" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Ciudad *" error={errors.ciudad}>
+                  <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
+                </FieldGroup>
+              </div>
+              <FieldGroup label="Deporte principal" error={null}>
+                <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
+                  {["Fútbol", "Futsal", "Baloncesto", "Voleibol", "Rugby", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </FieldGroup>
+            </>
+          ) : (
+            /* ── Clubes registration form ── */
+            <>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Nombre del club *" error={errors.nombre}>
+                  <input style={mkInput(errors.nombre)} value={form.nombre} onChange={(e) => updateField("nombre", sanitizeText(e.target.value))} placeholder="Ej: Águilas del Lucero" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Disciplina" error={null}>
+                  <select style={{ ...mkInput(false), cursor: "pointer" }} value={form.disciplina} onChange={(e) => updateField("disciplina", e.target.value)}>
+                    {["Futbol", "Futsal", "Baloncesto", "Voleibol", "Otro"].map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Ciudad *" error={errors.ciudad}>
+                  <input style={mkInput(errors.ciudad)} value={form.ciudad} onChange={(e) => updateField("ciudad", sanitizeText(e.target.value))} placeholder="Ej: Medellín" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Director técnico *" error={errors.entrenador}>
+                  <input style={mkInput(errors.entrenador)} value={form.entrenador} onChange={(e) => updateField("entrenador", sanitizeText(e.target.value))} placeholder="Nombre completo" maxLength={60} />
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Categoría principal *" error={errors.categorias}>
+                  <input style={mkInput(errors.categorias)} value={form.categorias} onChange={(e) => updateField("categorias", sanitizeText(e.target.value))} placeholder="Ej: Sub-17" maxLength={30} />
+                </FieldGroup>
+                <FieldGroup label="Temporada" error={null}>
+                  <input style={mkInput(false)} value={form.temporada} onChange={(e) => updateField("temporada", e.target.value)} placeholder="2025-26" maxLength={10} />
+                </FieldGroup>
+              </div>
+              <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <FieldGroup label="Campo / Cancha" error={null}>
+                  <input style={mkInput(false)} value={form.campo} onChange={(e) => updateField("campo", sanitizeText(e.target.value))} placeholder="Ej: Estadio Sur" maxLength={60} />
+                </FieldGroup>
+                <FieldGroup label="Teléfono" error={null}>
+                  <input style={mkInput(false)} value={form.telefono} onChange={(e) => updateField("telefono", sanitizePhone(e.target.value))} placeholder="300 123 4567" maxLength={20} />
+                </FieldGroup>
+              </div>
+            </>
+          )}
+
+          <div style={{ marginTop: 6, paddingTop: 18, borderTop: `1px solid ${PALETTE.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 12 }}>Cuenta de acceso</div>
+            <div className="ldg-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <FieldGroup label="Email *" error={errors.email}>
+                <input style={mkInput(errors.email)} value={form.email} onChange={(e) => updateField("email", sanitizeEmail(e.target.value))} placeholder="tu@email.com" maxLength={80} type="email" autoComplete="email" />
+              </FieldGroup>
+              <FieldGroup label="Contraseña *" error={errors.password}>
+                <input style={mkInput(errors.password)} value={form.password} onChange={(e) => updateField("password", e.target.value)} placeholder="Mínimo 6 caracteres" maxLength={72} type="password" autoComplete="new-password" />
+              </FieldGroup>
+            </div>
+          </div>
+
+          {source !== "torneos" && (
+            <FieldGroup label="Tu rol en el club" error={errors.role}>
+              <select style={{ ...mkInput(errors.role), cursor: "pointer" }} value={form.role} onChange={(e) => updateField("role", e.target.value)}>
+                {Object.entries(ROLES).map(([key, r]) => <option key={key} value={key}>{r.label}</option>)}
+              </select>
+            </FieldGroup>
+          )}
+
+          <div style={{ marginTop: 8, padding: "18px", borderRadius: 18, background: "#FFFCF7", border: `1px solid ${PALETTE.border}` }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: PALETTE.text, marginBottom: 10 }}>Autorización de datos</div>
+
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <input type="checkbox" checked={consentData} onChange={(e) => { setConsentData(e.target.checked); if (errors.consentData) setErrors((p) => { const n = { ...p }; delete n.consentData; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
+              <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
+                Acepto la{" "}
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: PALETTE.neon }}>
+                  Política de Tratamiento de Datos Personales
+                </a>.
+              </span>
+            </label>
+            {errors.consentData && <div style={{ fontSize: 10, color: PALETTE.danger, marginBottom: 10 }}>{errors.consentData}</div>}
+
+            {source !== "torneos" && (
+              <>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <input type="checkbox" checked={consentGuardian} onChange={(e) => { setConsentGuardian(e.target.checked); if (errors.consentGuardian) setErrors((p) => { const n = { ...p }; delete n.consentGuardian; return n; }); }} style={{ marginTop: 2, accentColor: PALETTE.neon }} />
+                  <span style={{ fontSize: 12, color: PALETTE.textMuted, lineHeight: 1.6 }}>
+                    Certifico la autorización de padres o tutores si se registran menores de edad.
+                  </span>
+                </label>
+                {errors.consentGuardian && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 8 }}>{errors.consentGuardian}</div>}
+              </>
+            )}
+          </div>
+
+          <button
+            onClick={validateAndSubmit}
+            disabled={loading || !consentData || (source !== "torneos" && !consentGuardian)}
+            style={{
+              width: "100%",
+              marginTop: 20,
+              minHeight: 52,
+              borderRadius: 14,
+              border: "none",
+              background: (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
+              color: (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? PALETTE.textMuted : "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: loading ? "wait" : (loading || !consentData || (source !== "torneos" && !consentGuardian)) ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "Registrando..." : source === "torneos" ? "Crear cuenta en Torneos" : "Confirmar registro"}
+          </button>
+
+          {isSupabaseReady && (
+            <div onClick={() => { setStep("login"); setErrors({}); }} style={{ marginTop: 14, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}>
+              Ya tengo cuenta. <span style={{ color: PALETTE.neon, fontWeight: 700 }}>Iniciar sesión</span>
+            </div>
+          )}
+        </motion.div>
+      </Shell>
+    );
+  }
+
+  // ── LOGIN ──────────────────────────────────────────────────────────────────
+
+  if (step === "login") {
+    return (
+      <Shell>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="ldg-panel"
+          style={{
+            maxWidth: 440,
+            margin: "0 auto",
+            padding: "34px 30px",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          }}
+        >
+          <TopBack onClick={productScope === "ecosystem" ? backToEntry : () => navigate("/")} label="Volver" />
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Iniciar sesión</div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>{isTorneos ? "Credenciales del organizador" : "Credenciales del club"}</div>
+            </div>
+          </div>
+
+          {msg && (
+            <div style={{
+              marginBottom: 16, padding: "10px 14px", borderRadius: 10, fontSize: 12,
+              background: msg.type === "error" ? PALETTE.dangerDim : PALETTE.bronceDim,
+              color: msg.type === "error" ? PALETTE.danger : PALETTE.bronce,
+              border: `1px solid ${msg.type === "error" ? PALETTE.dangerBorder : PALETTE.bronceBorder}`,
+            }}>{msg.text}</div>
+          )}
+
+          <FieldGroup label="Email" error={errors.email}>
+            <input
+              style={mkInput(errors.email)}
+              value={loginForm.email}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, email: e.target.value })); if (errors.email) setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
+              placeholder="tu@email.com"
+              maxLength={80}
+              type="email"
+              autoComplete="email"
+            />
+          </FieldGroup>
+
+          <FieldGroup label="Contraseña" error={errors.password}>
+            <input
+              style={mkInput(errors.password)}
+              value={loginForm.password}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, password: e.target.value })); if (errors.password) setErrors((p) => { const n = { ...p }; delete n.password; return n; }); }}
+              placeholder="Tu contraseña"
+              type="password"
+              autoComplete="current-password"
+              onKeyDown={(e) => e.key === "Enter" && validateAndLogin()}
+            />
+          </FieldGroup>
+
+          <button
+            onClick={validateAndLogin}
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 10,
+              minHeight: 50,
+              borderRadius: 14,
+              border: "none",
+              background: loading ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)",
+              color: loading ? PALETTE.textMuted : "#FFFFFF",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              cursor: loading ? "wait" : "pointer",
+            }}
+          >
+            {loading ? "Verificando..." : isTorneos ? "Ingresar a Torneos" : "Ingresar al CRM"}
+          </button>
+
+          <button
+            onClick={handleGoogleLogin}
+            disabled={loading}
+            style={{
+              width: "100%",
+              marginTop: 10,
+              minHeight: 46,
+              borderRadius: 14,
+              border: `1px solid ${PALETTE.border}`,
+              background: PALETTE.surface,
+              color: PALETTE.text,
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: loading ? "wait" : "pointer",
+            }}
+          >
+            Continuar con Google
+          </button>
+
+          <div
+            onClick={() => { setStep("forgot"); setErrors({}); setMsg(null); }}
+            style={{ marginTop: 12, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}
+          >
+            ¿Olvidaste tu contraseña?
+          </div>
+
+          <div onClick={() => { setStep("register"); setErrors({}); }} style={{ marginTop: 16, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}>
+            No tengo cuenta. <span style={{ color: PALETTE.neon, fontWeight: 700 }}>{isTorneos ? "Registrarme en Torneos" : "Registrar club"}</span>
+          </div>
+        </motion.div>
+      </Shell>
+    );
+  }
+
+  if (step === "forgot") {
+    return (
+      <Shell>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="ldg-panel"
+          style={{
+            maxWidth: 440,
+            margin: "0 auto",
+            padding: "34px 30px",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          }}
+        >
+          <TopBack onClick={() => { setStep("login"); setErrors({}); setMsg(null); }} label="Volver" />
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Recuperar contraseña</div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Te enviaremos instrucciones si la cuenta existe</div>
+            </div>
+          </div>
+          {msg && (
+            <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, fontSize: 12, background: PALETTE.bronceDim, color: PALETTE.bronce, border: `1px solid ${PALETTE.bronceBorder}` }}>{msg.text}</div>
+          )}
+          <FieldGroup label="Email" error={errors.email}>
+            <input
+              style={mkInput(errors.email)}
+              value={loginForm.email}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, email: e.target.value })); if (errors.email) setErrors((p) => { const n = { ...p }; delete n.email; return n; }); }}
+              placeholder="tu@email.com"
+              maxLength={80}
+              type="email"
+              autoComplete="email"
+            />
+          </FieldGroup>
+          <button
+            onClick={validateAndForgotPassword}
+            disabled={loading}
+            style={{ width: "100%", marginTop: 10, minHeight: 50, borderRadius: 14, border: "none", background: loading ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)", color: loading ? PALETTE.textMuted : "#FFFFFF", fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", cursor: loading ? "wait" : "pointer" }}
+          >
+            {loading ? "Enviando..." : "Enviar instrucciones"}
+          </button>
+        </motion.div>
+      </Shell>
+    );
+  }
+
+  if (step === "reset") {
+    return (
+      <Shell>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="ldg-panel"
+          style={{
+            maxWidth: 440,
+            margin: "0 auto",
+            padding: "34px 30px",
+            borderRadius: 24,
+            background: "rgba(255,255,255,0.98)",
+            border: `1px solid ${PALETTE.border}`,
+            boxShadow: "0 24px 64px rgba(23,26,28,0.10)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+            <BrandSymbol />
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>Nueva contraseña</div>
+              <div style={{ fontSize: 11, color: PALETTE.textMuted }}>Define una contraseña segura para tu cuenta</div>
+            </div>
+          </div>
+          {msg && (
+            <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, fontSize: 12, background: msg.type === "error" ? PALETTE.dangerDim : PALETTE.bronceDim, color: msg.type === "error" ? PALETTE.danger : PALETTE.bronce, border: `1px solid ${msg.type === "error" ? PALETTE.dangerBorder : PALETTE.bronceBorder}` }}>{msg.text}</div>
+          )}
+          <FieldGroup label="Nueva contraseña" error={errors.newPassword}>
+            <input
+              style={mkInput(errors.newPassword)}
+              value={loginForm.newPassword}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, newPassword: e.target.value })); if (errors.newPassword) setErrors((p) => { const n = { ...p }; delete n.newPassword; return n; }); }}
+              placeholder="Mínimo 10 caracteres"
+              type="password"
+              autoComplete="new-password"
+            />
+          </FieldGroup>
+          <FieldGroup label="Confirmar contraseña" error={errors.confirmPassword}>
+            <input
+              style={mkInput(errors.confirmPassword)}
+              value={loginForm.confirmPassword}
+              onChange={(e) => { setLoginForm((p) => ({ ...p, confirmPassword: e.target.value })); if (errors.confirmPassword) setErrors((p) => { const n = { ...p }; delete n.confirmPassword; return n; }); }}
+              placeholder="Repite tu contraseña"
+              type="password"
+              autoComplete="new-password"
+            />
+          </FieldGroup>
+          <button
+            onClick={validateAndResetPassword}
+            disabled={loading}
+            style={{ width: "100%", marginTop: 10, minHeight: 50, borderRadius: 14, border: "none", background: loading ? "#E8DCC4" : "linear-gradient(135deg, #CE8946 0%, #A66F38 100%)", color: loading ? PALETTE.textMuted : "#FFFFFF", fontSize: 12, fontWeight: 800, letterSpacing: "0.14em", textTransform: "uppercase", cursor: loading ? "wait" : "pointer" }}
+          >
+            {loading ? "Actualizando..." : "Actualizar contraseña"}
+          </button>
+        </motion.div>
+      </Shell>
+    );
+  }
+
+  return null;
 }
