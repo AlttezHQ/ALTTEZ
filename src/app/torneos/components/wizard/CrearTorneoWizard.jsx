@@ -132,12 +132,12 @@ function Field({ label, required, children, style, error }) {
 
 function RowInp({ label, type = "text", value, onChange, options }) {
   const isNum = type === "number";
-  const selectWidth = 130;
+  const selectWidth = 150; // Increased to prevent text truncation
   const numWidth = 70;
   
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
-      <label style={{ fontSize: 11, fontWeight: 800, color: MUTED, flex: 1, letterSpacing: "0.02em", lineHeight: 1.2 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+      <label style={{ fontSize: 10, fontWeight: 800, color: MUTED, flex: 1, letterSpacing: "0.03em", lineHeight: 1.2, paddingRight: 4 }}>
         {label.toUpperCase()}
       </label>
       
@@ -147,7 +147,7 @@ function RowInp({ label, type = "text", value, onChange, options }) {
             <select 
               value={value} 
               onChange={e => onChange(e.target.value)} 
-              style={{ ...inputStyle, paddingLeft: 12, paddingRight: 28, height: 36, appearance: "none", fontSize: 12, fontWeight: 700, background: "#FFF", borderRadius: 8 }}
+              style={{ ...inputStyle, paddingLeft: 10, paddingRight: 24, height: 36, appearance: "none", fontSize: 11, fontWeight: 700, background: "#FFF", borderRadius: 8 }}
             >
               {options.map(o => (
                 <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
