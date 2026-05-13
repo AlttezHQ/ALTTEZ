@@ -11,6 +11,8 @@ import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../../shared/store/useStore";
+import { useAuth } from "../../shared/auth";
+import { getPostLogoutRedirect } from "../../shared/auth/authRedirects";
 import FieldBackground from "../../shared/ui/FieldBackground";
 import ErrorBoundary from "../../shared/ui/ErrorBoundary";
 import ToastContainer, { showToast } from "../../shared/ui/Toast";
@@ -25,7 +27,7 @@ import { canAccessModule } from "../../shared/constants/roles";
 import { isSupabaseReady } from "../../shared/lib/supabase";
 import { createClub as sbCreateClub, setClubId, migrateLocalToSupabase, loadClubIdFromProfile } from "../../shared/services/supabaseService";
 import { exportBackupJSON } from "../../shared/services/backupService";
-import { signUp, signIn, signOut as authSignOut, getProfile, onAuthStateChange, linkProfileToClub } from "../../shared/services/authService";
+import { signUp, signIn } from "../../shared/services/authService";
 import OfflineBanner from "../../shared/ui/OfflineBanner";
 import UpdateToast from "../../shared/ui/UpdateToast";
 import MiniTopbar from "./MiniTopbar";
@@ -99,6 +101,7 @@ const LoadingFallback = () => (
 export function CRMApp() {
   const navigate = useNavigate();
   const location = useLocation();
+  const auth = useAuth();
   const mode = useStore(state => state.mode);
   const setMode = useStore(state => state.setMode);
   const setSession = useStore(state => state.setSession);
@@ -112,41 +115,20 @@ export function CRMApp() {
   const setFinanzas = useStore(state => state.setFinanzas);
   const _clearStore = useStore(state => state.clearStore);
 
-  // Auth state: perfil de Supabase (club_id + role)
-  const [authProfile, setAuthProfile] = useState(null);
+  // Role: demo siempre admin; sin Supabase configurado modo offline también admin
+  // Con Supabase usa el role del AuthProvider global.
+  const userRole = mode === "demo" || (mode && !isSupabaseReady)
+    ? "admin"
+    : (auth.role ?? null);
 
-  // Listener de auth: detecta login/logout/token refresh
+  // Sync club_id from AuthProvider to services when profile loads/changes
   useEffect(() => {
-    if (!isSupabaseReady) return;
-    const sub = onAuthStateChange(async (event, authSession) => {
-      if (event === "SIGNED_IN" && authSession) {
-        const profile = await getProfile();
-        setAuthProfile(profile);
-        if (profile?.club_id) {
-          setClubId(profile.club_id);
-          setHealthClubId(profile.club_id);
-          await loadClubIdFromProfile();
-        }
-      } else if (event === "SIGNED_OUT") {
-        setAuthProfile(null);
-      }
-    });
-    // Cargar profile si ya hay sesion activa al boot
-    (async () => {
-      const profile = await getProfile();
-      if (profile) {
-        setAuthProfile(profile);
-        if (profile.club_id) {
-          setClubId(profile.club_id);
-          setHealthClubId(profile.club_id);
-        }
-      }
-    })();
-    return () => sub.unsubscribe();
-  }, []);
-
-  // Role: exclusivamente desde Supabase authProfile; demo siempre admin aislado
-  const userRole = mode === "demo" ? "admin" : (authProfile?.role ?? null);
+    if (auth.clubId) {
+      setClubId(auth.clubId);
+      setHealthClubId(auth.clubId);
+      loadClubIdFromProfile();
+    }
+  }, [auth.clubId]);
 
   // Navegacion con control de acceso por rol
   const navigateTo = useCallback((mod) => {
@@ -193,10 +175,13 @@ export function CRMApp() {
         showToast(error, "error");
         return;
       }
-      // Sin sesión = email confirmation requerido; el usuario debe confirmar antes de continuar
+      // Si signUp no estableció sesión (proyecto con email-confirm), intentar login inmediato
       if (!session) {
-        showToast("Cuenta creada. Revisa tu correo para confirmar el acceso.", "info");
-        return;
+        const { error: signInError } = await signIn(form.email, form.password);
+        if (signInError) {
+          showToast(signInError, "error");
+          return;
+        }
       }
     }
 
@@ -221,17 +206,12 @@ export function CRMApp() {
     if (isSupabaseReady) {
       const clubId = await sbCreateClub(form, "production");
       if (clubId) {
-        await linkProfileToClub(clubId);
-        const profile = await getProfile();
-        if (profile) {
-          setAuthProfile(profile);
-          setClubId(profile.club_id);
-          setHealthClubId(profile.club_id);
-        }
+        await auth.linkClub(clubId);
+        await auth.refreshProfile();
         showToast("Club registrado y sincronizado en la nube.", "info");
       }
     }
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, auth, navigate]);
 
   const handleLogin = useCallback(async ({ email, password, redirectPath }) => {
     if (!isSupabaseReady) {
@@ -252,25 +232,23 @@ export function CRMApp() {
       return;
     }
 
-    // Cargar profile y club_id (CRM only)
-    const profile = await getProfile();
-    if (!profile?.club_id) {
+    // Esperar a que el AuthProvider cargue el profile
+    // (se actualiza vía onAuthStateChange listener en AuthProvider)
+    // Verificar que tiene club_id
+    const profile = auth.profile;
+    if (profile && !profile.club_id) {
       showToast("No se encontro un club vinculado a esta cuenta. Contacta al administrador.", "warning");
       return;
     }
-    setAuthProfile(profile);
-    setClubId(profile.club_id);
-    setHealthClubId(profile.club_id);
 
     setMode("production");
     setActiveModule("home");
-    showToast(`Bienvenido, ${profile.full_name || user.email}`, "success");
-  }, [setSession, setMode, navigate]);
+    showToast(`Bienvenido, ${auth.fullName || user.email}`, "success");
+  }, [setSession, setMode, navigate, auth]);
 
   const handleLogout = useCallback(async () => {
-    // Cerrar sesion Supabase Auth
-    if (isSupabaseReady) await authSignOut();
-    setAuthProfile(null);
+    // Cerrar sesion via AuthProvider (maneja Supabase Auth)
+    await auth.signOut();
     logoutService();
     clearSnapshots();
     setClubId(null);
@@ -282,18 +260,21 @@ export function CRMApp() {
     setFinanzas(EMPTY_FINANZAS);
     setActiveModule("home");
     setMode(null);
-    navigate("/");
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, navigate]);
+    const dest = getPostLogoutRedirect(location.pathname);
+    navigate(dest);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, navigate, auth, location]);
 
-  // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado, forzar logout.
+  // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado,
+  // y tanto auth como profile ya terminaron de cargar, forzar logout.
+  // FIX: no dispara logout mientras loadingAuth o loadingProfile están activos.
   useEffect(() => {
-    if (mode && !userRole) {
+    if (mode && !userRole && !auth.loadingAuth && !auth.loadingProfile) {
       const logoutId = setTimeout(() => {
         handleLogout();
       }, 0);
       return () => clearTimeout(logoutId);
     }
-  }, [mode, userRole, handleLogout]);
+  }, [mode, userRole, auth.loadingAuth, auth.loadingProfile, handleLogout]);
 
   // Auto-demo: si llegan desde el portal con ?demo=true
   useEffect(() => {
@@ -382,14 +363,14 @@ export function CRMApp() {
               {activeModule === "entrenamiento" && (
                 <ErrorBoundary>
                   <_MiniTopbarLocal title="Entrenamiento" />
-                  <Entrenamiento clubId={authProfile?.club_id || ""} />
+                  <Entrenamiento clubId={auth.clubId || ""} />
                 </ErrorBoundary>
               )}
 
               {activeModule === "plantilla" && (
                 <ErrorBoundary>
                   <_MiniTopbarLocal title="Gestion de plantilla" />
-                  <GestionPlantilla clubId={authProfile?.club_id || ""} />
+                  <GestionPlantilla clubId={auth.clubId || ""} />
                 </ErrorBoundary>
               )}
 
@@ -410,14 +391,14 @@ export function CRMApp() {
               {activeModule === "calendario" && (
                 <ErrorBoundary>
                   <_MiniTopbarLocal title="Calendario" accent={C.bronce} accentBg="rgba(206, 137, 70,0.05)" />
-                  <Calendario clubId={authProfile?.club_id || ""} />
+                  <Calendario clubId={auth.clubId || ""} />
                 </ErrorBoundary>
               )}
 
               {activeModule === "partidos" && (
                 <ErrorBoundary>
                   <_MiniTopbarLocal title="Match Center" accent={C.bronce} accentBg="rgba(206, 137, 70,0.05)" />
-                  <MatchCenter clubId={authProfile?.club_id || ""} />
+                  <MatchCenter clubId={auth.clubId || ""} />
                 </ErrorBoundary>
               )}
 
