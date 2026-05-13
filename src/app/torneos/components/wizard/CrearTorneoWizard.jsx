@@ -132,21 +132,22 @@ function Field({ label, required, children, style, error }) {
 
 function RowInp({ label, type = "text", value, onChange, options }) {
   const isNum = type === "number";
-  const fieldWidth = isNum ? 80 : 180;
+  const selectWidth = 130;
+  const numWidth = 70;
   
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-      <label style={{ fontSize: 12, fontWeight: 700, color: MUTED, width: 130, flexShrink: 0, lineHeight: 1.2 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 12 }}>
+      <label style={{ fontSize: 11, fontWeight: 800, color: MUTED, flex: 1, letterSpacing: "0.02em", lineHeight: 1.2 }}>
         {label.toUpperCase()}
       </label>
       
-      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
         {type === "select" ? (
-          <div style={{ position: "relative", width: fieldWidth }}>
+          <div style={{ position: "relative", width: selectWidth }}>
             <select 
               value={value} 
               onChange={e => onChange(e.target.value)} 
-              style={{ ...inputStyle, paddingRight: 32, height: 38, appearance: "none", fontSize: 12, fontWeight: 700, background: "#FFF", borderRadius: 10 }}
+              style={{ ...inputStyle, paddingLeft: 12, paddingRight: 28, height: 36, appearance: "none", fontSize: 12, fontWeight: 700, background: "#FFF", borderRadius: 8 }}
             >
               {options.map(o => (
                 <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
@@ -154,17 +155,17 @@ function RowInp({ label, type = "text", value, onChange, options }) {
                 </option>
               ))}
             </select>
-            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
               <ChevronRight size={12} color={MUTED} style={{ transform: "rotate(90deg)" }} />
             </div>
           </div>
         ) : (
-          <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 10, background: "#FFF", overflow: "hidden", width: fieldWidth, height: 38, transition: "all 0.2s" }}>
+          <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 8, background: "#FFF", overflow: "hidden", width: numWidth, height: 36, transition: "all 0.2s" }}>
             <input 
               type="text"
-              inputMode={isNum ? "numeric" : "text"}
+              inputMode="numeric"
               value={(isNum && value === 0) ? "" : value}
-              placeholder={isNum ? "0" : ""}
+              placeholder="0"
               onChange={e => {
                 const v = e.target.value;
                 if (isNum) {
@@ -173,7 +174,7 @@ function RowInp({ label, type = "text", value, onChange, options }) {
                   onChange(v);
                 }
               }}
-              style={{ border: "none", background: "none", padding: "0 10px", flex: 1, fontSize: 13, color: TEXT, outline: "none", height: "100%", textAlign: isNum ? "center" : "left", fontWeight: 800 }} 
+              style={{ border: "none", background: "none", width: "100%", textAlign: "center", fontSize: 14, color: TEXT, outline: "none", height: "100%", fontWeight: 800, padding: 0 }} 
             />
           </div>
         )}
