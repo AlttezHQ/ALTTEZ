@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { Trophy, Globe, Users, Tag, Calendar, BarChart2, Settings, Home, List } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, CalendarPlus, Settings, LayoutDashboard, Globe, ChevronLeft, ChevronRight } from "lucide-react";
 import { PALETTE } from "../../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -13,53 +13,71 @@ const BORDER = PALETTE.border;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
 const NAV_ITEMS = [
-  { id: "inicio",       icon: Home,      label: "Inicio" },
-  { id: "torneos",      icon: Trophy,    label: "Torneos" },
-  { id: "equipos",      icon: Users,     label: "Equipos" },
-  { id: "categorias",   icon: Tag,       label: "Categorías" },
-  { id: "calendario",   icon: Calendar,  label: "Calendario" },
-  { id: "estadisticas", icon: BarChart2, label: "Estadísticas" },
-  { id: "fixtures",     icon: List,      label: "Fixtures" },
-  { id: "publica",      icon: Globe,     label: "Vista pública" },
-  { id: "ajustes",      icon: Settings,  label: "Ajustes" },
+  { id: "inicio",        icon: LayoutDashboard, label: "Inicio" },
+  { id: "torneos",       icon: Trophy,          label: "Torneos" },
+  { id: "equipos",       icon: Shirt,           label: "Equipos" },
+  { id: "categorias",    icon: Network,         label: "Categorías" },
+  { id: "fixtures",      icon: CalendarDays,    label: "Gestión de Partidos" },
+  { id: "estadisticas",  icon: BarChart2,       label: "Estadísticas" },
+  { id: "publica",       icon: Globe,           label: "Vista pública" },
+  { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
-export default function TorneosSidebar({ active, onNav, torneoActivo }) {
+export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle }) {
   return (
-    <div style={{
-      width: 220, flexShrink: 0, background: CARD,
-      borderRight: `1px solid ${BORDER}`,
-      display: "flex", flexDirection: "column",
-      fontFamily: FONT, height: "100vh", position: "sticky", top: 0,
-    }}>
+    <motion.div 
+      initial={false}
+      animate={{ width: isCollapsed ? 74 : 220 }}
+      style={{
+        flexShrink: 0, background: CARD,
+        borderRight: `1px solid ${BORDER}`,
+        display: "flex", flexDirection: "column",
+        fontFamily: FONT, height: "100vh", position: "sticky", top: 0,
+        overflow: "hidden"
+      }}
+    >
       {/* Brand */}
-      <div style={{ padding: "20px 16px 14px", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ padding: isCollapsed ? "20px 0" : "20px 16px 14px", display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "flex-start", gap: 8 }}>
         <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ width: 26, height: 26, objectFit: "contain" }} />
-        <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.06em", color: TEXT }}>ALTTEZ</span>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 6px", marginLeft: 2 }}>TORNEOS</span>
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap", overflow: "hidden" }}>
+              <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.06em", color: TEXT }}>ALTTEZ</span>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 6px", marginLeft: 4 }}>TORNEOS</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Torneo activo badge */}
       {torneoActivo && (
-        <div style={{ margin: "0 10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "6px 10px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: CU, letterSpacing: "0.08em", marginBottom: 2 }}>TORNEO ACTIVO</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{torneoActivo.nombre}</div>
+        <div style={{ margin: isCollapsed ? "0 10px 8px" : "0 10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: isCollapsed ? "6px" : "6px 10px", display: "flex", justifyContent: "center" }}>
+          {!isCollapsed ? (
+            <div style={{ overflow: "hidden" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: CU, letterSpacing: "0.08em", marginBottom: 2 }}>TORNEO ACTIVO</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{torneoActivo.nombre}</div>
+            </div>
+          ) : (
+            <Trophy size={16} color={CU} title={torneoActivo.nombre} />
+          )}
         </div>
       )}
 
       <div style={{ height: 1, background: BORDER, margin: "0 12px 8px" }} />
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "4px 8px", overflow: "auto" }}>
+      <nav style={{ flex: 1, padding: "4px 8px", overflowX: "hidden", overflowY: "auto" }}>
         {NAV_ITEMS.map(({ id, icon: Icon, label }) => {
           const isActive = active === id;
           return (
             <motion.button
               key={id}
-              whileHover={{ x: 2 }}
+              whileHover={{ x: isCollapsed ? 0 : 2 }}
               onClick={() => onNav(id)}
+              title={isCollapsed ? label : ""}
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 10,
+                justifyContent: isCollapsed ? "center" : "flex-start",
                 padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
                 background: isActive ? CU_DIM : "transparent",
                 color: isActive ? CU : MUTED,
@@ -69,16 +87,19 @@ export default function TorneosSidebar({ active, onNav, torneoActivo }) {
                 marginBottom: 1, transition: "background 0.15s",
               }}
             >
-              <Icon size={15} style={{ flexShrink: 0 }} />
-              {label}
+              <Icon size={18} style={{ flexShrink: 0 }} />
+              {!isCollapsed && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
             </motion.button>
           );
         })}
       </nav>
 
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}` }}>
-        <span style={{ fontSize: 11, color: HINT, fontFamily: FONT }}>v2.0 · Torneos</span>
+      <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between" }}>
+        {!isCollapsed && <span style={{ fontSize: 11, color: HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>v2.0 · Torneos</span>}
+        <button onClick={onToggle} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: MUTED }}>
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -39,10 +39,17 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
     ? new Date(torneo.fechaInicio + "T00:00:00")
     : new Date();
 
-  // Build all valid dates (up to 365 days out)
+  const endDate = torneo.fechaFin
+    ? new Date(torneo.fechaFin + "T23:59:59")
+    : new Date(startDate.getTime() + 365 * DAY_MS);
+
+  // Build all valid dates (up to endDate)
   const validDates = [];
-  for (let i = 0; i < 365; i++) {
+  const limitDays = Math.min(365, Math.ceil((endDate - startDate) / DAY_MS) + 1);
+  
+  for (let i = 0; i < limitDays; i++) {
     const d = new Date(startDate.getTime() + i * DAY_MS);
+    if (d > endDate) break;
     if (cfg.diasDisponibles.includes(d.getDay())) {
       validDates.push(d);
     }
@@ -68,8 +75,11 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
   // Tracking state
   const teamLastMatch = {};    // equipoId → dateStr
   const dayCount      = {};    // dateStr → count
+  const slotCount     = {};    // dateStr_timeStr → count
   const sedeIndex     = { v: 0 };
   const arbitroIndex  = { v: 0 };
+  
+  const slotCapacity = Math.max(1, sedes.length);
 
   const patches = [];
 
@@ -82,13 +92,17 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
       const usedToday = dayCount[slot.dateStr] ?? 0;
       if (usedToday >= cfg.maxPartidosDia) continue;
 
+      const slotKey = `${slot.dateStr}_${slot.time.toISOString()}`;
+      const usedSlot = slotCount[slotKey] ?? 0;
+      if (usedSlot >= slotCapacity) continue;
+
       // Check rest days for both teams
       const lastLocal  = teamLastMatch[local];
       const lastVisita = teamLastMatch[visita];
       if (lastLocal  && daysBetween(slot.dateStr, lastLocal)  < cfg.descansoDias) continue;
       if (lastVisita && daysBetween(slot.dateStr, lastVisita) < cfg.descansoDias) continue;
 
-      assigned = slot;
+      assigned = { ...slot, key: slotKey };
       break;
     }
 
@@ -96,6 +110,7 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
 
     // Mark slot consumed
     dayCount[assigned.dateStr] = (dayCount[assigned.dateStr] ?? 0) + 1;
+    slotCount[assigned.key] = (slotCount[assigned.key] ?? 0) + 1;
     teamLastMatch[local]  = assigned.dateStr;
     teamLastMatch[visita] = assigned.dateStr;
 

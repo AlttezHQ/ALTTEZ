@@ -120,24 +120,24 @@ export default function CalendarioPage({ onGoTorneos }) {
     grouped[key].push(p);
   }
 
-  const handleAutoSchedule = () => {
-    const count = autoSchedule(torneoActivoId);
+  const handleAutoSchedule = async () => {
+    const count = await autoSchedule(torneoActivoId);
     setScheduled(count);
     setTimeout(() => setScheduled(null), 4000);
   };
 
-  const handleEditSave = id => {
-    actualizarPartido(id, {
+  const handleEditSave = async id => {
+    await actualizarPartido(id, {
       fechaHora: editData.fechaHora || null,
       lugar:     editData.lugar     || null,
     });
     setEditId(null);
   };
 
-  const toggleDia = d => {
+  const toggleDia = async d => {
     const dias = cfg.diasDisponibles ?? [];
     const next = dias.includes(d) ? dias.filter(x => x !== d) : [...dias, d];
-    actualizarCfg(torneoActivoId, { diasDisponibles: next });
+    await actualizarCfg(torneoActivoId, { diasDisponibles: next });
   };
 
   return (
@@ -238,7 +238,7 @@ export default function CalendarioPage({ onGoTorneos }) {
                 <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                   <MapPin size={11} color={CU} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 12, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.nombre}</span>
-                  <button onClick={() => eliminarSede(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0 }}>
+                  <button onClick={async () => await eliminarSede(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0 }}>
                     <X size={11} />
                   </button>
                 </div>
@@ -247,18 +247,18 @@ export default function CalendarioPage({ onGoTorneos }) {
                 <input
                   type="text" placeholder="Nombre de la sede" value={newSede.nombre}
                   onChange={e => setNewSede(v => ({ ...v, nombre: e.target.value }))}
-                  onKeyDown={e => {
+                  onKeyDown={async e => {
                     if (e.key === "Enter" && newSede.nombre.trim()) {
-                      agregarSede(torneoActivoId, newSede);
+                      await agregarSede(torneoActivoId, newSede);
                       setNewSede({ nombre: "", direccion: "" });
                     }
                   }}
                   style={{ ...inputSm, flex: 1 }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!newSede.nombre.trim()) return;
-                    agregarSede(torneoActivoId, newSede);
+                    await agregarSede(torneoActivoId, newSede);
                     setNewSede({ nombre: "", direccion: "" });
                   }}
                   style={{ background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 6, padding: "0 8px", cursor: "pointer", color: CU }}
@@ -273,7 +273,7 @@ export default function CalendarioPage({ onGoTorneos }) {
                 <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                   <User size={11} color={CU} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 12, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nombre}</span>
-                  <button onClick={() => eliminarArbitro(a.id)} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0 }}>
+                  <button onClick={async () => await eliminarArbitro(a.id)} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0 }}>
                     <X size={11} />
                   </button>
                 </div>
@@ -282,18 +282,18 @@ export default function CalendarioPage({ onGoTorneos }) {
                 <input
                   type="text" placeholder="Nombre del árbitro" value={newArbitro.nombre}
                   onChange={e => setNewArbitro(v => ({ ...v, nombre: e.target.value }))}
-                  onKeyDown={e => {
+                  onKeyDown={async e => {
                     if (e.key === "Enter" && newArbitro.nombre.trim()) {
-                      agregarArbitro(torneoActivoId, newArbitro);
+                      await agregarArbitro(torneoActivoId, newArbitro);
                       setNewArbitro({ nombre: "", contacto: "" });
                     }
                   }}
                   style={{ ...inputSm, flex: 1 }}
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!newArbitro.nombre.trim()) return;
-                    agregarArbitro(torneoActivoId, newArbitro);
+                    await agregarArbitro(torneoActivoId, newArbitro);
                     setNewArbitro({ nombre: "", contacto: "" });
                   }}
                   style={{ background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 6, padding: "0 8px", cursor: "pointer", color: CU }}

@@ -9,6 +9,7 @@
 
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./shared/auth";
 import { setHookErrorHandler } from "./shared/hooks/useLocalStorage";
 import { setStorageErrorHandler } from "./shared/services/storageService";
 import { setHealthErrorHandler } from "./shared/services/healthService";
@@ -36,6 +37,7 @@ const CRMApp = lazy(() => import("./app/shell/CRMApp"));
 
 // ── ALTTEZ Torneos ──
 const TorneosApp = lazy(() => import("./app/torneos/TorneosApp"));
+const PublicTorneoPage = lazy(() => import("./app/torneos/pages/PublicTorneoPage"));
 
 // ── Conectar handlers de error al boot ──
 const _toastError = (msg) => showToast(msg, "error");
@@ -63,41 +65,45 @@ const LoadingFallback = () => (
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastContainer />
-      <Routes>
-        {/* Portal Corporativo — rutas con navbar compartida */}
-        <Route element={<Suspense fallback={<LoadingFallback />}><PortalLayout /></Suspense>}>
-          <Route index element={<PortalHome />} />
-          <Route path="quienes-somos" element={<QuienesSomos />} />
-          <Route path="contacto" element={<Contacto />} />
-          <Route path="producto/alttezcrm" element={<SportsCRMPage />} />
-          <Route path="servicios/sports-crm" element={<Navigate to="/producto/alttezcrm" replace />} />
-          <Route path="precios" element={<PricingPage />} />
-          <Route path="journal" element={<JournalPage />} />
-        </Route>
-        {/* Politica de Privacidad — publica, sin navbar del portal */}
-        <Route
-          path="/privacidad"
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <PrivacyPolicy />
-            </Suspense>
-          }
-        />
-        {/* Confirmacion de asistencia — publica */}
-        <Route
-          path="/confirmar/:clubId/:eventId"
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <ConfirmarAsistencia />
-            </Suspense>
-          }
-        />
-        {/* CRM App — sistema de gestion deportiva */}
-        <Route path="/crm/*" element={<Suspense fallback={<LoadingFallback />}><CRMApp /></Suspense>} />
-        {/* ALTTEZ Torneos — producto independiente */}
-        <Route path="/torneos/*" element={<Suspense fallback={<LoadingFallback />}><TorneosApp /></Suspense>} />
-      </Routes>
+      <AuthProvider>
+        <ToastContainer />
+        <Routes>
+          {/* Portal Corporativo — rutas con navbar compartida */}
+          <Route element={<Suspense fallback={<LoadingFallback />}><PortalLayout /></Suspense>}>
+            <Route index element={<PortalHome />} />
+            <Route path="quienes-somos" element={<QuienesSomos />} />
+            <Route path="contacto" element={<Contacto />} />
+            <Route path="producto/alttezcrm" element={<SportsCRMPage />} />
+            <Route path="servicios/sports-crm" element={<Navigate to="/producto/alttezcrm" replace />} />
+            <Route path="precios" element={<PricingPage />} />
+            <Route path="journal" element={<JournalPage />} />
+          </Route>
+          {/* Politica de Privacidad — publica, sin navbar del portal */}
+          <Route
+            path="/privacidad"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PrivacyPolicy />
+              </Suspense>
+            }
+          />
+          {/* Confirmacion de asistencia — publica */}
+          <Route
+            path="/confirmar/:clubId/:eventId"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ConfirmarAsistencia />
+              </Suspense>
+            }
+          />
+          {/* CRM App — sistema de gestion deportiva */}
+          <Route path="/crm/*" element={<Suspense fallback={<LoadingFallback />}><CRMApp /></Suspense>} />
+          {/* ALTTEZ Torneos — producto independiente */}
+          <Route path="/torneos/*" element={<Suspense fallback={<LoadingFallback />}><TorneosApp /></Suspense>} />
+          {/* Portal Publico de Torneos */}
+          <Route path="/t/:slug" element={<Suspense fallback={<LoadingFallback />}><PublicTorneoPage /></Suspense>} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

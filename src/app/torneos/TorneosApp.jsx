@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, FileSpreadsheet, Tag } from "lucide-react";
+import { Trophy, X, FileSpreadsheet, Tag, Globe } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
-import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
-import { signIn, signUp, signOut as authSignOut, deleteAccount, onAuthStateChange } from "../../shared/services/authService";
+import { useAuth } from "../../shared/auth";
+import { validateTorneosInlineLogin, validateTorneosInlineRegister } from "../../shared/auth/authValidation";
+import { getPostLogoutRedirect } from "../../shared/auth/authRedirects";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -14,10 +14,12 @@ import InicioPage        from "./pages/InicioPage";
 import TorneosListPage   from "./pages/TorneosListPage";
 import EquiposPage       from "./pages/EquiposPage";
 import FixturesPage      from "./pages/FixturesPage";
-import EstadisticasPage  from "./pages/EstadisticasPage";
-import CalendarioPage    from "./pages/CalendarioPage";
 import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
+import CategoriasPage    from "./pages/CategoriasPage";
+import ProgramacionPage  from "./pages/ProgramacionPage";
+import EstadisticasPage  from "./pages/EstadisticasPage";
+import AlttezLoader      from "./components/shared/AlttezLoader";
 
 const BG     = PALETTE.bg;
 const CARD   = PALETTE.surface;
@@ -38,8 +40,10 @@ const PAGE_ANIM = {
 };
 
 // ── Inline auth screen (login + register tabs) ─────────────────────────────
+// Uses shared auth context + centralized validation.
 
-function TorneosAuthScreen({ onAuthSuccess }) {
+function TorneosAuthScreen() {
+  const auth = useAuth();
   const [tab, setTab]     = useState("login");
   const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -52,32 +56,30 @@ function TorneosAuthScreen({ onAuthSuccess }) {
   };
 
   const handleLogin = async () => {
-    const errs = {};
-    if (!form.email)    errs.email    = "Requerido";
-    if (!form.password) errs.password = "Requerido";
+    const { errors: errs, cleanData } = validateTorneosInlineLogin(form);
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (!cleanData) return;
     setLoading(true);
-    const { user, error } = await signIn(form.email, form.password);
+    const { error } = await auth.signIn(cleanData.email, cleanData.password);
     setLoading(false);
     if (error) { setMsg({ type: "error", text: error }); return; }
-    onAuthSuccess(user);
+    // Auth state update handled by AuthProvider listener
   };
 
   const handleRegister = async () => {
-    const errs = {};
-    if (!form.nombre.trim())                       errs.nombre   = "Requerido";
-    if (!form.email)                               errs.email    = "Requerido";
-    if (!form.password || form.password.length < 6) errs.password = "Mínimo 6 caracteres";
+    const { errors: errs, cleanData } = validateTorneosInlineRegister(form);
     setErrors(errs);
-    if (Object.keys(errs).length) return;
+    if (!cleanData) return;
     setLoading(true);
-    const { error } = await signUp({ email: form.email, password: form.password, fullName: form.nombre, role: "admin" });
+    const { error } = await auth.signUp({
+      email: cleanData.email,
+      password: cleanData.password,
+      fullName: cleanData.nombre,
+      role: "admin",
+    });
+    if (error) { setLoading(false); setMsg({ type: "error", text: error }); return; }
     setLoading(false);
-    if (error) { setMsg({ type: "error", text: error }); return; }
-    setMsg({ type: "success", text: "Cuenta creada. Revisa tu correo para confirmar el acceso, luego inicia sesión." });
-    setTab("login");
-    setForm(f => ({ ...f, password: "" }));
+    // Auth state update handled by AuthProvider listener
   };
 
   const inp = (hasErr) => ({
@@ -275,73 +277,76 @@ function ImportModal({ onClose }) {
 // ── Main app ──────────────────────────────────────────────────────────────────
 
 export default function TorneosApp() {
-  const navigate       = useNavigate();
+  const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
-  const [activeModule, setActiveModule] = useState("inicio");
+  const loadTorneos    = useTorneosStore(s => s.loadTorneosFromSupabase);
+
+  const [activeModule, setActiveModule] = useState(() => {
+    return localStorage.getItem("torneos_active_module") || "inicio";
+  });
   const [showImport,   setShowImport]   = useState(false);
+  const [editingTorneo, setEditingTorneo] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // undefined = checking, null = not authed, object = authed
-  const [authUser, setAuthUser] = useState(isSupabaseReady ? undefined : null);
-
+  // Persist activeModule
   useEffect(() => {
-    if (!isSupabaseReady) return;
+    localStorage.setItem("torneos_active_module", activeModule);
+  }, [activeModule]);
 
-    // Check existing session
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setAuthUser(user ?? null);
-    });
-
-    // Subscribe to changes
-    const sub = onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN")  setAuthUser(session?.user ?? null);
-      if (event === "SIGNED_OUT") setAuthUser(null);
-    });
-    return () => sub.unsubscribe();
-  }, []);
+  // Sync with Supabase on auth
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      loadTorneos();
+    }
+  }, [auth.isAuthenticated, loadTorneos]);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
 
-  const handleCreate  = () => setActiveModule("crear");
+  const handleCreate  = (torneo = null) => {
+    setEditingTorneo(torneo);
+    setActiveModule("crear");
+  };
   const handleImport  = () => setShowImport(true);
 
-  const handleWizardFinish = () => setActiveModule("torneos");
-  const handleWizardBack   = () => setActiveModule("inicio");
+  const handleWizardFinish = () => {
+    setEditingTorneo(null);
+    setActiveModule("inicio");
+  };
+  const handleWizardBack   = () => {
+    setEditingTorneo(null);
+    setActiveModule("inicio");
+  };
 
   const handleAbrirTorneo = () => setActiveModule("fixtures");
 
+  // Logout: limpiar sesión via AuthProvider. No navegar a "/".
+  // El auth gate de abajo mostrará TorneosAuthScreen automáticamente.
   const handleLogout = async () => {
-    if (isSupabaseReady) await authSignOut();
-    navigate("/");
+    await auth.signOut();
+    // Auth gate below will render TorneosAuthScreen when user becomes null
   };
 
   const handleDeleteAccount = async () => {
     if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
-    const { error } = await deleteAccount();
+    const { error } = await auth.deleteAccount();
     if (error) { alert(error); return; }
-    navigate("/");
+    // Auth gate below will render TorneosAuthScreen when user becomes null
   };
 
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
-  if (authUser === undefined) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG }}>
-        <div style={{ textAlign: "center", fontFamily: FONT }}>
-          <Trophy size={28} color={CU} style={{ marginBottom: 12 }} />
-          <div style={{ fontSize: 11, color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase" }}>Cargando...</div>
-        </div>
-      </div>
-    );
+  if (auth.loadingAuth) {
+    return <AlttezLoader fullScreen />;
   }
 
   // Auth gate — show login/register if no active session
-  if (authUser === null) {
-    return <TorneosAuthScreen onAuthSuccess={setAuthUser} />;
+  if (!auth.isAuthenticated) {
+    return <TorneosAuthScreen />;
   }
 
   return (
@@ -350,13 +355,15 @@ export default function TorneosApp() {
         active={sidebarActive}
         onNav={goTo}
         torneoActivo={torneoActivo}
+        isCollapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
-          userName={authUser?.email ?? ""}
+          userName={auth.user?.email ?? ""}
         />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>
@@ -376,6 +383,7 @@ export default function TorneosApp() {
             {activeModule === "crear" && (
               <motion.div key="crear" {...PAGE_ANIM}>
                 <CrearTorneoWizard
+                  initialData={editingTorneo}
                   onFinish={handleWizardFinish}
                   onBack={handleWizardBack}
                 />
@@ -399,23 +407,7 @@ export default function TorneosApp() {
 
             {activeModule === "categorias" && (
               <motion.div key="categorias" {...PAGE_ANIM}>
-                <ModuleEmptyState
-                  icon={Tag}
-                  title="Sin categorías"
-                  subtitle="Define categorías para organizar tus torneos."
-                />
-              </motion.div>
-            )}
-
-            {activeModule === "calendario" && (
-              <motion.div key="calendario" {...PAGE_ANIM}>
-                <CalendarioPage onGoTorneos={goTorneos} />
-              </motion.div>
-            )}
-
-            {activeModule === "estadisticas" && (
-              <motion.div key="estadisticas" {...PAGE_ANIM}>
-                <EstadisticasPage onGoTorneos={goTorneos} />
+                <CategoriasPage onGoTorneos={goTorneos} onNavigate={goTo} />
               </motion.div>
             )}
 
@@ -425,15 +417,30 @@ export default function TorneosApp() {
               </motion.div>
             )}
 
-            {activeModule === "publica" && (
-              <motion.div key="publica" {...PAGE_ANIM}>
+            {activeModule === "ajustes" && (
+              <motion.div key="ajustes" {...PAGE_ANIM}>
                 <AjustesPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
-            {activeModule === "ajustes" && (
-              <motion.div key="ajustes" {...PAGE_ANIM}>
-                <AjustesPage onGoTorneos={goTorneos} />
+            {activeModule === "programacion" && (
+              <motion.div key="programacion" {...PAGE_ANIM}>
+                <ProgramacionPage onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "publica" && (
+              <motion.div key="publica" {...PAGE_ANIM}>
+                <div style={{ fontFamily: FONT, padding: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Vista Pública</h2>
+                  <p style={{ color: MUTED, fontSize: 13 }}>La vista pública del torneo estará disponible cuando publiques el torneo desde Configuración.</p>
+                </div>
+              </motion.div>
+            )}
+
+            {activeModule === "estadisticas" && (
+              <motion.div key="estadisticas" {...PAGE_ANIM}>
+                <EstadisticasPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

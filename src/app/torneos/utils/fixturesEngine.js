@@ -18,15 +18,19 @@ const GRUPOS_LABELS = ["A", "B", "C", "D", "E", "F", "G", "H"];
 export function generarFixture(torneo, equipos) {
   if (!equipos.length) return [];
 
-  switch (torneo.formato) {
+  const formato = torneo.formato || "todos_contra_todos";
+  const vueltas = torneo.vueltas || 1;
+
+  switch (formato) {
     case "todos_contra_todos":
-      return generarLiga(equipos, torneo.id, null);
+    case "liga":
+      return generarLiga(equipos, torneo.id, null, vueltas);
     case "eliminacion":
       return generarEliminacion(equipos, torneo.id);
     case "grupos_playoffs": {
       const grupos = distribuirEnGrupos(equipos, torneo.numGrupos || 2);
       const partidosGrupos = grupos.flatMap((grp, i) =>
-        generarLiga(grp, torneo.id, GRUPOS_LABELS[i] ?? String(i + 1))
+        generarLiga(grp, torneo.id, GRUPOS_LABELS[i] ?? String(i + 1), vueltas)
       );
       const partidosPlayoffs = generarBracketsVacios(torneo, grupos);
       return [...partidosGrupos, ...partidosPlayoffs];
@@ -38,7 +42,7 @@ export function generarFixture(torneo, equipos) {
 
 // ── Liga (round-robin) ────────────────────────────────────────────────────────
 
-function generarLiga(equipos, torneoId, grupo) {
+function generarLiga(equipos, torneoId, grupo, vueltas = 1) {
   let lista = [...equipos];
   if (lista.length % 2 !== 0) lista.push({ id: "BYE", nombre: "BYE" });
 
@@ -47,27 +51,37 @@ function generarLiga(equipos, torneoId, grupo) {
   const partidos = [];
   let orden = 0;
 
-  for (let r = 0; r < rondas; r++) {
-    for (let i = 0; i < n / 2; i++) {
-      const local   = lista[i];
-      const visita  = lista[n - 1 - i];
-      if (local.id === "BYE" || visita.id === "BYE") continue;
-      partidos.push({
-        id: ID(), torneoId,
-        fase: grupo ? "grupos" : "liga",
-        ronda: r + 1,
-        grupo,
-        equipoLocalId:  local.id,
-        equipoVisitaId: visita.id,
-        golesLocal: null, golesVisita: null,
-        estado: "programado",
-        fechaHora: null, lugar: null,
-        orden: orden++,
-        createdAt: NOW(),
-      });
+  for (let v = 0; v < vueltas; v++) {
+    for (let r = 0; r < rondas; r++) {
+      for (let i = 0; i < n / 2; i++) {
+        let local   = lista[i];
+        let visita  = lista[n - 1 - i];
+        
+        // Alternar localía en vueltas pares (ej. vuelta 2)
+        if (v % 2 !== 0) {
+          const temp = local;
+          local = visita;
+          visita = temp;
+        }
+
+        if (local.id === "BYE" || visita.id === "BYE") continue;
+        partidos.push({
+          id: ID(), torneoId,
+          fase: grupo ? "grupos" : "liga",
+          ronda: (v * rondas) + r + 1,
+          grupo,
+          equipoLocalId:  local.id,
+          equipoVisitaId: visita.id,
+          golesLocal: null, golesVisita: null,
+          estado: "pendiente",
+          fechaHora: null, lugar: null,
+          orden: orden++,
+          createdAt: NOW(),
+        });
+      }
+      // Rotar: fijar índice 0, rotar el resto
+      lista = [lista[0], lista[n - 1], ...lista.slice(1, n - 1)];
     }
-    // Rotar: fijar índice 0, rotar el resto
-    lista = [lista[0], lista[n - 1], ...lista.slice(1, n - 1)];
   }
   return partidos;
 }
