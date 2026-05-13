@@ -601,17 +601,27 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
                 <Field label="Fecha de inicio" required error={step1Errors.fechaInicio}>
-                  <div style={{ ...dateClickArea, cursor: "pointer", borderColor: step1Errors.fechaInicio ? PALETTE.danger : BORDER }} onClick={() => startRef.current?.showPicker()}>
+                  <div 
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startRef.current?.showPicker(); } }}
+                    style={{ ...dateClickArea, cursor: "pointer", borderColor: step1Errors.fechaInicio ? PALETTE.danger : BORDER }} 
+                    onClick={() => startRef.current?.showPicker()}
+                  >
                     <Calendar size={14} color={step1Errors.fechaInicio ? PALETTE.danger : HINT} />
                     <span style={{ fontSize: 13, color: data.fechaInicio ? TEXT : HINT, flex: 1 }}>{data.fechaInicio || "DD/MM/AAAA"}</span>
-                    <input ref={startRef} type="date" style={hiddenInput} value={data.fechaInicio} onChange={e => update("fechaInicio", e.target.value)} />
+                    <input ref={startRef} type="date" tabIndex={-1} style={hiddenInput} value={data.fechaInicio} onChange={e => update("fechaInicio", e.target.value)} />
                   </div>
                 </Field>
                 <Field label="Fecha de finalización" required error={step1Errors.fechaFin}>
-                  <div style={{ ...dateClickArea, cursor: "pointer", borderColor: step1Errors.fechaFin ? PALETTE.danger : BORDER }} onClick={() => endRef.current?.showPicker()}>
+                  <div 
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); endRef.current?.showPicker(); } }}
+                    style={{ ...dateClickArea, cursor: "pointer", borderColor: step1Errors.fechaFin ? PALETTE.danger : BORDER }} 
+                    onClick={() => endRef.current?.showPicker()}
+                  >
                     <Calendar size={14} color={step1Errors.fechaFin ? PALETTE.danger : HINT} />
                     <span style={{ fontSize: 13, color: data.fechaFin ? TEXT : HINT, flex: 1 }}>{data.fechaFin || "DD/MM/AAAA"}</span>
-                    <input ref={endRef} type="date" style={hiddenInput} value={data.fechaFin} onChange={e => update("fechaFin", e.target.value)} />
+                    <input ref={endRef} type="date" tabIndex={-1} style={hiddenInput} value={data.fechaFin} onChange={e => update("fechaFin", e.target.value)} />
                   </div>
                 </Field>
                 <Field label="Organizador" required error={step1Errors.organizador}><input style={{ ...inputStyle, borderColor: step1Errors.organizador ? PALETTE.danger : BORDER }} value={data.organizador} onChange={e => update("organizador", e.target.value)} placeholder="ALTTEZ Torneos" /></Field>
