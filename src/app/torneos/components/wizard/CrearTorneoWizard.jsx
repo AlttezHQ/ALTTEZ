@@ -131,27 +131,44 @@ function Field({ label, required, children, style, error }) {
 }
 
 function RowInp({ label, type = "text", value, onChange, options }) {
+  const isNum = type === "number";
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <label style={{ fontSize: 13, fontWeight: 500, color: MUTED }}>{label}</label>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1 }}>{label}</label>
       {type === "select" ? (
-        <div style={{ position: "relative", minWidth: 200 }}>
-          <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inputStyle, paddingRight: 32, height: 42, appearance: "none" }}>
+        <div style={{ position: "relative", width: 180 }}>
+          <select 
+            value={value} 
+            onChange={e => onChange(e.target.value)} 
+            style={{ ...inputStyle, paddingRight: 32, height: 40, appearance: "none", fontSize: 13, fontWeight: 500, background: "#FFF" }}
+          >
             {options.map(o => (
               <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
                 {typeof o === "string" ? o : o.l || o.label}
               </option>
             ))}
           </select>
-          <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}><ChevronRight size={14} color={MUTED} style={{ transform: "rotate(90deg)" }} /></div>
+          <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+            <ChevronRight size={14} color={MUTED} style={{ transform: "rotate(90deg)" }} />
+          </div>
         </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", border: `1px solid ${BORDER}`, borderRadius: 10, background: "#FDFDFB", overflow: "hidden", minWidth: 200, height: 42 }}>
-          <input type={type} value={value} onChange={e => onChange(e.target.value)} style={{ border: "none", background: "none", padding: "0 14px", flex: 1, fontSize: 13, color: TEXT, outline: "none", height: "100%" }} />
-          <div style={{ display: "flex", flexDirection: "column", borderLeft: `1px solid ${BORDER}`, background: "#F9F9F7", height: "100%", width: 32 }}>
-            <button onClick={() => onChange(Number(value) + 1)} style={{ border: "none", background: "none", flex: 1, cursor: "pointer", color: MUTED, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronRight size={10} style={{ transform: "rotate(-90deg)" }} /></button>
-            <button onClick={() => onChange(Math.max(1, Number(value) - 1))} style={{ border: "none", background: "none", flex: 1, cursor: "pointer", color: MUTED, borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronRight size={10} style={{ transform: "rotate(90deg)" }} /></button>
-          </div>
+        <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 12, background: "#FFF", overflow: "hidden", width: 100, height: 40, transition: "all 0.2s" }}>
+          <input 
+            type={isNum ? "text" : type}
+            inputMode={isNum ? "numeric" : undefined}
+            value={(isNum && value === 0) ? "" : value}
+            placeholder={isNum ? "0" : ""}
+            onChange={e => {
+              const v = e.target.value;
+              if (isNum) {
+                if (v === "" || /^\d+$/.test(v)) onChange(v === "" ? 0 : parseInt(v));
+              } else {
+                onChange(v);
+              }
+            }}
+            style={{ border: "none", background: "none", padding: "0 14px", flex: 1, fontSize: 14, color: TEXT, outline: "none", height: "100%", textAlign: isNum ? "center" : "left", fontWeight: 800 }} 
+          />
         </div>
       )}
     </div>
@@ -1092,6 +1109,21 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
           </>
         )}
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .modern-inp-wrap:focus-within {
+          border-color: ${CU} !important;
+          box-shadow: 0 0 0 3px ${CU}15;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+      `}} />
     </div>
   );
 }
