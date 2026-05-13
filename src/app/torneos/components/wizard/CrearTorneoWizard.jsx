@@ -132,11 +132,11 @@ function Field({ label, required, children, style, error }) {
 
 function RowInp({ label, type = "text", value, onChange, options }) {
   const isNum = type === "number";
-  const fieldWidth = 160; // Fixed width for all input fields to ensure alignment
+  const fieldWidth = isNum ? 100 : 180;
   
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
-      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</label>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1 }}>{label}</label>
       
       {type === "select" ? (
         <div style={{ position: "relative", width: fieldWidth }}>
@@ -158,18 +158,9 @@ function RowInp({ label, type = "text", value, onChange, options }) {
       ) : (
         <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 12, background: "#FFF", overflow: "hidden", width: fieldWidth, height: 40, transition: "all 0.2s" }}>
           <input 
-            type={isNum ? "text" : type}
-            inputMode={isNum ? "numeric" : undefined}
-            value={(isNum && value === 0) ? "" : value}
-            placeholder={isNum ? "0" : ""}
-            onChange={e => {
-              const v = e.target.value;
-              if (isNum) {
-                if (v === "" || /^\d+$/.test(v)) onChange(v === "" ? 0 : parseInt(v));
-              } else {
-                onChange(v);
-              }
-            }}
+            type={isNum ? "number" : type}
+            value={value}
+            onChange={e => onChange(e.target.value)}
             style={{ border: "none", background: "none", padding: "0 14px", flex: 1, fontSize: 14, color: TEXT, outline: "none", height: "100%", textAlign: isNum ? "center" : "left", fontWeight: 800 }} 
           />
         </div>
@@ -787,7 +778,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <aside><div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, boxShadow: ELEV, padding: 24 }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}><div><h4 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Configurar categoría</h4><div style={{ fontSize: 14, color: CU, fontWeight: 700 }}>{activeCat?.nombre}</div></div><div style={{ width: 40, height: 40, borderRadius: "50%", background: "#FCF8F1", display: "flex", alignItems: "center", justifyContent: "center" }}><Users size={18} color={CU} /></div></div><div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 
                 <RowInp label="Número de equipos" type="number" value={activeCat?.teams || 0} onChange={v => {
-                  const nextCats = data.categorias.map(c => c.id === catId ? { ...c, teams: parseInt(v) || 0 } : c);
+                  const nextCats = data.categorias.map(c => c.id === catId ? { ...c, teams: v === "" ? "" : (parseInt(v) || 0) } : c);
                   setData(p => ({ ...p, categorias: nextCats }));
                 }} />
 
@@ -802,9 +793,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 )}
                 {activeStruct.format === "grupos_playoffs" && (
                   <>
-                    <RowInp label="Número de grupos" type="number" value={activeStruct.grupos || 2} onChange={v => updateStruct(catId, { grupos: v })} />
-                    <RowInp label="Equipos por grupo" type="number" value={activeStruct.tpg || 4} onChange={v => updateStruct(catId, { tpg: v })} />
-                    <RowInp label="Clasifican por grupo" type="number" value={activeStruct.cpg || 2} onChange={v => updateStruct(catId, { cpg: v })} />
+                    <RowInp label="Número de grupos" type="number" value={activeStruct.grupos || 2} onChange={v => updateStruct(catId, { grupos: v === "" ? "" : (parseInt(v) || 0) })} />
+                    <RowInp label="Equipos por grupo" type="number" value={activeStruct.tpg || 4} onChange={v => updateStruct(catId, { tpg: v === "" ? "" : (parseInt(v) || 0) })} />
+                    <RowInp label="Clasifican por grupo" type="number" value={activeStruct.cpg || 2} onChange={v => updateStruct(catId, { cpg: v === "" ? "" : (parseInt(v) || 0) })} />
                     <RowInp label="Fase final" type="select" value={activeStruct.faseFinal || "semis"} onChange={v => updateStruct(catId, { faseFinal: v })} options={[{v: "semis", l: "Semifinal + final"}, {v: "final", l: "Final"}]} />
                   </>
                 )}
