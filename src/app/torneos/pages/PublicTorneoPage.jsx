@@ -7,6 +7,7 @@ import { calcularPosiciones } from "../utils/fixturesEngine";
 import { useState } from "react";
 
 const CU = PALETTE.bronce;
+const CU_DIM = PALETTE.bronce + "15";
 const BG = PALETTE.bg;
 const CARD = PALETTE.surface;
 const TEXT = PALETTE.text;
