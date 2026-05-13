@@ -97,8 +97,7 @@ export default function PublicTorneoPage() {
           >
             {[...torneo.patrocinadores, ...torneo.patrocinadores, ...torneo.patrocinadores].map((s, idx) => (
               <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                <img src={s.logo} alt={s.nombre} style={{ height: 30, width: "auto", filter: "grayscale(100%)", opacity: 0.6 }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: MUTED, letterSpacing: "0.05em" }}>{s.nombre.toUpperCase()}</span>
+                <img src={s.logo} alt={s.nombre} style={{ height: 30, width: "auto" }} />
               </div>
             ))}
           </motion.div>
