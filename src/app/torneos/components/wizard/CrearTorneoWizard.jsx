@@ -132,15 +132,18 @@ function Field({ label, required, children, style, error }) {
 
 function RowInp({ label, type = "text", value, onChange, options }) {
   const isNum = type === "number";
+  const fieldWidth = 160; // Fixed width for all input fields to ensure alignment
+  
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
-      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1 }}>{label}</label>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 4 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</label>
+      
       {type === "select" ? (
-        <div style={{ position: "relative", width: 180 }}>
+        <div style={{ position: "relative", width: fieldWidth }}>
           <select 
             value={value} 
             onChange={e => onChange(e.target.value)} 
-            style={{ ...inputStyle, paddingRight: 32, height: 40, appearance: "none", fontSize: 13, fontWeight: 500, background: "#FFF" }}
+            style={{ ...inputStyle, paddingRight: 32, height: 40, appearance: "none", fontSize: 13, fontWeight: 600, background: "#FFF" }}
           >
             {options.map(o => (
               <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
@@ -153,7 +156,7 @@ function RowInp({ label, type = "text", value, onChange, options }) {
           </div>
         </div>
       ) : (
-        <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 12, background: "#FFF", overflow: "hidden", width: 100, height: 40, transition: "all 0.2s" }}>
+        <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 12, background: "#FFF", overflow: "hidden", width: fieldWidth, height: 40, transition: "all 0.2s" }}>
           <input 
             type={isNum ? "text" : type}
             inputMode={isNum ? "numeric" : undefined}
