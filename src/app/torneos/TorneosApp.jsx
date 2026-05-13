@@ -17,6 +17,9 @@ import FixturesPage      from "./pages/FixturesPage";
 import AjustesPage       from "./pages/AjustesPage";
 import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
 import CategoriasPage    from "./pages/CategoriasPage";
+import ProgramacionPage  from "./pages/ProgramacionPage";
+import EstadisticasPage  from "./pages/EstadisticasPage";
+import AlttezLoader      from "./components/shared/AlttezLoader";
 
 const BG     = PALETTE.bg;
 const CARD   = PALETTE.surface;
@@ -281,9 +284,17 @@ export default function TorneosApp() {
 
   const loadTorneos    = useTorneosStore(s => s.loadTorneosFromSupabase);
 
-  const [activeModule, setActiveModule] = useState("inicio");
+  const [activeModule, setActiveModule] = useState(() => {
+    return localStorage.getItem("torneos_active_module") || "inicio";
+  });
   const [showImport,   setShowImport]   = useState(false);
   const [editingTorneo, setEditingTorneo] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Persist activeModule
+  useEffect(() => {
+    localStorage.setItem("torneos_active_module", activeModule);
+  }, [activeModule]);
 
   // Sync with Supabase on auth
   useEffect(() => {
@@ -303,7 +314,7 @@ export default function TorneosApp() {
 
   const handleWizardFinish = () => {
     setEditingTorneo(null);
-    setActiveModule("torneos");
+    setActiveModule("inicio");
   };
   const handleWizardBack   = () => {
     setEditingTorneo(null);
@@ -330,14 +341,7 @@ export default function TorneosApp() {
 
   // Loading state while checking Supabase session
   if (auth.loadingAuth) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG }}>
-        <div style={{ textAlign: "center", fontFamily: FONT }}>
-          <Trophy size={28} color={CU} style={{ marginBottom: 12 }} />
-          <div style={{ fontSize: 11, color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase" }}>Cargando...</div>
-        </div>
-      </div>
-    );
+    return <AlttezLoader fullScreen />;
   }
 
   // Auth gate — show login/register if no active session
@@ -351,6 +355,8 @@ export default function TorneosApp() {
         active={sidebarActive}
         onNav={goTo}
         torneoActivo={torneoActivo}
+        isCollapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
@@ -401,7 +407,7 @@ export default function TorneosApp() {
 
             {activeModule === "categorias" && (
               <motion.div key="categorias" {...PAGE_ANIM}>
-                <CategoriasPage onGoTorneos={goTorneos} />
+                <CategoriasPage onGoTorneos={goTorneos} onNavigate={goTo} />
               </motion.div>
             )}
 
@@ -414,6 +420,27 @@ export default function TorneosApp() {
             {activeModule === "ajustes" && (
               <motion.div key="ajustes" {...PAGE_ANIM}>
                 <AjustesPage onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "programacion" && (
+              <motion.div key="programacion" {...PAGE_ANIM}>
+                <ProgramacionPage onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "publica" && (
+              <motion.div key="publica" {...PAGE_ANIM}>
+                <div style={{ fontFamily: FONT, padding: 24 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Vista Pública</h2>
+                  <p style={{ color: MUTED, fontSize: 13 }}>La vista pública del torneo estará disponible cuando publiques el torneo desde Configuración.</p>
+                </div>
+              </motion.div>
+            )}
+
+            {activeModule === "estadisticas" && (
+              <motion.div key="estadisticas" {...PAGE_ANIM}>
+                <EstadisticasPage onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

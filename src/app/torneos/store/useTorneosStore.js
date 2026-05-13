@@ -27,11 +27,12 @@ const FORMAT_MAP = {
 export const useTorneosStore = create(
   persist(
     (set, get) => ({
-      torneos:  [],
-      equipos:  [],
-      partidos: [],
-      sedes:    [],
-      arbitros: [],
+      torneos:    [],
+      equipos:    [],
+      partidos:   [],
+      sedes:      [],
+      arbitros:   [],
+      categorias: [],
       torneoActivoId: null,
       wizardDraft:    null,
       loading:        false,
@@ -43,28 +44,31 @@ export const useTorneosStore = create(
         const formato = FORMAT_MAP[data.formato] ?? data.formato ?? "todos_contra_todos";
         const torneo = {
           id: ID(),
-          nombre:     data.nombre  || "Sin nombre",
-          deporte:    data.deporte || "Fútbol",
+          nombre:        data.nombre  || "Sin nombre",
+          deporte:       data.deporte || "Fútbol",
+          temporada:     data.temporada || "",
           formato,
-          estado:     "borrador",
-          fechaInicio: data.fecha  || null,
-          fechaFin:    data.fechaFin || null,
-          slug:        generarSlug(data.nombre || "torneo"),
-          numGrupos:   data.numGrupos || 2,
-          publicado:   false,
-          descripcion: "",
-          portada:     null,
-          perfil:      null,
-          contacto:    "",
-          premios:     "",
-          patrocinadores: [], // [{ id, nombre, logo }]
-          visibilidad: "publico", // publico | privado
-          reglamentoUrl: null,
+          estado:        "borrador",
+          fechaInicio:   data.fechaInicio || null,
+          fechaFin:      data.fechaFin || null,
+          sedePrincipal: data.sedePrincipal || "",
+          organizador:   data.organizador || "",
+          slug:          generarSlug(data.nombre || "torneo"),
+          numGrupos:     data.numGrupos || 2,
+          publicado:     false,
+          descripcion:   data.descripcion || "",
+          portada:       null,
+          perfil:        null,
+          contacto:      "",
+          premios:       "",
+          patrocinadores: [], 
+          visibilidad:   "publico", 
+          reglamentoUrl:  null,
           seguidoresCount: 0,
-          vistasCount: 0,
+          vistasCount:     0,
           schedulingConfig: { ...DEFAULT_SCHEDULING },
-          createdAt:   NOW(),
-          updatedAt:   NOW(),
+          createdAt:     NOW(),
+          updatedAt:     NOW(),
         };
         set(s => ({ torneos: [...s.torneos, torneo], torneoActivoId: torneo.id }));
         await svc.saveTorneo(torneo);
@@ -85,11 +89,12 @@ export const useTorneosStore = create(
 
       async eliminarTorneo(id) {
         set(s => ({
-          torneos:   s.torneos.filter(t => t.id !== id),
-          equipos:   s.equipos.filter(e => e.torneoId !== id),
-          partidos:  s.partidos.filter(p => p.torneoId !== id),
-          sedes:     s.sedes.filter(se => se.torneoId !== id),
-          arbitros:  s.arbitros.filter(a => a.torneoId !== id),
+          torneos:    s.torneos.filter(t => t.id !== id),
+          equipos:    s.equipos.filter(e => e.torneoId !== id),
+          partidos:   s.partidos.filter(p => p.torneoId !== id),
+          sedes:      s.sedes.filter(se => se.torneoId !== id),
+          arbitros:   s.arbitros.filter(a => a.torneoId !== id),
+          categorias: s.categorias.filter(c => c.torneoId !== id),
           torneoActivoId: s.torneoActivoId === id ? null : s.torneoActivoId,
         }));
         await svc.deleteTorneoRemote(id);
@@ -340,6 +345,52 @@ export const useTorneosStore = create(
         return patches.length;
       },
 
+      // ── Categorías ─────────────────────────────────────────────────────
+
+      async agregarCategorias(torneoId, cats) {
+        const nuevas = cats.map(c => ({
+          id: c.id || ID(),
+          torneoId,
+          nombre:    c.nombre || "Sin nombre",
+          teams:     parseInt(c.teams) || 0,
+          format:    c.format || "todos_contra_todos",
+          fases:     c.fases || "ida",
+          vueltas:   parseInt(c.vueltas) || 1,
+          grupos:    parseInt(c.grupos) || 2,
+          tpg:       parseInt(c.tpg) || 4,
+          cpg:       parseInt(c.cpg) || 2,
+          faseFinal: c.faseFinal || "final",
+          desempate: c.desempate || "goal_diff",
+          createdAt: NOW(),
+        }));
+        set(s => ({ categorias: [...s.categorias, ...nuevas] }));
+        await svc.saveCategorias(torneoId, nuevas);
+        return nuevas;
+      },
+
+      async actualizarCategoria(id, patch) {
+        let torneoId = null;
+        set(s => ({
+          categorias: s.categorias.map(c => {
+            if (c.id === id) {
+              torneoId = c.torneoId;
+              return { ...c, ...patch };
+            }
+            return c;
+          }),
+        }));
+        if (torneoId) {
+          const updatedCat = get().categorias.find(c => c.id === id);
+          if (updatedCat) {
+            await svc.saveCategorias(torneoId, [updatedCat]);
+          }
+        }
+      },
+
+      getCategoriasByTorneo(torneoId) {
+        return get().categorias.filter(c => c.torneoId === torneoId);
+      },
+
       // ── Wizard draft ─────────────────────────────────────────────────────
 
       setWizardDraft(data) {
@@ -386,6 +437,10 @@ export const useTorneosStore = create(
         return get().arbitros.filter(a => a.torneoId === torneoId);
       },
 
+      getCategoriasTorneo(torneoId) {
+        return get().categorias.filter(c => c.torneoId === torneoId);
+      },
+
       getTorneoActivo() {
         const id = get().torneoActivoId;
         return id ? get().torneos.find(t => t.id === id) ?? null : null;
@@ -400,6 +455,7 @@ export const useTorneosStore = create(
           const allPartidos = results.flatMap(r => r.partidos);
           const allSedes    = results.flatMap(r => r.sedes);
           const allArbitros = results.flatMap(r => r.arbitros);
+          const allCategorias = results.flatMap(r => r.categorias || []);
           
           set({ 
             torneos: allTorneos, 
@@ -407,6 +463,7 @@ export const useTorneosStore = create(
             partidos: allPartidos,
             sedes: allSedes,
             arbitros: allArbitros,
+            categorias: allCategorias,
             loading: false 
           });
         } catch (err) {

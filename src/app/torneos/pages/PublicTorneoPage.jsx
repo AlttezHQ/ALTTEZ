@@ -135,62 +135,99 @@ export default function PublicTorneoPage() {
         
         {activeTab === "fixture" && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-              {torneoPartidos.filter(p => ["programado", "en_curso", "finalizado"].includes(p.estado)).sort((a,b) => new Date(a.fechaHora) - new Date(b.fechaHora)).map(p => {
-                const local = torneoEquipos.find(e => e.id === p.equipoLocalId);
-                const visita = torneoEquipos.find(e => e.id === p.equipoVisitaId);
-                return (
-                  <div key={p.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 20, boxShadow: ELEVATION.card }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, fontSize: 10, fontWeight: 800, color: MUTED }}>
-                      <span>JORNADA {p.ronda} · {p.fase.toUpperCase()}</span>
-                      <span style={{ color: p.estado === "finalizado" ? CU : "#22C55E" }}>{p.estado.toUpperCase()}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ flex: 1, textAlign: "right", fontSize: 14, fontWeight: 700 }}>{local?.nombre}</div>
-                      <div style={{ padding: "4px 12px", background: BG, borderRadius: 8, fontWeight: 800, fontSize: 16 }}>
-                        {p.estado === "finalizado" ? `${p.golesLocal} - ${p.golesVisita}` : "vs"}
+            {torneoPartidos.length === 0 ? (
+              <div style={{ padding: "60px 20px", textAlign: "center", color: MUTED }}>
+                <Calendar size={48} style={{ margin: "0 auto 16px", opacity: 0.2 }} />
+                <div style={{ fontSize: 16, fontWeight: 700 }}>Aún no hay partidos programados</div>
+                <div style={{ fontSize: 13, marginTop: 8 }}>El calendario estará disponible pronto.</div>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+                {torneoPartidos.filter(p => ["programado", "en_curso", "finalizado"].includes(p.estado)).sort((a,b) => new Date(a.fechaHora) - new Date(b.fechaHora)).map(p => {
+                  const local = torneoEquipos.find(e => e.id === p.equipoLocalId);
+                  const visita = torneoEquipos.find(e => e.id === p.equipoVisitaId);
+                  const isDone = p.estado === "finalizado";
+                  return (
+                    <motion.div whileHover={{ y: -4 }} key={p.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 20, padding: 24, boxShadow: "0 10px 20px rgba(0,0,0,0.03)", transition: "all 0.3s" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: "0.04em" }}>
+                        <span>JORNADA {p.ronda} · {p.fase.toUpperCase()}</span>
+                        <span style={{ color: isDone ? MUTED : "#22C55E", background: isDone ? BG : "#22C55E15", padding: "4px 8px", borderRadius: 6 }}>{p.estado.toUpperCase()}</span>
                       </div>
-                      <div style={{ flex: 1, textAlign: "left", fontSize: 14, fontWeight: 700 }}>{visita?.nombre}</div>
-                    </div>
-                    {p.fechaHora && (
-                      <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${BORDER}`, display: "flex", justifyContent: "center", gap: 16, fontSize: 11, color: MUTED }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Calendar size={12}/> {new Date(p.fechaHora).toLocaleDateString()}</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 4 }}><MapPin size={12}/> Cancha {p.sedeId?.slice(-1) || 1}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 48, height: 48, borderRadius: "50%", background: local?.color || CU_DIM, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${CARD}`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+                            {local?.escudo ? <img src={local.escudo} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : <Users size={20} color={local?.color ? "#FFF" : CU} />}
+                          </div>
+                          <div style={{ textAlign: "center", fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>{local?.nombre || "TBD"}</div>
+                        </div>
+                        
+                        <div style={{ padding: isDone ? "8px 16px" : "6px 12px", background: isDone ? CU_DIM : BG, border: `1px solid ${isDone ? "transparent" : BORDER}`, borderRadius: 12, fontWeight: 900, fontSize: isDone ? 20 : 12, color: isDone ? CU : MUTED, display: "flex", alignItems: "center", justifyContent: "center", minWidth: 60 }}>
+                          {isDone ? `${p.golesLocal} - ${p.golesVisita}` : "VS"}
+                        </div>
+                        
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 48, height: 48, borderRadius: "50%", background: visita?.color || BORDER, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${CARD}`, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}>
+                            {visita?.escudo ? <img src={visita.escudo} style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} /> : <Users size={20} color="#FFF" />}
+                          </div>
+                          <div style={{ textAlign: "center", fontSize: 13, fontWeight: 800, lineHeight: 1.2 }}>{visita?.nombre || "TBD"}</div>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                      {(p.fechaHora || p.sedeId) && (
+                        <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORDER}`, display: "flex", justifyContent: "center", gap: 20, fontSize: 11, color: MUTED, fontWeight: 600 }}>
+                          {p.fechaHora && <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Calendar size={14}/> {new Date(p.fechaHora).toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
+                          {p.sedeId && <span style={{ display: "flex", alignItems: "center", gap: 6 }}><MapPin size={14}/> Cancha {p.sedeId?.slice(-1) || 1}</span>}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
         )}
 
         {activeTab === "tabla" && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
-                    <th style={{ padding: 16, textAlign: "center", width: 40 }}>#</th>
-                    <th style={{ padding: 16, textAlign: "left" }}>Equipo</th>
-                    <th style={{ padding: 16, textAlign: "center" }}>PJ</th>
-                    <th style={{ padding: 16, textAlign: "center" }}>GD</th>
-                    <th style={{ padding: 16, textAlign: "center", fontWeight: 800 }}>PTS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabla.map((t, i) => (
-                    <tr key={t.equipoId} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td style={{ padding: 14, textAlign: "center", fontWeight: 700, color: i < 3 ? CU : MUTED }}>{i + 1}</td>
-                      <td style={{ padding: 14, fontWeight: 700 }}>{t.nombre}</td>
-                      <td style={{ padding: 14, textAlign: "center", color: MUTED }}>{t.pj}</td>
-                      <td style={{ padding: 14, textAlign: "center", color: MUTED }}>{t.gf - t.gc}</td>
-                      <td style={{ padding: 14, textAlign: "center", fontWeight: 800, color: CU, fontSize: 15 }}>{t.pts}</td>
+            {tabla.length === 0 ? (
+               <div style={{ padding: "60px 20px", textAlign: "center", color: MUTED }}>
+                 <BarChart2 size={48} style={{ margin: "0 auto 16px", opacity: 0.2 }} />
+                 <div style={{ fontSize: 16, fontWeight: 700 }}>La tabla de posiciones está vacía</div>
+                 <div style={{ fontSize: 13, marginTop: 8 }}>Se actualizará automáticamente cuando se jueguen partidos.</div>
+               </div>
+            ) : (
+              <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
+                      <th style={{ padding: 16, textAlign: "center", width: 40, color: MUTED }}>#</th>
+                      <th style={{ padding: 16, textAlign: "left", color: MUTED }}>EQUIPO</th>
+                      <th style={{ padding: 16, textAlign: "center", color: MUTED }}>PJ</th>
+                      <th style={{ padding: 16, textAlign: "center", color: MUTED }}>GD</th>
+                      <th style={{ padding: 16, textAlign: "center", fontWeight: 800, color: CU }}>PTS</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {tabla.map((t, i) => {
+                      const eq = torneoEquipos.find(e => e.id === t.equipoId);
+                      return (
+                        <tr key={t.equipoId} style={{ borderBottom: `1px solid ${BORDER}`, transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#FDFBF7"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <td style={{ padding: "14px 16px", textAlign: "center", fontWeight: 800, color: i < 3 ? CU : MUTED }}>{i + 1}</td>
+                          <td style={{ padding: "14px 16px", fontWeight: 800, display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: "50%", background: eq?.color || CU_DIM, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+                               {eq?.escudo ? <img src={eq.escudo} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 10, color: eq?.color ? "#FFF" : CU }}>{t.nombre.charAt(0)}</span>}
+                            </div>
+                            {t.nombre}
+                          </td>
+                          <td style={{ padding: "14px 16px", textAlign: "center", color: MUTED, fontWeight: 600 }}>{t.pj}</td>
+                          <td style={{ padding: "14px 16px", textAlign: "center", color: (t.gf - t.gc) > 0 ? "#22C55E" : (t.gf - t.gc) < 0 ? "#EF4444" : MUTED, fontWeight: 700 }}>{(t.gf - t.gc) > 0 ? `+${t.gf - t.gc}` : (t.gf - t.gc)}</td>
+                          <td style={{ padding: "14px 16px", textAlign: "center", fontWeight: 900, color: CU, fontSize: 15, background: CU_DIM }}>{t.pts}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </motion.div>
         )}
 

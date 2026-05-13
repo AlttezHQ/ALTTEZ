@@ -28,7 +28,8 @@ export default function AjustesPage({ onGoTorneos }) {
   const torneo = allTorneos.find(t => t.id === torneoActivoId) ?? null;
 
   const [form, setForm]     = useState({ 
-    nombre: "", deporte: "", fechaInicio: "",
+    nombre: "", deporte: "", temporada: "", fechaInicio: "", fechaFin: "",
+    organizador: "", sedePrincipal: "",
     descripcion: "", contacto: "", premios: "", visibilidad: "publico"
   });
   const [saved, setSaved]   = useState(false);
@@ -40,7 +41,11 @@ export default function AjustesPage({ onGoTorneos }) {
       setForm({ 
         nombre: torneo.nombre, 
         deporte: torneo.deporte, 
+        temporada: torneo.temporada ?? "",
         fechaInicio: torneo.fechaInicio ?? "",
+        fechaFin: torneo.fechaFin ?? "",
+        organizador: torneo.organizador ?? "",
+        sedePrincipal: torneo.sedePrincipal ?? "",
         descripcion: torneo.descripcion ?? "",
         contacto: torneo.contacto ?? "",
         premios: torneo.premios ?? "",
@@ -94,10 +99,44 @@ export default function AjustesPage({ onGoTorneos }) {
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>FECHA DE INICIO</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>TEMPORADA</label>
             <input
-              type="date" value={form.fechaInicio}
-              onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
+              type="text" value={form.temporada} placeholder="Ej: 2026-I"
+              onChange={e => setForm(f => ({ ...f, temporada: e.target.value }))}
+              style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
+            />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>FECHA DE INICIO</label>
+              <input
+                type="date" value={form.fechaInicio}
+                onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
+                style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>FECHA DE FIN</label>
+              <input
+                type="date" value={form.fechaFin}
+                onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
+                style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>ORGANIZADOR</label>
+            <input
+              type="text" value={form.organizador}
+              onChange={e => setForm(f => ({ ...f, organizador: e.target.value }))}
+              style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5, letterSpacing: "0.04em" }}>SEDE PRINCIPAL</label>
+            <input
+              type="text" value={form.sedePrincipal}
+              onChange={e => setForm(f => ({ ...f, sedePrincipal: e.target.value }))}
               style={{ width: "100%", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", fontSize: 13, color: TEXT, fontFamily: FONT, background: BG, outline: "none" }}
             />
           </div>

@@ -117,7 +117,7 @@ function StatChip({ value, label }) {
   );
 }
 
-function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNavigate }) {
+function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNavigate, onCreate }) {
   const finalizados  = partidos.filter(p => p.estado === "finalizado").length;
   const programados  = partidos.filter(p => p.fechaHora).length;
   const schedPct     = partidos.length > 0 ? programados / partidos.length : 0;
@@ -135,7 +135,7 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
   const NEXT_ACTIONS = {
     "Equipos":               { label: "Agregar equipos", mod: "equipos" },
     "Fixture generado":      { label: "Generar fixture",  mod: "fixtures" },
-    "Calendario programado": { label: "Programar calendario", mod: "calendario" },
+    "Calendario programado": { label: "Programar partidos", mod: "fixtures" },
     "Torneo publicado":      { label: "Publicar torneo",  mod: "ajustes" },
   };
   const nextAction = nextStep ? NEXT_ACTIONS[nextStep.label] : null;
@@ -180,7 +180,27 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: "-0.02em", fontFamily: FONT }}>
                 {torneo.nombre}
               </h2>
+              {(torneo.temporada || torneo.organizador || torneo.sedePrincipal) && (
+                <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 12, color: MUTED }}>
+                  {torneo.temporada && <span>📅 {torneo.temporada}</span>}
+                  {torneo.organizador && <span>👤 {torneo.organizador}</span>}
+                  {torneo.sedePrincipal && <span>📍 {torneo.sedePrincipal}</span>}
+                </div>
+              )}
             </div>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              onClick={onCreate}
+              style={{
+                display: "flex", alignItems: "center", gap: 7,
+                background: "transparent", color: CU, border: `1px solid ${CU_BOR}`,
+                borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
+                fontFamily: FONT, cursor: "pointer"
+              }}
+            >
+              <Plus size={14} /> Crear otro torneo
+            </motion.button>
           </div>
 
           {/* Stats row */}
@@ -250,10 +270,10 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={() => onNavigate("calendario")}
+                onClick={() => onNavigate("fixtures")}
                 style={{ width: "100%", marginTop: 10, background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "9px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
               >
-                Ver calendario completo
+                Ver programación completa
               </motion.button>
             </>
           ) : (
@@ -267,10 +287,10 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={() => onNavigate("calendario")}
+                onClick={() => onNavigate("fixtures")}
                 style={{ width: "100%", background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
               >
-                Ir al calendario
+                Ir a Gestión de Partidos
               </motion.button>
             </>
           )}
@@ -377,11 +397,13 @@ export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate
   const allEquipos     = useTorneosStore(s => s.equipos);
   const allPartidos    = useTorneosStore(s => s.partidos);
   const allSedes       = useTorneosStore(s => s.sedes);
+  const allCategorias  = useTorneosStore(s => s.categorias);
 
   const torneoActivo = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
   const equipos  = torneoActivoId ? allEquipos.filter(e => e.torneoId === torneoActivoId)  : [];
   const partidos = torneoActivoId ? allPartidos.filter(p => p.torneoId === torneoActivoId) : [];
   const sedes    = torneoActivoId ? allSedes.filter(s => s.torneoId === torneoActivoId)    : [];
+  const categorias = torneoActivoId ? allCategorias.filter(c => c.torneoId === torneoActivoId) : [];
 
   if (torneoActivo) {
     return (
@@ -392,6 +414,7 @@ export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate
         sedes={sedes}
         onInfoClick={onInfoClick}
         onNavigate={onNavigate ?? onInfoClick}
+        onCreate={onCreate}
       />
     );
   }

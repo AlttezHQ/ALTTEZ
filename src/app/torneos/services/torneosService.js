@@ -18,10 +18,13 @@ export async function saveTorneo(torneo) {
     organizador_id: user.id,
     nombre:       torneo.nombre,
     deporte:      torneo.deporte,
+    temporada:    torneo.temporada,
     formato:      torneo.formato,
     estado:       torneo.estado,
     fecha_inicio: torneo.fechaInicio,
     fecha_fin:    torneo.fechaFin,
+    sede_principal: torneo.sedePrincipal,
+    organizador_nombre: torneo.organizador,
     slug:         torneo.slug,
     num_grupos:   torneo.numGrupos,
     publicado:    torneo.publicado,
@@ -139,9 +142,32 @@ export async function deleteArbitroRemote(id) {
   return { ok: !error, error };
 }
 
+
 export async function deleteEquipoRemote(id) {
   if (!isSupabaseReady) return { ok: false };
   const { error } = await supabase.from("torneo_equipos").delete().eq("id", id);
+  return { ok: !error, error };
+}
+
+// ── Categorías ─────────────────────────────────────────────────────────────
+
+export async function saveCategorias(torneoId, categorias) {
+  if (!isSupabaseReady) return { ok: false };
+  const rows = categorias.map(c => ({
+    id: c.id,
+    torneo_id: torneoId,
+    nombre: c.nombre,
+    teams: c.teams,
+    format: c.format,
+    fases: c.fases,
+    vueltas: c.vueltas,
+    grupos: c.grupos,
+    tpg: c.tpg,
+    cpg: c.cpg,
+    fase_final: c.faseFinal,
+    desempate: c.desempate,
+  }));
+  const { error } = await supabase.from("torneo_categorias").upsert(rows);
   return { ok: !error, error };
 }
 
@@ -193,6 +219,7 @@ export async function fetchAllTorneos() {
     const { data: partidosRows } = await supabase.from("torneo_partidos").select("*").eq("torneo_id", t.id);
     const { data: sedesRows } = await supabase.from("torneo_sedes").select("*").eq("torneo_id", t.id);
     const { data: arbitrosRows } = await supabase.from("torneo_arbitros").select("*").eq("torneo_id", t.id);
+    const { data: categoriasRows } = await supabase.from("torneo_categorias").select("*").eq("torneo_id", t.id).catch(() => ({ data: [] }));
 
     results.push({
       torneo: mapTorneo(t),
@@ -200,6 +227,7 @@ export async function fetchAllTorneos() {
       partidos: (partidosRows ?? []).map(mapPartido),
       sedes: (sedesRows ?? []).map(mapSede),
       arbitros: (arbitrosRows ?? []).map(mapArbitro),
+      categorias: (categoriasRows ?? []).map(mapCategoria),
     });
   }
   return results;
@@ -209,8 +237,10 @@ export async function fetchAllTorneos() {
 
 function mapTorneo(r) {
   return {
-    id: r.id, nombre: r.nombre, deporte: r.deporte, formato: r.formato,
-    estado: r.estado, fechaInicio: r.fecha_inicio, fechaFin: r.fecha_fin,
+    id: r.id, nombre: r.nombre, deporte: r.deporte, temporada: r.temporada,
+    formato: r.formato, estado: r.estado, fechaInicio: r.fecha_inicio,
+    fechaFin: r.fecha_fin, sedePrincipal: r.sede_principal,
+    organizador: r.organizador_nombre,
     slug: r.slug, numGrupos: r.num_grupos, publicado: r.publicado,
     descripcion: r.descripcion, portada: r.portada, perfil: r.perfil,
     contacto: r.contacto, premios: r.premios, patrocinadores: r.patrocinadores,
@@ -245,4 +275,13 @@ function mapSede(r) {
 
 function mapArbitro(r) {
   return { id: r.id, torneoId: r.torneo_id, nombre: r.nombre, contacto: r.contacto };
+}
+
+function mapCategoria(r) {
+  return {
+    id: r.id, torneoId: r.torneo_id, nombre: r.nombre, teams: r.teams,
+    format: r.format, fases: r.fases, vueltas: r.vueltas,
+    grupos: r.grupos, tpg: r.tpg, cpg: r.cpg,
+    faseFinal: r.fase_final, desempate: r.desempate,
+  };
 }
