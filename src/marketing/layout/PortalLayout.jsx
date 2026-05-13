@@ -1,4 +1,4 @@
-﻿import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useResponsive } from "../../shared/hooks/useResponsive";
@@ -7,6 +7,8 @@ import UpdateToast from "../../shared/ui/UpdateToast";
 import InstallAppBanner from "../../shared/ui/InstallAppBanner";
 import { buildWhatsAppUrl } from "../data/contactConfig";
 import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand.js";
+import { X } from "lucide-react";
+import AuthLoginForm from "../../shared/auth/components/AuthLoginForm";
 
 const SERVICES = [
   {
@@ -323,7 +325,7 @@ function HamburgerIcon({ open }) {
   );
 }
 
-function MobileDrawer({ open, onClose, navigate }) {
+function MobileDrawer({ open, onClose, navigate, onLoginClick }) {
   const [servicesOpen, setServicesOpen] = useState(false);
 
   return (
@@ -450,8 +452,9 @@ function MobileDrawer({ open, onClose, navigate }) {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
-                  navigate("/crm");
                   onClose();
+                  if(onLoginClick) onLoginClick();
+                  else navigate("/crm");
                 }}
                 style={{
                   width: "100%",
@@ -569,6 +572,7 @@ export default function PortalLayout() {
   const { isMobile } = useResponsive();
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const navLinks = useMemo(
     () => [
@@ -685,7 +689,7 @@ export default function PortalLayout() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <InstallAppBanner compact />
             <motion.button
-              onClick={() => navigate("/crm")}
+              onClick={() => setLoginModalOpen(true)}
               whileHover={{ color: B.text, x: 1 }}
               whileTap={{ scale: 0.97 }}
               style={{
@@ -740,7 +744,7 @@ export default function PortalLayout() {
         )}
       </motion.nav>
 
-      <MobileDrawer open={drawerOpen && isMobile} onClose={() => setDrawerOpen(false)} navigate={navigate} location={location} />
+      <MobileDrawer open={drawerOpen && isMobile} onClose={() => setDrawerOpen(false)} navigate={navigate} location={location} onLoginClick={() => setLoginModalOpen(true)} />
 
       <main style={{ paddingTop: 80 }}>
         <Suspense fallback={<LoadingFallback />}>
@@ -759,6 +763,34 @@ export default function PortalLayout() {
       </main>
 
       <WhatsAppCTA />
+
+      <AnimatePresence>
+        {loginModalOpen && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+              onClick={() => setLoginModalOpen(false)}
+              style={{ position: "absolute", inset: 0, background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 440, padding: "0 20px" }}
+            >
+              <button
+                onClick={() => setLoginModalOpen(false)}
+                style={{ position: "absolute", top: 16, right: 36, background: "rgba(0,0,0,0.05)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10, color: B.textMuted }}
+              >
+                <X size={16} />
+              </button>
+              <AuthLoginForm 
+                source={null}
+                onRegisterClick={() => { setLoginModalOpen(false); navigate("/crm"); }}
+                onRecoverClick={() => { setLoginModalOpen(false); navigate("/crm"); }}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <footer
         style={{
