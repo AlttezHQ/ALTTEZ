@@ -132,39 +132,52 @@ function Field({ label, required, children, style, error }) {
 
 function RowInp({ label, type = "text", value, onChange, options }) {
   const isNum = type === "number";
-  const fieldWidth = isNum ? 100 : 180;
+  const fieldWidth = isNum ? 80 : 180;
   
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 8 }}>
-      <label style={{ fontSize: 13, fontWeight: 600, color: MUTED, flex: 1 }}>{label}</label>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: MUTED, width: 130, flexShrink: 0, lineHeight: 1.2 }}>
+        {label.toUpperCase()}
+      </label>
       
-      {type === "select" ? (
-        <div style={{ position: "relative", width: fieldWidth }}>
-          <select 
-            value={value} 
-            onChange={e => onChange(e.target.value)} 
-            style={{ ...inputStyle, paddingRight: 32, height: 40, appearance: "none", fontSize: 13, fontWeight: 600, background: "#FFF" }}
-          >
-            {options.map(o => (
-              <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
-                {typeof o === "string" ? o : o.l || o.label}
-              </option>
-            ))}
-          </select>
-          <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-            <ChevronRight size={14} color={MUTED} style={{ transform: "rotate(90deg)" }} />
+      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+        {type === "select" ? (
+          <div style={{ position: "relative", width: fieldWidth }}>
+            <select 
+              value={value} 
+              onChange={e => onChange(e.target.value)} 
+              style={{ ...inputStyle, paddingRight: 32, height: 38, appearance: "none", fontSize: 12, fontWeight: 700, background: "#FFF", borderRadius: 10 }}
+            >
+              {options.map(o => (
+                <option key={typeof o === "string" ? o : o.v || o.value} value={typeof o === "string" ? o : o.v || o.value}>
+                  {typeof o === "string" ? o : o.l || o.label}
+                </option>
+              ))}
+            </select>
+            <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+              <ChevronRight size={12} color={MUTED} style={{ transform: "rotate(90deg)" }} />
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 12, background: "#FFF", overflow: "hidden", width: fieldWidth, height: 40, transition: "all 0.2s" }}>
-          <input 
-            type={isNum ? "number" : type}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            style={{ border: "none", background: "none", padding: "0 14px", flex: 1, fontSize: 14, color: TEXT, outline: "none", height: "100%", textAlign: isNum ? "center" : "left", fontWeight: 800 }} 
-          />
-        </div>
-      )}
+        ) : (
+          <div className="modern-inp-wrap" style={{ display: "flex", alignItems: "center", border: `1.5px solid ${BORDER}`, borderRadius: 10, background: "#FFF", overflow: "hidden", width: fieldWidth, height: 38, transition: "all 0.2s" }}>
+            <input 
+              type="text"
+              inputMode={isNum ? "numeric" : "text"}
+              value={(isNum && value === 0) ? "" : value}
+              placeholder={isNum ? "0" : ""}
+              onChange={e => {
+                const v = e.target.value;
+                if (isNum) {
+                  if (v === "" || /^\d+$/.test(v)) onChange(v === "" ? 0 : parseInt(v));
+                } else {
+                  onChange(v);
+                }
+              }}
+              style={{ border: "none", background: "none", padding: "0 10px", flex: 1, fontSize: 13, color: TEXT, outline: "none", height: "100%", textAlign: isNum ? "center" : "left", fontWeight: 800 }} 
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
