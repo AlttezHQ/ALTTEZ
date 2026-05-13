@@ -59,8 +59,8 @@ export default function PublicTorneoPage() {
 
       {/* Header Info */}
       <header style={{ paddingTop: 60, paddingBottom: 24, textAlign: "center", background: CARD, borderBottom: `1px solid ${BORDER}` }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.03em" }}>{torneo.nombre}</h1>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, fontSize: 14, color: MUTED, marginBottom: 16 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, margin: "0 0 8px", letterSpacing: "-0.03em", padding: "0 16px" }}>{torneo.nombre}</h1>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, fontSize: 14, color: MUTED, marginBottom: 16, flexWrap: "wrap", padding: "0 16px" }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Users size={14}/> {torneoEquipos.length} Equipos</span>
           <span>•</span>
           <span style={{ textTransform: "capitalize" }}>{torneo.deporte}</span>
@@ -105,8 +105,8 @@ export default function PublicTorneoPage() {
       )}
 
       {/* Tabs Navigation */}
-      <nav style={{ background: CARD, borderBottom: `1px solid ${BORDER}`, position: "sticky", top: 0, zIndex: 50 }}>
-        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "center" }}>
+      <nav style={{ background: CARD, borderBottom: `1px solid ${BORDER}`, position: "sticky", top: 0, zIndex: 50, overflowX: "auto", whiteSpace: "nowrap" }}>
+        <div style={{ maxWidth: 800, margin: "0 auto", display: "flex", justifyContent: "center", minWidth: "max-content", padding: "0 16px" }}>
           {[
             { id: "fixture", label: "Fixture", icon: Calendar },
             { id: "tabla", label: "Tabla", icon: BarChart2 },
@@ -142,7 +142,7 @@ export default function PublicTorneoPage() {
                 <div style={{ fontSize: 13, marginTop: 8 }}>El calendario estará disponible pronto.</div>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+              <div className="responsive-grid">
                 {torneoPartidos.filter(p => ["programado", "en_curso", "finalizado"].includes(p.estado)).sort((a,b) => new Date(a.fechaHora) - new Date(b.fechaHora)).map(p => {
                   const local = torneoEquipos.find(e => e.id === p.equipoLocalId);
                   const visita = torneoEquipos.find(e => e.id === p.equipoVisitaId);
@@ -195,8 +195,8 @@ export default function PublicTorneoPage() {
                  <div style={{ fontSize: 13, marginTop: 8 }}>Se actualizará automáticamente cuando se jueguen partidos.</div>
                </div>
             ) : (
-              <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflowX: "auto", boxShadow: ELEVATION.card }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 500 }}>
                   <thead>
                     <tr style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
                       <th style={{ padding: 16, textAlign: "center", width: 40, color: MUTED }}>#</th>
@@ -251,7 +251,7 @@ export default function PublicTorneoPage() {
               <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 16px" }}>Sobre el torneo</h3>
               <p style={{ lineHeight: 1.7, color: MUTED, whiteSpace: "pre-wrap" }}>{torneo.descripcion || "Sin descripción disponible."}</p>
               
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 32 }}>
+              <div className="responsive-grid" style={{ marginTop: 32 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: "#F59E0B20", display: "flex", alignItems: "center", justifyContent: "center" }}><Gift color="#F59E0B" size={20}/></div>
                   <div>
@@ -274,8 +274,16 @@ export default function PublicTorneoPage() {
       </main>
 
       <style dangerouslySetInnerHTML={{ __html: `
+        .responsive-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 20px;
+        }
         @media (max-width: 600px) {
-          .tab-label { display: none; }
+          .tab-label { display: inline-block; }
+          .responsive-grid {
+            grid-template-columns: 1fr;
+          }
         }
       `}} />
     </div>
