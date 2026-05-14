@@ -26,7 +26,7 @@
  * @version 1.1.0
  */
 
-import { createContext, useState, useEffect, useCallback, useMemo } from "react";
+import { createContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { isSupabaseReady, supabase } from "../lib/supabase";
 import {
   signIn as authSignIn,
@@ -57,6 +57,9 @@ export default function AuthProvider({ children }) {
   // Error states
   const [authError, setAuthError] = useState(null);
   const [profileError, setProfileError] = useState(null);
+  const authCheckId = useRef(0);
+  const authenticatedOnce = useRef(false);
+  const explicitSignOut = useRef(false);
 
   // ── Bootstrap: check existing session + subscribe to changes ──
 
@@ -67,14 +70,16 @@ export default function AuthProvider({ children }) {
     }
 
     let mounted = true;
+    const currentAuthCheck = ++authCheckId.current;
 
     // 1. Check existing session
     const bootstrap = async () => {
       try {
         const { data: { user: existingUser } } = await supabase.auth.getUser();
-        if (!mounted) return;
+        if (!mounted || currentAuthCheck !== authCheckId.current) return;
 
         if (existingUser) {
+          authenticatedOnce.current = true;
           setUser(existingUser);
           setLoadingAuth(false);
 
@@ -92,11 +97,12 @@ export default function AuthProvider({ children }) {
             if (mounted) setLoadingProfile(false);
           }
         } else {
+          if (authenticatedOnce.current) return;
           setUser(null);
           setLoadingAuth(false);
         }
       } catch (err) {
-        if (mounted) {
+        if (mounted && currentAuthCheck === authCheckId.current && !authenticatedOnce.current) {
           setUser(null);
           setAuthError(err?.message || "Error verificando sesión");
           setLoadingAuth(false);
@@ -111,6 +117,9 @@ export default function AuthProvider({ children }) {
       if (!mounted) return;
 
       if (event === "SIGNED_IN" && authSession) {
+        authCheckId.current += 1;
+        authenticatedOnce.current = true;
+        explicitSignOut.current = false;
         setUser(authSession.user);
         setSession(authSession);
         setAuthError(null);
@@ -129,6 +138,10 @@ export default function AuthProvider({ children }) {
           if (mounted) setLoadingProfile(false);
         }
       } else if (event === "SIGNED_OUT") {
+        if (!explicitSignOut.current && authenticatedOnce.current) return;
+        explicitSignOut.current = false;
+        authenticatedOnce.current = false;
+        authCheckId.current += 1;
         setUser(null);
         setSession(null);
         setProfile(null);
@@ -148,7 +161,31 @@ export default function AuthProvider({ children }) {
   // ── Auth actions ────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async (email, password) => {
-    return await authSignIn(email, password);
+    const result = await authSignIn(email, password);
+    const signedUser = result?.session?.user ?? result?.user ?? null;
+
+    if (!result?.error && signedUser) {
+      authCheckId.current += 1;
+      authenticatedOnce.current = true;
+      explicitSignOut.current = false;
+      setUser(signedUser);
+      setSession(result.session ?? null);
+      setAuthError(null);
+      setLoadingAuth(false);
+
+      setLoadingProfile(true);
+      try {
+        const prof = await getProfile();
+        setProfile(prof);
+        setProfileError(null);
+      } catch (err) {
+        setProfileError(err?.message || "Error cargando perfil");
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+
+    return result;
   }, []);
 
   const handleSignUp = useCallback(async (params) => {
@@ -156,6 +193,7 @@ export default function AuthProvider({ children }) {
   }, []);
 
   const handleSignOut = useCallback(async () => {
+    explicitSignOut.current = true;
     // 1. Call Supabase signOut
     if (isSupabaseReady) {
       await authSignOut();
@@ -163,6 +201,7 @@ export default function AuthProvider({ children }) {
     // 2. Clear all local auth state
     // (onAuthStateChange listener handles Supabase mode,
     //  manual clear covers non-Supabase/offline mode)
+    authenticatedOnce.current = false;
     setUser(null);
     setSession(null);
     setProfile(null);
