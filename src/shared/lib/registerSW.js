@@ -14,16 +14,30 @@
 export function registerSW() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
+  let refreshing = false;
+
+  const activateUpdate = (registration) => {
+    const worker = registration.waiting;
+    if (!worker) return;
+    worker.postMessage({ type: "SKIP_WAITING" });
+  };
 
   // Only register in production builds to avoid dev cache confusion.
   // Remove the NODE_ENV check if you want SW in dev as well.
   if (import.meta.env.PROD) {
     window.addEventListener("load", () => {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
         .then((registration) => {
           // Check for waiting SW on initial load (e.g. user returns after update deployed)
           if (registration.waiting) {
+            activateUpdate(registration);
             window.dispatchEvent(
               new CustomEvent("sw-update-available", {
                 detail: { registration },
@@ -42,6 +56,7 @@ export function registerSW() {
                 navigator.serviceWorker.controller
               ) {
                 // New SW installed and waiting — notify UI
+                activateUpdate(registration);
                 window.dispatchEvent(
                   new CustomEvent("sw-update-available", {
                     detail: { registration },
