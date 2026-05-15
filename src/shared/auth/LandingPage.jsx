@@ -22,6 +22,10 @@ export default function LandingPage() {
   const [source, setSource] = useState(null); // null (clubes) | "torneos"
 
   const handleAction = (newStep, newSource) => {
+    if (newSource === "torneos") {
+      navigate(newStep === "register" ? "/torneos?auth=register" : "/torneos");
+      return;
+    }
     setStep(newStep);
     setSource(newSource);
   };

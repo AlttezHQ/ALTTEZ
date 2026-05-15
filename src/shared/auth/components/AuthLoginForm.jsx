@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LogIn } from "lucide-react";
 import { PALETTE } from "../../tokens/palette";
 import { useAuth } from "../useAuth";
+import { getPostLoginRedirect, getRedirectParam } from "../authRedirects";
 import { sanitizeEmail } from "../../utils/sanitize";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -37,6 +39,8 @@ function mkInput(hasError) {
 
 export default function AuthLoginForm({ onRegisterClick, onRecoverClick, source = null }) {
   const auth = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -59,7 +63,16 @@ export default function AuthLoginForm({ onRegisterClick, onRecoverClick, source 
       setMsg(null);
       const { error } = await auth.signIn(cleanEmail, form.password);
       setLoading(false);
-      if (error) setMsg({ type: "error", text: error });
+      if (error) {
+        setMsg({ type: "error", text: error });
+        return;
+      }
+      const currentPath = source === "torneos" ? "/torneos" : location.pathname;
+      navigate(getPostLoginRedirect({
+        redirectPath: getRedirectParam(),
+        currentPath,
+        profile: auth.profile,
+      }), { replace: true });
     }
   };
 
