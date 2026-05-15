@@ -16,8 +16,24 @@ export default class ErrorBoundary extends Component {
     console.error("[ErrorBoundary]", error, errorInfo);
   }
 
-  handleRetry = () => {
-    window.location.reload();
+  handleRetry = async () => {
+    try {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      }
+
+      if ("caches" in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      }
+    } catch (cleanupError) {
+      console.error("[ErrorBoundary] cleanup failed", cleanupError);
+    } finally {
+      const url = new URL(window.location.href);
+      url.searchParams.set("recovery", Date.now().toString());
+      window.location.replace(url.toString());
+    }
   };
 
   render() {

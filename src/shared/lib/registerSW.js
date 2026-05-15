@@ -14,6 +14,13 @@
 export function registerSW() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
+  const isRecoveryMode = new URLSearchParams(window.location.search).has("recovery");
+  if (isRecoveryMode) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("recovery");
+    window.history.replaceState({}, "", url.toString());
+    return;
+  }
   let refreshing = false;
 
   const activateUpdate = (registration) => {
