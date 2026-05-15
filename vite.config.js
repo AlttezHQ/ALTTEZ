@@ -96,8 +96,8 @@ export default defineConfig({
         // Precache app shell
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
 
-        // Offline fallback: serve offline.html when navigation fails
-        navigateFallback: '/offline.html',
+        // SPA fallback: serve the app shell for client-side routes like /torneos.
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [
           /^\/api\//,
           /^\/auth\//,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, FileSpreadsheet, Tag, Globe } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
@@ -42,9 +43,9 @@ const PAGE_ANIM = {
 // ── Inline auth screen (login + register tabs) ─────────────────────────────
 // Uses shared auth context + centralized validation.
 
-function TorneosAuthScreen() {
+function TorneosAuthScreen({ initialTab = "login" }) {
   const auth = useAuth();
-  const [tab, setTab]     = useState("login");
+  const [tab, setTab]     = useState(initialTab);
   const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -277,6 +278,7 @@ function ImportModal({ onClose }) {
 // ── Main app ──────────────────────────────────────────────────────────────────
 
 export default function TorneosApp() {
+  const location       = useLocation();
   const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
@@ -290,6 +292,7 @@ export default function TorneosApp() {
   const [showImport,   setShowImport]   = useState(false);
   const [editingTorneo, setEditingTorneo] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const initialAuthTab = new URLSearchParams(location.search).get("auth") === "register" ? "register" : "login";
 
   // Persist activeModule
   useEffect(() => {
@@ -354,7 +357,7 @@ export default function TorneosApp() {
 
   // Auth gate — show login/register if no active session
   if (!auth.isAuthenticated) {
-    return <TorneosAuthScreen />;
+    return <TorneosAuthScreen key={initialAuthTab} initialTab={initialAuthTab} />;
   }
 
   return (
