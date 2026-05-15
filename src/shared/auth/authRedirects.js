@@ -27,7 +27,7 @@ const ALLOWED_REDIRECTS = ["/crm", "/torneos"];
  * @param {Object|null} options.profile      - Perfil con club_id, role, etc.
  * @returns {string} Ruta destino
  */
-export function getPostLoginRedirect({ redirectPath, currentPath, profile } = {}) {
+export function getPostLoginRedirect({ redirectPath, currentPath } = {}) {
   // 1. Redirect explícito (si es válido)
   if (redirectPath && ALLOWED_REDIRECTS.some(r => redirectPath.startsWith(r))) {
     return redirectPath;

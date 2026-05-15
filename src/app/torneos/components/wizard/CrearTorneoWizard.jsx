@@ -556,7 +556,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     } 
   }));
 
-  const activeStruct = structures[catId] || { format: data.formato || "todos_contra_todos", status: "pending" };
   const activeCat    = data.categorias.find(c => c.id === catId);
   const activeTeamsRaw = teams[catId] || [];
   const activeTeams = activeTeamsRaw.filter(t => 
@@ -1172,14 +1171,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     setIsImporting(false);
   };
 
-  const assignOrphan = (orphan, catId) => {
-    const nextTeams = { ...teams };
-    if (!nextTeams[catId]) nextTeams[catId] = [];
-    nextTeams[catId].push({ ...orphan, id: Date.now() + Math.random(), status: "Completo" });
-    setTeams(nextTeams);
-    setPendingTeams(p => p.filter(o => o.name !== orphan.name));
-    if (pendingTeams.length === 1) setShowPendingModal(false);
-  };
 
   const handleApplyRecommendedToAll = () => {
     const next = { ...structures };
@@ -2662,7 +2653,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 initial="hidden"
                 animate="visible"
               >
-                {data.categorias.map((cat, ci) => {
+                {data.categorias.map((cat) => {
                   const s = structures[cat.id] || {};
                   const tList = teams[cat.id] || [];
                   const isCollapsed = collapsedCats[cat.id];
@@ -2803,7 +2794,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             matchesPerCat[cat.id] = { rounds, mPerRound };
           });
 
-          const totalMatchesStep6 = Object.values(matchesPerCat).reduce((acc, curr) => acc + (curr.rounds * curr.mPerRound), 0);
 
           return (
             <motion.div key="step6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
@@ -2887,7 +2877,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           <div style={{ fontSize: 12, color: MUTED }}>Vista preliminar por categoría</div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {data.categorias.map((cat, ci) => {
+                          {data.categorias.map((cat) => {
                             const info = matchesPerCat[cat.id];
                             if (selectedJornada > info.rounds) return null;
                             const tList = teams[cat.id] || [];
@@ -3418,7 +3408,7 @@ function SmallBadge({ icon: Icon, label, value }) {
   );
 }
 
-function FooterBadge({ icon: Icon, label, value, status = "default" }) {
+function FooterBadge({ icon: Icon, label, value }) {
   const isBorrador = value === "Borrador";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 20px", background: "#FFF", borderRadius: 16, border: `1px solid ${BORDER}`, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   List, Trophy, RefreshCw, X, Check, BarChart2, CalendarPlus, 
@@ -223,7 +223,6 @@ export default function FixturesPage({ onGoTorneos }) {
   
   const setPartidos        = useTorneosStore(s => s.setPartidos);
   const registrarResultado = useTorneosStore(s => s.registrarResultado);
-  const autoSchedulePartidos = useTorneosStore(s => s.autoSchedulePartidos);
   const actualizarCfg      = useTorneosStore(s => s.actualizarSchedulingConfig);
   const agregarSede        = useTorneosStore(s => s.agregarSede);
   const eliminarSede       = useTorneosStore(s => s.eliminarSede);
@@ -251,7 +250,48 @@ export default function FixturesPage({ onGoTorneos }) {
   const [filterQuery, setFilterQuery] = useState("");
   const [filterEstado, setFilterEstado] = useState("Todos los estados");
 
-  const toggleDate = (key) => setExpandedDates(prev => ({ ...prev, [key]: !prev[key] }));
+  const categories = useMemo(() => {
+    if (!torneoActivoId) return [];
+    return [...new Set(allEquipos.filter(e => e.torneoId === torneoActivoId).map(e => e.grupo || "General"))].sort();
+  }, [allEquipos, torneoActivoId]);
+
+  const partidosCat = useMemo(() => {
+    if (!torneoActivoId || !selectedCat && categories.length === 0) return [];
+    const active = selectedCat || categories[0];
+    return allPartidos.filter(p => p.torneoId === torneoActivoId && (p.grupo || "General") === active);
+  }, [allPartidos, torneoActivoId, selectedCat, categories]);
+
+  const maxRound = useMemo(() => Math.max(0, ...partidosCat.map(p => p.ronda || 0)), [partidosCat]);
+
+  const groups = useMemo(() => {
+    return partidosCat.reduce((acc, p) => {
+      const key = p.fechaHora ? new Date(p.fechaHora).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long" }) : `Fecha ${p.ronda || 1}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(p);
+      return acc;
+    }, {});
+  }, [partidosCat]);
+
+  const groupKeys = useMemo(() => {
+    return Object.keys(groups).sort((a, b) => {
+      if (a.startsWith("Fecha ") && b.startsWith("Fecha ")) {
+        return parseInt(a.replace("Fecha ", "")) - parseInt(b.replace("Fecha ", ""));
+      }
+      const pA = groups[a][0];
+      const pB = groups[b][0];
+      if (pA.fechaHora && pB.fechaHora) return new Date(pA.fechaHora) - new Date(pB.fechaHora);
+      return (pA.ronda || 0) - (pB.ronda || 0);
+    });
+  }, [groups]);
+
+  const tabla = useMemo(() => calcularPosiciones(partidosCat, equiposCat), [partidosCat, equiposCat]);
+
+  // Enforce first group expanded by default if not set
+  useEffect(() => {
+    if (groupKeys.length > 0 && expandedDates[groupKeys[0]] === undefined) {
+      setExpandedDates(prev => ({ ...prev, [groupKeys[0]]: true }));
+    }
+  }, [groupKeys, expandedDates]);
 
   if (!torneoActivoId) {
     return (
@@ -260,11 +300,8 @@ export default function FixturesPage({ onGoTorneos }) {
   }
 
   const torneo   = allTorneos.find(t => t.id === torneoActivoId) ?? null;
-  const categories = useMemo(() => [...new Set(allEquipos.filter(e => e.torneoId === torneoActivoId).map(e => e.grupo || "General"))].sort(), [allEquipos, torneoActivoId]);
-  
   const activeCat = selectedCat || categories[0];
   const equiposCat = allEquipos.filter(e => e.torneoId === torneoActivoId && (e.grupo || "General") === activeCat);
-  const partidosCat = allPartidos.filter(p => p.torneoId === torneoActivoId && (p.grupo || "General") === activeCat);
   
   const arbitros = allArbitros.filter(a => a.torneoId === torneoActivoId);
   const sedes    = allSedes.filter(s => s.torneoId === torneoActivoId);
@@ -311,7 +348,7 @@ export default function FixturesPage({ onGoTorneos }) {
     }
   };
 
-  const maxRound = useMemo(() => Math.max(0, ...partidosCat.map(p => p.ronda || 0)), [partidosCat]);
+  const toggleDate = (key) => setExpandedDates(prev => ({ ...prev, [key]: !prev[key] }));
 
   const handleSchedRound = async () => {
     if (!schedFrom) { showToast("Define la fecha de inicio", "error"); return; }
@@ -325,7 +362,6 @@ export default function FixturesPage({ onGoTorneos }) {
     const intervaloMin = 90; // minutos entre partidos
     
     let currentDate = new Date(schedFrom + "T" + horaInicio);
-    const end = schedTo ? new Date(schedTo + "T23:59:00") : currentDate;
     
     const scheduled = roundMatches.map((match, i) => {
       // Avanzar al siguiente día disponible si la hora excede horaFin
@@ -356,32 +392,6 @@ export default function FixturesPage({ onGoTorneos }) {
     showToast(`Fecha ${schedRound}: ${scheduled.length} partidos programados`, "success");
   };
 
-  const tabla = calcularPosiciones(partidosCat, equiposCat);
-  const groups = partidosCat.reduce((acc, p) => {
-    const key = p.fechaHora ? new Date(p.fechaHora).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long" }) : `Fecha ${p.ronda || 1}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(p);
-    return acc;
-  }, {});
-  
-  const groupKeys = useMemo(() => {
-    return Object.keys(groups).sort((a, b) => {
-      if (a.startsWith("Fecha ") && b.startsWith("Fecha ")) {
-        return parseInt(a.replace("Fecha ", "")) - parseInt(b.replace("Fecha ", ""));
-      }
-      const pA = groups[a][0];
-      const pB = groups[b][0];
-      if (pA.fechaHora && pB.fechaHora) return new Date(pA.fechaHora) - new Date(pB.fechaHora);
-      return (pA.ronda || 0) - (pB.ronda || 0);
-    });
-  }, [groups]);
-
-  // Enforce first group expanded by default if not set
-  useMemo(() => {
-    if (groupKeys.length > 0 && expandedDates[groupKeys[0]] === undefined) {
-      setExpandedDates({ [groupKeys[0]]: true });
-    }
-  }, [groupKeys]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: FONT }}>
@@ -460,7 +470,7 @@ export default function FixturesPage({ onGoTorneos }) {
 
                       {/* Dates List */}
                       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        {groupKeys.filter(k => filterJornada === "Todas las jornadas" || k === filterJornada).map((key, i) => {
+                        {groupKeys.filter(k => filterJornada === "Todas las jornadas" || k === filterJornada).map((key) => {
                           const isExpanded = expandedDates[key] || false;
                           let filteredMatches = groups[key];
                           if (filterEstado !== "Todos los estados") {
@@ -691,7 +701,7 @@ export default function FixturesPage({ onGoTorneos }) {
                                             <motion.div 
                                               key={m.id} 
                                               whileHover={{ scale: 1.01, backgroundColor: "#FDFBF7", borderColor: CU_BOR }}
-                                              onClick={() => setSelectedMatch({ partido: m, local, visita, sede, arbitro, hora })}
+                                              onClick={() => setSelectedMatch({ partido: m, local, visita, sede, arbitro: arb, hora })}
                                               style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", borderRadius: 8, transition: "all 0.2s" }}
                                             >
                                               <div style={{ width: 8, height: 8, borderRadius: "50%", background: estado.dot, flexShrink: 0, boxShadow: `0 0 0 3px ${estado.dot}20` }} />

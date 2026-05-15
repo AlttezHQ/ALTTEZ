@@ -416,7 +416,7 @@ export default function TorneosApp() {
 
             {activeModule === "equipos" && (
               <motion.div key="equipos" {...PAGE_ANIM}>
-                <EquiposPage onGoTorneos={goTorneos} />
+                <EquiposPage key={torneoActivoId} onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
@@ -428,13 +428,13 @@ export default function TorneosApp() {
 
             {activeModule === "fixtures" && (
               <motion.div key="fixtures" {...PAGE_ANIM}>
-                <FixturesPage onGoTorneos={goTorneos} />
+                <FixturesPage key={torneoActivoId} onGoTorneos={goTorneos} />
               </motion.div>
             )}
 
             {activeModule === "ajustes" && (
               <motion.div key="ajustes" {...PAGE_ANIM}>
-                <AjustesPage onGoTorneos={goTorneos} />
+                <AjustesPage key={torneoActivoId} onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

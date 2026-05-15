@@ -238,7 +238,7 @@ export function calculateSchedulingStats(horarios, totalMatches, numCanchas = 1,
  * Genera sugerencias inteligentes si el torneo no es viable en las fechas propuestas.
  */
 export function getFeasibilitySuggestions(data, stats) {
-  const { fechaInicio, fechaFin, numCanchas, duracionPartido, horarios } = data;
+  const { fechaInicio, fechaFin, numCanchas, horarios } = data;
   if (!fechaInicio || !fechaFin) return [];
 
   const start = new Date(fechaInicio);
@@ -248,7 +248,6 @@ export function getFeasibilitySuggestions(data, stats) {
   const suggestions = [];
 
   if (stats.estimatedWeeks > availableWeeks) {
-    const gap = stats.estimatedWeeks - availableWeeks;
     
     suggestions.push({
       type: "fecha",

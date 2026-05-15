@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Settings, Globe, Copy, Check, Info, Image, Gift, Phone, Users, Plus, Trash2, Shield } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
@@ -27,32 +27,22 @@ export default function AjustesPage({ onGoTorneos }) {
 
   const torneo = allTorneos.find(t => t.id === torneoActivoId) ?? null;
 
-  const [form, setForm]     = useState({ 
-    nombre: "", deporte: "", temporada: "", fechaInicio: "", fechaFin: "",
-    organizador: "", sedePrincipal: "",
-    descripcion: "", contacto: "", premios: "", visibilidad: "publico"
-  });
+  const [form, setForm]     = useState(() => ({ 
+    nombre: torneo?.nombre || "", 
+    deporte: torneo?.deporte || "Fútbol", 
+    temporada: torneo?.temporada || "", 
+    fechaInicio: torneo?.fechaInicio || "", 
+    fechaFin: torneo?.fechaFin || "",
+    organizador: torneo?.organizador || "", 
+    sedePrincipal: torneo?.sedePrincipal || "",
+    descripcion: torneo?.descripcion || "", 
+    contacto: torneo?.contacto || "", 
+    premios: torneo?.premios || "", 
+    visibilidad: torneo?.visibilidad || "publico"
+  }));
   const [saved, setSaved]   = useState(false);
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState({ perfil: false, portada: false, sponsor: false });
-
-  useEffect(() => {
-    if (torneo) {
-      setForm({ 
-        nombre: torneo.nombre, 
-        deporte: torneo.deporte, 
-        temporada: torneo.temporada ?? "",
-        fechaInicio: torneo.fechaInicio ?? "",
-        fechaFin: torneo.fechaFin ?? "",
-        organizador: torneo.organizador ?? "",
-        sedePrincipal: torneo.sedePrincipal ?? "",
-        descripcion: torneo.descripcion ?? "",
-        contacto: torneo.contacto ?? "",
-        premios: torneo.premios ?? "",
-        visibilidad: torneo.visibilidad ?? "publico"
-      });
-    }
-  }, [torneoActivoId, torneo]);
 
   if (!torneoActivoId || !torneo) {
     return <ModuleEmptyState icon={Settings} title="Selecciona un torneo" subtitle="Abre un torneo para ver y editar sus ajustes." ctaLabel="Ver torneos" onCta={onGoTorneos} />;

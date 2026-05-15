@@ -12,13 +12,13 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — falling back to localStorage");
-}
+// Export status
+export const isSupabaseReady = !!(supabaseUrl && supabaseKey);
 
-export const supabase = supabaseUrl && supabaseKey
+export const supabase = isSupabaseReady
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
-/** true si Supabase está configurado y disponible */
-export const isSupabaseReady = !!supabase;
+if (!isSupabaseReady) {
+  console.warn("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — falling back to localStorage if applicable");
+}

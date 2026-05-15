@@ -33,7 +33,8 @@ function reportError(msg, error) {
  * @param {string} params.role - "admin" | "coach" | "staff"
  * @returns {Promise<{ user: Object|null, error: string|null }>}
  */
-export async function signUp({ email, password, fullName, role = "admin" }) {
+export async function signUp({ email, password, fullName, nombre, role = "admin" }) {
+  const finalFullName = fullName || nombre || "";
   if (!isSupabaseReady) return { user: null, error: "Supabase no disponible" };
 
   const { data, error } = await supabase.auth.signUp({
@@ -41,7 +42,7 @@ export async function signUp({ email, password, fullName, role = "admin" }) {
     password,
     options: {
       data: {
-        full_name: fullName,
+        full_name: finalFullName,
         role,
       },
     },

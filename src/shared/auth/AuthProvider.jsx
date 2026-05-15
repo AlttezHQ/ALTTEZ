@@ -26,7 +26,7 @@
  * @version 1.1.0
  */
 
-import { createContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { isSupabaseReady, supabase } from "../lib/supabase";
 import {
   signIn as authSignIn,
@@ -40,7 +40,7 @@ import {
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
-export const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContext";
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 

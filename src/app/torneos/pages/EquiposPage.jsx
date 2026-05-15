@@ -29,7 +29,7 @@ const EASE    = [0.22, 1, 0.36, 1];
 // ── Components ───────────────────────────────────────────────────────────────
 
 function EquipoModal({ isOpen, onClose, onSave, initialData = null }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => initialData ? { ...initialData } : {
     nombre: "", grupo: "", delegado: "", entrenador: "", logo: ""
   });
   const [loading, setLoading] = useState(false);
@@ -37,11 +37,9 @@ function EquipoModal({ isOpen, onClose, onSave, initialData = null }) {
 
   useEffect(() => {
     if (isOpen) {
-      if (initialData) setFormData({ ...initialData });
-      else setFormData({ nombre: "", grupo: "", delegado: "", entrenador: "", logo: "" });
       setTimeout(() => nameInputRef.current?.focus(), 100);
     }
-  }, [initialData, isOpen]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -348,10 +346,6 @@ export default function EquiposPage({ onGoTorneos }) {
   const [playersOpen, setPlayersOpen] = useState(false);
   const [editingEquipo, setEditingEquipo] = useState(null);
 
-  if (!torneoActivoId) {
-    return <ModuleEmptyState icon={Users} title="Selecciona un torneo" subtitle="Abre un torneo desde la lista para gestionar sus equipos." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
-  }
-
   const torneo  = allTorneos.find(t => t.id === torneoActivoId) ?? null;
   const equiposRaw = allEquipos.filter(e => e.torneoId === torneoActivoId);
 
@@ -370,6 +364,10 @@ export default function EquiposPage({ onGoTorneos }) {
       return matchSearch && matchEstado;
     });
   }, [equiposRaw, search, filterEstado]);
+
+  if (!torneoActivoId) {
+    return <ModuleEmptyState icon={Users} title="Selecciona un torneo" subtitle="Abre un torneo desde la lista para gestionar sus equipos." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
+  }
 
   const stats = {
     total: equiposRaw.length,
@@ -457,7 +455,7 @@ export default function EquiposPage({ onGoTorneos }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: EASE }} style={{ fontFamily: FONT, color: TEXT }}>
       
-      <EquipoModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingEquipo(null); }} onSave={handleSaveModal} initialData={editingEquipo} />
+      <EquipoModal key={editingEquipo?.id || "new"} isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingEquipo(null); }} onSave={handleSaveModal} initialData={editingEquipo} />
       <ImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} onImport={handleImport} />
       <TeamPlayersModal isOpen={playersOpen} onClose={() => { setPlayersOpen(false); setEditingEquipo(null); }} team={editingEquipo} onUpdate={(patch) => actualizarEquipo(editingEquipo.id, patch)} />
 

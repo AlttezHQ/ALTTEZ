@@ -397,13 +397,11 @@ export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate
   const allEquipos     = useTorneosStore(s => s.equipos);
   const allPartidos    = useTorneosStore(s => s.partidos);
   const allSedes       = useTorneosStore(s => s.sedes);
-  const allCategorias  = useTorneosStore(s => s.categorias);
 
   const torneoActivo = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
   const equipos  = torneoActivoId ? allEquipos.filter(e => e.torneoId === torneoActivoId)  : [];
   const partidos = torneoActivoId ? allPartidos.filter(p => p.torneoId === torneoActivoId) : [];
   const sedes    = torneoActivoId ? allSedes.filter(s => s.torneoId === torneoActivoId)    : [];
-  const categorias = torneoActivoId ? allCategorias.filter(c => c.torneoId === torneoActivoId) : [];
 
   if (torneoActivo) {
     return (
