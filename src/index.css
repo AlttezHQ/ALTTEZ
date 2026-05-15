@@ -21,6 +21,9 @@ body {
   min-height: 100dvh;
   -webkit-overflow-scrolling: touch;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #root {

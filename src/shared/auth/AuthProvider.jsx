@@ -75,7 +75,16 @@ export default function AuthProvider({ children }) {
     // 1. Check existing session
     const bootstrap = async () => {
       try {
-        const { data: { user: existingUser } } = await supabase.auth.getUser();
+        // Safety timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 5000)
+        );
+
+        const { data: { user: existingUser } } = await Promise.race([
+          supabase.auth.getUser(),
+          timeoutPromise
+        ]);
+
         if (!mounted || currentAuthCheck !== authCheckId.current) return;
 
         if (existingUser) {
@@ -102,10 +111,14 @@ export default function AuthProvider({ children }) {
           setLoadingAuth(false);
         }
       } catch (err) {
-        if (mounted && currentAuthCheck === authCheckId.current && !authenticatedOnce.current) {
+        console.error("[Auth] Bootstrap error:", err);
+        if (mounted && currentAuthCheck === authCheckId.current) {
           setUser(null);
-          setAuthError(err?.message || "Error verificando sesión");
           setLoadingAuth(false);
+          setAuthError(err.message === "AUTH_TIMEOUT" 
+            ? "No se pudo conectar con el servidor de autenticación" 
+            : (err?.message || "Error verificando sesión")
+          );
         }
       }
     };
