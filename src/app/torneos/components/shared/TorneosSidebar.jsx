@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, CalendarPlus, Settings, LayoutDashboard, Globe, ChevronLeft, ChevronRight } from "lucide-react";
-import { PALETTE } from "../../../../shared/tokens/palette";
+import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, CalendarPlus, Settings, LayoutDashboard, Globe, ChevronLeft, ChevronRight, User, ChevronDown, LogOut, Trash2 } from "lucide-react";
+import { PALETTE, ELEVATION } from "../../../../shared/tokens/palette";
+import { APP_CONFIG } from "../../../../shared/tokens/config";
 
 const CU     = PALETTE.bronce;
 const CU_DIM = PALETTE.bronceDim;
@@ -23,7 +25,10 @@ const NAV_ITEMS = [
   { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
-export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle }) {
+export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", onLogout, onDeleteAccount }) {
+  const [openUser, setOpenUser] = useState(false);
+  const displayName = userName.includes("@") ? userName.split("@")[0] : userName || "Administrador";
+
   return (
     <motion.div 
       initial={false}
@@ -94,8 +99,87 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
         })}
       </nav>
 
+      {/* User Profile Dropdown */}
+      <div style={{ padding: "0 16px 12px", position: "relative" }}>
+        <button
+          onClick={() => setOpenUser(o => !o)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 8,
+            background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 10, padding: isCollapsed ? "8px" : "8px 12px",
+            cursor: "pointer", fontFamily: FONT, justifyContent: isCollapsed ? "center" : "flex-start",
+            transition: "background 0.2s"
+          }}
+          onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
+          onMouseOut={e => e.currentTarget.style.background = "transparent"}
+        >
+          <User size={16} color={MUTED} />
+          {!isCollapsed && (
+            <>
+              <span style={{ fontSize: 13, color: TEXT, fontWeight: 600, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {displayName}
+              </span>
+              <ChevronDown size={14} color={MUTED} style={{ transition: "transform 0.2s", transform: openUser ? "rotate(180deg)" : "rotate(0deg)" }} />
+            </>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {openUser && !isCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: 6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.97 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: "absolute", bottom: "calc(100% + 4px)", left: 16, right: 16,
+                background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
+                boxShadow: ELEVATION?.card ?? "0 10px 28px rgba(23,26,28,0.07)",
+                overflow: "hidden", zIndex: 50
+              }}
+            >
+              <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
+                <div style={{ fontSize: 11, color: MUTED }}>Cuenta conectada</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {userName || "—"}
+                </div>
+              </div>
+
+              <div style={{ padding: 4 }}>
+                <button
+                  onClick={() => { setOpenUser(false); onLogout?.(); }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px", background: "transparent", border: "none", borderRadius: 8,
+                    cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: MUTED,
+                    textAlign: "left", transition: "background 0.15s"
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
+                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <LogOut size={14} /> Cerrar sesión
+                </button>
+
+                <button
+                  onClick={() => { setOpenUser(false); onDeleteAccount?.(); }}
+                  style={{
+                    width: "100%", display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px", background: "transparent", border: "none", borderRadius: 8,
+                    cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600,
+                    color: PALETTE.danger, textAlign: "left", transition: "background 0.15s", marginTop: 2
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = "#FEF2F2"}
+                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <Trash2 size={14} /> Eliminar cuenta
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between" }}>
-        {!isCollapsed && <span style={{ fontSize: 11, color: HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>v2.0 · Torneos</span>}
+        {!isCollapsed && <span style={{ fontSize: 11, color: HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>v{APP_CONFIG.modules.torneos.version} · Torneos</span>}
         <button onClick={onToggle} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: MUTED }}>
           {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>

@@ -1,5 +1,6 @@
 import { Component } from "react";
 import { PALETTE as C } from "../tokens/palette";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -25,66 +26,100 @@ export default class ErrorBoundary extends Component {
         <div
           style={{
             minHeight: "100vh",
-            background: C.bgDark,
+            background: "#0F0F0E",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            padding: 20,
+            fontFamily: "'Inter', sans-serif",
           }}
         >
           <div
             style={{
               textAlign: "center",
-              maxWidth: 420,
-              padding: 40,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.03)",
+              maxWidth: 480,
+              padding: "48px 32px",
+              borderRadius: 24,
+              border: "1px solid rgba(216, 154, 43, 0.15)",
+              background: "rgba(26, 26, 24, 0.8)",
+              backdropFilter: "blur(20px)",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
             }}
           >
             <div
               style={{
-                fontSize: 48,
-                fontWeight: 900,
-                color: "#E24B4A",
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                background: "rgba(216, 154, 43, 0.1)",
+                border: "1px solid rgba(216, 154, 43, 0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                color: "#D89A2B",
+              }}
+            >
+              <AlertCircle size={32} />
+            </div>
+            <h2
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: "#FFF",
                 marginBottom: 12,
-                lineHeight: 1,
+                letterSpacing: "-0.02em",
               }}
             >
-              Error
-            </div>
-            <div
+              Hemos tenido un contratiempo
+            </h2>
+            <p
               style={{
-                fontSize: 14,
-                color: "rgba(255,255,255,0.6)",
-                marginBottom: 8,
+                fontSize: 15,
+                color: "rgba(255,255,255,0.5)",
+                marginBottom: 24,
+                lineHeight: 1.6,
               }}
             >
-              Algo ha salido mal.
-            </div>
+              Algo no salió como esperábamos. No te preocupes, tus datos locales suelen estar a salvo.
+            </p>
+            
             <div
               style={{
-                fontSize: 11,
-                color: "rgba(255,255,255,0.3)",
-                marginBottom: 28,
+                fontSize: 12,
+                fontFamily: "monospace",
+                color: "#D89A2B",
+                background: "rgba(216, 154, 43, 0.05)",
+                padding: "12px 16px",
+                borderRadius: 12,
+                marginBottom: 32,
+                border: "1px solid rgba(216, 154, 43, 0.1)",
                 wordBreak: "break-word",
+                opacity: 0.8,
               }}
             >
-              {this.state.error?.message || "Error desconocido"}
+              {this.state.error?.message || "Error de ejecución inesperado"}
             </div>
+
             <button
               onClick={this.handleRetry}
               style={{
-                background: "#c8ff00",
-                color: C.bgDark,
+                background: "#D89A2B",
+                color: "#FFF",
                 border: "none",
-                padding: "10px 28px",
-                fontSize: 12,
+                padding: "14px 32px",
+                borderRadius: 12,
+                fontSize: 14,
                 fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "1.5px",
                 cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                transition: "all 0.2s ease",
               }}
             >
-              Reintentar
+              <RefreshCw size={18} />
+              Reintentar ahora
             </button>
           </div>
         </div>

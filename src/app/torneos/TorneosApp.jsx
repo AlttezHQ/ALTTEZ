@@ -321,7 +321,15 @@ export default function TorneosApp() {
     setActiveModule("inicio");
   };
 
-  const handleAbrirTorneo = () => setActiveModule("fixtures");
+  const handleAbrirTorneo = () => setActiveModule("inicio");
+
+  const handleEditTorneo = (t) => {
+    const store = useTorneosStore.getState();
+    const categorias = store.categorias.filter(c => c.torneoId === t.id);
+    const equipos = store.equipos.filter(e => e.torneoId === t.id);
+    setEditingTorneo({ ...t, categorias, equipos });
+    setActiveModule("crear");
+  };
 
   // Logout: limpiar sesión via AuthProvider. No navegar a "/".
   // El auth gate de abajo mostrará TorneosAuthScreen automáticamente.
@@ -357,6 +365,9 @@ export default function TorneosApp() {
         torneoActivo={torneoActivo}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        userName={auth.user?.email ?? ""}
+        onLogout={handleLogout}
+        onDeleteAccount={handleDeleteAccount}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
@@ -395,6 +406,7 @@ export default function TorneosApp() {
                 <TorneosListPage
                   onCreate={handleCreate}
                   onAbrir={handleAbrirTorneo}
+                  onEdit={handleEditTorneo}
                 />
               </motion.div>
             )}

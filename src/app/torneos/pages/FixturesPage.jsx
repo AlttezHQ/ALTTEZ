@@ -270,6 +270,12 @@ export default function FixturesPage({ onGoTorneos }) {
   const sedes    = allSedes.filter(s => s.torneoId === torneoActivoId);
   const cfg      = torneo?.schedulingConfig ?? { diasDisponibles: [6, 0], horaInicio: "10:00", horaFin: "22:00" };
 
+  const toggleDia = (d) => {
+    const actuales = cfg.diasDisponibles ?? [];
+    const nuevos = actuales.includes(d) ? actuales.filter(x => x !== d) : [...actuales, d];
+    actualizarCfg(torneoActivoId, { diasDisponibles: nuevos });
+  };
+
   const handleConfirmGenerar = async (fechaInicio, fechaFin) => {
     if (!fechaFin) { showToast("Debes especificar la fecha de fin", "error"); return; }
     setShowGenModal(false);
@@ -358,13 +364,24 @@ export default function FixturesPage({ onGoTorneos }) {
     return acc;
   }, {});
   
+  const groupKeys = useMemo(() => {
+    return Object.keys(groups).sort((a, b) => {
+      if (a.startsWith("Fecha ") && b.startsWith("Fecha ")) {
+        return parseInt(a.replace("Fecha ", "")) - parseInt(b.replace("Fecha ", ""));
+      }
+      const pA = groups[a][0];
+      const pB = groups[b][0];
+      if (pA.fechaHora && pB.fechaHora) return new Date(pA.fechaHora) - new Date(pB.fechaHora);
+      return (pA.ronda || 0) - (pB.ronda || 0);
+    });
+  }, [groups]);
+
   // Enforce first group expanded by default if not set
   useMemo(() => {
-    const keys = Object.keys(groups).sort();
-    if (keys.length > 0 && expandedDates[keys[0]] === undefined) {
-      setExpandedDates({ [keys[0]]: true });
+    if (groupKeys.length > 0 && expandedDates[groupKeys[0]] === undefined) {
+      setExpandedDates({ [groupKeys[0]]: true });
     }
-  }, [groups]);
+  }, [groupKeys]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: FONT }}>
@@ -394,7 +411,6 @@ export default function FixturesPage({ onGoTorneos }) {
               const programados = partidosCat.filter(p => p.estado === "programado").length;
               const pendientes = totalPartidos - jugados - programados;
               const proximos = partidosCat.filter(p => p.estado === "programado").sort((a,b) => new Date(a.fechaHora) - new Date(b.fechaHora)).slice(0, 3);
-              const groupKeys = Object.keys(groups).sort();
 
               return (
               <motion.div key="f" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
