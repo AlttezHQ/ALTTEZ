@@ -6,6 +6,8 @@
 
 import { isSupabaseReady, supabase } from "../../../shared/lib/supabase";
 
+const QUERY_TIMEOUT_MS = 12000;
+
 // ── Torneos ───────────────────────────────────────────────────────────────────
 
 export async function saveTorneo(torneo) {
@@ -208,37 +210,91 @@ export async function getTorneoPublico(slug) {
 
 export async function fetchAllTorneos() {
   if (!isSupabaseReady) return [];
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await withTimeout(
+    supabase.auth.getUser(),
+    "usuario"
+  );
+  if (userError) throw userError;
   if (!user) return [];
 
-  const { data: torneosRows } = await supabase
-    .from("torneos")
-    .select("*")
-    .eq("organizador_id", user.id);
+  const { data: torneosRows, error: torneosError } = await withTimeout(
+    supabase
+      .from("torneos")
+      .select("*")
+      .eq("organizador_id", user.id),
+    "torneos"
+  );
+  if (torneosError) throw torneosError;
 
   if (!torneosRows) return [];
 
   const results = [];
   for (const t of torneosRows) {
-    const { data: equiposRows } = await supabase.from("torneo_equipos").select("*").eq("torneo_id", t.id);
-    const { data: partidosRows } = await supabase.from("torneo_partidos").select("*").eq("torneo_id", t.id);
-    const { data: sedesRows } = await supabase.from("torneo_sedes").select("*").eq("torneo_id", t.id);
-    const { data: arbitrosRows } = await supabase.from("torneo_arbitros").select("*").eq("torneo_id", t.id);
-    const { data: categoriasRows } = await supabase.from("torneo_categorias").select("*").eq("torneo_id", t.id).catch(() => ({ data: [] }));
+    const [
+      { data: equiposRows, error: equiposError },
+      { data: partidosRows, error: partidosError },
+      { data: sedesRows, error: sedesError },
+      { data: arbitrosRows, error: arbitrosError },
+      { data: categoriasRows, error: categoriasError },
+    ] = await Promise.all([
+      withTimeout(supabase.from("torneo_equipos").select("*").eq("torneo_id", t.id), `equipos ${t.id}`),
+      withTimeout(supabase.from("torneo_partidos").select("*").eq("torneo_id", t.id), `partidos ${t.id}`),
+      withTimeout(supabase.from("torneo_sedes").select("*").eq("torneo_id", t.id), `sedes ${t.id}`),
+      withTimeout(supabase.from("torneo_arbitros").select("*").eq("torneo_id", t.id), `árbitros ${t.id}`),
+      withTimeout(supabase.from("torneo_categorias").select("*").eq("torneo_id", t.id), `categorías ${t.id}`),
+    ]);
+
+    if (equiposError) throw equiposError;
+    if (partidosError) throw partidosError;
+    const sedesMissing = isMissingOptionalTableError(sedesError);
+    const arbitrosMissing = isMissingOptionalTableError(arbitrosError);
+    const categoriasMissing = isMissingOptionalTableError(categoriasError);
+
+    if (sedesError && !sedesMissing) throw sedesError;
+    if (arbitrosError && !arbitrosMissing) throw arbitrosError;
+    if (categoriasError && !categoriasMissing) throw categoriasError;
+
+    if (sedesMissing) {
+      console.log("[TORNEOS] tabla opcional ausente: torneo_sedes");
+    }
+    if (arbitrosMissing) {
+      console.log("[TORNEOS] tabla opcional ausente: torneo_arbitros");
+    }
+    if (categoriasMissing) {
+      console.log("[TORNEOS] tabla opcional ausente: torneo_categorias");
+    }
 
     results.push({
       torneo: mapTorneo(t),
       equipos: (equiposRows ?? []).map(mapEquipo),
       partidos: (partidosRows ?? []).map(mapPartido),
-      sedes: (sedesRows ?? []).map(mapSede),
-      arbitros: (arbitrosRows ?? []).map(mapArbitro),
-      categorias: (categoriasRows ?? []).map(mapCategoria),
+      sedes: sedesMissing ? [] : (sedesRows ?? []).map(mapSede),
+      arbitros: arbitrosMissing ? [] : (arbitrosRows ?? []).map(mapArbitro),
+      categorias: categoriasMissing ? [] : (categoriasRows ?? []).map(mapCategoria),
     });
   }
   return results;
 }
 
 // ── Mappers (snake_case → camelCase) ─────────────────────────────────────────
+
+function withTimeout(promise, label) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout cargando ${label} de torneos`));
+    }, QUERY_TIMEOUT_MS);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+function isMissingOptionalTableError(error) {
+  if (!error) return false;
+  return error.code === "PGRST205" || /Could not find the table/i.test(error.message || "");
+}
 
 function mapTorneo(r) {
   return {

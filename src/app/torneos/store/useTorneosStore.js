@@ -447,6 +447,7 @@ export const useTorneosStore = create(
       },
 
       async loadTorneosFromSupabase() {
+        console.log("[TORNEOS] inicio carga");
         set({ loading: true, error: null });
         try {
           const results = await svc.fetchAllTorneos();
@@ -456,18 +457,40 @@ export const useTorneosStore = create(
           const allSedes    = results.flatMap(r => r.sedes);
           const allArbitros = results.flatMap(r => r.arbitros);
           const allCategorias = results.flatMap(r => r.categorias || []);
-          
-          set({ 
+
+          const currentActivoId = get().torneoActivoId;
+          const torneoActivoId = allTorneos.some(t => t.id === currentActivoId)
+            ? currentActivoId
+            : (allTorneos[0]?.id ?? null);
+
+          console.log("[TORNEOS] torneos", allTorneos);
+          console.log("[TORNEOS] categorías", allCategorias);
+
+          set({
             torneos: allTorneos, 
             equipos: allEquipos, 
             partidos: allPartidos,
             sedes: allSedes,
             arbitros: allArbitros,
             categorias: allCategorias,
-            loading: false 
+            torneoActivoId,
           });
+
+          return {
+            torneos: allTorneos,
+            equipos: allEquipos,
+            partidos: allPartidos,
+            sedes: allSedes,
+            arbitros: allArbitros,
+            categorias: allCategorias,
+          };
         } catch (err) {
-          set({ error: err.message, loading: false });
+          console.error("[TORNEOS] error", err);
+          set({ error: err?.message || "No se pudo cargar el módulo de torneos" });
+          throw err;
+        } finally {
+          set({ loading: false });
+          console.log("[TORNEOS] loading false");
         }
       },
     }),

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, FileSpreadsheet, Tag, Globe } from "lucide-react";
+import { Trophy, X, FileSpreadsheet, AlertTriangle, Building2 } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
 import { useAuth } from "../../shared/auth";
 import { validateTorneosInlineLogin, validateTorneosInlineRegister } from "../../shared/auth/authValidation";
-import { getPostLogoutRedirect } from "../../shared/auth/authRedirects";
+import { supabase, isSupabaseReady } from "../../shared/lib/supabase";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -60,27 +60,39 @@ function TorneosAuthScreen({ initialTab = "login" }) {
     const { errors: errs, cleanData } = validateTorneosInlineLogin(form);
     setErrors(errs);
     if (!cleanData) return;
-    setLoading(true);
-    const { error } = await auth.signIn(cleanData.email, cleanData.password);
-    setLoading(false);
-    if (error) { setMsg({ type: "error", text: error }); return; }
-    // Auth state update handled by AuthProvider listener
+    try {
+      setLoading(true);
+      setMsg(null);
+      const { error } = await auth.signIn(cleanData.email, cleanData.password);
+      if (error) { setMsg({ type: "error", text: error }); return; }
+      // Auth state update handled by AuthProvider listener
+    } catch (error) {
+      setMsg({ type: "error", text: error?.message || "No se pudo iniciar sesión" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegister = async () => {
     const { errors: errs, cleanData } = validateTorneosInlineRegister(form);
     setErrors(errs);
     if (!cleanData) return;
-    setLoading(true);
-    const { error } = await auth.signUp({
-      email: cleanData.email,
-      password: cleanData.password,
-      fullName: cleanData.nombre,
-      role: "admin",
-    });
-    if (error) { setLoading(false); setMsg({ type: "error", text: error }); return; }
-    setLoading(false);
-    // Auth state update handled by AuthProvider listener
+    try {
+      setLoading(true);
+      setMsg(null);
+      const { error } = await auth.signUp({
+        email: cleanData.email,
+        password: cleanData.password,
+        fullName: cleanData.nombre,
+        role: "admin",
+      });
+      if (error) { setMsg({ type: "error", text: error }); return; }
+      // Auth state update handled by AuthProvider listener
+    } catch (error) {
+      setMsg({ type: "error", text: error?.message || "No se pudo crear la cuenta" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inp = (hasErr) => ({
@@ -277,11 +289,45 @@ function ImportModal({ onClose }) {
 
 // ── Main app ──────────────────────────────────────────────────────────────────
 
+const TORNEOS_INIT_TIMEOUT_MS = 12000;
+
+function TorneosStatusScreen({ icon: Icon, title, subtitle, ctaLabel, onCta }) {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG, padding: "24px" }}>
+      <div style={{ width: "100%", maxWidth: 720, background: CARD, borderRadius: 24, border: `1px solid ${BORDER}`, boxShadow: "0 24px 64px rgba(23,26,28,0.10)", padding: "24px 20px" }}>
+        <ModuleEmptyState
+          icon={Icon}
+          title={title}
+          subtitle={subtitle}
+          ctaLabel={ctaLabel}
+          onCta={onCta}
+        />
+      </div>
+    </div>
+  );
+}
+
+function withInitTimeout(promise, label) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout cargando ${label} en /torneos`));
+    }, TORNEOS_INIT_TIMEOUT_MS);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
 export default function TorneosApp() {
   const location       = useLocation();
+  const navigate       = useNavigate();
   const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
+  const storeLoading   = useTorneosStore(s => s.loading);
+  const storeError     = useTorneosStore(s => s.error);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
 
   const loadTorneos    = useTorneosStore(s => s.loadTorneosFromSupabase);
@@ -292,6 +338,11 @@ export default function TorneosApp() {
   const [showImport,   setShowImport]   = useState(false);
   const [editingTorneo, setEditingTorneo] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [sessionUser, setSessionUser] = useState(null);
+  const [requiresAuth, setRequiresAuth] = useState(false);
+  const [initError, setInitError] = useState(null);
+  const [initStatus, setInitStatus] = useState("idle");
   const initialAuthTab = new URLSearchParams(location.search).get("auth") === "register" ? "register" : "login";
 
   // Persist activeModule
@@ -299,12 +350,114 @@ export default function TorneosApp() {
     localStorage.setItem("torneos_active_module", activeModule);
   }, [activeModule]);
 
-  // Sync with Supabase on auth
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      loadTorneos();
+    let cancelled = false;
+
+    async function init() {
+      try {
+        if (!isSupabaseReady || !supabase) {
+          throw new Error("Supabase no está configurado para cargar ALTTEZ Torneos");
+        }
+
+        setInitialLoading(true);
+        setRequiresAuth(false);
+        setInitError(null);
+        setInitStatus("idle");
+
+        console.log("[TORNEOS] inicio carga");
+
+        const { data: sessionData, error: sessionError } = await withInitTimeout(
+          supabase.auth.getSession(),
+          "sesión"
+        );
+        console.log("[TORNEOS] sesión obtenida", sessionData?.session ?? null);
+
+        if (sessionError) throw sessionError;
+
+        if (!sessionData?.session) {
+          if (!cancelled) {
+            setSessionUser(null);
+            setRequiresAuth(true);
+            navigate("/torneos?auth=login", { replace: true });
+          }
+          return;
+        }
+
+        const user = sessionData.session.user ?? null;
+        console.log("[TORNEOS] usuario", user ?? null);
+
+        if (!user) {
+          if (!cancelled) {
+            setSessionUser(null);
+            setRequiresAuth(true);
+            navigate("/torneos?auth=login", { replace: true });
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          setSessionUser(user);
+          if (location.search) {
+            navigate("/torneos", { replace: true });
+          }
+        }
+
+        const { data: profile, error: profileError } = await withInitTimeout(
+          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+          "perfil"
+        );
+        console.log("[TORNEOS] perfil", profile ?? null);
+
+        if (profileError) throw profileError;
+
+        if (!profile) {
+          if (!cancelled) {
+            setInitStatus("missing-profile");
+            setInitError("No encontramos un perfil asociado a tu cuenta de torneos.");
+          }
+          return;
+        }
+
+        const organization = {
+          id: profile.club_id ?? user.id,
+          nombre: profile.full_name ?? user.email ?? "Organización ALTTEZ",
+        };
+        console.log("[TORNEOS] organización", organization);
+
+        if (!organization?.id) {
+          if (!cancelled) {
+            setInitStatus("missing-organization");
+          }
+          return;
+        }
+
+        const result = await withInitTimeout(loadTorneos(), "torneos");
+
+        if (!cancelled) {
+          console.log("[TORNEOS] torneos", result?.torneos ?? []);
+          console.log("[TORNEOS] categorías", result?.categorias ?? []);
+          setInitStatus(result?.torneos?.length ? "ready" : "empty");
+        }
+      } catch (error) {
+        console.error("[TORNEOS] error", error);
+        if (!cancelled) {
+          setInitStatus("error");
+          setInitError(error?.message || "No se pudo cargar el módulo de torneos");
+        }
+      } finally {
+        if (!cancelled) {
+          setInitialLoading(false);
+          console.log("[TORNEOS] loading false");
+        }
+      }
     }
-  }, [auth.isAuthenticated, loadTorneos]);
+
+    init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.user?.id, loadTorneos, location.search, navigate]);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
@@ -337,6 +490,8 @@ export default function TorneosApp() {
   // Logout: limpiar sesión via AuthProvider. No navegar a "/".
   // El auth gate de abajo mostrará TorneosAuthScreen automáticamente.
   const handleLogout = async () => {
+    setSessionUser(null);
+    setRequiresAuth(true);
     await auth.signOut();
     // Auth gate below will render TorneosAuthScreen when user becomes null
   };
@@ -345,19 +500,51 @@ export default function TorneosApp() {
     if (!window.confirm("¿Eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")) return;
     const { error } = await auth.deleteAccount();
     if (error) { alert(error); return; }
+    setSessionUser(null);
+    setRequiresAuth(true);
     // Auth gate below will render TorneosAuthScreen when user becomes null
   };
 
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
-  if (auth.loadingAuth) {
-    return <AlttezLoader fullScreen />;
+  if (initialLoading || storeLoading) {
+    return <AlttezLoader fullScreen text="Cargando torneos..." />;
   }
 
   // Auth gate — show login/register if no active session
-  if (!auth.isAuthenticated) {
+  if (requiresAuth || !sessionUser) {
     return <TorneosAuthScreen key={initialAuthTab} initialTab={initialAuthTab} />;
+  }
+
+  if (initStatus === "missing-profile") {
+    return (
+      <TorneosStatusScreen
+        icon={AlertTriangle}
+        title="No encontramos tu perfil"
+        subtitle={initError || "Tu cuenta inició sesión, pero todavía no tiene un perfil válido para ALTTEZ Torneos."}
+      />
+    );
+  }
+
+  if (initStatus === "missing-organization") {
+    return (
+      <TorneosStatusScreen
+        icon={Building2}
+        title="No hay organización disponible"
+        subtitle="La sesión está activa, pero no encontramos una organización válida para cargar el módulo de torneos."
+      />
+    );
+  }
+
+  if (initStatus === "error" || storeError) {
+    return (
+      <TorneosStatusScreen
+        icon={AlertTriangle}
+        title="No se pudo cargar el módulo"
+        subtitle={initError || storeError || "Ocurrió un problema cargando torneos desde Supabase."}
+      />
+    );
   }
 
   return (
@@ -368,7 +555,7 @@ export default function TorneosApp() {
         torneoActivo={torneoActivo}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        userName={auth.user?.email ?? ""}
+        userName={sessionUser?.email ?? auth.user?.email ?? ""}
         onLogout={handleLogout}
         onDeleteAccount={handleDeleteAccount}
       />
@@ -377,7 +564,7 @@ export default function TorneosApp() {
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
-          userName={auth.user?.email ?? ""}
+          userName={sessionUser?.email ?? auth.user?.email ?? ""}
         />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>
