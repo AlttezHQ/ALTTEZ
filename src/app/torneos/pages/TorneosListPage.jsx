@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trophy, Plus, Play, Trash2, Clock, CheckCircle } from "lucide-react";
+import { Trophy, Plus, Play, Trash2, Clock, CheckCircle, Edit3 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 
@@ -143,8 +143,17 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => onEdit?.(t)}
+                  style={{ width: 36, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                  title="Editar torneo"
+                >
+                  <Edit3 size={13} color={MUTED} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => onCreate(t)}
                   style={{ width: 36, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                  title="Duplicar / Crear similar"
                 >
                   <Plus size={13} color={MUTED} style={{ transform: "rotate(45deg)" }} />
                 </motion.button>

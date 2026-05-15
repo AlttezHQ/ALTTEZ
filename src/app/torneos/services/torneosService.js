@@ -52,9 +52,14 @@ export async function deleteTorneoRemote(id) {
 export async function saveEquipos(torneoId, equipos) {
   if (!isSupabaseReady) return { ok: false, error: { message: "Supabase not configured" } };
   
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "No authenticated user" };
+  
   const rows = equipos.map(e => ({
     id: e.id,
     torneo_id: torneoId,
+    user_id: user.id,
+    organizador_id: user.id,
     nombre: e.nombre,
     escudo: e.logo || e.escudo || null,
     color: e.color || null,
