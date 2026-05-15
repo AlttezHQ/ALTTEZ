@@ -59,7 +59,7 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
         <div style={{ margin: isCollapsed ? "0 10px 8px" : "0 10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: isCollapsed ? "6px" : "6px 10px", display: "flex", justifyContent: "center" }}>
           {!isCollapsed ? (
             <div style={{ overflow: "hidden" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: CU, letterSpacing: "0.08em", marginBottom: 2 }}>TORNEO ACTIVO</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: CU, letterSpacing: "0.08em", marginBottom: 2 }}>TORNEO ACTIVO</div>
               <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{torneoActivo.nombre}</div>
             </div>
           ) : (

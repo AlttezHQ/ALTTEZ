@@ -124,7 +124,7 @@ function TorneosAuthScreen({ initialTab = "login" }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
           <Trophy size={20} color={CU} />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.04em", color: TEXT }}>ALTTEZ Torneos</div>
+            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.04em", color: TEXT }}>ALTTEZ Torneos</div>
             <div style={{ fontSize: 10, color: MUTED }}>Gestor de torneos deportivos</div>
           </div>
         </div>
@@ -139,7 +139,7 @@ function TorneosAuthScreen({ initialTab = "login" }) {
                 flex: 1, padding: "8px 0", borderRadius: 8, border: "none",
                 background: tab === key ? CARD : "transparent",
                 color: tab === key ? CU : MUTED,
-                fontWeight: tab === key ? 700 : 500,
+                fontWeight: tab === key ? 600 : 500,
                 fontSize: 12, fontFamily: FONT, cursor: "pointer",
                 boxShadow: tab === key ? "0 2px 8px rgba(23,26,28,0.08)" : "none",
                 transition: "all 0.15s",
@@ -178,7 +178,7 @@ function TorneosAuthScreen({ initialTab = "login" }) {
             <button onClick={handleLogin} disabled={loading} style={{
               width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
               background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
-              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
+              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 600,
               fontFamily: FONT, cursor: loading ? "wait" : "pointer",
             }}>{loading ? "Verificando..." : "Ingresar"}</button>
           </>
@@ -208,7 +208,7 @@ function TorneosAuthScreen({ initialTab = "login" }) {
             <button onClick={handleRegister} disabled={loading} style={{
               width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
               background: loading ? "#E8DCC4" : `linear-gradient(135deg, ${CU}, #A66F38)`,
-              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 700,
+              color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 600,
               fontFamily: FONT, cursor: loading ? "wait" : "pointer",
             }}>{loading ? "Creando cuenta..." : "Crear cuenta"}</button>
           </>
@@ -634,7 +634,7 @@ export default function TorneosApp() {
             {activeModule === "publica" && (
               <motion.div key="publica" {...PAGE_ANIM}>
                 <div style={{ fontFamily: FONT, padding: 24 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Vista Pública</h2>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: TEXT, marginBottom: 8 }}>Vista Pública</h2>
                   <p style={{ color: MUTED, fontSize: 13 }}>La vista pública del torneo estará disponible cuando publiques el torneo desde Configuración.</p>
                 </div>
               </motion.div>

@@ -13,8 +13,8 @@ html {
 }
 
 body {
-  background: #fafaf8;
-  color: #171a1c;
+  background: #F6F1EA;
+  color: #1F1F1D;
   font-size: clamp(14px, 0.85rem + 0.2vw, 16px);
   font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
@@ -161,27 +161,27 @@ h4 { font-size: clamp(14px, 1vw + 8px, 20px); }
   --t-base: 200ms ease;
   --t-slow: 300ms ease;
 
-  --color-bronce: #C9973A;
-  --color-bronce-hi: #D8A657;
+  --color-bronce: #CE8946;
+  --color-bronce-hi: #D8A06B;
   --color-bronce-deep: #B7832D;
-  --color-bronce-dim: rgba(201, 151, 58,0.12);
-  --color-bronce-border: rgba(201, 151, 58,0.28);
-  --color-bronce-glow: rgba(201, 151, 58,0.18);
-  --color-bronce-focus: rgba(201, 151, 58,0.34);
-  --color-bronce-ice: #F4E7CF;
+  --color-bronce-dim: rgba(206, 137, 70, 0.12);
+  --color-bronce-border: rgba(206, 137, 70, 0.28);
+  --color-bronce-glow: rgba(206, 137, 70, 0.18);
+  --color-bronce-focus: rgba(206, 137, 70, 0.34);
+  --color-bronce-ice: #F6F1EA;
   --color-success: #2fa56f;
   --color-success-dim: rgba(47,165,111,0.10);
   --color-amber: #d89a2b;
   --color-amber-dim: rgba(216,154,43,0.10);
   --color-danger: #d95c5c;
   --color-danger-dim: rgba(217,92,92,0.10);
-  --color-bg: #fafaf8;
-  --color-bg-panel: #ffffff;
+  --color-bg: #F6F1EA;
+  --color-bg-panel: #EDE8D0;
   --color-bg-elevated: #ffffff;
   --color-surface: #ffffff;
   --color-surface-glass: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(246,241,234,0.96) 100%);
-  --color-border: #e9e2d7;
-  --color-border-hi: #e1d6c7;
+  --color-border: #EDE8D0;
+  --color-border-hi: #E1D6C7;
   --color-text-muted: #667085;
   --color-text-hint: #98a2b3;
 }

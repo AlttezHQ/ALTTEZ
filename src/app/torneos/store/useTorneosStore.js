@@ -181,6 +181,25 @@ export const useTorneosStore = create(
         return equipo;
       },
 
+      async agregarMuchosEquipos(torneoId, list) {
+        const nuevos = list.map(d => ({
+          id: ID(), torneoId,
+          nombre: d.nombre || "Equipo",
+          logo:   d.logo || d.escudo || null,
+          escudo: d.logo || d.escudo || null,
+          color:  d.color  ?? null,
+          grupo:  d.grupo  ?? null,
+          delegado: d.delegado ?? "",
+          entrenador: d.entrenador ?? "",
+          jugadores: d.jugadores ?? [],
+          createdAt: NOW(),
+        }));
+        set(s => ({ equipos: [...s.equipos, ...nuevos] }));
+        const { ok, error } = await svc.saveEquipos(torneoId, nuevos);
+        if (!ok) showToast("Error al guardar equipos en la nube: " + (error?.message || "Servidor no responde"), "error");
+        return nuevos;
+      },
+
       async agregarEquipos(torneoId, nombres) {
         const nuevos = nombres
           .map(n => n.trim()).filter(Boolean)

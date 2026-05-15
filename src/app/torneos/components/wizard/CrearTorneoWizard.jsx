@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTorneosStore } from "../../store/useTorneosStore";
 import { calculateTournamentMath, recommendStructure, calculateSchedulingStats, estimateProjectedEndDate, getFeasibilitySuggestions } from "../../utils/tournamentAlgorithms";
+import AlttezLoader from "../shared/AlttezLoader";
 import { PALETTE, ELEVATION } from "../../../../shared/tokens/palette";
 
 const CU      = PALETTE.bronce;
@@ -110,8 +111,8 @@ function StatBadge({ icon: Icon, label, value }) {
         <Icon size={20} color={CU} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 2 }}>{value}</div>
-        <div style={{ fontSize: 11, fontWeight: 600, color: HINT }}>{label}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{value}</div>
+        <div style={{ fontSize: 11, fontWeight: 500, color: HINT }}>{label}</div>
       </div>
     </motion.div>
   );
@@ -196,10 +197,10 @@ function StepperHeader({ step, onStepClick }) {
               transition: "all 0.3s", zIndex: 2,
               boxShadow: active ? `0 0 15px ${CU}40` : "none"
             }}>
-              {done ? <CheckCircle size={18} color="#FFF" /> : <span style={{ fontSize: 13, fontWeight: 800, color: active ? "#FFF" : HINT }}>{n}</span>}
+              {done ? <CheckCircle size={18} color="#FFF" /> : <span style={{ fontSize: 13, fontWeight: 700, color: active ? "#FFF" : HINT }}>{n}</span>}
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: 13, fontWeight: active ? 800 : 600, color: active ? TEXT : MUTED }}>{n}. {label}</span>
+              <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? TEXT : MUTED }}>{n}. {label}</span>
               {done && <span style={{ fontSize: 10, color: PALETTE.success, fontWeight: 700 }}>Completado</span>}
               {active && <span style={{ fontSize: 10, color: CU, fontWeight: 700 }}>En proceso</span>}
             </div>
@@ -224,7 +225,7 @@ function StepperHeader({ step, onStepClick }) {
 function Field({ label, required, children, style, error }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>
-      <label style={{ fontSize: 11, fontWeight: 700, color: error ? PALETTE.danger : MUTED, letterSpacing: "0.02em", transition: "color 0.2s" }}>
+      <label style={{ fontSize: 11, fontWeight: 600, color: error ? PALETTE.danger : MUTED, letterSpacing: "0.02em", transition: "color 0.2s" }}>
         {label.toUpperCase()} {required && <span style={{ color: PALETTE.danger }}>*</span>}
         {error && <span style={{ marginLeft: 4, fontSize: 10 }}>— Requerido</span>}
       </label>
@@ -240,7 +241,7 @@ function RowInp({ label, type = "text", value, onChange, options }) {
   
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
-      <label style={{ fontSize: 10, fontWeight: 800, color: MUTED, flex: 1, letterSpacing: "0.03em", lineHeight: 1.2, paddingRight: 4 }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, flex: 1, letterSpacing: "0.03em", lineHeight: 1.2, paddingRight: 4 }}>
         {label.toUpperCase()}
       </label>
       
@@ -277,7 +278,7 @@ function RowInp({ label, type = "text", value, onChange, options }) {
                   onChange(v);
                 }
               }}
-              style={{ border: "none", background: "none", width: "100%", textAlign: "center", fontSize: 14, color: TEXT, outline: "none", height: "100%", fontWeight: 800, padding: 0 }} 
+              style={{ border: "none", background: "none", width: "100%", textAlign: "center", fontSize: 14, color: TEXT, outline: "none", height: "100%", fontWeight: 700, padding: 0 }} 
             />
           </div>
         )}
@@ -302,7 +303,7 @@ function Switch({ active, onChange, label, desc }) {
         <div style={{ width: 36, height: 20, borderRadius: 20, background: active ? CU : BORDER, position: "relative", transition: "background 0.2s" }}>
           <motion.div animate={{ x: active ? 18 : 2 }} style={{ width: 16, height: 16, borderRadius: "50%", background: "#FFF", position: "absolute", top: 2, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }} />
         </div>
-        {label && <span style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>{label}</span>}
+        {label && <span style={{ fontSize: 12, fontWeight: 600, color: TEXT }}>{label}</span>}
         {desc && (
           <div onMouseEnter={() => setShowInfo(true)} onMouseLeave={() => setShowInfo(false)} style={{ display: "flex", alignItems: "center" }}>
             <Info size={14} color={active ? CU : HINT} style={{ transition: "color 0.2s" }} />
@@ -327,7 +328,7 @@ function SidebarItem({ icon: Icon, title, desc }) {
   return (
     <div style={{ display: "flex", gap: 12 }}>
       <div style={{ marginTop: 2 }}><Icon size={16} color={CU} /></div>
-      <div><div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 2 }}>{title}</div><div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>{desc}</div></div>
+      <div><div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>{title}</div><div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{desc}</div></div>
     </div>
   );
 }
@@ -339,8 +340,8 @@ function Step3Stat({ icon: Icon, val, lab }) {
         <Icon size={14} color={CU} />
       </div>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>{val}</div>
-        <div style={{ fontSize: 9, color: HINT, fontWeight: 700, letterSpacing: "0.02em" }}>{lab.toUpperCase()}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, lineHeight: 1.1 }}>{val}</div>
+        <div style={{ fontSize: 9, color: HINT, fontWeight: 500, letterSpacing: "0.02em" }}>{lab.toUpperCase()}</div>
       </div>
     </div>
   );
@@ -351,7 +352,7 @@ function SummaryBar({ data, totalLoaded }) {
     <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, padding: "10px 24px", marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "center", gap: 40 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <Trophy size={18} color={CU} />
-        <div><h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: TEXT }}>{data.nombre || "Torneo sin nombre"}</h3><p style={{ margin: 0, fontSize: 10, color: MUTED, fontWeight: 600 }}>{data.deporte} · {data.temporada} · {data.fechaInicio || "Fecha pendiente"}</p></div>
+        <div><h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TEXT }}>{data.nombre || "Torneo sin nombre"}</h3><p style={{ margin: 0, fontSize: 10, color: MUTED, fontWeight: 600 }}>{data.deporte} · {data.temporada} · {data.fechaInicio || "Fecha pendiente"}</p></div>
       </div>
       <div style={{ width: 1, height: 24, background: BORDER }} />
       <div style={{ display: "flex", gap: 40 }}>
@@ -456,6 +457,8 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
   const [tempCats, setTempCats] = useState([]);
   const [selectedJornada, setSelectedJornada] = useState(null);
   const [collapsedCats, setCollapsedCats] = useState({});
+  const [toast, setToast] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
 
@@ -496,7 +499,17 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       setIsLoaded(true);
       return;
     }
+  }, []);
 
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // Hydrate from localStorage or initialData
+  useEffect(() => {
     const saved = localStorage.getItem("crear_torneo_wizard");
     if (saved) {
       try {
@@ -711,54 +724,69 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       return;
     }
 
-    // 1. Crear el torneo base
-    const newTorneo = await crearTorneo(data);
-    
-    // 2. Agregar sede principal si existe
-    if (data.sedePrincipal) {
-      await useTorneosStore.getState().agregarSede(newTorneo.id, { nombre: data.sedePrincipal });
-    }
-
-    // 3. Guardar categorías con su estructura completa
-    const categoriasConEstructura = data.categorias.map(c => {
-      const s = structures[c.id] || {};
-      return {
-        id: c.id,
-        nombre: c.nombre,
-        teams: c.teams || 0,
-        format: s.format || data.formato || "todos_contra_todos",
-        fases: s.fases || "ida",
-        vueltas: s.vueltas || 1,
-        grupos: s.groupsCount || s.grupos || 2,
-        cpg: s.qualifyPerGroup || s.cpg || 2,
-        faseFinal: s.faseFinal || "final",
-        desempate: s.desempate || "goal_diff",
-        groupsCount: s.groupsCount,
-        groupLegs: s.groupLegs,
-        qualifyPerGroup: s.qualifyPerGroup,
-        playoffLegs: s.playoffLegs,
-        finalLegs: s.finalLegs
-      };
-    });
-    await useTorneosStore.getState().agregarCategorias(newTorneo.id, categoriasConEstructura);
-
-    // 4. Agregar todos los equipos registrados
-    for (const [id, teamList] of Object.entries(teams)) {
-      const cat = data.categorias.find(c => c.id === id);
-      const catName = cat?.nombre || "General";
+    setIsCreating(true);
+    try {
+      // 1. Crear el torneo base
+      const newTorneo = await crearTorneo(data);
       
-      for (const t of teamList) {
-        await useTorneosStore.getState().agregarEquipo(newTorneo.id, {
-          nombre: t.name,
-          delegado: t.delegate,
-          grupo: catName,
-          jugadores: []
+      // 2. Agregar sede principal si existe
+      if (data.sedePrincipal) {
+        await useTorneosStore.getState().agregarSede(newTorneo.id, { nombre: data.sedePrincipal });
+      }
+
+      // 3. Guardar categorías con su estructura completa
+      const categoriasConEstructura = data.categorias.map(c => {
+        const s = structures[c.id] || {};
+        return {
+          id: c.id,
+          nombre: c.nombre,
+          teams: c.teams || 0,
+          format: s.format || data.formato || "todos_contra_todos",
+          fases: s.fases || "ida",
+          vueltas: s.vueltas || 1,
+          grupos: s.groupsCount || s.grupos || 2,
+          cpg: s.qualifyPerGroup || s.cpg || 2,
+          faseFinal: s.faseFinal || "final",
+          desempate: s.desempate || "goal_diff",
+          groupsCount: s.groupsCount,
+          groupLegs: s.groupLegs,
+          qualifyPerGroup: s.qualifyPerGroup,
+          playoffLegs: s.playoffLegs,
+          finalLegs: s.finalLegs
+        };
+      });
+      await useTorneosStore.getState().agregarCategorias(newTorneo.id, categoriasConEstructura);
+
+      // 4. Agregar todos los equipos registrados (Optimizado en lote)
+      const allTeamsFlat = [];
+      for (const [id, teamList] of Object.entries(teams)) {
+        const cat = data.categorias.find(c => c.id === id);
+        const catName = cat?.nombre || "General";
+        teamList.forEach(t => {
+          allTeamsFlat.push({
+            nombre: t.name,
+            delegado: t.delegate,
+            grupo: catName,
+            jugadores: []
+          });
         });
       }
-    }
 
-    clearStorage();
-    onFinish?.();
+      if (allTeamsFlat.length > 0) {
+        await useTorneosStore.getState().agregarMuchosEquipos(newTorneo.id, allTeamsFlat);
+      }
+
+      setToast("¡Torneo creado con éxito!");
+      setTimeout(() => {
+        clearStorage();
+        onFinish?.();
+      }, 1500);
+    } catch (err) {
+      console.error("Error creating tournament:", err);
+      setToast("Error crítico al crear el torneo");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleSaveDraft = () => {
@@ -1171,15 +1199,14 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     setIsImporting(false);
   };
 
-
   const handleApplyRecommendedToAll = () => {
     const next = { ...structures };
     data.categorias.forEach(c => {
-      const tCount = teams.filter(t => t.categoriaId === c.id).length;
+      const tCount = teams[c.id]?.length || 0;
       next[c.id] = { ...recommendStructure(tCount), status: "configured" };
     });
     setStructures(next);
-    alert("Se ha aplicado el formato recomendado a todas las categorías según sus equipos registrados.");
+    setToast("¡Todas las categorías han sido configuradas automáticamente!");
   };
 
   const calculateWizardProgress = () => {
@@ -1240,10 +1267,10 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       
       {/* Category Modal */}
       {showCatModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.45)", zIndex: 2500, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#FFF", borderRadius: 24, padding: 32, width: 540, maxHeight: "90vh", overflow: "auto", boxShadow: ELEV, fontFamily: FONT }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Agregar categorías</h3>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Agregar categorías</h3>
               <button onClick={() => { setShowCatModal(false); setCustomCatName(""); setTempCats([]); }} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} color={MUTED} /></button>
             </div>
             <p style={{ margin: "0 0 20px", fontSize: 13, color: MUTED }}>Selecciona varias categorías y luego haz clic en Guardar.</p>
@@ -1322,12 +1349,12 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
       {/* Suggestions Application Modal */}
       {showSuggestModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 2500, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
           <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#FFF", borderRadius: 28, padding: 32, width: 500, boxShadow: ELEV }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: "#FFF5F5", display: "flex", alignItems: "center", justifyContent: "center" }}><Sparkles size={20} color={PALETTE.danger} /></div>
-                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Optimizar torneo</h3>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Optimizar torneo</h3>
               </div>
               <button onClick={() => setShowSuggestModal(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} color={MUTED} /></button>
             </div>
@@ -1404,7 +1431,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   });
                   setShowSuggestModal(null);
                 }} 
-                style={{ flex: 2, height: 48, borderRadius: 12, border: "none", background: PALETTE.danger, color: "#FFF", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+                style={{ flex: 2, height: 48, borderRadius: 12, border: "none", background: PALETTE.danger, color: "#FFF", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
               >
                 <Check size={18} /> Aplicar seleccionadas
               </button>
@@ -1424,7 +1451,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       </div>
 
       <div style={{ marginBottom: 40 }}>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: TEXT, letterSpacing: "-0.03em" }}>Crear torneo</h1>
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: TEXT, letterSpacing: "-0.03em" }}>Crear torneo</h1>
         <p style={{ margin: "8px 0 0", fontSize: 14, color: MUTED, lineHeight: 1.5, maxWidth: 600 }}>
           {step === 4 ? "Gestiona los árbitros participantes y su disponibilidad." : step === 3 ? "Agrega los equipos participantes y asígnalos a cada categoría." : "Configura tu torneo paso a paso y personaliza cada detalle."}
         </p>
@@ -1443,7 +1470,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               {/* Section 1 */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: CU_DIM, border: `1px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center" }}><FileText size={16} color={CU} /></div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TEXT }}>1. Información básica del torneo</h3>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: TEXT }}>1. Información básica del torneo</h3>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
                 <Field label="Nombre del torneo" required error={step1Errors.nombre}><input style={{ ...inputStyle, borderColor: step1Errors.nombre ? PALETTE.danger : BORDER }} value={data.nombre} onChange={e => update("nombre", e.target.value)} placeholder="Copa Primavera 2026" /></Field>
@@ -1508,19 +1535,19 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
               {/* Section 2 — Categorías */}
               <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24, marginBottom: 24 }}>
-                <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}>
+                <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
                   <Users size={18} color={CU} /> 2. {data.multiplesCategorias ? "Categorías del torneo" : "Categoría del torneo"}
                 </h3>
                 
                 {data.multiplesCategorias ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
                     {data.categorias.map(cat => (
-                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", background: "#FDFDFB", borderRadius: 12, border: `1px solid ${BORDER}` }}>
+                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", background: "#FDFDFB", borderRadius: 10, border: `1px solid ${BORDER}` }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cat.nombre}</div>
-                          {cat.teams > 0 && <div style={{ fontSize: 10, color: HINT }}>{cat.teams} equipos</div>}
+                          <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>{cat.nombre}</div>
+                          {cat.teams > 0 && <div style={{ fontSize: 9, color: HINT, fontWeight: 600 }}>{cat.teams} equipos</div>}
                         </div>
-                        <button onClick={() => setData(p => ({ ...p, categorias: p.categorias.filter(c => c.id !== cat.id) }))} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0, marginLeft: 4 }}><X size={12} /></button>
+                        <button onClick={() => setData(p => ({ ...p, categorias: p.categorias.filter(c => c.id !== cat.id) }))} style={{ background: "none", border: "none", cursor: "pointer", color: HINT, padding: 0, marginLeft: 4, display: "flex" }}><X size={12} /></button>
                       </div>
                     ))}
                     <button
@@ -1581,21 +1608,21 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               {/* Section 3 — Horarios */}
               <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
                     <Calendar size={18} color={CU} /> 3. Días y horarios de juego
                   </h3>
                   <div style={{ display: "flex", gap: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "6px 12px" }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>CANCHAS</div>
-                      <input type="number" min="1" value={data.numCanchas} onChange={e => update("numCanchas", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 40, border: "none", background: "none", fontSize: 13, fontWeight: 800, color: TEXT, textAlign: "center", outline: "none" }} />
+                      <div style={{ fontSize: 10, fontWeight: 500, color: MUTED }}>CANCHAS</div>
+                      <input type="number" min="1" value={data.numCanchas} onChange={e => update("numCanchas", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 40, border: "none", background: "none", fontSize: 13, fontWeight: 600, color: TEXT, textAlign: "center", outline: "none" }} />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "6px 12px" }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>DURACIÓN (MIN)</div>
-                      <input type="number" step="15" min="15" value={data.duracionPartido} onChange={e => update("duracionPartido", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 50, border: "none", background: "none", fontSize: 13, fontWeight: 800, color: TEXT, textAlign: "center", outline: "none" }} />
+                      <div style={{ fontSize: 10, fontWeight: 700, color: MUTED }}>DURACIÓN (MIN)</div>
+                      <input type="number" step="15" min="15" value={data.duracionPartido} onChange={e => update("duracionPartido", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 50, border: "none", background: "none", fontSize: 13, fontWeight: 600, color: TEXT, textAlign: "center", outline: "none" }} />
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 10, padding: "6px 12px" }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>MARGEN (MIN)</div>
-                      <input type="number" step="5" min="0" value={data.margenEntrePartidos} onChange={e => update("margenEntrePartidos", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 40, border: "none", background: "none", fontSize: 13, fontWeight: 800, color: TEXT, textAlign: "center", outline: "none" }} />
+                      <div style={{ fontSize: 10, fontWeight: 600, color: MUTED }}>MARGEN (MIN)</div>
+                      <input type="number" step="5" min="0" value={data.margenEntrePartidos} onChange={e => update("margenEntrePartidos", e.target.value === "" ? "" : parseInt(e.target.value))} style={{ width: 40, border: "none", background: "none", fontSize: 13, fontWeight: 600, color: TEXT, textAlign: "center", outline: "none" }} />
                     </div>
                   </div>
                 </div>
@@ -1619,7 +1646,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                         transition: "all 0.2s"
                       }}
                     >
-                      <div style={{ fontSize: 11, fontWeight: 800, color: h.activo ? CU : MUTED }}>{h.dia.slice(0, 3)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 500, color: h.activo ? CU : MUTED }}>{h.dia.slice(0, 3)}</div>
                     </div>
                   ))}
                 </div>
@@ -1628,7 +1655,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
                     <button 
                       onClick={handleApplyTimeToAll} 
-                      style={{ background: "#FFF8EE", border: `1px solid ${CU_BOR}`, color: CU, padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s", boxShadow: "0 2px 4px rgba(181, 143, 76, 0.1)" }}
+                      style={{ background: "#FFF8EE", border: `1px solid ${CU_BOR}`, color: CU, padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s", boxShadow: "0 2px 4px rgba(181, 143, 76, 0.1)" }}
                       onMouseEnter={e => { e.currentTarget.style.background = CU_DIM; e.currentTarget.style.transform = "translateY(-1px)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "#FFF8EE"; e.currentTarget.style.transform = "translateY(0)"; }}
                     >
@@ -1637,10 +1664,10 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   </div>
                 )}
  
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                   {data.horarios.filter(h => h.activo).map((h, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: "#FDFDFB", borderRadius: 12, border: `1px solid ${BORDER}` }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, width: 40 }}>{h.dia.slice(0, 3)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, width: 40 }}>{h.dia.slice(0, 3)}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <input 
                           type="time" 
@@ -1651,9 +1678,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                             next[idx].inicio = e.target.value;
                             update("horarios", next);
                           }}
-                          style={{ border: "none", background: "none", fontSize: 14, fontWeight: 800, color: TEXT, outline: "none", width: 100, cursor: "pointer", padding: 0 }}
+                          style={{ border: "none", background: "none", fontSize: 14, fontWeight: 700, color: TEXT, outline: "none", width: 100, cursor: "pointer", padding: 0 }}
                         />
-                        <span style={{ color: HINT, fontWeight: 800 }}>—</span>
+                        <span style={{ color: HINT, fontWeight: 700 }}>—</span>
                         <input 
                           type="time" 
                           value={h.fin} 
@@ -1663,7 +1690,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                             next[idx].fin = e.target.value;
                             update("horarios", next);
                           }}
-                          style={{ border: "none", background: "none", fontSize: 14, fontWeight: 800, color: TEXT, outline: "none", width: 100, cursor: "pointer", padding: 0 }}
+                          style={{ border: "none", background: "none", fontSize: 14, fontWeight: 700, color: TEXT, outline: "none", width: 100, cursor: "pointer", padding: 0 }}
                         />
                       </div>
                     </div>
@@ -1683,7 +1710,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <div style={{ background: "#FDFDFB", borderRadius: 20, border: `1px solid ${BORDER}`, padding: 22 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
                   <Lightbulb size={16} color="#D89A2B" />
-                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: TEXT }}>Qué configurarás en este paso</h4>
+                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: TEXT }}>Qué configurarás en este paso</h4>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <SidebarItem icon={Calendar} title="Nombre y temporada" desc="Define el nombre oficial del torneo y la temporada correspondiente." />
@@ -1710,7 +1737,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", padding: "16px 0" }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ padding: "0 16px 8px", fontSize: 11, fontWeight: 800, color: HINT, letterSpacing: "0.05em" }}>CATEGORÍAS</div>
+                  <div style={{ padding: "0 16px 8px", fontSize: 11, fontWeight: 700, color: HINT, letterSpacing: "0.05em" }}>CATEGORÍAS</div>
                   {data.categorias.map(c => {
                     const tCount = teams[c.id]?.length || 0;
                     const active = catId === c.id;
@@ -1737,36 +1764,32 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       <motion.div 
                         key={c.id} 
                         variants={ANIM_VARIANTS.item}
-                        whileHover={{ x: 6, backgroundColor: active ? "#FFF" : "#F8F8F6" }}
+                        whileHover={{ x: 4, backgroundColor: active ? "#FFF" : "#F8F8F6" }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setCatId(c.id)} 
                         style={{ 
                           margin: "0 12px",
-                          padding: "16px", 
-                          borderRadius: 16,
+                          padding: "10px 14px", 
+                          borderRadius: 12,
                           display: "flex", 
-                          flexDirection: "column",
+                          alignItems: "center",
                           gap: 12,
                           cursor: "pointer", 
                           background: active ? "#FFF" : "#FDFDFB", 
-                          border: `1.5px solid ${active ? CU : BORDER}`,
-                          boxShadow: active ? "0 4px 12px rgba(181, 143, 76, 0.1)" : "none",
+                          border: `1px solid ${active ? CU : BORDER}`,
+                          boxShadow: active ? "0 4px 12px rgba(181, 143, 76, 0.08)" : "none",
                           transition: "all 0.2s"
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 10, background: active ? CU : BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <LayoutGrid size={16} color={active ? "#FFF" : HINT} />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{c.nombre}</div>
-                            <div style={{ fontSize: 11, color: HINT }}>{tCount} equipos cargados</div>
-                          </div>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: active ? CU : BG, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <LayoutGrid size={14} color={active ? "#FFF" : HINT} />
                         </div>
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 8, background: stateBg, color: stateColor, border: `1px solid ${stateColor}20` }}>
-                            {stateText.toUpperCase()}
-                          </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nombre}</div>
+                          <div style={{ fontSize: 9, color: HINT, fontWeight: 600 }}>{tCount} EQUIPOS</div>
+                        </div>
+                        <div style={{ fontSize: 8, fontWeight: 700, padding: "3px 6px", borderRadius: 6, background: stateBg, color: stateColor, border: `1px solid ${stateColor}20`, flexShrink: 0 }}>
+                          {stateText.toUpperCase()}
                         </div>
                       </motion.div>
                     );
@@ -1785,7 +1808,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   return (
                     <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 40, textAlign: "center" }}>
                       <AlertCircle size={40} color={PALETTE.danger} style={{ margin: "0 auto 16px" }} />
-                      <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800 }}>Categoría sin equipos suficientes</h3>
+                      <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700 }}>Categoría sin equipos suficientes</h3>
                       <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Esta categoría tiene {tCount} equipo(s). Se requieren al menos 2 equipos para configurar un formato de competencia.</p>
                     </div>
                   );
@@ -1793,9 +1816,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
                 return (
                   <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                        <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 32, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <div style={{ display: "flex", gap: 6 }}>
                           <button 
                             onClick={() => {
                               const idx = data.categorias.findIndex(c => c.id === catId);
@@ -1817,21 +1840,38 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                             <ChevronRight size={16} color={TEXT} />
                           </button>
                         </div>
-                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Configurando: <span style={{ color: CU }}>{activeCat.nombre}</span></h3>
+                        <div style={{ position: "relative" }}>
+                          <select 
+                            value={catId} 
+                            onChange={e => setCatId(parseInt(e.target.value))}
+                            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%" }}
+                          >
+                            {data.categorias.map(c => (
+                              <option key={c.id} value={c.id}>{c.nombre}</option>
+                            ))}
+                          </select>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 14px", background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, cursor: "pointer" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>Configurando: <span style={{ color: CU }}>{activeCat.nombre}</span></span>
+                            <MoreHorizontal size={14} color={MUTED} />
+                          </div>
+                        </div>
                       </div>
                       
-                      <div style={{ display: "flex", gap: 10 }}>
-                        <button onClick={handleApplyRecommendedToAll} style={{ display: "flex", alignItems: "center", gap: 6, background: "#EEF6FF", border: "1px solid #C7DFF7", color: "#1A5FA8", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                          <Sparkles size={14} /> Recomendado a todas
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <button onClick={handleApplyRecommendedToAll} style={{ display: "flex", alignItems: "center", gap: 8, background: "#EEF6FF", border: "1px solid #C7DFF7", color: "#1A5FA8", padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#E1EFFF"} onMouseLeave={e => e.currentTarget.style.background = "#EEF6FF"}>
+                          <Sparkles size={14} /> Autoconfigurar categorías
                         </button>
-                        <button onClick={() => updateStruct(catId, { ...recommendStructure(tCount), status: "configured" })} style={{ display: "flex", alignItems: "center", gap: 6, background: "#FFF8EE", border: "1px solid #F5DEB3", color: "#D89A2B", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        <button onClick={() => {
+                          updateStruct(catId, { ...recommendStructure(tCount), status: "configured" });
+                          setToast(`Configuración recomendada aplicada a ${activeCat.nombre}`);
+                        }} style={{ display: "flex", alignItems: "center", gap: 8, background: "#FFF8EE", border: "1px solid #F5DEB3", color: "#D89A2B", padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#FFF1D6"} onMouseLeave={e => e.currentTarget.style.background = "#FFF8EE"}>
                           <Zap size={14} /> Usar recomendación
                         </button>
                       </div>
                     </div>
 
                     <div style={{ marginBottom: 24 }}>
-                      <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 800 }}>1. Formato de competencia</h4>
+                      <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>1. Formato de competencia</h4>
                       <motion.div 
                         variants={ANIM_VARIANTS.container}
                         initial="hidden"
@@ -1840,6 +1880,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       >
                         {FASE_OPTIONS.filter(f => f.id !== "liga_playoffs").map(opt => {
                           const sel = s.format === opt.id;
+                          const Icon = opt.icon;
                           return (
                             <motion.div 
                               key={opt.id} 
@@ -1848,16 +1889,32 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                               whileTap={ANIM_VARIANTS.card.tap}
                               onClick={() => updateStruct(catId, { format: opt.id, status: "configured" })} 
                               style={{ 
-                                padding: "14px 12px", 
-                                borderRadius: 12, 
+                                padding: "20px", 
+                                borderRadius: 16, 
                                 border: `1.5px solid ${sel ? CU : BORDER}`, 
-                                background: sel ? CU_DIM : "#FFF", 
+                                background: sel ? "#FFF" : "#FDFDFB", 
                                 cursor: "pointer",
-                                boxShadow: sel ? "0 8px 20px rgba(181, 143, 76, 0.1)" : "none"
+                                transition: "all 0.2s",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 12,
+                                position: "relative",
+                                overflow: "hidden",
+                                boxShadow: sel ? "0 8px 20px rgba(181, 143, 76, 0.12)" : "none"
                               }}
                             >
-                              <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{opt.label}</div>
-                              <div style={{ fontSize: 10, color: MUTED }}>{opt.desc}</div>
+                              {sel && (
+                                <div style={{ position: "absolute", top: 0, right: 0, width: 28, height: 28, background: CU, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 0 0 12px" }}>
+                                  <Check size={14} color="#FFF" />
+                                </div>
+                              )}
+                              <div style={{ width: 36, height: 36, borderRadius: 10, background: sel ? CU_DIM : BG, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                <Icon size={18} color={sel ? CU : MUTED} />
+                              </div>
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: sel ? TEXT : MUTED, marginBottom: 4 }}>{opt.label}</div>
+                                <div style={{ fontSize: 10, color: HINT, lineHeight: 1.4 }}>{opt.desc}</div>
+                              </div>
                             </motion.div>
                           );
                         })}
@@ -1866,7 +1923,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
                     {s.format === "grupos_playoffs" && (
                       <div style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 800 }}>2. Configuración de fase de grupos</h4>
+                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>2. Configuración de fase de grupos</h4>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                           <RowInp label="Número de grupos" type="number" value={s.groupsCount || 1} onChange={v => updateStruct(catId, { groupsCount: parseInt(v) || 1, status: "configured" })} />
                           <RowInp label="Modalidad" type="select" value={s.groupLegs || 1} onChange={v => updateStruct(catId, { groupLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Una vuelta"}, {v: 2, l: "Ida y vuelta"}]} />
@@ -1877,7 +1934,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     
                     {s.format === "todos_contra_todos" && (
                       <div style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 800 }}>2. Configuración de liga</h4>
+                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>2. Configuración de liga</h4>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
                           <RowInp label="Número de vueltas" type="select" value={s.groupLegs || 1} onChange={v => updateStruct(catId, { groupLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Una vuelta"}, {v: 2, l: "Ida y vuelta"}]} />
                         </div>
@@ -1886,7 +1943,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
                     {(s.format === "grupos_playoffs" || s.format === "eliminacion") && (
                       <div style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 800 }}>3. Eliminatoria</h4>
+                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>3. Eliminatoria</h4>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                           <RowInp label="Partidos de eliminatoria" type="select" value={s.playoffLegs || 1} onChange={v => updateStruct(catId, { playoffLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Partido único"}, {v: 2, l: "Ida y vuelta"}]} />
                           <RowInp label="Gran final" type="select" value={s.finalLegs || 1} onChange={v => updateStruct(catId, { finalLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Partido único"}, {v: 2, l: "Ida y vuelta"}]} />
@@ -1907,13 +1964,13 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 return (
                   <div style={{ background: "#FDFBF7", borderRadius: 20, border: `1px solid #F5E6D3`, padding: 24 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>Vista previa automática</h4>
+                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Vista previa automática</h4>
                       <div style={{ fontSize: 10, fontWeight: 700, padding: "4px 8px", borderRadius: 6, background: "#E7F9ED", color: PALETTE.success }}>Configuración válida</div>
                     </div>
                     
                     {s.format === "grupos_playoffs" && (
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: MUTED, marginBottom: 8 }}>FASE DE GRUPOS</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: MUTED, marginBottom: 8 }}>FASE DE GRUPOS</div>
                         <PreviewItem text={`${s.groupsCount} grupo(s)`} />
                         <PreviewItem text={`${math.groupStageMatches} partidos en total`} />
                       </div>
@@ -1921,7 +1978,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     
                     {math.totalQualified > 0 && (
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: MUTED, marginBottom: 8 }}>CLASIFICACIÓN</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: MUTED, marginBottom: 8 }}>CLASIFICACIÓN</div>
                         <PreviewItem text={`Total clasificados: ${math.totalQualified}`} />
                         {math.playoffStructure && <PreviewItem text={`Inicia desde: ${math.playoffStructure.initialRound}`} />}
                         {math.playoffStructure?.needsPreliminary && <PreviewItem text={`Requiere ronda preliminar (${math.playoffStructure.teamsInPreliminary} equipos)`} />}
@@ -1929,13 +1986,13 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     )}
                     
                     <div style={{ borderTop: "1px solid #F5E6D3", paddingTop: 16, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 14, fontWeight: 800 }}>Total de partidos:</span>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: CU }}>{math.totalMatches}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>Total de partidos:</span>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: CU }}>{math.totalMatches}</span>
                     </div>
 
                     {/* CALENDAR IMPACT */}
                     <div style={{ borderTop: "1px solid #F5E6D3", paddingTop: 16, marginTop: 16 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: MUTED, marginBottom: 12 }}>IMPACTO EN CALENDARIO</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: MUTED, marginBottom: 12 }}>IMPACTO EN CALENDARIO</div>
                       {(() => {
                         const stats = calculateSchedulingStats(data.horarios, math.totalMatches);
                         return (
@@ -1977,7 +2034,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", padding: "16px 0" }}
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ padding: "0 16px 8px", fontSize: 11, fontWeight: 800, color: HINT, letterSpacing: "0.05em" }}>CATEGORÍAS</div>
+                  <div style={{ padding: "0 16px 8px", fontSize: 11, fontWeight: 700, color: HINT, letterSpacing: "0.05em" }}>CATEGORÍAS</div>
                   {data.categorias.map(c => {
                     const loaded = teams[c.id]?.length || 0;
                     const isDone = loaded >= 2;
@@ -1992,26 +2049,26 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                         onClick={() => setCatId(c.id)} 
                         style={{ 
                           margin: "0 12px",
-                          padding: "16px", 
-                          borderRadius: 16, 
+                          padding: "10px 14px", 
+                          borderRadius: 12, 
                           display: "flex", 
                           alignItems: "center", 
                           gap: 12, 
                           cursor: "pointer", 
                           background: active ? "#FFF" : "#FDFDFB", 
-                          border: `1.5px solid ${active ? CU : BORDER}`,
-                          boxShadow: active ? "0 4px 12px rgba(181, 143, 76, 0.1)" : "none",
+                          border: `1px solid ${active ? CU : BORDER}`,
+                          boxShadow: active ? "0 4px 12px rgba(181, 143, 76, 0.08)" : "none",
                           transition: "all 0.2s"
                         }}
                       >
-                        <div style={{ width: 36, height: 36, borderRadius: 12, background: active ? CU : BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Users size={18} color={active ? "#FFF" : HINT} />
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: active ? CU : BG, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <Users size={14} color={active ? "#FFF" : HINT} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{c.nombre}</div>
-                          <div style={{ fontSize: 11, color: isDone ? PALETTE.success : "#E87C2E", fontWeight: 700 }}>
-                            {isDone ? <CheckCircle size={10} style={{ marginRight: 4 }} /> : <AlertCircle size={10} style={{ marginRight: 4 }} />}
-                            {loaded} equipos
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.nombre}</div>
+                          <div style={{ fontSize: 9, color: isDone ? PALETTE.success : "#E87C2E", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                            {isDone ? <Check size={8} /> : <AlertCircle size={8} />}
+                            {loaded} EQUIPOS
                           </div>
                         </div>
                       </motion.div>
@@ -2026,7 +2083,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, color: "#D89A2B" }}>
                       <div style={{ width: 44, height: 44, borderRadius: 12, background: "#FEF9C3", display: "flex", alignItems: "center", justifyContent: "center" }}><AlertTriangle size={24} /></div>
                       <div>
-                        <h3 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: TEXT }}>Acción requerida</h3>
+                        <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: TEXT }}>Acción requerida</h3>
                         <p style={{ margin: 0, fontSize: 13, color: MUTED }}>Se detectaron detalles en la importación de archivos</p>
                       </div>
                     </div>
@@ -2035,7 +2092,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       <div style={{ marginBottom: 24, padding: 20, background: "#F0F9FF", borderRadius: 16, border: "1px solid #B9E6FE" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                            <Plus size={16} color="#026AA2" />
-                           <span style={{ fontSize: 14, fontWeight: 800, color: "#026AA2" }}>Nuevas categorías detectadas</span>
+                           <span style={{ fontSize: 14, fontWeight: 700, color: "#026AA2" }}>Nuevas categorías detectadas</span>
                         </div>
                         <p style={{ margin: "0 0 12px", fontSize: 13, color: "#026AA2", lineHeight: 1.5 }}>El archivo contiene equipos en categorías que no has creado. Se crearán automáticamente:</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2063,14 +2120,14 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 ) : isImporting ? (
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 40 }}>
                     <div style={{ width: 60, height: 60, borderRadius: "50%", border: `4px solid ${CU_DIM}`, borderTopColor: CU, margin: "0 auto 24px", animation: "spin 1s linear infinite" }} />
-                    <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 800 }}>Procesando archivo...</h3>
+                    <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700 }}>Procesando archivo...</h3>
                     <p style={{ margin: 0, fontSize: 14, color: MUTED, maxWidth: 300 }}>Estamos organizando tus equipos y validando las categorías cargadas.</p>
                   </div>
                 ) : (
                   <>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", marginBottom: 20 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Equipos de: {activeCat?.nombre}</h3>
+                        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Equipos de: {activeCat?.nombre}</h3>
                         <span style={{ fontSize: 12, color: "#E87C2E", fontWeight: 700 }}>{activeTeams.length} equipos cargados</span>
                       </div>
                       <div style={{ display: "flex", gap: 8 }}>
@@ -2118,7 +2175,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                               <Shield size={16} color={CU} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 800, fontSize: 13, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</div>
                               <div style={{ fontSize: 9, color: HINT, display: "flex", alignItems: "center", gap: 3, marginTop: 1 }}>
                                 <User size={8} style={{ opacity: 0.7 }} /> 
                                 <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.delegate || "Sin delegado"}</span>
@@ -2164,7 +2221,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 {importConflicts ? (
                   <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${CU_BOR}`, padding: 24, boxShadow: ELEV }}>
-                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 800 }}>Resolver conflictos</h4>
+                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Resolver conflictos</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <button onClick={() => resolveConflicts("replace")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: CU, color: "#FFF", border: "none", fontWeight: 700, cursor: "pointer", transition: "transform 0.1s" }} onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"} onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
                         {importConflicts.conflicts.length > 0 ? "Reemplazar e Importar" : "Crear e Importar"}
@@ -2177,12 +2234,12 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   </div>
                 ) : isImporting ? (
                   <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24, opacity: 0.6, pointerEvents: "none" }}>
-                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 800 }}>Acciones rápidas</h4>
+                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Acciones rápidas</h4>
                     <p style={{ fontSize: 12, color: MUTED }}>Importación en curso...</p>
                   </div>
                 ) : (
                   <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24 }}>
-                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 800 }}>Acciones rápidas</h4>
+                    <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Acciones rápidas</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <button onClick={() => {
                         const name = window.prompt("Nombre del equipo:");
@@ -2207,7 +2264,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ background: "#FFF", borderRadius: 24, padding: 32, width: 400, boxShadow: ELEV }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>Dar de baja a equipo</h3>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Dar de baja a equipo</h3>
                     <button onClick={() => setTeamToWithdraw(null)} style={{ background: "none", border: "none", cursor: "pointer" }}><X size={20} color={MUTED} /></button>
                   </div>
                   <div style={{ padding: 16, background: "#FFF1E7", borderRadius: 12, border: `1px solid #F5D4B8`, display: "flex", gap: 10, marginBottom: 20 }}>
@@ -2239,10 +2296,10 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
                 <div>
-                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800 }}>Gestión de Árbitros</h2>
+                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Gestión de Árbitros</h2>
                   <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Registra los jueces que participarán en el torneo para su asignación automática.</p>
                 </div>
-                <div style={{ background: "#E7F9ED", color: PALETTE.success, padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 800 }}>
+                <div style={{ background: "#E7F9ED", color: PALETTE.success, padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 700 }}>
                   {data.arbitros.length} ÁRBITROS REGISTRADOS
                 </div>
               </div>
@@ -2271,7 +2328,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       input.value = "";
                     }
                   }}
-                  style={{ background: CU, color: "#FFF", border: "none", padding: "0 32px", borderRadius: 12, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)" }}
+                  style={{ background: CU, color: "#FFF", border: "none", padding: "0 32px", borderRadius: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)" }}
                 >
                   Agregar Juez
                 </button>
@@ -2297,11 +2354,11 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     style={{ padding: 16, background: "#FFF", border: `1.5px solid ${BORDER}`, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 2px 8px rgba(0,0,0,0.02)", cursor: "pointer" }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: a.photo ? `url(${a.photo}) center/cover` : CU_DIM, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: CU, border: `1px solid ${CU_BOR}` }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: a.photo ? `url(${a.photo}) center/cover` : CU_DIM, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: CU, border: `1px solid ${CU_BOR}` }}>
                         {!a.photo && a.name.slice(0,1).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{a.name}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{a.name}</div>
                         <div style={{ fontSize: 10, color: a.disponibilidad === "completa" ? PALETTE.success : "#D89A2B", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
                           {a.disponibilidad === "completa" ? <CheckCircle size={10} /> : <Clock size={10} />}
                           {a.disponibilidad === "completa" ? "Disponible" : "Con franjas"}
@@ -2334,12 +2391,12 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             {/* Modal de Perfil de Árbitro */}
             <AnimatePresence>
               {showArbModal && selectedArb && (
-                <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.45)", zIndex: 2500, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.93, opacity: 0 }} style={{ background: "#FFF", borderRadius: 28, padding: 32, width: 580, maxHeight: "90vh", overflow: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.15)", fontFamily: FONT }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                         <div style={{ position: "relative" }}>
-                          <div style={{ width: 80, height: 80, borderRadius: 24, background: selectedArb.photo ? `url(${selectedArb.photo}) center/cover` : CU_DIM, border: `2px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 800, color: CU, overflow: "hidden" }}>
+                          <div style={{ width: 80, height: 80, borderRadius: 24, background: selectedArb.photo ? `url(${selectedArb.photo}) center/cover` : CU_DIM, border: `2px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: CU, overflow: "hidden" }}>
                             {!selectedArb.photo && selectedArb.name.slice(0,1).toUpperCase()}
                           </div>
                           <input 
@@ -2381,7 +2438,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           )}
                         </div>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>{selectedArb.name}</h3>
+                          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{selectedArb.name}</h3>
                           <p style={{ margin: "4px 0 0", fontSize: 12, color: MUTED }}>Perfil del Cuerpo Arbitral</p>
                         </div>
                       </div>
@@ -2394,7 +2451,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <Clock size={18} color={CU} />
-                            <span style={{ fontSize: 14, fontWeight: 800 }}>Disponibilidad</span>
+                            <span style={{ fontSize: 14, fontWeight: 700 }}>Disponibilidad</span>
                           </div>
                           <Switch 
                             active={selectedArb.disponibilidad === "completa"} 
@@ -2483,7 +2540,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       <div style={{ padding: 24, background: "#FDFDFB", borderRadius: 20, border: `1.5px solid ${BORDER}` }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                           <FileText size={18} color={CU} />
-                          <span style={{ fontSize: 14, fontWeight: 800 }}>Información Adicional</span>
+                          <span style={{ fontSize: 14, fontWeight: 700 }}>Información Adicional</span>
                         </div>
                         <textarea 
                           placeholder="Escribe notas relevantes, experiencia o certificaciones del árbitro..."
@@ -2500,7 +2557,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     </div>
 
                     <div style={{ marginTop: 32 }}>
-                      <button onClick={() => setShowArbModal(false)} style={{ width: "100%", height: 52, borderRadius: 16, background: CU, color: "#FFF", border: "none", fontWeight: 800, cursor: "pointer", boxShadow: "0 6px 20px rgba(181, 143, 76, 0.3)" }}>
+                      <button onClick={() => setShowArbModal(false)} style={{ width: "100%", height: 52, borderRadius: 16, background: CU, color: "#FFF", border: "none", fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 20px rgba(181, 143, 76, 0.3)" }}>
                         Guardar Perfil
                       </button>
                     </div>
@@ -2517,7 +2574,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
                 <div>
-                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800 }}>Distribución de Grupos</h2>
+                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Distribución de Grupos</h2>
                   <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Visualiza cómo quedarán asignados los equipos en cada categoría.</p>
                 </div>
                 <button 
@@ -2566,7 +2623,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           <Users size={20} color={isCollapsed ? HINT : CU} />
                         </div>
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: 16, color: TEXT }}>{cat.nombre}</div>
+                          <div style={{ fontWeight: 700, fontSize: 16, color: TEXT }}>{cat.nombre}</div>
                           <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>
                             {gCount} grupos · {tList.length} equipos · {Math.ceil(tList.length / gCount)} promedio por grupo
                           </div>
@@ -2590,13 +2647,13 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           {groups.map((g, gi) => (
                             <div key={gi} style={{ background: "#FFF", borderRadius: 20, border: `1px solid ${BORDER}`, boxShadow: "0 2px 8px rgba(0,0,0,0.02)", overflow: "hidden", transition: "transform 0.2s" }}>
                               <div style={{ padding: "14px 20px", background: "#FDFDFB", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontWeight: 800, fontSize: 14, color: TEXT }}>{g.name}</span>
+                                <span style={{ fontWeight: 700, fontSize: 14, color: TEXT }}>{g.name}</span>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: HINT }}>{g.teams.length} equipos</span>
                               </div>
                               <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
                                 {g.teams.map((t, ti) => (
                                   <div key={ti} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12, background: "#F8F9FA", border: "1px solid #F1F3F5", transition: "all 0.2s" }}>
-                                    <span style={{ color: HINT, fontWeight: 800, fontSize: 11, width: 16 }}>{ti + 1}</span>
+                                    <span style={{ color: HINT, fontWeight: 700, fontSize: 11, width: 16 }}>{ti + 1}</span>
                                     <div style={{ width: 28, height: 28, borderRadius: 8, background: "#FFF", border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                       <Shield size={14} color={CU} />
                                     </div>
@@ -2622,7 +2679,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
                 <div>
-                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800 }}>Fixture del Torneo</h2>
+                  <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Fixture del Torneo</h2>
                   <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Previsualización de los enfrentamientos por categoría y jornada.</p>
                 </div>
                 <div style={{ display: "flex", gap: 12 }}>
@@ -2639,7 +2696,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       alert("¡Fixture definitivo generado! El sistema ha bloqueado las jornadas para este borrador.");
                       handleNext();
                     }}
-                    style={{ background: CU, color: "#FFF", border: "none", padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)", transition: "all 0.2s" }}
+                    style={{ background: CU, color: "#FFF", border: "none", padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)", transition: "all 0.2s" }}
                     onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 15px rgba(181, 143, 76, 0.3)"; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(181, 143, 76, 0.2)"; }}
                   >
@@ -2690,7 +2747,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{ width: 8, height: 8, borderRadius: "50%", background: CU }} />
-                        <span style={{ fontWeight: 800, fontSize: 16 }}>{cat.nombre}</span>
+                        <span style={{ fontWeight: 700, fontSize: 16 }}>{cat.nombre}</span>
                       </div>
                       <ChevronRight size={20} color={HINT} style={{ transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)", transition: "transform 0.3s" }} />
                     </div>
@@ -2707,13 +2764,13 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
                         {/* Fixture Preview */}
                         <div style={{ marginBottom: 32 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, marginBottom: 16 }}>Enfrentamientos previstos (Fase de Grupos)</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 16 }}>Enfrentamientos previstos (Fase de Grupos)</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                             {previewMatches.length > 0 ? (
                               [1, 2].map(j => (
                                 <div key={j} style={{ background: "#FDFDFB", borderRadius: 16, padding: "16px 24px", border: `1px solid ${BORDER}` }}>
-                                  <div style={{ fontSize: 11, fontWeight: 800, color: MUTED, marginBottom: 12, letterSpacing: "0.05em" }}>JORNADA {j}</div>
-                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, marginBottom: 12, letterSpacing: "0.05em" }}>JORNADA {j}</div>
+                                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                                     {previewMatches.map((m, mi) => (
                                       <div key={mi} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FFF", padding: "12px 16px", borderRadius: 12, border: `1px solid ${BORDER}`, boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
                                         <div style={{ flex: 1, textAlign: "right", fontWeight: 700, fontSize: 13 }}>{m.home.name}</div>
@@ -2734,7 +2791,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                         {/* Playoff Scheme */}
                         {s.format === "grupos_playoffs" && (
                           <div style={{ background: "#F8F9FA", borderRadius: 20, padding: 24, border: `1px solid ${BORDER}` }}>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, marginBottom: 20 }}>Esquema de Fase Final (Playoffs)</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 20 }}>Esquema de Fase Final (Playoffs)</div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
                               {[
                                 { label: "Clasificación", desc: `${s.groupsCount || 2} grupos` },
@@ -2744,9 +2801,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                 <React.Fragment key={si}>
                                   <div style={{ textAlign: "center", zIndex: 1 }}>
                                     <div style={{ width: 40, height: 40, borderRadius: "50%", background: si === arr.length - 1 ? CU : "#FFF", border: `2px solid ${CU}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", color: si === arr.length - 1 ? "#FFF" : CU }}>
-                                      {si === arr.length - 1 ? <Trophy size={20} /> : <div style={{ fontWeight: 800 }}>{si + 1}</div>}
+                                      {si === arr.length - 1 ? <Trophy size={20} /> : <div style={{ fontWeight: 700 }}>{si + 1}</div>}
                                     </div>
-                                    <div style={{ fontSize: 13, fontWeight: 800 }}>{step.label}</div>
+                                    <div style={{ fontSize: 13, fontWeight: 700 }}>{step.label}</div>
                                     <div style={{ fontSize: 11, color: MUTED }}>{step.desc}</div>
                                   </div>
                                   {si < arr.length - 1 && (
@@ -2801,7 +2858,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
                   <div>
-                    <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800 }}>Calendario Estimado</h2>
+                    <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Calendario Estimado</h2>
                     <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Distribución tentativa de jornadas basada en tu configuración de horarios.</p>
                   </div>
                   <button 
@@ -2849,12 +2906,12 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           boxShadow: isSelected ? "0 8px 24px rgba(181, 143, 76, 0.15)" : "none"
                         }}
                       >
-                        <div style={{ fontSize: 11, fontWeight: 800, color: isSelected ? CU : MUTED, marginBottom: 8, letterSpacing: "0.05em" }}>JORNADA {j}</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: isSelected ? CU : MUTED, marginBottom: 8, letterSpacing: "0.05em" }}>JORNADA {j}</div>
                         {(() => {
                           const endD = new Date(date);
                           endD.setDate(date.getDate() + 6);
                           return (
-                            <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
                               <span>{date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                               <span style={{ opacity: 0.3 }}>—</span>
                               <span>{endD.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
@@ -2873,7 +2930,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
                       <div style={{ background: "#FDFDFB", border: `1.5px solid ${BORDER}`, borderRadius: 20, padding: 24 }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Partidos de la Jornada {selectedJornada}</h3>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Partidos de la Jornada {selectedJornada}</h3>
                           <div style={{ fontSize: 12, color: MUTED }}>Vista preliminar por categoría</div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -2891,7 +2948,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                 >
                                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: CU }} />
-                                    <span style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{cat.nombre}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cat.nombre}</span>
                                     <span style={{ fontSize: 11, color: HINT }}>({info.mPerRound} partidos)</span>
                                   </div>
                                   <ChevronRight size={16} color={HINT} style={{ transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)", transition: "transform 0.3s" }} />
@@ -2946,7 +3003,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                                         <div style={{ fontSize: 9, fontWeight: 900, color: CU }}>{dayInfo.dia.slice(0,3).toUpperCase()}</div>
                                                         <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>C{dayInfo.cancha}</div>
                                                       </div>
-                                                      <div style={{ fontSize: 13, fontWeight: 800 }}>{dayInfo.inicio}</div>
+                                                      <div style={{ fontSize: 13, fontWeight: 700 }}>{dayInfo.inicio}</div>
                                                     </div>
                                                     <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                                                       <div style={{ flex: 1, textAlign: "right", fontSize: 12, fontWeight: 700, color: TEXT }}>{tList[hIdx]?.name || "Equipo A"}</div>
@@ -2955,7 +3012,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                                     </div>
                                                     <div style={{ width: 120, borderLeft: `1px solid ${BORDER}`, paddingLeft: 10, display: "flex", flexDirection: "column", gap: 2 }}>
                                                       <div style={{ fontSize: 9, fontWeight: 700, color: HINT }}>ÁRBITRO</div>
-                                                      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{arb}</div>
+                                                      <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{arb}</div>
                                                     </div>
                                                   </div>
                                                 );
@@ -2977,7 +3034,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <Info size={20} color="#D89A2B" />
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: 14, color: "#926B24", marginBottom: 4 }}>Nota sobre el calendario</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: "#926B24", marginBottom: 4 }}>Nota sobre el calendario</div>
                     <p style={{ margin: 0, fontSize: 13, color: "#D89A2B", lineHeight: 1.5 }}>
                       Este calendario es una proyección automática basada en la fecha de inicio ({data.fechaInicio || 'No definida'}) y la cantidad de partidos estimados ({totalMatches}). Podrás ajustar fechas y horas exactas una vez creado el torneo.
                     </p>
@@ -2994,7 +3051,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
               <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
                 <div style={{ width: 80, height: 80, borderRadius: "50%", background: "#FCF8F1", display: "flex", alignItems: "center", justifyContent: "center" }}><Trophy size={40} color={CU} /></div>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{data.nombre}</h2>
+                  <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{data.nombre}</h2>
                   <div style={{ display: "flex", gap: 12, marginTop: 4, color: MUTED, fontSize: 14 }}><span>{data.deporte}</span><span>·</span><span>{data.temporada}</span></div>
                 </div>
               </div>
@@ -3017,7 +3074,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             <div style={{ display: "grid", gridTemplateColumns: "1fr 380px", gap: 24, alignItems: "start" }}>
               <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: "24px 0" }}>
                 <div style={{ padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Resumen de categorías y estructura</h3>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Resumen de categorías y estructura</h3>
                   <button onClick={() => setStep(2)} style={{ background: "none", border: "none", color: CU, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}><Edit3 size={14} /> Editar estructura</button>
                 </div>
                 <div style={{ overflowX: "auto" }}>
@@ -3067,14 +3124,14 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     </motion.tbody>
                   </table>
                 </div>
-                <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontWeight: 800 }}>
+                <div style={{ padding: "20px 24px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10, fontSize: 14, fontWeight: 700 }}>
                   <BarChart2 size={18} color={CU} /> Total de partidos estimados en el torneo: <span style={{ color: TEXT }}>{totalMatches}</span>
                 </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24 }}>
-                  <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 10 }}><Users size={18} color={CU} /> Resumen de equipos</h3>
+                  <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}><Users size={18} color={CU} /> Resumen de equipos</h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
                     <SummaryRow lab="Categorías" val={data.categorias.length} />
                     <SummaryRow lab="Equipos cargados" val={totalLoaded} />
@@ -3090,7 +3147,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                         <>
                           <SummaryRow lab="Partidos / semana" val={stats.weeklyCapacity} />
                           <SummaryRow lab="Duración estimada" val={`${stats.estimatedWeeks} semanas`} />
-                          <SummaryRow lab="Final proyectado" val={<span style={{ color: isOverdue ? PALETTE.danger : CU, fontWeight: 800 }}>{projected}</span>} />
+                          <SummaryRow lab="Final proyectado" val={<span style={{ color: isOverdue ? PALETTE.danger : CU, fontWeight: 700 }}>{projected}</span>} />
                           <div style={{ marginTop: 12, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                               <span style={{ fontSize: 13, color: MUTED }}>Capacidad de Árbitros</span>
@@ -3101,7 +3158,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                 return (
                                   <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 8, background: isShort ? "#FEF2F2" : "#F0FDF4", border: `1px solid ${isShort ? "#FCA5A5" : "#86EFAC"}` }}>
                                     <div style={{ width: 6, height: 6, borderRadius: "50%", background: isShort ? PALETTE.danger : PALETTE.success }} />
-                                    <span style={{ fontSize: 11, fontWeight: 800, color: isShort ? PALETTE.danger : PALETTE.success }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: isShort ? PALETTE.danger : PALETTE.success }}>
                                       {isShort ? "INSUFICIENTE" : "COBERTURA TOTAL"}
                                     </span>
                                   </div>
@@ -3118,7 +3175,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                           
                           {suggestions.length > 0 && (
                             <div style={{ marginTop: 20, padding: 16, background: isOverdue ? "#FFF5F5" : "#FFFBF2", borderRadius: 16, border: `1.5px solid ${isOverdue ? "#FFEBEB" : "#FFF1D6"}` }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, color: isOverdue ? PALETTE.danger : "#D89A2B", fontWeight: 800, fontSize: 13, marginBottom: 12 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, color: isOverdue ? PALETTE.danger : "#D89A2B", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
                                 <Sparkles size={16} /> {isOverdue ? "ASISTENTE INTELIGENTE" : "OPORTUNIDAD DE OPTIMIZACIÓN"}
                               </div>
                               <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
@@ -3143,7 +3200,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                                   duration: 2,
                                 }}
                                 onClick={() => setShowSuggestModal(suggestions)}
-                                style={{ width: "100%", background: isOverdue ? PALETTE.danger : "#D89A2B", color: "#FFF", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.2s" }}
+                                style={{ width: "100%", background: isOverdue ? PALETTE.danger : "#D89A2B", color: "#FFF", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "all 0.2s" }}
                               >
                                 <Wand2 size={16} /> Utilizar recomendaciones
                               </motion.button>
@@ -3159,7 +3216,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       {totalLoaded >= totalExpected ? "Todos los equipos requeridos están cargados correctamente." : `Faltan cargar ${totalExpected - totalLoaded} equipos para completar las categorías.`}
                     </p>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 12 }}>Equipos por categoría</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Equipos por categoría</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {[...data.categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true })).map(c => {
                       const loaded = teams[c.id]?.length || 0;
@@ -3170,8 +3227,8 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       return (
                         <div key={c.id} style={{ background: "#FDFDFB", padding: "16px", borderRadius: 16, border: `1.5px solid ${BORDER}` }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{c.nombre}</span>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: isComplete ? PALETTE.success : "#D89A2B" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{c.nombre}</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: isComplete ? PALETTE.success : "#D89A2B" }}>
                               {isComplete ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                               {loaded} / {expected}
                             </div>
@@ -3190,7 +3247,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                 </div>
 
                 <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24 }}>
-                   <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 800 }}>Checklist de validación</h3>
+                   <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600 }}>Checklist de validación</h3>
                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                       <CheckItem 
                         label="Información básica" 
@@ -3219,7 +3276,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       {(data.nombre && data.categorias.every(c => structures[c.id]?.status === "configured") && totalLoaded >= totalExpected && totalExpected > 0) ? <CheckCircle size={20} color={PALETTE.success} /> : <AlertCircle size={20} color="#E87C2E" />}
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{(data.nombre && data.categorias.every(c => structures[c.id]?.status === "configured") && totalLoaded >= totalExpected && totalExpected > 0) ? "Todo está listo" : "Revisión pendiente"}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{(data.nombre && data.categorias.every(c => structures[c.id]?.status === "configured") && totalLoaded >= totalExpected && totalExpected > 0) ? "Todo está listo" : "Revisión pendiente"}</div>
                       <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{(data.nombre && data.categorias.every(c => structures[c.id]?.status === "configured") && totalLoaded >= totalExpected && totalExpected > 0) ? "Puedes crear el torneo y comenzar con la generación del fixture." : "Resuelve las advertencias del checklist para evitar errores."}</div>
                     </div>
                   </div>
@@ -3254,7 +3311,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     border: "none", 
                     background: (data.nombre && data.categorias.length > 0) ? CU : BORDER, 
                     color: "#FFF", 
-                    fontWeight: 800, 
+                    fontWeight: 700, 
                     fontSize: 15,
                     cursor: (data.nombre && data.categorias.length > 0) ? "pointer" : "not-allowed",
                     display: "flex",
@@ -3298,24 +3355,24 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
         }
       `}} />
       {/* STICKY ACTION FOOTER */}
-      <div style={{ position: "sticky", bottom: 0, left: 0, right: 0, background: "rgba(255, 255, 255, 0.8)", backdropFilter: "blur(12px)", borderTop: `1px solid ${BORDER}`, padding: "20px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100, marginTop: 40, margin: "0 -40px -40px" }}>
+      <div style={{ position: "sticky", bottom: 0, left: 0, right: 0, padding: "32px 0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100, marginTop: 40, background: "transparent" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {step > 1 && (
             <button 
               onClick={() => setStep(s => s - 1)} 
-              style={{ background: "#FFF", border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: "0 22px", height: 48, fontSize: 14, fontWeight: 700, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
+              style={{ background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 12, padding: "0 22px", height: 48, fontSize: 14, fontWeight: 600, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = CU; e.currentTarget.style.color = CU; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED; }}
             >
               <ArrowLeft size={16} /> Anterior
             </button>
           )}
-          <button 
-            onClick={handleSaveDraft} 
-            style={{ background: "#FFF", border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: "0 22px", height: 48, fontSize: 14, fontWeight: 700, color: TEXT, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
-            onMouseEnter={e => { e.currentTarget.style.background = BG; e.currentTarget.style.borderColor = CU_BOR; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = BORDER; }}
-          >
+            <button 
+              onClick={handleSaveDraft} 
+              style={{ background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 12, padding: "0 22px", height: 48, fontSize: 14, fontWeight: 600, color: TEXT, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = BG; e.currentTarget.style.borderColor = CU_BOR; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = BORDER; }}
+            >
             <Save size={16} /> Guardar borrador
           </button>
         </div>
@@ -3333,12 +3390,41 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             whileHover={{ scale: 1.02, y: -2 }} 
             whileTap={{ scale: 0.98 }} 
             onClick={handleNext} 
-            style={{ background: CU, color: "#FFF", border: "none", borderRadius: 12, padding: "0 40px", minWidth: 220, height: 52, fontSize: 15, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 8px 25px rgba(181, 143, 76, 0.3)", whiteSpace: "nowrap" }}
+            style={{ background: CU, color: "#FFF", border: "none", borderRadius: 12, padding: "0 40px", minWidth: 220, height: 52, fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 8px 25px rgba(206, 137, 70, 0.3)", whiteSpace: "nowrap" }}
           >
             {step === 6 ? "Ver resumen final" : step === 7 ? "CREAR TORNEO AHORA" : "Guardar y continuar"} <ArrowRight size={20} />
           </motion.button>
         </div>
       </div>
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+            style={{ 
+              position: "fixed", bottom: 40, left: "50%", x: "-50%", 
+              background: "#1F1F1D", color: "#FFF", padding: "12px 24px", 
+              borderRadius: 12, fontSize: 13, fontWeight: 600, zIndex: 3000,
+              display: "flex", alignItems: "center", gap: 10,
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+            }}
+          >
+            <CheckCircle size={16} color={PALETTE.success} />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {isCreating && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(255,255,255,0.8)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 4000 }}>
+          <div style={{ textAlign: "center" }}>
+            <AlttezLoader />
+            <p style={{ marginTop: 20, fontSize: 16, fontWeight: 700, color: CU }}>Iniciando tu torneo...</p>
+            <p style={{ fontSize: 13, color: MUTED }}>Estamos guardando categorías y equipos en la nube.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3353,8 +3439,8 @@ function InfoBox({ icon: Icon, label, value }) {
         <Icon size={18} color={CU} />
       </div>
       <div>
-        <div style={{ fontSize: 10, fontWeight: 800, color: HINT, marginBottom: 2, letterSpacing: "0.05em" }}>{label.toUpperCase()}</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{value || "---"}</div>
+        <div style={{ fontSize: 10, fontWeight: 500, color: HINT, marginBottom: 2, letterSpacing: "0.05em" }}>{label.toUpperCase()}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{value || "---"}</div>
       </div>
     </motion.div>
   );
@@ -3364,7 +3450,7 @@ function SummaryRow({ lab, val }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={{ fontSize: 14, color: MUTED }}>{lab}</span>
-      <span style={{ fontSize: 16, fontWeight: 800 }}>{val}</span>
+      <span style={{ fontSize: 16, fontWeight: 600 }}>{val}</span>
     </div>
   );
 }
@@ -3384,7 +3470,7 @@ function CheckItem({ label, sub, status = "success" }) {
     >
        <div style={{ marginTop: 2 }}><Icon size={18} color={color} /></div>
        <div>
-         <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{label}</div>
+         <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{label}</div>
          <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{sub}</div>
        </div>
     </motion.div>
@@ -3401,8 +3487,8 @@ function SmallBadge({ icon: Icon, label, value }) {
         <Icon size={12} color={isBorrador ? HINT : CU} />
       </div>
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ fontSize: 8, fontWeight: 800, color: HINT, letterSpacing: "0.05em", lineHeight: 1 }}>{label.toUpperCase()}</div>
-        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 8, fontWeight: 500, color: HINT, letterSpacing: "0.05em", lineHeight: 1 }}>{label.toUpperCase()}</div>
+        <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, lineHeight: 1 }}>{value}</div>
       </div>
     </div>
   );
@@ -3416,8 +3502,8 @@ function FooterBadge({ icon: Icon, label, value }) {
         <Icon size={16} color={isBorrador ? HINT : CU} />
       </div>
       <div>
-        <div style={{ fontSize: 9, fontWeight: 800, color: HINT, letterSpacing: "0.05em", marginBottom: 2 }}>{label.toUpperCase()}</div>
-        <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{value}</div>
+        <div style={{ fontSize: 9, fontWeight: 500, color: HINT, letterSpacing: "0.05em", marginBottom: 2 }}>{label.toUpperCase()}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{value}</div>
       </div>
     </div>
   );

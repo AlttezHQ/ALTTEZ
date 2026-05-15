@@ -61,7 +61,6 @@ export async function saveEquipos(torneoId, equipos) {
     id: e.id,
     torneo_id: torneoId,
     user_id: user.id,
-    organizador_id: user.id,
     nombre: e.nombre,
     escudo: e.logo || e.escudo || null,
     color: e.color || null,

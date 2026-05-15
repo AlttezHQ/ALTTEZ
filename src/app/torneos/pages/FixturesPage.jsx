@@ -284,6 +284,8 @@ export default function FixturesPage({ onGoTorneos }) {
     });
   }, [groups]);
 
+  const activeCat = selectedCat || categories[0];
+  const equiposCat = allEquipos.filter(e => e.torneoId === torneoActivoId && (e.grupo || "General") === activeCat);
   const tabla = useMemo(() => calcularPosiciones(partidosCat, equiposCat), [partidosCat, equiposCat]);
 
   // Enforce first group expanded by default if not set
@@ -300,8 +302,6 @@ export default function FixturesPage({ onGoTorneos }) {
   }
 
   const torneo   = allTorneos.find(t => t.id === torneoActivoId) ?? null;
-  const activeCat = selectedCat || categories[0];
-  const equiposCat = allEquipos.filter(e => e.torneoId === torneoActivoId && (e.grupo || "General") === activeCat);
   
   const arbitros = allArbitros.filter(a => a.torneoId === torneoActivoId);
   const sedes    = allSedes.filter(s => s.torneoId === torneoActivoId);
