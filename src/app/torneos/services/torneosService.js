@@ -38,6 +38,11 @@ export async function saveTorneo(torneo) {
     patrocinadores: torneo.patrocinadores,
     visibilidad:  torneo.visibilidad,
     reglamento_url: torneo.reglamentoUrl,
+    sede_ubicacion: torneo.sedeUbicacion,
+    num_canchas:   torneo.numCanchas,
+    duracion_partido: torneo.duracionPartido,
+    margen_entre_partidos: torneo.margenEntrePartidos,
+    horarios:      torneo.horarios || [],
     updated_at:   new Date().toISOString(),
   });
   return { ok: !error, error };
@@ -81,6 +86,33 @@ export async function saveEquipos(torneoId, equipos) {
   return { ok: true, data };
 }
 
+export async function saveEquipoPublic(equipoId, { escudo, entrenador, delegado, jugadores }) {
+  if (!isSupabaseReady) return { ok: false };
+  
+  // Intentamos primero hacer el update directamente (funciona si no hay RLS estricto activo)
+  const { error: updateError } = await supabase.from("torneo_equipos").update({
+    escudo: escudo || null,
+    entrenador: entrenador || null,
+    delegado: delegado || null,
+    jugadores: jugadores || []
+  }).eq("id", equipoId);
+
+  if (!updateError) {
+    return { ok: true };
+  }
+
+  // Si falla por RLS, intentamos usar el RPC (si el usuario ya corrió la migración 016)
+  const { error: rpcError } = await supabase.rpc("update_equipo_public", {
+    p_equipo_id: equipoId,
+    p_escudo: escudo,
+    p_entrenador: entrenador,
+    p_delegado: delegado,
+    p_jugadores: jugadores
+  });
+  
+  return { ok: !rpcError, error: rpcError || updateError };
+}
+
 // ── Partidos ──────────────────────────────────────────────────────────────────
 
 export async function savePartidos(torneoId, partidos) {
@@ -98,16 +130,22 @@ export async function savePartidos(torneoId, partidos) {
     orden: p.orden,
     sede_id: p.sedeId,
     arbitro_id: p.arbitroId,
+    eventos: p.eventos ?? [],
   }));
   const { error } = await supabase.from("torneo_partidos").upsert(rows);
   return { ok: !error, error };
 }
 
-export async function updateResultado(partidoId, golesLocal, golesVisita) {
+export async function updateResultado(partidoId, golesLocal, golesVisita, eventos = []) {
   if (!isSupabaseReady) return { ok: false };
   const { error } = await supabase
     .from("torneo_partidos")
-    .update({ goles_local: golesLocal, goles_visita: golesVisita, estado: "finalizado" })
+    .update({ 
+      goles_local: golesLocal, 
+      goles_visita: golesVisita, 
+      estado: "finalizado",
+      eventos 
+    })
     .eq("id", partidoId);
   return { ok: !error, error };
 }
@@ -172,6 +210,22 @@ export async function saveCategorias(torneoId, categorias) {
     cpg: c.cpg,
     fase_final: c.faseFinal,
     desempate: c.desempate,
+    // Fase de grupos
+    groups_count:       c.groupsCount       ?? 2,
+    group_legs:         c.groupLegs         ?? 1,
+    qualify_per_group:  c.qualifyPerGroup    ?? 2,
+    assignment_method:  c.assignmentMethod   ?? "auto_serpentina",
+    allow_best_thirds:  c.allowBestThirds    ?? false,
+    best_thirds_count:  c.bestThirdsCount    ?? 0,
+    // Puntos y desempate
+    points_config:      c.pointsConfig       ?? { win: 3, draw: 1, loss: 0 },
+    tiebreakers:        c.tiebreakers        ?? ["points","goal_diff","goals_for","h2h","fair_play","draw"],
+    // Fase final
+    playoff_legs:            c.playoffLegs            ?? 1,
+    final_legs:              c.finalLegs              ?? 1,
+    initial_knockout_round:  c.initialKnockoutRound   ?? "auto",
+    crossing_method:         c.crossingMethod         ?? "auto_position",
+    knockout_tiebreak_rule:  c.knockoutTiebreakRule   ?? "penalties",
   }));
   const { error } = await supabase.from("torneo_categorias").upsert(rows);
   return { ok: !error, error };
@@ -305,6 +359,9 @@ function mapTorneo(r) {
     descripcion: r.descripcion, portada: r.portada, perfil: r.perfil,
     contacto: r.contacto, premios: r.premios, patrocinadores: r.patrocinadores,
     visibilidad: r.visibilidad, reglamentoUrl: r.reglamento_url,
+    sedeUbicacion: r.sede_ubicacion, numCanchas: r.num_canchas,
+    duracionPartido: r.duracion_partido, margenEntrePartidos: r.margen_entre_partidos,
+    horarios: r.horarios || [],
     createdAt: r.created_at, updatedAt: r.updated_at,
   };
 }
@@ -325,6 +382,7 @@ function mapPartido(r) {
     golesLocal: r.goles_local, golesVisita: r.goles_visita, estado: r.estado,
     fechaHora: r.fecha_hora, lugar: r.lugar, orden: r.orden,
     sedeId: r.sede_id, arbitroId: r.arbitro_id,
+    eventos: r.eventos ?? [],
     createdAt: r.created_at,
   };
 }
@@ -343,5 +401,21 @@ function mapCategoria(r) {
     format: r.format, fases: r.fases, vueltas: r.vueltas,
     grupos: r.grupos, tpg: r.tpg, cpg: r.cpg,
     faseFinal: r.fase_final, desempate: r.desempate,
+    // Fase de grupos
+    groupsCount:      r.groups_count      ?? 2,
+    groupLegs:        r.group_legs        ?? 1,
+    qualifyPerGroup:  r.qualify_per_group ?? 2,
+    assignmentMethod: r.assignment_method ?? "auto_serpentina",
+    allowBestThirds:  r.allow_best_thirds ?? false,
+    bestThirdsCount:  r.best_thirds_count ?? 0,
+    // Puntos y desempate
+    pointsConfig: r.points_config ?? { win: 3, draw: 1, loss: 0 },
+    tiebreakers:  r.tiebreakers   ?? ["points","goal_diff","goals_for","h2h","fair_play","draw"],
+    // Fase final
+    playoffLegs:           r.playoff_legs            ?? 1,
+    finalLegs:             r.final_legs              ?? 1,
+    initialKnockoutRound:  r.initial_knockout_round  ?? "auto",
+    crossingMethod:        r.crossing_method         ?? "auto_position",
+    knockoutTiebreakRule:  r.knockout_tiebreak_rule  ?? "penalties",
   };
 }

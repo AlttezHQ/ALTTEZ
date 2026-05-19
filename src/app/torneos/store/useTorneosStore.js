@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { calcularPosiciones } from "../utils/fixturesEngine";
+import {
+  calculateGroupStandings,
+  applyTiebreakers,
+  getQualifiedTeams,
+  DEFAULT_POINTS_CONFIG,
+  DEFAULT_TIEBREAKERS,
+} from "../utils/competitionEngine";
 import { autoSchedule } from "../utils/schedulingEngine";
 import * as svc from "../services/torneosService";
 import { showToast } from "../../../shared/ui/Toast";
@@ -18,10 +25,12 @@ const DEFAULT_SCHEDULING = {
 };
 
 const FORMAT_MAP = {
-  "Todos contra todos": "todos_contra_todos",
-  "Eliminación directa": "eliminacion",
-  "Grupos + Playoffs":   "grupos_playoffs",
-  "Mixto":               "grupos_playoffs",
+  "Todos contra todos":    "todos_contra_todos",
+  "Eliminación directa":   "eliminacion",
+  "Grupos + Playoffs":     "grupos_playoffs",
+  "Grupos + Fase Final":   "grupos_playoffs",
+  "GROUPS_PLUS_KNOCKOUT":  "grupos_playoffs",
+  "Mixto":                 "grupos_playoffs",
 };
 
 export const useTorneosStore = create(
@@ -33,6 +42,7 @@ export const useTorneosStore = create(
       sedes:      [],
       arbitros:   [],
       categorias: [],
+      matchChangeLogs: [],
       torneoActivoId: null,
       wizardDraft:    null,
       loading:        false,
@@ -231,6 +241,18 @@ export const useTorneosStore = create(
         }
       },
 
+      async actualizarEquiposBatch(torneoId, equiposActualizados) {
+        set(s => {
+          const dict = {};
+          equiposActualizados.forEach(e => { dict[e.id] = e; });
+          return {
+            equipos: s.equipos.map(e => dict[e.id] ? { ...e, ...dict[e.id] } : e)
+          };
+        });
+        const { ok, error } = await svc.saveEquipos(torneoId, get().equipos.filter(e => e.torneoId === torneoId));
+        if (!ok) showToast("Error al sincronizar grupos: " + (error?.message || "Inténtalo de nuevo"), "error");
+      },
+
       async eliminarEquipo(id) {
         const s = get();
         const eq = s.equipos.find(x => x.id === id);
@@ -255,13 +277,13 @@ export const useTorneosStore = create(
         await svc.savePartidos(torneoId, partidos);
       },
 
-      async registrarResultado(partidoId, golesLocal, golesVisita) {
+      async registrarResultado(partidoId, golesLocal, golesVisita, eventos = []) {
         let torneoId = null;
         set(s => {
           const updated = s.partidos.map(p => {
             if (p.id === partidoId) {
               torneoId = p.torneoId;
-              return { ...p, golesLocal, golesVisita, estado: "finalizado" };
+              return { ...p, golesLocal, golesVisita, estado: "finalizado", eventos };
             }
             return p;
           });
@@ -380,6 +402,20 @@ export const useTorneosStore = create(
           cpg:       parseInt(c.cpg) || 2,
           faseFinal: c.faseFinal || "final",
           desempate: c.desempate || "goal_diff",
+          // ── Nuevos campos Grupos + Fase Final ──────────────────────────
+          groupsCount:          parseInt(c.groupsCount)     || 2,
+          groupLegs:            parseInt(c.groupLegs)       || 1,
+          qualifyPerGroup:      parseInt(c.qualifyPerGroup)  || 2,
+          assignmentMethod:     c.assignmentMethod     || "auto_serpentina",
+          allowBestThirds:      c.allowBestThirds      ?? false,
+          bestThirdsCount:      parseInt(c.bestThirdsCount)  || 0,
+          pointsConfig:         c.pointsConfig         || { ...DEFAULT_POINTS_CONFIG },
+          tiebreakers:          c.tiebreakers          || [...DEFAULT_TIEBREAKERS],
+          initialKnockoutRound: c.initialKnockoutRound || "auto",
+          crossingMethod:       c.crossingMethod       || "auto_position",
+          knockoutTiebreakRule: c.knockoutTiebreakRule  || "penalties",
+          playoffLegs:          parseInt(c.playoffLegs)      || 1,
+          finalLegs:            parseInt(c.finalLegs)        || 1,
           createdAt: NOW(),
         }));
         set(s => ({ categorias: [...s.categorias, ...nuevas] }));
@@ -408,6 +444,77 @@ export const useTorneosStore = create(
 
       getCategoriasByTorneo(torneoId) {
         return get().categorias.filter(c => c.torneoId === torneoId);
+      },
+
+      /** Devuelve la configuración de competencia de una categoría (merge con defaults). */
+      getCompetitionConfig(categoriaId) {
+        const cat = get().categorias.find(c => c.id === categoriaId);
+        if (!cat) return null;
+        return {
+          groupsCount:          cat.groupsCount          ?? 2,
+          groupLegs:            cat.groupLegs            ?? 1,
+          qualifyPerGroup:      cat.qualifyPerGroup       ?? 2,
+          assignmentMethod:     cat.assignmentMethod      ?? "auto_serpentina",
+          allowBestThirds:      cat.allowBestThirds       ?? false,
+          bestThirdsCount:      cat.bestThirdsCount       ?? 0,
+          pointsConfig:         cat.pointsConfig          ?? { ...DEFAULT_POINTS_CONFIG },
+          tiebreakers:          cat.tiebreakers           ?? [...DEFAULT_TIEBREAKERS],
+          initialKnockoutRound: cat.initialKnockoutRound  ?? "auto",
+          crossingMethod:       cat.crossingMethod        ?? "auto_position",
+          knockoutTiebreakRule: cat.knockoutTiebreakRule  ?? "penalties",
+          playoffLegs:          cat.playoffLegs           ?? 1,
+          finalLegs:            cat.finalLegs             ?? 1,
+        };
+      },
+
+      /**
+       * Calcula tabla de posiciones por grupo para una categoría concreta.
+       * @returns {{ [groupLabel]: standingRow[] }}
+       */
+      getPosicionesByGrupo(torneoId, categoriaId) {
+        const s       = get();
+        const cat     = s.categorias.find(c => c.id === categoriaId);
+        const partidos = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId || !p.categoriaId));
+        const equipos  = s.equipos.filter(e => e.torneoId === torneoId);
+        const pointsConfig = cat?.pointsConfig ?? DEFAULT_POINTS_CONFIG;
+        return calculateGroupStandings(partidos, equipos, pointsConfig);
+      },
+
+      /**
+       * Devuelve equipos clasificados para la fase final.
+       */
+      getClasificados(torneoId, categoriaId) {
+        const s         = get();
+        const cat       = s.categorias.find(c => c.id === categoriaId);
+        const partidos  = s.partidos.filter(p => p.torneoId === torneoId);
+        const equipos   = s.equipos.filter(e => e.torneoId === torneoId);
+        const config    = get().getCompetitionConfig(categoriaId) ?? {};
+        const groupStandings = calculateGroupStandings(
+          partidos, equipos, config.pointsConfig ?? DEFAULT_POINTS_CONFIG
+        );
+        return getQualifiedTeams(groupStandings, config, partidos);
+      },
+
+      /**
+       * Registra un cambio de partido en el historial (reprogramación con traza).
+       */
+      async registrarCambioPartido(partidoId, change) {
+        const s = get();
+        const partido = s.partidos.find(p => p.id === partidoId);
+        if (!partido) return;
+        const log = {
+          id:         ID(),
+          partidoId,
+          torneoId:   partido.torneoId,
+          tipo:       change.tipo   || "reprogramacion",
+          motivo:     change.motivo || "",
+          fechaAnterior: partido.fechaHora,
+          fechaNueva:    change.fechaNueva ?? null,
+          realizadoPor:  change.realizadoPor ?? null,
+          timestamp:  NOW(),
+        };
+        set(s => ({ matchChangeLogs: [...(s.matchChangeLogs ?? []), log] }));
+        return log;
       },
 
       // ── Wizard draft ─────────────────────────────────────────────────────

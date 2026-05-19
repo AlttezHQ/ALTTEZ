@@ -22,6 +22,8 @@ import CrearTorneoWizard from "./components/wizard/CrearTorneoWizard";
 import CategoriasPage    from "./pages/CategoriasPage";
 import ProgramacionPage  from "./pages/ProgramacionPage";
 import EstadisticasPage  from "./pages/EstadisticasPage";
+import GruposPage        from "./pages/GruposPage";
+import FaseFinalPage     from "./pages/FaseFinalPage";
 import AlttezLoader      from "./components/shared/AlttezLoader";
 
 const BG     = PALETTE.bg;
@@ -635,6 +637,7 @@ export default function TorneosApp() {
         active={sidebarActive}
         onNav={goTo}
         torneoActivo={torneoActivo}
+        categorias={torneoActivoId ? useTorneosStore.getState().getCategoriasTorneo(torneoActivoId) : []}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         userName={accountDisplayName}
@@ -700,6 +703,18 @@ export default function TorneosApp() {
             {activeModule === "fixtures" && (
               <motion.div key="fixtures" {...PAGE_ANIM}>
                 <FixturesPage key={torneoActivoId} onGoTorneos={goTorneos} />
+              </motion.div>
+            )}
+
+            {activeModule === "grupos" && (
+              <motion.div key="grupos" {...PAGE_ANIM}>
+                <GruposPage key={torneoActivoId} onGoTorneos={goTorneos} onNavigate={goTo} />
+              </motion.div>
+            )}
+
+            {activeModule === "fase_final" && (
+              <motion.div key="fase_final" {...PAGE_ANIM}>
+                <FaseFinalPage key={torneoActivoId} onGoTorneos={goTorneos} />
               </motion.div>
             )}
 

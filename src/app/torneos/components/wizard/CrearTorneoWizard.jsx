@@ -11,6 +11,15 @@ import {
 } from "lucide-react";
 import { useTorneosStore } from "../../store/useTorneosStore";
 import { calculateTournamentMath, recommendStructure, calculateSchedulingStats, estimateProjectedEndDate, getFeasibilitySuggestions } from "../../utils/tournamentAlgorithms";
+import {
+  DEFAULT_GROUPS_PLUS_KNOCKOUT_CONFIG,
+  TIEBREAKER_OPTIONS,
+  ASSIGNMENT_METHOD_OPTIONS,
+  CROSSING_METHOD_OPTIONS,
+  KNOCKOUT_TIEBREAK_OPTIONS,
+  INITIAL_ROUND_OPTIONS,
+  canGenerateFixture,
+} from "../../utils/competitionEngine";
 import AlttezLoader from "../shared/AlttezLoader";
 import { PALETTE, ELEVATION } from "../../../../shared/tokens/palette";
 
@@ -167,55 +176,68 @@ function StepperHeader({ step, onStepClick }) {
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24, margin: "20px 0 40px", flexWrap: "wrap" }}
+      style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "space-between", 
+        width: "100%", 
+        maxWidth: 1100, 
+        margin: "20px auto 40px", 
+        padding: "0 16px",
+        flexWrap: "nowrap",
+        overflowX: "auto"
+      }}
+      className="hide-scrollbar"
     >
       {STEP_LABELS.map((label, i) => {
         const n = i + 1;
         const active = n === step;
         const done = n < step;
         return (
-          <motion.div 
-            key={n} 
-            onClick={() => onStepClick(n)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 12, 
-              position: "relative", 
-              cursor: "pointer",
-              opacity: active ? 1 : (done ? 0.9 : 0.6),
-              transition: "opacity 0.2s"
-            }}
-          >
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: active ? CU : (done ? CU : "transparent"),
-              border: `2px solid ${active || done ? CU : BORDER}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.3s", zIndex: 2,
-              boxShadow: active ? `0 0 15px ${CU}40` : "none"
-            }}>
-              {done ? <CheckCircle size={18} color="#FFF" /> : <span style={{ fontSize: 13, fontWeight: 700, color: active ? "#FFF" : HINT }}>{n}</span>}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? TEXT : MUTED }}>{n}. {label}</span>
-              {done && <span style={{ fontSize: 10, color: PALETTE.success, fontWeight: 700 }}>Completado</span>}
-              {active && <span style={{ fontSize: 10, color: CU, fontWeight: 700 }}>En proceso</span>}
-            </div>
+          <React.Fragment key={n}>
+            <motion.div 
+              onClick={() => onStepClick(n)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: 10, 
+                cursor: "pointer",
+                flexShrink: 0,
+                transition: "opacity 0.2s"
+              }}
+            >
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: active ? CU : (done ? "#ECFDF5" : "#FFF"),
+                border: done ? "1.5px solid #10B981" : (active ? `1.5px solid ${CU}` : `1.5px solid ${BORDER}`),
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.3s",
+                boxShadow: active ? `0 0 12px ${CU}30` : "none"
+              }}>
+                {done ? (
+                  <Check size={14} color="#10B981" strokeWidth={3} />
+                ) : (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: active ? "#FFF" : HINT }}>{n}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: 12, fontWeight: active ? 700 : 600, color: active ? TEXT : MUTED }}>{n}. {label}</span>
+                <span style={{ 
+                  fontSize: 10, 
+                  fontWeight: 700, 
+                  color: done ? "#10B981" : (active ? CU : HINT),
+                  marginTop: 1
+                }}>
+                  {done ? "Completado" : (active ? "En proceso" : "Pendiente")}
+                </span>
+              </div>
+            </motion.div>
             {i < STEP_LABELS.length - 1 && (
-              <div style={{ 
-                position: "absolute", 
-                right: -20, 
-                top: "50%", 
-                width: 12, 
-                height: 1, 
-                background: BORDER,
-                display: "none" // We use gap instead of absolute line for better wrapping
-              }} />
+              <div style={{ flex: 1, height: 1, background: "#E2E8F0", margin: "0 12px", minWidth: 16 }} />
             )}
-          </motion.div>
+          </React.Fragment>
         );
       })}
     </motion.div>
@@ -347,18 +369,387 @@ function Step3Stat({ icon: Icon, val, lab }) {
   );
 }
 
-function SummaryBar({ data, totalLoaded }) {
+function SummaryBar({ data, totalLoaded, teams = {}, structures = {} }) {
+  let totalPartidosEstimados = 0;
+  let maxRounds = 1;
+
+  data.categorias.forEach(cat => {
+    const tCount = teams[cat.id]?.length || 0;
+    const s = structures[cat.id] || {};
+    let rounds = 1;
+    let mPerRound = 0;
+
+    if (s.format === 'todos_contra_todos') {
+      rounds = tCount % 2 === 0 ? tCount - 1 : tCount;
+      mPerRound = Math.floor(tCount / 2);
+    } else {
+      const teamsInGroup = Math.ceil(tCount / (s.groupsCount || 1));
+      const groupRounds = teamsInGroup % 2 === 0 ? teamsInGroup - 1 : teamsInGroup;
+      const playoffRounds = s.faseFinal === 'cuartos' ? 3 : s.faseFinal === 'semis' ? 2 : 1;
+      rounds = groupRounds + playoffRounds;
+      mPerRound = Math.floor(tCount / 2);
+    }
+    
+    if (rounds > maxRounds) maxRounds = rounds;
+    totalPartidosEstimados += (rounds * mPerRound);
+  });
+
+  const startDateStr = data.fechaInicio 
+    ? new Date(data.fechaInicio).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '--/--/----';
+
+  const startDate = data.fechaInicio ? new Date(data.fechaInicio) : new Date();
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + ((maxRounds - 1) * 7) + 6);
+
+  const endDateStr = data.fechaInicio 
+    ? endDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '--/--/----';
+
+  const diffTime = Math.abs(endDate - startDate);
+  const diffDays = data.fechaInicio ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0;
+
   return (
-    <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, padding: "10px 24px", marginBottom: 28, display: "flex", alignItems: "center", justifyContent: "center", gap: 40 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <Trophy size={18} color={CU} />
-        <div><h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TEXT }}>{data.nombre || "Torneo sin nombre"}</h3><p style={{ margin: 0, fontSize: 10, color: MUTED, fontWeight: 600 }}>{data.deporte} · {data.temporada} · {data.fechaInicio || "Fecha pendiente"}</p></div>
+    <div style={{ 
+      background: "#FFF", 
+      borderRadius: 16, 
+      border: `1.5px solid ${BORDER}`, 
+      padding: "16px 28px", 
+      marginBottom: 32, 
+      display: "flex", 
+      alignItems: "center", 
+      justifyContent: "space-between",
+      boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+    }}>
+      {/* Columna 1: Info General */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ 
+          width: 48, 
+          height: 48, 
+          borderRadius: 12, 
+          background: "#FFF8EE", 
+          border: `1.5px solid #F5DEB3`, 
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center" 
+        }}>
+          <Trophy size={20} color={CU} />
+        </div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: TEXT }}>{data.nombre || "Torneo preliminar"}</h3>
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 600, display: "flex", gap: 6 }}>
+            <span>{data.deporte || "Deporte"}</span>
+            <span>·</span>
+            <span>{data.temporada || "2026"}</span>
+          </div>
+          <div style={{ fontSize: 11, color: TEXT, fontWeight: 700, marginTop: 4 }}>
+            Inicio: {startDateStr}
+          </div>
+        </div>
       </div>
-      <div style={{ width: 1, height: 24, background: BORDER }} />
-      <div style={{ display: "flex", gap: 40 }}>
-        <Step3Stat icon={LayoutGrid} val={data.categorias.length} lab="Categorías" />
-        <Step3Stat icon={Users} val={totalLoaded} lab="Equipos" />
+
+      {/* Divisor */}
+      <div style={{ width: 1, height: 40, background: BORDER }} />
+
+      {/* Columna 2: Categorías */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <LayoutGrid size={18} color={MUTED} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>{data.categorias.length}</div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: "0.02em", marginTop: 2 }}>CATEGORÍAS</div>
+        </div>
       </div>
+
+      {/* Divisor */}
+      <div style={{ width: 1, height: 40, background: BORDER }} />
+
+      {/* Columna 3: Equipos */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Users size={18} color={MUTED} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>{totalLoaded}</div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: "0.02em", marginTop: 2 }}>EQUIPOS</div>
+        </div>
+      </div>
+
+      {/* Divisor */}
+      <div style={{ width: 1, height: 40, background: BORDER }} />
+
+      {/* Columna 4: Partidos Estimados */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Globe size={18} color={MUTED} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>{totalPartidosEstimados}</div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: "0.02em", marginTop: 2 }}>PARTIDOS ESTIMADOS</div>
+        </div>
+      </div>
+
+      {/* Divisor */}
+      <div style={{ width: 1, height: 40, background: BORDER }} />
+
+      {/* Columna 5: Jornadas Estimadas */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Calendar size={18} color={MUTED} />
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>{maxRounds}</div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: "0.02em", marginTop: 2 }}>JORNADAS ESTIMADAS</div>
+        </div>
+      </div>
+
+      {/* Divisor */}
+      <div style={{ width: 1, height: 40, background: BORDER }} />
+
+      {/* Columna 6: Rango Fechas y Duración */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <Clock size={18} color={MUTED} />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: TEXT, lineHeight: 1.1 }}>
+            {startDateStr} - {endDateStr}
+          </div>
+          <div style={{ fontSize: 10, color: MUTED, fontWeight: 700, letterSpacing: "0.02em", marginTop: 2 }}>
+            DURACIÓN: {diffDays} DÍAS
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── GroupsPlusFinalConfig ─────────────────────────────────────────────────────
+// Panel expandido de configuración para el formato "Grupos + Fase Final".
+// Es un componente puro: recibe `s` (structure del catId) y llama `onUpdate(patch)`.
+
+const EASY = [0.22, 1, 0.36, 1];
+
+function ConfigSection({ number, title, icon: Icon, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ marginBottom: 16, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 12,
+          padding: "14px 18px", background: open ? "#FDFDFB" : "#FAFAF8",
+          border: "none", cursor: "pointer", textAlign: "left",
+        }}
+      >
+        <div style={{ width: 28, height: 28, borderRadius: 8, background: CU_DIM, border: `1px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon size={13} color={CU} />
+        </div>
+        <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: TEXT }}>{number}. {title}</span>
+        <ChevronRight size={14} color={MUTED} style={{ transform: open ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: EASY }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ padding: "16px 18px 18px", borderTop: `1px solid ${BORDER}` }}>
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TiebreakerList({ tiebreakers, onChange }) {
+  const moveUp   = i => { if (i === 0) return; const next = [...tiebreakers]; [next[i-1], next[i]] = [next[i], next[i-1]]; onChange(next); };
+  const moveDown = i => { if (i === tiebreakers.length - 1) return; const next = [...tiebreakers]; [next[i], next[i+1]] = [next[i+1], next[i]]; onChange(next); };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {tiebreakers.map((id, i) => {
+        const opt = TIEBREAKER_OPTIONS.find(o => o.id === id);
+        if (!opt) return null;
+        return (
+          <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "#FDFDFB", borderRadius: 9, border: `1px solid ${BORDER}` }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: CU, width: 18, textAlign: "center", background: CU_DIM, borderRadius: 5, padding: "2px 0" }}>{i + 1}</span>
+            <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: TEXT }}>{opt.label}</span>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button onClick={() => moveUp(i)}   disabled={i === 0}                        style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: i === 0 ? "not-allowed" : "pointer", opacity: i === 0 ? 0.3 : 1 }}><ChevronLeft  size={12} color={MUTED} style={{ transform: "rotate(90deg)" }} /></button>
+              <button onClick={() => moveDown(i)} disabled={i === tiebreakers.length - 1}  style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 6, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", cursor: i === tiebreakers.length - 1 ? "not-allowed" : "pointer", opacity: i === tiebreakers.length - 1 ? 0.3 : 1 }}><ChevronRight size={12} color={MUTED} style={{ transform: "rotate(90deg)" }} /></button>
+            </div>
+          </div>
+        );
+      })}
+      <p style={{ margin: "4px 0 0", fontSize: 10, color: HINT }}>Arrastra o usa las flechas para reordenar la prioridad de desempate.</p>
+    </div>
+  );
+}
+
+function GroupsPlusFinalConfig({ s, tCount, onUpdate }) {
+  // Merge con defaults para garantizar que todos los campos existen
+  const cfg = { ...DEFAULT_GROUPS_PLUS_KNOCKOUT_CONFIG, ...s };
+
+  const groupsCount     = cfg.groupsCount     ?? 2;
+  const groupLegs       = cfg.groupLegs       ?? 1;
+  const qualifyPerGroup = cfg.qualifyPerGroup  ?? 2;
+  const assignMethod    = cfg.assignmentMethod ?? "auto_serpentina";
+  const allowBestThirds = cfg.allowBestThirds  ?? false;
+  const bestThirdsCount = cfg.bestThirdsCount  ?? 0;
+  const pointsWin       = cfg.pointsConfig?.win  ?? 3;
+  const pointsDraw      = cfg.pointsConfig?.draw ?? 1;
+  const pointsLoss      = cfg.pointsConfig?.loss ?? 0;
+  const tiebreakers     = cfg.tiebreakers     ?? [...DEFAULT_GROUPS_PLUS_KNOCKOUT_CONFIG.tiebreakers];
+  const initRound       = cfg.initialKnockoutRound ?? "auto";
+  const crossMethod     = cfg.crossingMethod   ?? "auto_position";
+  const kTiebreak       = cfg.knockoutTiebreakRule ?? "penalties";
+  const playoffLegs     = cfg.playoffLegs      ?? 1;
+  const finalLegs       = cfg.finalLegs        ?? 1;
+
+  // Cálculos en tiempo real
+  const teamsPerGroup   = groupsCount > 0 ? Math.ceil(tCount / groupsCount) : 0;
+  const totalQualified  = groupsCount * qualifyPerGroup + (allowBestThirds ? bestThirdsCount : 0);
+  const groupMatches    = (() => {
+    let total = 0;
+    for (let g = 0; g < groupsCount; g++) {
+      const n = g < (tCount % groupsCount) ? teamsPerGroup : Math.floor(tCount / groupsCount);
+      total += (n * (n - 1) / 2);
+    }
+    return total * groupLegs;
+  })();
+
+  const validationResult = canGenerateFixture(
+    Array.from({ length: tCount }, (_, i) => ({ id: i })),
+    { groupsCount }
+  );
+
+  const patchPoints = (field, val) =>
+    onUpdate({ pointsConfig: { win: pointsWin, draw: pointsDraw, loss: pointsLoss, [field]: parseInt(val) || 0 } });
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      {/* Validation banner */}
+      {!validationResult.ok && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, marginBottom: 16 }}>
+          <AlertCircle size={16} color={PALETTE.danger} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ fontSize: 12, color: PALETTE.danger, fontWeight: 600 }}>{validationResult.reason}</span>
+        </div>
+      )}
+
+      {/* ── A: Fase de grupos */}
+      <ConfigSection number="A" title="Fase de grupos" icon={LayoutGrid} defaultOpen={true}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <RowInp label="Número de grupos" type="number" value={groupsCount}
+            onChange={v => onUpdate({ groupsCount: Math.max(1, parseInt(v) || 1) })} />
+          <RowInp label="Vueltas por grupo" type="select" value={groupLegs}
+            onChange={v => onUpdate({ groupLegs: parseInt(v) || 1 })}
+            options={[{ v: 1, l: "Una vuelta" }, { v: 2, l: "Ida y vuelta" }]} />
+          <RowInp label="Clasifican por grupo" type="number" value={qualifyPerGroup}
+            onChange={v => onUpdate({ qualifyPerGroup: Math.max(1, parseInt(v) || 1) })} />
+        </div>
+
+        <RowInp label="Método de asignación" type="select" value={assignMethod}
+          onChange={v => onUpdate({ assignmentMethod: v })}
+          options={ASSIGNMENT_METHOD_OPTIONS.map(o => ({ v: o.id, l: o.label }))} />
+
+        {/* Mejores terceros */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: BG, borderRadius: 10, marginTop: 14 }}>
+          <Switch
+            active={allowBestThirds}
+            onChange={v => onUpdate({ allowBestThirds: v, bestThirdsCount: v ? 1 : 0 })}
+            label="Incluir mejores terceros"
+            desc="Permite clasificar los mejores equipos de tercer lugar entre todos los grupos."
+          />
+          {allowBestThirds && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+              <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Cantidad:</span>
+              <input
+                type="number" min="1" max={groupsCount} value={bestThirdsCount}
+                onChange={e => onUpdate({ bestThirdsCount: Math.min(groupsCount, Math.max(1, parseInt(e.target.value) || 1)) })}
+                style={{ width: 52, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "4px 8px", fontSize: 13, fontWeight: 700, textAlign: "center", background: "#FFF" }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Stat chips */}
+        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+          {[
+            { label: "Equipos/grupo", value: teamsPerGroup },
+            { label: "Partidos grupos", value: groupMatches },
+            { label: "Total clasificados", value: totalQualified },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ flex: 1, minWidth: 80, textAlign: "center", padding: "10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 10 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: CU }}>{value}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: MUTED, marginTop: 2, letterSpacing: "0.04em" }}>{label.toUpperCase()}</div>
+            </div>
+          ))}
+        </div>
+      </ConfigSection>
+
+      {/* ── B: Puntos y desempate */}
+      <ConfigSection number="B" title="Puntos y criterios de desempate" icon={BarChart2} defaultOpen={false}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 20 }}>
+          {[
+            { label: "Puntos por victoria", field: "win",  value: pointsWin  },
+            { label: "Puntos por empate",   field: "draw", value: pointsDraw },
+            { label: "Puntos por derrota",  field: "loss", value: pointsLoss },
+          ].map(({ label, field, value }) => (
+            <div key={field} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, marginBottom: 8, letterSpacing: "0.03em" }}>{label.toUpperCase()}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <button onClick={() => patchPoints(field, value - 1)} disabled={value <= 0} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${BORDER}`, background: "#FFF", cursor: value <= 0 ? "not-allowed" : "pointer", fontSize: 16, fontWeight: 700, color: TEXT, opacity: value <= 0 ? 0.3 : 1 }}>−</button>
+                <span style={{ fontSize: 22, fontWeight: 800, color: CU, minWidth: 32, textAlign: "center" }}>{value}</span>
+                <button onClick={() => patchPoints(field, value + 1)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${BORDER}`, background: "#FFF", cursor: "pointer", fontSize: 16, fontWeight: 700, color: TEXT }}>+</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, marginBottom: 12, letterSpacing: "0.04em" }}>CRITERIOS DE DESEMPATE (en orden de prioridad)</div>
+          <TiebreakerList
+            tiebreakers={tiebreakers}
+            onChange={next => onUpdate({ tiebreakers: next })}
+          />
+        </div>
+      </ConfigSection>
+
+      {/* ── C: Fase final */}
+      <ConfigSection number="C" title="Fase final / Eliminatoria" icon={Trophy} defaultOpen={false}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+          <RowInp label="Ronda inicial" type="select" value={initRound}
+            onChange={v => onUpdate({ initialKnockoutRound: v })}
+            options={INITIAL_ROUND_OPTIONS.map(o => ({ v: o.id, l: o.label }))} />
+          <RowInp label="Tipo de cruce" type="select" value={crossMethod}
+            onChange={v => onUpdate({ crossingMethod: v })}
+            options={CROSSING_METHOD_OPTIONS.map(o => ({ v: o.id, l: o.label }))} />
+          <RowInp label="Partidos por ronda" type="select" value={playoffLegs}
+            onChange={v => onUpdate({ playoffLegs: parseInt(v) || 1 })}
+            options={[{ v: 1, l: "Partido único" }, { v: 2, l: "Ida y vuelta" }]} />
+          <RowInp label="Gran final" type="select" value={finalLegs}
+            onChange={v => onUpdate({ finalLegs: parseInt(v) || 1 })}
+            options={[{ v: 1, l: "Partido único" }, { v: 2, l: "Ida y vuelta" }]} />
+        </div>
+
+        <div style={{ gridColumn: "1 / -1" }}>
+          <RowInp label="Regla de empate en eliminatoria" type="select" value={kTiebreak}
+            onChange={v => onUpdate({ knockoutTiebreakRule: v })}
+            options={KNOCKOUT_TIEBREAK_OPTIONS.map(o => ({ v: o.id, l: o.label }))} />
+        </div>
+
+        {/* Info chip: total de clasificados */}
+        {totalQualified >= 2 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#EEF6FF", border: "1px solid #C7DFF7", borderRadius: 10, marginTop: 4 }}>
+            <Info size={14} color="#1A5FA8" style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "#1A5FA8" }}>
+              Con <strong>{totalQualified}</strong> clasificados, la fase final arranca en
+              <strong> {totalQualified <= 2 ? "final" : totalQualified <= 4 ? "semifinal" : totalQualified <= 8 ? "cuartos de final" : "octavos de final"}</strong>.
+              {totalQualified !== 2 && totalQualified !== 4 && totalQualified !== 8 && totalQualified !== 16 && (
+                <span style={{ color: "#D89A2B" }}> Se generará una ronda preliminar para los equipos sin bye.</span>
+              )}
+            </span>
+          </div>
+        )}
+      </ConfigSection>
     </div>
   );
 }
@@ -477,7 +868,12 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
           tpg: c.tpg || 4,
           cpg: c.cpg || 2,
           faseFinal: c.faseFinal || "final",
-          desempate: c.desempate || "goal_diff"
+          desempate: c.desempate || "goal_diff",
+          groupsCount: c.groupsCount || c.grupos || 2,
+          groupLegs: c.groupLegs || c.fases || "ida",
+          qualifyPerGroup: c.qualifyPerGroup || c.cpg || 2,
+          playoffLegs: c.playoffLegs || "ida",
+          finalLegs: c.finalLegs || "ida"
         };
       });
 
@@ -490,9 +886,33 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
           id: e.id,
           name: e.nombre,
           delegate: e.delegado || "",
+          logo: e.escudo || e.logo || null,
+          color: e.color || null,
+          players: e.jugadores?.length || 0,
+          jugadores: e.jugadores || [],
           estado: e.estado || "activo"
         });
       });
+
+      setData(p => ({
+        ...p,
+        nombre: initialData.nombre || p.nombre,
+        deporte: initialData.deporte || p.deporte,
+        temporada: initialData.temporada || p.temporada,
+        fechaInicio: initialData.fechaInicio || p.fechaInicio,
+        fechaFin: initialData.fechaFin || p.fechaFin,
+        organizador: initialData.organizador || p.organizador,
+        sedePrincipal: initialData.sedePrincipal || p.sedePrincipal,
+        descripcion: initialData.descripcion || p.descripcion,
+        formato: initialData.formato || p.formato,
+        categorias: initialData.categorias || p.categorias,
+        arbitros: initialData.arbitros || p.arbitros,
+        horarios: initialData.horarios || p.horarios,
+        sedeUbicacion: initialData.sedeUbicacion || p.sedeUbicacion,
+        numCanchas: initialData.numCanchas || p.numCanchas,
+        duracionPartido: initialData.duracionPartido || p.duracionPartido,
+        margenEntrePartidos: initialData.margenEntrePartidos || p.margenEntrePartidos
+      }));
 
       setStructures(mappedStructures);
       setTeams(mappedTeams);
@@ -1726,7 +2146,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
         {step === 3 && (
           <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <SummaryBar data={data} totalLoaded={totalLoaded} />
+            <SummaryBar data={data} totalLoaded={totalLoaded} teams={teams} structures={structures} />
             <div style={{ display: "grid", gridTemplateColumns: "240px 1fr 340px", gap: 24, alignItems: "start" }}>
               
               {/* SIDEBAR - CATEGORIAS */}
@@ -1921,17 +2341,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       </motion.div>
                     </div>
 
-                    {s.format === "grupos_playoffs" && (
-                      <div style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>2. Configuración de fase de grupos</h4>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                          <RowInp label="Número de grupos" type="number" value={s.groupsCount || 1} onChange={v => updateStruct(catId, { groupsCount: parseInt(v) || 1, status: "configured" })} />
-                          <RowInp label="Modalidad" type="select" value={s.groupLegs || 1} onChange={v => updateStruct(catId, { groupLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Una vuelta"}, {v: 2, l: "Ida y vuelta"}]} />
-                          <RowInp label="Clasifican por grupo" type="number" value={s.qualifyPerGroup || 2} onChange={v => updateStruct(catId, { qualifyPerGroup: parseInt(v) || 1, status: "configured" })} />
-                        </div>
-                      </div>
-                    )}
-                    
                     {s.format === "todos_contra_todos" && (
                       <div style={{ marginBottom: 24 }}>
                         <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>2. Configuración de liga</h4>
@@ -1941,14 +2350,23 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                       </div>
                     )}
 
-                    {(s.format === "grupos_playoffs" || s.format === "eliminacion") && (
+                    {s.format === "eliminacion" && (
                       <div style={{ marginBottom: 24 }}>
-                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>3. Eliminatoria</h4>
+                        <h4 style={{ margin: "0 0 12px", fontSize: 14, fontWeight: 700 }}>2. Eliminatoria</h4>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                           <RowInp label="Partidos de eliminatoria" type="select" value={s.playoffLegs || 1} onChange={v => updateStruct(catId, { playoffLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Partido único"}, {v: 2, l: "Ida y vuelta"}]} />
                           <RowInp label="Gran final" type="select" value={s.finalLegs || 1} onChange={v => updateStruct(catId, { finalLegs: parseInt(v) || 1, status: "configured" })} options={[{v: 1, l: "Partido único"}, {v: 2, l: "Ida y vuelta"}]} />
                         </div>
                       </div>
+                    )}
+
+                    {/* ── GRUPOS + FASE FINAL: Panel expandido ────────────── */}
+                    {s.format === "grupos_playoffs" && (
+                      <GroupsPlusFinalConfig
+                        s={s}
+                        tCount={tCount}
+                        onUpdate={patch => updateStruct(catId, { ...patch, status: "configured" })}
+                      />
                     )}
                   </div>
                 );
@@ -2024,7 +2442,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
         {step === 2 && (
           <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <SummaryBar data={data} totalLoaded={totalLoaded} />
+            <SummaryBar data={data} totalLoaded={totalLoaded} teams={teams} structures={structures} />
 
             <div style={{ display: "grid", gridTemplateColumns: "240px 1fr 300px", gap: 24, alignItems: "start" }}>
               <motion.div 
@@ -2292,7 +2710,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
         {step === 4 && (
           <motion.div key="stepArbitros" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <SummaryBar data={data} totalLoaded={totalLoaded} />
+            <SummaryBar data={data} totalLoaded={totalLoaded} teams={teams} structures={structures} />
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
                 <div>
@@ -2570,7 +2988,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
         {step === 5 && (
           <motion.div key="stepGroups" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <SummaryBar data={data} totalLoaded={totalLoaded} />
+            <SummaryBar data={data} totalLoaded={totalLoaded} teams={teams} structures={structures} />
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
                 <div>
@@ -2826,9 +3244,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
         {step === 6 && (() => {
           const startDate = data.fechaInicio ? new Date(data.fechaInicio) : new Date();
           
-          // Calculate max rounds and matches per round
           let maxRounds = 1;
           const matchesPerCat = {};
+          let totalPartidosEstimados = 0;
           
           data.categorias.forEach(cat => {
             const tCount = teams[cat.id]?.length || 0;
@@ -2849,202 +3267,472 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
             
             if (rounds > maxRounds) maxRounds = rounds;
             matchesPerCat[cat.id] = { rounds, mPerRound };
+            totalPartidosEstimados += (rounds * mPerRound);
           });
-
+          
+          const stats = calculateSchedulingStats(data.horarios, totalPartidosEstimados, data.numCanchas, data.duracionPartido, data.margenEntrePartidos);
 
           return (
             <motion.div key="step6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <SummaryBar data={data} totalLoaded={totalLoaded} />
-              <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
-                  <div>
-                    <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Calendario Estimado</h2>
-                    <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Distribución tentativa de jornadas basada en tu configuración de horarios.</p>
-                  </div>
-                  <button 
-                    onClick={handleDownloadCalendar}
-                    style={{ background: "#FFF", border: `1.5px solid ${BORDER}`, padding: "10px 22px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", color: TEXT, display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = BG; e.currentTarget.style.borderColor = CU_BOR; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = BORDER; }}
-                  >
-                    <Download size={16} /> Descargar calendario PDF
-                  </button>
-                </div>
-
-                <motion.div 
-                  variants={ANIM_VARIANTS.container}
-                  initial="hidden"
-                  animate="visible"
-                  style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16, marginBottom: 32 }}
-                >
-                  {Array.from({ length: Math.min(maxRounds, 20) }).map((_, i) => {
-                    const j = i + 1;
-                    const date = new Date(startDate);
-                    date.setDate(startDate.getDate() + (i * 7)); // Suponiendo jornadas semanales
-                    
-                    const matchesThisRound = data.categorias.reduce((acc, cat) => {
-                      const info = matchesPerCat[cat.id];
-                      return acc + (j <= info.rounds ? info.mPerRound : 0);
-                    }, 0);
-
-                    const isSelected = selectedJornada === j;
-
-                    return (
-                      <motion.div 
-                        key={j} 
-                        variants={ANIM_VARIANTS.item}
-                        whileHover={ANIM_VARIANTS.card.hover}
-                        whileTap={ANIM_VARIANTS.card.tap}
-                        onClick={() => setSelectedJornada(isSelected ? null : j)}
-                        style={{ 
-                          background: isSelected ? "#FFF" : BG, 
-                          borderRadius: 20, 
-                          padding: "20px 24px", 
-                          border: `1.5px solid ${isSelected ? CU : BORDER}`, 
-                          cursor: "pointer", 
-                          transition: "all 0.2s",
-                          boxShadow: isSelected ? "0 8px 24px rgba(181, 143, 76, 0.15)" : "none"
-                        }}
+              <SummaryBar data={data} totalLoaded={totalLoaded} teams={teams} structures={structures} />
+              
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 24, alignItems: "start", marginBottom: 24 }}>
+                {/* SECCIÓN PRINCIPAL: CALENDARIO ESTIMADO */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, boxShadow: ELEV }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                      <div>
+                        <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700 }}>Calendario Estimado</h2>
+                        <p style={{ margin: 0, fontSize: 14, color: MUTED }}>Revisa la distribución tentativa de jornadas antes de confirmar la creación del torneo.</p>
+                      </div>
+                      <button 
+                        onClick={handleDownloadCalendar}
+                        style={{ background: "#FFF", border: `1.5px solid ${BORDER}`, padding: "10px 22px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", color: TEXT, display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = BG; e.currentTarget.style.borderColor = CU_BOR; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "#FFF"; e.currentTarget.style.borderColor = BORDER; }}
                       >
-                        <div style={{ fontSize: 11, fontWeight: 700, color: isSelected ? CU : MUTED, marginBottom: 8, letterSpacing: "0.05em" }}>JORNADA {j}</div>
-                        {(() => {
-                          const endD = new Date(date);
-                          endD.setDate(date.getDate() + 6);
-                          return (
-                            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                              <span>{date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                              <span style={{ opacity: 0.3 }}>—</span>
-                              <span>{endD.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                            </div>
-                          );
-                        })()}
-                        <div style={{ fontSize: 13, color: HINT }}>{matchesThisRound} partidos</div>
-                        <div style={{ height: 3, width: 40, background: isSelected ? CU : BORDER, marginTop: 12, borderRadius: 2 }} />
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
+                        <Download size={16} /> Descargar calendario PDF
+                      </button>
+                    </div>
 
-                <AnimatePresence>
-                  {selectedJornada && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: "hidden" }}>
-                      <div style={{ background: "#FDFDFB", border: `1.5px solid ${BORDER}`, borderRadius: 20, padding: 24 }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Partidos de la Jornada {selectedJornada}</h3>
-                          <div style={{ fontSize: 12, color: MUTED }}>Vista preliminar por categoría</div>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {data.categorias.map((cat) => {
-                            const info = matchesPerCat[cat.id];
-                            if (selectedJornada > info.rounds) return null;
-                            const tList = teams[cat.id] || [];
-                            const isCollapsed = collapsedCats[cat.id];
-                            
-                            return (
-                              <div key={cat.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden", background: "#FFF" }}>
-                                <div 
-                                  onClick={() => setCollapsedCats(prev => ({ ...prev, [cat.id]: !prev[cat.id] }))}
-                                  style={{ padding: "12px 16px", background: isCollapsed ? "#FFF" : "#FDFDFB", borderBottom: isCollapsed ? "none" : `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
-                                >
-                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: CU }} />
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cat.nombre}</span>
-                                    <span style={{ fontSize: 11, color: HINT }}>({info.mPerRound} partidos)</span>
+                    {/* ALERTA INFORMATIVA */}
+                    <div style={{ padding: "16px 24px", background: "#FFF8EE", borderRadius: 16, border: `1px solid #F5DEB3`, display: "flex", gap: 16, marginBottom: 32 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#FDF0D5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Info size={20} color="#D89A2B" />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: "#926B24", marginBottom: 4 }}>Calendario preliminar</div>
+                        <p style={{ margin: 0, fontSize: 13, color: "#D89A2B", lineHeight: 1.5 }}>
+                          Este calendario aún no está publicado. Puedes revisarlo, ajustar horarios o continuar al resumen final.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* SELECTOR DE JORNADAS */}
+                    {(() => {
+                      const currentSelected = selectedJornada || 1;
+                      const cards = [];
+                      
+                      if (maxRounds <= 6) {
+                        for (let i = 1; i <= maxRounds; i++) {
+                          cards.push({ type: 'round', num: i });
+                        }
+                      } else {
+                        let start = 1;
+                        if (currentSelected > 3) {
+                          start = Math.min(currentSelected - 2, maxRounds - 5);
+                        }
+                        for (let i = 0; i < 5; i++) {
+                          cards.push({ type: 'round', num: start + i });
+                        }
+                        
+                        const lastOfWindow = start + 4;
+                        if (lastOfWindow < maxRounds - 1) {
+                          cards.push({ type: 'dots' });
+                          cards.push({ type: 'round', num: maxRounds });
+                        } else if (lastOfWindow === maxRounds - 1) {
+                          cards.push({ type: 'round', num: maxRounds });
+                        }
+                      }
+
+                      return (
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32, justifyContent: "center", width: "100%" }}>
+                          {/* Left Navigation Arrow */}
+                          <button 
+                            onClick={() => setSelectedJornada(Math.max(1, currentSelected - 1))}
+                            disabled={currentSelected === 1}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: "50%",
+                              background: "#FFF",
+                              border: `1.5px solid ${BORDER}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: currentSelected === 1 ? "not-allowed" : "pointer",
+                              color: currentSelected === 1 ? HINT : TEXT,
+                              opacity: currentSelected === 1 ? 0.4 : 1,
+                              transition: "all 0.2s",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                              flexShrink: 0
+                            }}
+                            onMouseEnter={e => { if (currentSelected !== 1) e.currentTarget.style.borderColor = CU; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; }}
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+
+                          {/* Cards Area */}
+                          <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "nowrap" }}>
+                            {cards.map((card, idx) => {
+                              if (card.type === 'dots') {
+                                return (
+                                  <div 
+                                    key={`dots-${idx}`}
+                                    style={{
+                                      width: 44,
+                                      height: 110,
+                                      borderRadius: 12,
+                                      border: `1.5px solid ${BORDER}`,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      color: HINT,
+                                      background: "#FFF",
+                                      fontWeight: 700,
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    ...
                                   </div>
-                                  <ChevronRight size={16} color={HINT} style={{ transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)", transition: "transform 0.3s" }} />
-                                </div>
+                                );
+                              }
 
-                                {!isCollapsed && (
-                                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ padding: 16, background: "#FFF" }}>
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-                                      {Array.from({ length: info.mPerRound }).map((_, mi) => {
-                                        const hIdx = (mi * 2) % tList.length;
-                                        const aIdx = (mi * 2 + 1) % tList.length;
-                                          const currentActiveHorarios = (data.horarios || []).filter(h => h.activo === true);
-                                          const numCanchas = data.numCanchas || 1;
-                                          const duracion = data.duracionPartido || 60;
-                                          const margen = data.margenEntrePartidos || 0;
-                                          const slotTotal = duracion + margen;
-                                          
-                                          // Calculate slot info
-                                          let remaining = mi;
-                                          let dayInfo = { dia: "---", inicio: "--:--", cancha: 1 };
-                                            
-                                            for (const h of currentActiveHorarios) {
-                                              const [h1, m1] = h.inicio.split(":").map(Number);
-                                              const [h2, m2] = h.fin.split(":").map(Number);
-                                              const totalMins = (h2 * 60 + m2) - (h1 * 60 + m1);
-                                              const slotsPerDay = Math.max(1, Math.floor(totalMins / slotTotal));
-                                              const capacityPerDay = slotsPerDay * numCanchas;
-  
-                                              if (remaining < capacityPerDay) {
-                                                const timeSlotIdx = Math.floor(remaining / numCanchas);
-                                                const fieldIdx = (remaining % numCanchas) + 1;
-                                                const startMins = h1 * 60 + m1 + (timeSlotIdx * slotTotal);
-                                                const hh = Math.floor(startMins / 60);
-                                                const mm = startMins % 60;
-                                                dayInfo = { dia: h.dia, inicio: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, cancha: fieldIdx };
-                                                break;
-                                              }
-                                              remaining -= capacityPerDay;
-                                            }
-                                          
-                                          // Fallback
-                                          if (dayInfo.dia === "---" && currentActiveHorarios.length > 0) {
-                                            dayInfo = { dia: currentActiveHorarios[0].dia, inicio: currentActiveHorarios[0].inicio, cancha: (mi % numCanchas) + 1 };
-                                          }
+                              const j = card.num;
+                              const date = new Date(startDate);
+                              date.setDate(startDate.getDate() + ((j - 1) * 7));
+                              const endD = new Date(date);
+                              endD.setDate(date.getDate() + 6);
+                              
+                              const matchesThisRound = data.categorias.reduce((acc, cat) => {
+                                const info = matchesPerCat[cat.id];
+                                return acc + (j <= info.rounds ? info.mPerRound : 0);
+                              }, 0);
 
-                                                const arb = data.arbitros.length > 0 ? data.arbitros[mi % data.arbitros.length].name : "Pendiente";
+                              const isSelected = currentSelected === j;
 
-                                                return (
-                                                  <div key={mi} style={{ background: "#FDFDFB", padding: "12px 16px", borderRadius: 14, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 20, boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
-                                                    <div style={{ width: 100, borderRight: `1px solid ${BORDER}`, paddingRight: 10 }}>
-                                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                                                        <div style={{ fontSize: 9, fontWeight: 900, color: CU }}>{dayInfo.dia.slice(0,3).toUpperCase()}</div>
-                                                        <div style={{ fontSize: 9, fontWeight: 700, color: MUTED }}>C{dayInfo.cancha}</div>
-                                                      </div>
-                                                      <div style={{ fontSize: 13, fontWeight: 700 }}>{dayInfo.inicio}</div>
-                                                    </div>
-                                                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                                      <div style={{ flex: 1, textAlign: "right", fontSize: 12, fontWeight: 700, color: TEXT }}>{tList[hIdx]?.name || "Equipo A"}</div>
-                                                      <div style={{ padding: "0 15px", fontSize: 10, fontWeight: 900, color: CU, opacity: 0.5 }}>VS</div>
-                                                      <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: TEXT }}>{tList[aIdx]?.name || "Equipo B"}</div>
-                                                    </div>
-                                                    <div style={{ width: 120, borderLeft: `1px solid ${BORDER}`, paddingLeft: 10, display: "flex", flexDirection: "column", gap: 2 }}>
-                                                      <div style={{ fontSize: 9, fontWeight: 700, color: HINT }}>ÁRBITRO</div>
-                                                      <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{arb}</div>
-                                                    </div>
-                                                  </div>
-                                                );
-                                              })}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </div>
-                            );
-                          })}
+                              return (
+                                <motion.div 
+                                  key={`round-${j}`} 
+                                  variants={ANIM_VARIANTS.item}
+                                  whileHover={ANIM_VARIANTS.card.hover}
+                                  whileTap={ANIM_VARIANTS.card.tap}
+                                  onClick={() => setSelectedJornada(j)}
+                                  style={{ 
+                                    background: isSelected ? "#FFFBF2" : "#FFF", 
+                                    borderRadius: 12, 
+                                    padding: "16px 12px", 
+                                    border: `1.5px solid ${isSelected ? CU : BORDER}`, 
+                                    cursor: "pointer", 
+                                    transition: "all 0.2s",
+                                    width: 125,
+                                    height: 110,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    flexShrink: 0,
+                                    boxShadow: isSelected ? "0 4px 12px rgba(181, 143, 76, 0.1)" : "none"
+                                  }}
+                                >
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? CU : TEXT, marginBottom: 4 }}>Jornada {j}</div>
+                                  <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, marginBottom: 6 }}>
+                                    {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {endD.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                  </div>
+                                  <div style={{ fontSize: 10, color: HINT, lineHeight: 1.2 }}>
+                                    {matchesThisRound} partidos
+                                    <div style={{ fontSize: 9 }}>estimados</div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Right Navigation Arrow */}
+                          <button 
+                            onClick={() => setSelectedJornada(Math.min(maxRounds, currentSelected + 1))}
+                            disabled={currentSelected === maxRounds}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: "50%",
+                              background: "#FFF",
+                              border: `1.5px solid ${BORDER}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: currentSelected === maxRounds ? "not-allowed" : "pointer",
+                              color: currentSelected === maxRounds ? HINT : TEXT,
+                              opacity: currentSelected === maxRounds ? 0.4 : 1,
+                              transition: "all 0.2s",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                              flexShrink: 0
+                            }}
+                            onMouseEnter={e => { if (currentSelected !== maxRounds) e.currentTarget.style.borderColor = CU; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; }}
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {/* BLOQUE DE PARTIDOS DE LA JORNADA */}
+                    <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 24 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Partidos de la Jornada {selectedJornada || 1}</h3>
+                          <span style={{ fontSize: 13, color: MUTED, fontWeight: 600 }}>
+                            {(() => {
+                              const d = new Date(startDate);
+                              d.setDate(d.getDate() + (((selectedJornada || 1) - 1) * 7));
+                              const ed = new Date(d);
+                              ed.setDate(d.getDate() + 6);
+                              return `${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — ${ed.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`;
+                            })()}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <div style={{ display: "flex", background: BG, borderRadius: 8, padding: 4, border: `1px solid ${BORDER}` }}>
+                            <button style={{ background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 6, width: 32, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: CU, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}><List size={14} /></button>
+                            <button style={{ background: "none", border: "none", width: 32, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: HINT }}><Calendar size={14} /></button>
+                          </div>
+                          <select style={{ ...inputStyle, height: 36, fontSize: 12, fontWeight: 600, paddingLeft: 12, paddingRight: 32, width: 160 }}>
+                            <option>Todas las categorías</option>
+                            {data.categorias.map(c => <option key={c.id}>{c.nombre}</option>)}
+                          </select>
+                          <button style={{ width: 36, height: 36, borderRadius: 8, background: "#FFF", border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: MUTED }}><Filter size={14} /></button>
                         </div>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
 
-                <div style={{ padding: "16px 24px", background: "#FFF8EE", borderRadius: 16, border: `1px solid #F5DEB3`, display: "flex", gap: 16, marginTop: 32 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#FDF0D5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Info size={20} color="#D89A2B" />
+                      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {data.categorias.map((cat, catIndex) => {
+                          const info = matchesPerCat[cat.id];
+                          const j = selectedJornada || 1;
+                          if (j > info.rounds) return null;
+                          
+                          const tList = teams[cat.id] || [];
+                          const isCollapsed = collapsedCats[cat.id] === undefined ? catIndex !== 0 : collapsedCats[cat.id];
+                          
+                          return (
+                            <div key={cat.id} style={{ border: `1px solid ${BORDER}`, borderRadius: 12, overflow: "hidden", background: "#FFF" }}>
+                              <div 
+                                onClick={() => setCollapsedCats(prev => ({ ...prev, [cat.id]: !isCollapsed }))}
+                                style={{ padding: "12px 16px", background: isCollapsed ? "#FDFDFB" : "#FFF", borderBottom: isCollapsed ? "none" : `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: CU }} />
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cat.nombre}</span>
+                                  <span style={{ fontSize: 11, color: HINT }}>({info.mPerRound} partidos)</span>
+                                </div>
+                                <ChevronRight size={16} color={HINT} style={{ transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)", transition: "transform 0.2s" }} />
+                              </div>
+
+                              {!isCollapsed && (
+                                <div style={{ background: "#FFF" }}>
+                                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                                    <thead>
+                                      <tr style={{ textAlign: "left", color: HINT, borderBottom: `1px solid ${BORDER}`, background: "#FAFAF8" }}>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Fecha y hora</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Cancha</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Local</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600, textAlign: "center" }}>VS</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Visitante</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Árbitro</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}>Estado</th>
+                                        <th style={{ padding: "10px 16px", fontWeight: 600 }}></th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {Array.from({ length: Math.min(info.mPerRound, 5) }).map((_, mi) => {
+                                        const hIdx = (mi * 2) % tList.length;
+                                        const aIdx = (mi * 2 + 1) % tList.length;
+                                        
+                                        const currentActiveHorarios = (data.horarios || []).filter(h => h.activo === true);
+                                        const numCanchas = data.numCanchas || 1;
+                                        const duracion = data.duracionPartido || 60;
+                                        const margen = data.margenEntrePartidos || 0;
+                                        const slotTotal = duracion + margen;
+                                        
+                                        let remaining = mi;
+                                        let dayInfo = { dia: "Lun", inicio: "08:00", cancha: 1 };
+                                        
+                                        if (currentActiveHorarios.length > 0) {
+                                          for (const h of currentActiveHorarios) {
+                                            const [h1, m1] = h.inicio.split(":").map(Number);
+                                            const [h2, m2] = h.fin.split(":").map(Number);
+                                            const totalMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                            const slotsPerDay = Math.max(1, Math.floor(totalMins / slotTotal));
+                                            const capacityPerDay = slotsPerDay * numCanchas;
+
+                                            if (remaining < capacityPerDay) {
+                                              const timeSlotIdx = Math.floor(remaining / numCanchas);
+                                              const fieldIdx = (remaining % numCanchas) + 1;
+                                              const startMins = h1 * 60 + m1 + (timeSlotIdx * slotTotal);
+                                              const hh = Math.floor(startMins / 60);
+                                              const mm = startMins % 60;
+                                              dayInfo = { dia: h.dia.slice(0,3), inicio: `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`, cancha: fieldIdx };
+                                              break;
+                                            }
+                                            remaining -= capacityPerDay;
+                                          }
+                                        }
+
+                                        const d = new Date(startDate);
+                                        d.setDate(d.getDate() + (((selectedJornada || 1) - 1) * 7));
+                                        const dateStr = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+                                        return (
+                                          <tr key={mi} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                                            <td style={{ padding: "12px 16px" }}>
+                                              <div style={{ fontWeight: 600, color: TEXT }}>{dayInfo.dia} {dateStr}</div>
+                                              <div style={{ fontWeight: 700, color: TEXT }}>{dayInfo.inicio}</div>
+                                            </td>
+                                            <td style={{ padding: "12px 16px" }}>
+                                              <div style={{ fontWeight: 700, color: TEXT }}>C{dayInfo.cancha}</div>
+                                              <div style={{ fontSize: 10, color: HINT }}>Cancha {dayInfo.cancha}</div>
+                                            </td>
+                                            <td style={{ padding: "12px 16px" }}>
+                                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                <div style={{ width: 20, height: 20, borderRadius: 4, background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}><Shield size={10} color={CU} /></div>
+                                                <span style={{ fontWeight: 700, color: TEXT }}>{tList[hIdx]?.name || "Local"}</span>
+                                              </div>
+                                            </td>
+                                            <td style={{ padding: "12px 16px", textAlign: "center", fontSize: 10, fontWeight: 900, color: "#D89A2B" }}>vs</td>
+                                            <td style={{ padding: "12px 16px" }}>
+                                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                <div style={{ width: 20, height: 20, borderRadius: 4, background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}><Shield size={10} color={CU} /></div>
+                                                <span style={{ fontWeight: 700, color: TEXT }}>{tList[aIdx]?.name || "Visitante"}</span>
+                                              </div>
+                                            </td>
+                                            <td style={{ padding: "12px 16px", color: MUTED, fontWeight: 600 }}>—</td>
+                                            <td style={{ padding: "12px 16px" }}>
+                                              <div style={{ fontSize: 10, fontWeight: 700, color: "#D89A2B", background: "#FFF8EE", border: "1px solid #F5DEB3", padding: "4px 8px", borderRadius: 6, display: "inline-block" }}>Árbitro pendiente</div>
+                                            </td>
+                                            <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                                              <button style={{ background: "none", border: "none", cursor: "pointer", color: HINT }}><MoreHorizontal size={16} /></button>
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                  {info.mPerRound > 5 && (
+                                    <div style={{ padding: "12px", textAlign: "center", borderTop: `1px solid ${BORDER}` }}>
+                                      <button style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 700, color: TEXT, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = BG} onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                                        Ver todos los partidos de {cat.nombre} ({info.mPerRound})
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: "#926B24", marginBottom: 4 }}>Nota sobre el calendario</div>
-                    <p style={{ margin: 0, fontSize: 13, color: "#D89A2B", lineHeight: 1.5 }}>
-                      Este calendario es una proyección automática basada en la fecha de inicio ({data.fechaInicio || 'No definida'}) y la cantidad de partidos estimados ({totalMatches}). Podrás ajustar fechas y horas exactas una vez creado el torneo.
-                    </p>
+
+                  {/* BOTTOM ACTION BAR */}
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: ELEV }}>
+                    <button 
+                      onClick={() => setStep(5)} 
+                      style={{ background: "#FFF", border: `1px solid ${BORDER}`, borderRadius: 12, padding: "12px 24px", fontSize: 13, fontWeight: 700, color: MUTED, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", transition: "all 0.2s" }}
+                      onMouseEnter={e => e.currentTarget.style.background = BG}
+                      onMouseLeave={e => e.currentTarget.style.background = "#FFF"}
+                    >
+                      <ArrowLeft size={16} /> Volver a formato
+                    </button>
+                    <button 
+                      onClick={() => setStep(7)}
+                      style={{ background: CU, color: "#FFF", border: "none", padding: "12px 32px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)", transition: "all 0.2s" }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 15px rgba(181, 143, 76, 0.3)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(181, 143, 76, 0.2)"; }}
+                    >
+                      Continuar al resumen <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* PANEL DERECHO */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                  {/* Card 1: Resumen del calendario */}
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: 14, fontWeight: 700, color: TEXT }}>Resumen del calendario</h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                      <div style={{ width: 80, height: 80, borderRadius: "50%", border: `6px solid ${CU}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, lineHeight: 1 }}>{totalPartidosEstimados}</span>
+                        <span style={{ fontSize: 9, fontWeight: 600, color: MUTED, textAlign: "center", lineHeight: 1.1, marginTop: 2 }}>Partidos<br/>estimados</span>
+                      </div>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#D89A2B" }} />
+                            <span style={{ color: MUTED, fontWeight: 600 }}>Estimados</span>
+                          </div>
+                          <span style={{ fontWeight: 700, color: TEXT }}>{totalPartidosEstimados} (100%)</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: PALETTE.success }} />
+                            <span style={{ color: MUTED, fontWeight: 600 }}>Programados</span>
+                          </div>
+                          <span style={{ fontWeight: 700, color: TEXT }}>0 (0%)</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#E2E8F0" }} />
+                            <span style={{ color: MUTED, fontWeight: 600 }}>Pendientes</span>
+                          </div>
+                          <span style={{ fontWeight: 700, color: TEXT }}>0 (0%)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Información del calendario */}
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: 14, fontWeight: 700, color: TEXT }}>Información del calendario</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: MUTED, fontWeight: 600 }}>Fecha inicio torneo</span>
+                        <span style={{ fontWeight: 700, color: TEXT }}>{data.fechaInicio ? new Date(data.fechaInicio).toLocaleDateString('es-ES') : '--/--/----'}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: MUTED, fontWeight: 600 }}>Fecha fin torneo</span>
+                        <span style={{ fontWeight: 700, color: TEXT }}>{data.fechaFin ? new Date(data.fechaFin).toLocaleDateString('es-ES') : '--/--/----'}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: MUTED, fontWeight: 600 }}>Duración estimada</span>
+                        <span style={{ fontWeight: 700, color: TEXT }}>{stats.estimatedWeeks * 7} días</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: MUTED, fontWeight: 600 }}>Promedio partidos por jornada</span>
+                        <span style={{ fontWeight: 700, color: TEXT }}>{(totalPartidosEstimados / Math.max(1, maxRounds)).toFixed(1)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                        <span style={{ color: MUTED, fontWeight: 600 }}>Canchas disponibles</span>
+                        <span style={{ fontWeight: 700, color: TEXT }}>{data.numCanchas || 1}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Acciones en este paso */}
+                  <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+                    <h3 style={{ margin: "0 0 20px", fontSize: 14, fontWeight: 700, color: TEXT }}>Acciones en este paso</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {[
+                        { icon: Clock, label: "Ajustar horarios", onClick: () => setStep(5) },
+                        { icon: Zap, label: "Regenerar calendario", onClick: () => alert("Regenerando...") },
+                        { icon: Save, label: "Guardar borrador", onClick: () => alert("Guardado") }
+                      ].map((action, i) => (
+                        <button key={i} onClick={action.onClick} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", background: BG, borderRadius: 12, border: `1px solid ${BORDER}`, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = CU_BOR} onMouseLeave={e => e.currentTarget.style.borderColor = BORDER}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <action.icon size={16} color={MUTED} />
+                            <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{action.label}</span>
+                          </div>
+                          <ChevronRight size={14} color={HINT} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </motion.div>
           );
         })()}
-
         {step === 7 && (
           <motion.div key="step7" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, padding: 32, marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "space-between" }}>

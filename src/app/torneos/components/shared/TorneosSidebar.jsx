@@ -14,7 +14,7 @@ const HINT   = PALETTE.textHint;
 const BORDER = PALETTE.border;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { id: "inicio",        icon: LayoutDashboard, label: "Inicio" },
   { id: "torneos",       icon: Trophy,          label: "Torneos" },
   { id: "equipos",       icon: Shirt,           label: "Equipos" },
@@ -25,9 +25,23 @@ const NAV_ITEMS = [
   { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
-export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", userEmail = "", onLogout, onDeleteAccount }) {
+export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", userEmail = "", onLogout, onDeleteAccount, categorias = [] }) {
   const [openUser, setOpenUser] = useState(false);
   const displayName = userName || "Administrador";
+
+  // Calcular navegación dinámica
+  const hasGrupos = categorias.some(c => c.format === "grupos_playoffs");
+  const hasKnockout = categorias.some(c => c.format === "grupos_playoffs" || c.format === "eliminacion");
+
+  const NAV_ITEMS = [...BASE_NAV_ITEMS];
+  
+  if (hasGrupos || hasKnockout) {
+    // Insertar después de Gestión de Partidos (índice 4)
+    const extraItems = [];
+    if (hasGrupos) extraItems.push({ id: "grupos", icon: Table, label: "Fase de Grupos" });
+    if (hasKnockout) extraItems.push({ id: "fase_final", icon: Trophy, label: "Fase Final" });
+    NAV_ITEMS.splice(5, 0, ...extraItems);
+  }
 
   return (
     <motion.div 

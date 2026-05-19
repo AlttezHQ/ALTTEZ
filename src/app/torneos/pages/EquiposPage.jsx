@@ -4,7 +4,7 @@ import {
   Users, Plus, Search, Filter, MoreVertical, 
   ChevronDown, Download, Info, CheckCircle2, 
   AlertCircle, Clock, Trash2, Edit2, Shield, Trophy, X,
-  Upload, FileText, ChevronRight, UserPlus, Save
+  Upload, FileText, ChevronRight, UserPlus, Save, Link as LinkIcon
 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
@@ -450,6 +450,12 @@ export default function EquiposPage({ onGoTorneos }) {
       setEditingEquipo(eq);
       setPlayersOpen(true);
     }
+    if (action === "link") {
+      const url = `${window.location.origin}/t/${torneo?.slug}/registro-equipo/${eq.id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast("Link público copiado al portapapeles", "success");
+      }).catch(() => showToast("Error al copiar link", "error"));
+    }
   };
 
   return (
@@ -559,7 +565,10 @@ export default function EquiposPage({ onGoTorneos }) {
                             <button onClick={() => handleAction(eq.id, "jugadores")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
                               <UserPlus size={14} color={CU} /> Plantilla / Jugadores
                             </button>
-                            <button onClick={() => handleAction(eq.id, "editar")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
+                            <button onClick={() => handleAction(eq.id, "link")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
+                              <LinkIcon size={14} color={CU} /> Copiar link de registro
+                            </button>
+                            <button onClick={() => handleAction(eq.id, "editar")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: MUTED, fontWeight: 600, borderRadius: 8 }}>
                               <Edit2 size={14} color={MUTED} /> Editar información
                             </button>
                             <div style={{ height: 1, background: BORDER, margin: "4px 0" }} />

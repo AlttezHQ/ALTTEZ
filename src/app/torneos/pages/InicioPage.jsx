@@ -122,10 +122,11 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
   const programados  = partidos.filter(p => p.fechaHora).length;
   const schedPct     = partidos.length > 0 ? programados / partidos.length : 0;
 
+  const isGrupos = torneo.formato === "grupos_playoffs";
   const checks = [
     { done: true,                         label: "Torneo creado",           sublabel: torneo.deporte },
     { done: equipos.length >= 2,          label: "Equipos",                 sublabel: equipos.length >= 2 ? `${equipos.length} equipos registrados` : "Agrega al menos 2 equipos" },
-    { done: partidos.length > 0,          label: "Fixture generado",        sublabel: partidos.length > 0 ? `${partidos.length} partidos` : "Genera el fixture desde Fixtures" },
+    { done: partidos.length > 0,          label: isGrupos ? "Fase de grupos" : "Fixture generado", sublabel: partidos.length > 0 ? `${partidos.length} partidos` : "Genera el fixture desde Fixtures" },
     { done: schedPct >= 0.5,              label: "Calendario programado",   sublabel: partidos.length > 0 ? `${programados} de ${partidos.length} partidos programados` : "Configura el calendario" },
     { done: torneo.publicado,             label: "Torneo publicado",        sublabel: torneo.publicado ? "URL pública activa" : "Publica para compartir el fixture" },
   ];
@@ -135,6 +136,7 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
   const NEXT_ACTIONS = {
     "Equipos":               { label: "Agregar equipos", mod: "equipos" },
     "Fixture generado":      { label: "Generar fixture",  mod: "fixtures" },
+    "Fase de grupos":        { label: "Gestionar grupos", mod: "grupos" },
     "Calendario programado": { label: "Programar partidos", mod: "fixtures" },
     "Torneo publicado":      { label: "Publicar torneo",  mod: "ajustes" },
   };
