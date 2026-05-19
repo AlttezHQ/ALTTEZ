@@ -120,6 +120,7 @@
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const TWENTY_EIGHT_DAYS_MS = 28 * 24 * 60 * 60 * 1000;
+const WINDOW_BOUNDARY_TOLERANCE_MS = 60 * 1000;
 const MAX_ENTRIES = 7;
 
 // ── Utilidades internas ──
@@ -399,7 +400,10 @@ function extractAthleteRpesWindow(athleteId, historial, now, minAgeMs, maxAgeMs)
     if (isNaN(sessionTime)) continue;
 
     const ageMs = now - sessionTime;
-    if (ageMs >= minAgeMs && ageMs <= maxAgeMs) {
+    if (
+      ageMs >= Math.max(0, minAgeMs - WINDOW_BOUNDARY_TOLERANCE_MS) &&
+      ageMs <= maxAgeMs + WINDOW_BOUNDARY_TOLERANCE_MS
+    ) {
       rpes.push(rpe);
     }
   }

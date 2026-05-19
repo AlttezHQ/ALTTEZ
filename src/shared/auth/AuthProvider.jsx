@@ -61,6 +61,37 @@ export default function AuthProvider({ children }) {
   const authenticatedOnce = useRef(false);
   const explicitSignOut = useRef(false);
 
+  const loadProfile = useCallback(async () => {
+    setLoadingProfile(true);
+    try {
+      const prof = await getProfile();
+      setProfile(prof);
+      setProfileError(null);
+      return prof;
+    } catch (err) {
+      setProfileError(err?.message || "Error cargando perfil");
+      return null;
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
+
+  const applyAuthenticatedSession = useCallback(async (authSession, fallbackUser = null) => {
+    const signedUser = authSession?.user ?? fallbackUser ?? null;
+    if (!signedUser) return null;
+
+    authCheckId.current += 1;
+    authenticatedOnce.current = true;
+    explicitSignOut.current = false;
+    setUser(signedUser);
+    setSession(authSession ?? null);
+    setAuthError(null);
+    setLoadingAuth(false);
+
+    await loadProfile();
+    return signedUser;
+  }, [loadProfile]);
+
   // ── Bootstrap: check existing session + subscribe to changes ──
 
   useEffect(() => {
@@ -92,19 +123,7 @@ export default function AuthProvider({ children }) {
           setUser(existingUser);
           setLoadingAuth(false);
 
-          // Load profile separately
-          setLoadingProfile(true);
-          try {
-            const prof = await getProfile();
-            if (mounted) {
-              setProfile(prof);
-              setProfileError(null);
-            }
-          } catch (err) {
-            if (mounted) setProfileError(err?.message || "Error cargando perfil");
-          } finally {
-            if (mounted) setLoadingProfile(false);
-          }
+          await loadProfile();
         } else {
           if (authenticatedOnce.current) return;
           setUser(null);
@@ -130,26 +149,7 @@ export default function AuthProvider({ children }) {
       if (!mounted) return;
 
       if (event === "SIGNED_IN" && authSession) {
-        authCheckId.current += 1;
-        authenticatedOnce.current = true;
-        explicitSignOut.current = false;
-        setUser(authSession.user);
-        setSession(authSession);
-        setAuthError(null);
-
-        // Load profile after sign-in
-        setLoadingProfile(true);
-        try {
-          const prof = await getProfile();
-          if (mounted) {
-            setProfile(prof);
-            setProfileError(null);
-          }
-        } catch (err) {
-          if (mounted) setProfileError(err?.message || "Error cargando perfil");
-        } finally {
-          if (mounted) setLoadingProfile(false);
-        }
+        await applyAuthenticatedSession(authSession);
       } else if (event === "SIGNED_OUT") {
         if (!explicitSignOut.current && authenticatedOnce.current) return;
         explicitSignOut.current = false;
@@ -169,41 +169,38 @@ export default function AuthProvider({ children }) {
       mounted = false;
       sub.unsubscribe();
     };
-  }, []);
+  }, [applyAuthenticatedSession, loadProfile]);
 
   // ── Auth actions ────────────────────────────────────────────────────────────
 
   const handleSignIn = useCallback(async (email, password) => {
     const result = await authSignIn(email, password);
-    const signedUser = result?.session?.user ?? result?.user ?? null;
-
-    if (!result?.error && signedUser) {
-      authCheckId.current += 1;
-      authenticatedOnce.current = true;
-      explicitSignOut.current = false;
-      setUser(signedUser);
-      setSession(result.session ?? null);
-      setAuthError(null);
-      setLoadingAuth(false);
-
-      setLoadingProfile(true);
-      try {
-        const prof = await getProfile();
-        setProfile(prof);
-        setProfileError(null);
-      } catch (err) {
-        setProfileError(err?.message || "Error cargando perfil");
-      } finally {
-        setLoadingProfile(false);
-      }
+    if (!result?.error) {
+      await applyAuthenticatedSession(result.session, result.user);
     }
 
     return result;
-  }, []);
+  }, [applyAuthenticatedSession]);
 
   const handleSignUp = useCallback(async (params) => {
-    return await authSignUp(params);
-  }, []);
+    const result = await authSignUp(params);
+
+    if (!result?.error && result?.session) {
+      await applyAuthenticatedSession(result.session, result.user);
+      return result;
+    }
+
+    if (!result?.error && params?.email && params?.password) {
+      const signInResult = await authSignIn(params.email, params.password);
+      if (!signInResult?.error) {
+        await applyAuthenticatedSession(signInResult.session, signInResult.user);
+        return { ...result, session: signInResult.session, user: signInResult.user };
+      }
+      return signInResult;
+    }
+
+    return result;
+  }, [applyAuthenticatedSession]);
 
   const handleSignOut = useCallback(async () => {
     explicitSignOut.current = true;
@@ -227,13 +224,10 @@ export default function AuthProvider({ children }) {
   const handleLinkClub = useCallback(async (clubId) => {
     const success = await linkProfileToClub(clubId);
     if (success) {
-      setLoadingProfile(true);
-      const prof = await getProfile();
-      setProfile(prof);
-      setLoadingProfile(false);
+      await loadProfile();
     }
     return success;
-  }, []);
+  }, [loadProfile]);
 
   const handleDeleteAccount = useCallback(async () => {
     const result = await authDeleteAccount();
@@ -252,19 +246,9 @@ export default function AuthProvider({ children }) {
    * Útil después de crear un club o cambiar roles.
    */
   const refreshProfile = useCallback(async () => {
-    setLoadingProfile(true);
     setProfileError(null);
-    try {
-      const prof = await getProfile();
-      setProfile(prof);
-      return prof;
-    } catch (err) {
-      setProfileError(err?.message || "Error recargando perfil");
-      return null;
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []);
+    return await loadProfile();
+  }, [loadProfile]);
 
   // ── Context value ───────────────────────────────────────────────────────────
 

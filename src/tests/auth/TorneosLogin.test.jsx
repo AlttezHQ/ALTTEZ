@@ -58,7 +58,10 @@ vi.mock("../../shared/lib/supabase", () => ({
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq:     vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      single: vi.fn().mockResolvedValue({
+        data: { id: "u1", club_id: "club-1", full_name: "Liga Norte", role: "admin" },
+        error: null,
+      }),
       update: vi.fn().mockReturnThis(),
     }),
   },
@@ -67,7 +70,7 @@ vi.mock("../../shared/lib/supabase", () => ({
 // ── framer-motion mock ────────────────────────────────────────────────────────
 
 vi.mock("framer-motion", () => {
-  const tags = ["div", "button", "span", "h1", "h2", "p", "section", "article"];
+  const tags = ["div", "button", "span", "h1", "h2", "p", "section", "article", "img"];
   const motion = {};
   tags.forEach((tag) => {
     motion[tag] = ({ children, whileHover, whileTap, animate, initial, exit, transition, ...rest }) =>
@@ -82,7 +85,13 @@ vi.mock("framer-motion", () => {
 // ── TorneosApp dependencies mock ──────────────────────────────────────────────
 
 vi.mock("../../app/torneos/store/useTorneosStore", () => ({
-  useTorneosStore: (sel) => sel({ torneoActivoId: null, torneos: [] }),
+  useTorneosStore: (sel) => sel({
+    torneoActivoId: null,
+    torneos: [],
+    loading: false,
+    error: null,
+    loadTorneosFromSupabase: vi.fn().mockResolvedValue({ torneos: [], categorias: [] }),
+  }),
 }));
 
 const mockNavigate = vi.fn();
@@ -453,6 +462,7 @@ describe("TorneosAuthScreen — formulario de login", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("TorneosAuthScreen — formulario de registro", () => {
+  const strongPassword = "RayoAzul#2026";
   beforeEach(async () => {
     vi.clearAllMocks();
     setupNoSession();
@@ -486,15 +496,18 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "liga@norte.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
-      target: { value: "pass123" },
+    fireEvent.change(screen.getByPlaceholderText("Minimo 10 caracteres"), {
+      target: { value: strongPassword },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Repite tu contrasena"), {
+      target: { value: strongPassword },
     });
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
     await waitFor(() => {
       expect(mockSignUp).toHaveBeenCalledWith({
         email: "liga@norte.com",
-        password: "pass123",
+        password: strongPassword,
         options: {
           data: { full_name: "Liga Norte", role: "admin" },
         },
@@ -517,8 +530,11 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "mi@liga.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
-      target: { value: "pass123" },
+    fireEvent.change(screen.getByPlaceholderText("Minimo 10 caracteres"), {
+      target: { value: strongPassword },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Repite tu contrasena"), {
+      target: { value: strongPassword },
     });
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
@@ -550,8 +566,11 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "mi@liga.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
-      target: { value: "pass123" },
+    fireEvent.change(screen.getByPlaceholderText("Minimo 10 caracteres"), {
+      target: { value: strongPassword },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Repite tu contrasena"), {
+      target: { value: strongPassword },
     });
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
@@ -576,8 +595,11 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "dup@b.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
-      target: { value: "pass123" },
+    fireEvent.change(screen.getByPlaceholderText("Minimo 10 caracteres"), {
+      target: { value: strongPassword },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Repite tu contrasena"), {
+      target: { value: strongPassword },
     });
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
@@ -586,20 +608,20 @@ describe("TorneosAuthScreen — formulario de registro", () => {
     });
   });
 
-  it("valida que password tenga mínimo 6 caracteres antes de llamar signUp", async () => {
+  it("valida que password tenga seguridad alta antes de llamar signUp", async () => {
     fireEvent.change(screen.getByPlaceholderText("Ej: Liga Norte"), {
       target: { value: "Liga Norte" },
     });
     fireEvent.change(screen.getByPlaceholderText("tu@email.com"), {
       target: { value: "a@b.com" },
     });
-    fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), {
+    fireEvent.change(screen.getByPlaceholderText("Minimo 10 caracteres"), {
       target: { value: "123" }, // muy corto
     });
     fireEvent.click(screen.getByRole("button", { name: /crear cuenta/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Mínimo 6 caracteres")).toBeInTheDocument();
+      expect(screen.getByText("La contrasena debe tener seguridad alta")).toBeInTheDocument();
     });
     expect(mockSignUp).not.toHaveBeenCalled();
   });
