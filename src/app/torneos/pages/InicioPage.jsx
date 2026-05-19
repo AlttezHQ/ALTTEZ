@@ -195,37 +195,44 @@ function InfoCards({ onInfoClick }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" style={{ marginTop: "40px" }}>
       {cards.map(({ icon: Icon, title, desc, mod, cta, iconColor, iconBg }, i) => (
         <motion.div
           key={title}
-          {...fadeUp(0.15 + i * 0.06)}
-          whileHover={{ y: -3, boxShadow: ELEV_MD }}
+          {...fadeUp(0.12 + i * 0.05)}
+          whileHover={{ y: -1, boxShadow: ELEV_MD }}
           transition={spring}
           onClick={() => onInfoClick(mod)}
           style={{
-            background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`,
-            padding: "18px 18px 14px", fontFamily: FONT, cursor: "pointer",
-            display: "flex", flexDirection: "column", boxShadow: ELEV_SM,
+            background: CARD, borderRadius: 8, border: `1px solid ${BORDER}`,
+            padding: "10px 12px", fontFamily: FONT, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 10, boxShadow: ELEV_SM,
           }}
         >
+          {/* Icon */}
           <div style={{
-            width: 36, height: 36, borderRadius: 9, background: iconBg,
-            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 11,
+            width: 26, height: 26, borderRadius: 6, background: iconBg, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <Icon size={16} color={iconColor} />
+            <Icon size={12} color={iconColor} />
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{title}</div>
-          <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.55, flex: 1 }}>{desc}</div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, marginBottom: 1 }}>{title}</div>
+            <div style={{
+              fontSize: 10, color: MUTED, lineHeight: 1.3,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{desc}</div>
+          </div>
+
+          {/* CTA */}
           <motion.div
-            whileHover={{ x: 3 }}
+            whileHover={{ x: 2 }}
             transition={spring}
-            style={{
-              marginTop: 12, display: "flex", alignItems: "center", gap: 4,
-              color: CU, fontSize: 12, fontWeight: 700,
-            }}
+            style={{ display: "flex", alignItems: "center", gap: 2, color: CU, fontSize: 10, fontWeight: 700, flexShrink: 0 }}
           >
-            {cta} <ArrowRight size={11} />
+            {cta} <ArrowRight size={9} />
           </motion.div>
         </motion.div>
       ))}
@@ -351,9 +358,9 @@ function ActiveDashboard({ torneo, equipos, partidos, onInfoClick, onNavigate, o
         <motion.div
           {...fadeUp(0)}
           style={{
-            flex: 1, background: CARD, borderRadius: 16,
+            flex: 1, background: CARD, borderRadius: 14,
             boxShadow: ELEV_MD, border: `1px solid ${BORDER}`,
-            padding: "24px 24px 20px", minWidth: 0, fontFamily: FONT,
+            padding: "18px 20px 16px", minWidth: 0, fontFamily: FONT,
           }}
         >
           {/* Header */}
