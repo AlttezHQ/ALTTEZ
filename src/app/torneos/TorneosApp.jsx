@@ -423,6 +423,7 @@ export default function TorneosApp() {
   const [showImport,   setShowImport]   = useState(false);
   const [editingTorneo, setEditingTorneo] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState(null);
   const [requiresAuth, setRequiresAuth] = useState(false);
@@ -535,7 +536,7 @@ export default function TorneosApp() {
     };
   }, [auth.loadingAuth, auth.loadingProfile, auth.user, auth.profile, loadTorneos, location.search, navigate]);
 
-  const goTo      = (mod) => setActiveModule(mod);
+  const goTo      = (mod) => { setActiveModule(mod); setMobileDrawerOpen(false); };
   const goTorneos = ()    => setActiveModule("torneos");
 
   const handleCreate  = (torneo = null) => {
@@ -632,29 +633,78 @@ export default function TorneosApp() {
     "Administrador";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: BG, fontFamily: FONT }}>
-      <TorneosSidebar
-        active={sidebarActive}
-        onNav={goTo}
-        torneoActivo={torneoActivo}
-        categorias={torneoActivoId ? useTorneosStore.getState().getCategoriasTorneo(torneoActivoId) : []}
-        isCollapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        userName={accountDisplayName}
-        userEmail={accountEmail}
-        onLogout={handleLogout}
-        onDeleteAccount={handleDeleteAccount}
-      />
+    <div className="flex min-h-screen font-sans" style={{ background: BG, fontFamily: FONT }}>
+      {/* Mobile drawer backdrop */}
+      <AnimatePresence>
+        {mobileDrawerOpen && (
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileDrawerOpen(false)}
+            className="fixed inset-0 z-40 md:hidden"
+            style={{ background: "rgba(23,26,28,0.45)", backdropFilter: "blur(2px)" }}
+          />
+        )}
+      </AnimatePresence>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+      {/* Sidebar: Desktop sticky | Mobile drawer */}
+      <div className="hidden md:flex flex-shrink-0">
+        <TorneosSidebar
+          active={sidebarActive}
+          onNav={goTo}
+          torneoActivo={torneoActivo}
+          categorias={torneoActivoId ? useTorneosStore.getState().getCategoriasTorneo(torneoActivoId) : []}
+          isCollapsed={isSidebarCollapsed}
+          onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          userName={accountDisplayName}
+          userEmail={accountEmail}
+          onLogout={handleLogout}
+          onDeleteAccount={handleDeleteAccount}
+        />
+      </div>
+
+      {/* Mobile drawer panel */}
+      <AnimatePresence>
+        {mobileDrawerOpen && (
+          <motion.div
+            key="drawer"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-y-0 left-0 z-50 md:hidden flex"
+            style={{ width: "min(280px, 82vw)" }}
+          >
+            <TorneosSidebar
+              active={sidebarActive}
+              onNav={goTo}
+              torneoActivo={torneoActivo}
+              categorias={torneoActivoId ? useTorneosStore.getState().getCategoriasTorneo(torneoActivoId) : []}
+              isCollapsed={false}
+              onToggle={() => setMobileDrawerOpen(false)}
+              userName={accountDisplayName}
+              userEmail={accountEmail}
+              onLogout={handleLogout}
+              onDeleteAccount={handleDeleteAccount}
+              isMobileDrawer
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
           userName={accountDisplayName}
           userEmail={accountEmail}
+          onMenuToggle={() => setMobileDrawerOpen(o => !o)}
         />
 
-        <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>
+        <main className="flex-1 overflow-y-auto" style={{ padding: "24px 20px 48px" }}>
           <AnimatePresence mode="wait">
 
             {activeModule === "inicio" && (

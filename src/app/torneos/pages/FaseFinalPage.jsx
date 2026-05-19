@@ -173,12 +173,12 @@ export default function FaseFinalPage({ onGoTorneos }) {
         </div>
       )}
 
-      {/* Bracket Layout */}
-      <div style={{ display: "flex", gap: 40, overflowX: "auto", padding: "10px 0 40px" }}>
+      {/* Bracket Layout — scroll-snap for touch precision on mobile */}
+      <div style={{ display: "flex", gap: 40, overflowX: "auto", padding: "10px 0 40px", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
         {activePhases.map((phaseName, i) => {
           const phaseMatches = matchPhases[phaseName].sort((a, b) => a.orden - b.orden);
           return (
-            <div key={phaseName} style={{ display: "flex", flexDirection: "column", gap: 32, flexShrink: 0 }}>
+            <div key={phaseName} style={{ display: "flex", flexDirection: "column", gap: 32, flexShrink: 0, scrollSnapAlign: "start", minWidth: 220 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: MUTED, textAlign: "center", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 {phaseName}
               </div>

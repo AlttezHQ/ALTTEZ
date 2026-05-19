@@ -577,7 +577,10 @@ export const useTorneosStore = create(
         set({ loading: true, error: null });
         try {
           const results = await svc.fetchAllTorneos();
-          const allTorneos = results.map(r => r.torneo);
+          const allTorneos = results.map(r => ({
+            ...r.torneo,
+            patrocinadores: Array.isArray(r.torneo.patrocinadores) ? r.torneo.patrocinadores : [],
+          }));
           const allEquipos = results.flatMap(r => r.equipos);
           const allPartidos = results.flatMap(r => r.partidos);
           const allSedes    = results.flatMap(r => r.sedes);

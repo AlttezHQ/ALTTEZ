@@ -61,7 +61,7 @@ function MiniTorneosPreview() {
 
 function InfoCards({ onInfoClick }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 20 }}>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
       {[
         { icon: Globe,     title: "Página pública",    desc: "Comparte el torneo con una URL pública",             mod: "publica" },
         { icon: BarChart2, title: "Estadísticas",       desc: "Rendimiento de equipos y jugadores en tiempo real", mod: "estadisticas" },
@@ -152,7 +152,7 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
 
   return (
     <>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
         {/* Main dashboard card */}
         <motion.div
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
@@ -235,7 +235,8 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
         <motion.div
           initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, ease: EASE, delay: 0.1 }}
-          style={{ width: 280, flexShrink: 0, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
+          className="w-full lg:w-[280px] lg:flex-shrink-0"
+          style={{ background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <Calendar size={14} color={CU} />
@@ -309,7 +310,7 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
 function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
   return (
     <>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
         {/* Welcome card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
@@ -335,7 +336,10 @@ function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
                 </motion.button>
               </div>
             </div>
+          {/* Mini fixture preview — hidden on mobile to save vertical space */}
+          <div className="hidden md:block">
             <MiniTorneosPreview />
+          </div>
           </div>
           {/* Steps strip */}
           <div style={{ display: "flex", alignItems: "center", borderTop: `1px solid ${BORDER}`, paddingTop: 18 }}>
@@ -357,7 +361,8 @@ function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
         <motion.div
           initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, ease: EASE, delay: 0.15 }}
-          style={{ width: 300, flexShrink: 0, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
+          className="w-full lg:w-[300px] lg:flex-shrink-0"
+          style={{ background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
         >
           <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 8 }}>Crear tu primer torneo</div>
           <p style={{ margin: "0 0 16px", fontSize: 12, color: MUTED, lineHeight: 1.5 }}>

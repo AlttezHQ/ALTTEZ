@@ -536,7 +536,7 @@ export default function FixturesPage({ onGoTorneos }) {
         </div>
       </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: tab === "programacion" ? "1fr" : "1fr 320px", gap: 24 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <main>
           <AnimatePresence mode="wait">
             {tab === "fixture" && (() => {
@@ -556,7 +556,7 @@ export default function FixturesPage({ onGoTorneos }) {
                     <button onClick={handleGenerar} style={{ background: CU, color: "#FFF", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 700, cursor: "pointer", boxShadow: ELEVATION.card }}>Generar Fixture</button>
                   </div>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24, alignItems: "start" }}>
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
                     {/* Left: Main Fixture List */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                       {/* Filters */}

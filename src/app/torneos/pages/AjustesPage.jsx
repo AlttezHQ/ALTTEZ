@@ -279,10 +279,10 @@ export default function AjustesPage({ onGoTorneos }) {
         </div>
         
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
-          {torneo.patrocinadores?.map(s => (
+          {Array.isArray(torneo.patrocinadores) && torneo.patrocinadores.map(s => (
             <div key={s.id} style={{ position: "relative", width: 60, height: 60, borderRadius: 8, border: `1px solid ${BORDER}`, background: `url(${s.logo}) center/contain no-repeat ${BG}` }}>
               <button 
-                onClick={async () => await actualizarTorneo(torneo.id, { patrocinadores: torneo.patrocinadores.filter(x => x.id !== s.id) })}
+                onClick={async () => await actualizarTorneo(torneo.id, { patrocinadores: (Array.isArray(torneo.patrocinadores) ? torneo.patrocinadores : []).filter(x => x.id !== s.id) })}
                 style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#EF4444", color: "#FFF", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
               >
                 <Trash2 size={10} />

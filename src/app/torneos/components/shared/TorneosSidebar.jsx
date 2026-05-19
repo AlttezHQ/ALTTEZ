@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, CalendarPlus, Settings, LayoutDashboard, Globe, ChevronLeft, ChevronRight, User, ChevronDown, LogOut, Trash2 } from "lucide-react";
+import { Trophy, Shirt, Network, CalendarDays, BarChart2, Table, Settings, LayoutDashboard, Globe, ChevronLeft, ChevronRight, X, User, ChevronDown, LogOut, Trash2 } from "lucide-react";
 import { PALETTE, ELEVATION } from "../../../../shared/tokens/palette";
 import { APP_CONFIG } from "../../../../shared/tokens/config";
 
@@ -25,53 +25,87 @@ const BASE_NAV_ITEMS = [
   { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
-export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", userEmail = "", onLogout, onDeleteAccount, categorias = [] }) {
+export default function TorneosSidebar({
+  active, onNav, torneoActivo, isCollapsed, onToggle,
+  userName = "", userEmail = "", onLogout, onDeleteAccount,
+  categorias = [], isMobileDrawer = false
+}) {
   const [openUser, setOpenUser] = useState(false);
   const displayName = userName || "Administrador";
 
-  // Calcular navegación dinámica
+  // Dynamic navigation items based on tournament categories
   const hasGrupos = categorias.some(c => c.format === "grupos_playoffs");
   const hasKnockout = categorias.some(c => c.format === "grupos_playoffs" || c.format === "eliminacion");
 
   const NAV_ITEMS = [...BASE_NAV_ITEMS];
-  
   if (hasGrupos || hasKnockout) {
-    // Insertar después de Gestión de Partidos (índice 4)
     const extraItems = [];
     if (hasGrupos) extraItems.push({ id: "grupos", icon: Table, label: "Fase de Grupos" });
     if (hasKnockout) extraItems.push({ id: "fase_final", icon: Trophy, label: "Fase Final" });
     NAV_ITEMS.splice(5, 0, ...extraItems);
   }
 
+  // In mobile drawer mode, sidebar is always expanded (never collapsed)
+  const collapsed = isMobileDrawer ? false : isCollapsed;
+
   return (
-    <motion.div 
+    <motion.div
       initial={false}
-      animate={{ width: isCollapsed ? 74 : 220 }}
+      animate={{ width: collapsed ? 74 : 220 }}
       style={{
-        flexShrink: 0, background: CARD,
+        flexShrink: 0,
+        background: CARD,
         borderRight: `1px solid ${BORDER}`,
-        display: "flex", flexDirection: "column",
-        fontFamily: FONT, height: "100vh", position: "sticky", top: 0,
-        overflow: "hidden"
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: FONT,
+        height: "100vh",
+        position: isMobileDrawer ? "relative" : "sticky",
+        top: 0,
+        overflow: "hidden",
+        width: isMobileDrawer ? "100%" : undefined,
       }}
     >
-      {/* Brand */}
-      <div style={{ padding: isCollapsed ? "20px 0" : "20px 16px 14px", display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "flex-start", gap: 8 }}>
-        <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ width: 26, height: 26, objectFit: "contain" }} />
-        <AnimatePresence>
-          {!isCollapsed && (
-            <motion.div initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} exit={{ opacity: 0, width: 0 }} style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap", overflow: "hidden" }}>
-              <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.06em", color: TEXT }}>ALTTEZ</span>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 6px", marginLeft: 4 }}>TORNEOS</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Brand row */}
+      <div style={{
+        padding: collapsed ? "20px 0" : "20px 16px 14px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: collapsed ? "center" : "space-between",
+        gap: 8,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                style={{ display: "flex", alignItems: "center", whiteSpace: "nowrap", overflow: "hidden" }}
+              >
+                <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.06em", color: TEXT }}>ALTTEZ</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 6px", marginLeft: 4 }}>TORNEOS</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Close button in mobile drawer */}
+        {isMobileDrawer && (
+          <button
+            onClick={onToggle}
+            style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: MUTED, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
-      {/* Torneo activo badge */}
+      {/* Active tournament badge */}
       {torneoActivo && (
-        <div style={{ margin: isCollapsed ? "0 10px 8px" : "0 10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: isCollapsed ? "6px" : "6px 10px", display: "flex", justifyContent: "center" }}>
-          {!isCollapsed ? (
+        <div style={{ margin: "0 10px 8px", background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: collapsed ? "6px" : "6px 10px", display: "flex", justifyContent: "center" }}>
+          {!collapsed ? (
             <div style={{ overflow: "hidden" }}>
               <div style={{ fontSize: 9, fontWeight: 600, color: CU, letterSpacing: "0.08em", marginBottom: 2 }}>TORNEO ACTIVO</div>
               <div style={{ fontSize: 11, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{torneoActivo.nombre}</div>
@@ -84,19 +118,19 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
 
       <div style={{ height: 1, background: BORDER, margin: "0 12px 8px" }} />
 
-      {/* Nav */}
+      {/* Nav items */}
       <nav style={{ flex: 1, padding: "4px 8px", overflowX: "hidden", overflowY: "auto" }}>
         {NAV_ITEMS.map(({ id, icon: Icon, label }) => {
           const isActive = active === id;
           return (
             <motion.button
               key={id}
-              whileHover={{ x: isCollapsed ? 0 : 2 }}
+              whileHover={{ x: collapsed ? 0 : 2 }}
               onClick={() => onNav(id)}
-              title={isCollapsed ? label : ""}
+              title={collapsed ? label : ""}
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 10,
-                justifyContent: isCollapsed ? "center" : "flex-start",
+                justifyContent: collapsed ? "center" : "flex-start",
                 padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
                 background: isActive ? CU_DIM : "transparent",
                 color: isActive ? CU : MUTED,
@@ -107,27 +141,29 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
               }}
             >
               <Icon size={18} style={{ flexShrink: 0 }} />
-              {!isCollapsed && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
+              {!collapsed && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
             </motion.button>
           );
         })}
       </nav>
 
-      {/* User Profile Dropdown */}
+      {/* User profile dropdown */}
       <div style={{ padding: "0 16px 12px", position: "relative" }}>
         <button
           onClick={() => setOpenUser(o => !o)}
           style={{
             width: "100%", display: "flex", alignItems: "center", gap: 8,
-            background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 10, padding: isCollapsed ? "8px" : "8px 12px",
-            cursor: "pointer", fontFamily: FONT, justifyContent: isCollapsed ? "center" : "flex-start",
-            transition: "background 0.2s"
+            background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 10,
+            padding: collapsed ? "8px" : "8px 12px",
+            cursor: "pointer", fontFamily: FONT,
+            justifyContent: collapsed ? "center" : "flex-start",
+            transition: "background 0.2s",
           }}
           onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
           onMouseOut={e => e.currentTarget.style.background = "transparent"}
         >
           <User size={16} color={MUTED} />
-          {!isCollapsed && (
+          {!collapsed && (
             <>
               <span style={{ fontSize: 13, color: TEXT, fontWeight: 600, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {displayName}
@@ -138,7 +174,7 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
         </button>
 
         <AnimatePresence>
-          {openUser && !isCollapsed && (
+          {openUser && !collapsed && (
             <motion.div
               initial={{ opacity: 0, y: 6, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -148,7 +184,7 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
                 position: "absolute", bottom: "calc(100% + 4px)", left: 16, right: 16,
                 background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
                 boxShadow: ELEVATION?.card ?? "0 10px 28px rgba(23,26,28,0.07)",
-                overflow: "hidden", zIndex: 50
+                overflow: "hidden", zIndex: 50,
               }}
             >
               <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
@@ -170,7 +206,7 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
                     width: "100%", display: "flex", alignItems: "center", gap: 10,
                     padding: "10px", background: "transparent", border: "none", borderRadius: 8,
                     cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: MUTED,
-                    textAlign: "left", transition: "background 0.15s"
+                    textAlign: "left", transition: "background 0.15s",
                   }}
                   onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
                   onMouseOut={e => e.currentTarget.style.background = "transparent"}
@@ -184,7 +220,7 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
                     width: "100%", display: "flex", alignItems: "center", gap: 10,
                     padding: "10px", background: "transparent", border: "none", borderRadius: 8,
                     cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600,
-                    color: PALETTE.danger, textAlign: "left", transition: "background 0.15s", marginTop: 2
+                    color: PALETTE.danger, textAlign: "left", transition: "background 0.15s", marginTop: 2,
                   }}
                   onMouseOver={e => e.currentTarget.style.background = "#FEF2F2"}
                   onMouseOut={e => e.currentTarget.style.background = "transparent"}
@@ -197,11 +233,18 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
         </AnimatePresence>
       </div>
 
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: isCollapsed ? "center" : "space-between" }}>
-        {!isCollapsed && <span style={{ fontSize: 11, color: HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>v{APP_CONFIG.modules.torneos.version} · Torneos</span>}
-        <button onClick={onToggle} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: MUTED }}>
-          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </button>
+      {/* Footer: version + collapse toggle */}
+      <div style={{ padding: "12px 16px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between" }}>
+        {!collapsed && <span style={{ fontSize: 11, color: HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>v{APP_CONFIG.modules.torneos.version} · Torneos</span>}
+        {/* Hide desktop collapse toggle in mobile drawer — use X button at top instead */}
+        {!isMobileDrawer && (
+          <button
+            onClick={onToggle}
+            style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, color: MUTED }}
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+        )}
       </div>
     </motion.div>
   );
