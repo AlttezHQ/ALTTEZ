@@ -83,6 +83,7 @@ export default function AuthProvider({ children }) {
     authCheckId.current += 1;
     authenticatedOnce.current = true;
     explicitSignOut.current = false;
+    setLoadingProfile(true);
     setUser(signedUser);
     setSession(authSession ?? null);
     setAuthError(null);
@@ -120,6 +121,7 @@ export default function AuthProvider({ children }) {
 
         if (existingUser) {
           authenticatedOnce.current = true;
+          setLoadingProfile(true);
           setUser(existingUser);
           setLoadingAuth(false);
 

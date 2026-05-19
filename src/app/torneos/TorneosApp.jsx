@@ -425,7 +425,7 @@ export default function TorneosApp() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [sessionUser, setSessionUser] = useState(null);
+  const [sessionUser, setSessionUser] = useState(() => auth.user || null);
   const [requiresAuth, setRequiresAuth] = useState(false);
   const [initError, setInitError] = useState(null);
   const [initStatus, setInitStatus] = useState("idle");
@@ -584,8 +584,10 @@ export default function TorneosApp() {
 
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
+  const hasLocalData = torneos && torneos.length > 0;
+
   // Loading state while checking Supabase session
-  if (auth.loadingAuth || auth.loadingProfile || initialLoading || storeLoading) {
+  if (auth.loadingAuth || auth.loadingProfile || (initialLoading && !hasLocalData) || (storeLoading && !hasLocalData)) {
     return <AlttezLoader fullScreen text="Cargando torneos..." />;
   }
 
