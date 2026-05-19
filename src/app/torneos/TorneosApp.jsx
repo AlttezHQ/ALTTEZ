@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, X, FileSpreadsheet, AlertTriangle, Building2 } from "lucide-react";
+import { Trophy, X, FileSpreadsheet, AlertTriangle, Building2, Mail } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
 import { useTorneosStore } from "./store/useTorneosStore";
 import { useAuth } from "../../shared/auth";
-import { validateTorneosInlineLogin, validateTorneosInlineRegister } from "../../shared/auth/authValidation";
-import { supabase, isSupabaseReady } from "../../shared/lib/supabase";
+import { isSupabaseReady } from "../../shared/lib/supabase";
+import { signInWithGoogle } from "../../shared/services/authService";
+import { validateLoginForm, validateRegisterForm } from "./auth/authValidators";
+import { evaluatePasswordStrength, getPasswordRequirements } from "./auth/passwordStrength";
 
 import TorneosSidebar    from "./components/shared/TorneosSidebar";
 import TorneosHeader     from "./components/shared/TorneosHeader";
@@ -43,10 +45,41 @@ const PAGE_ANIM = {
 // ── Inline auth screen (login + register tabs) ─────────────────────────────
 // Uses shared auth context + centralized validation.
 
+function PasswordStrengthIndicator({ password, passwordStrength }) {
+  if (!password) return null;
+
+  const isHigh = passwordStrength.level === "high";
+  const isMedium = passwordStrength.level === "medium";
+  const tone = isHigh ? CU : isMedium ? MUTED : PALETTE.danger;
+  const progressWidth = `${(passwordStrength.passed / passwordStrength.total) * 100}%`;
+
+  return (
+    <div style={{ marginTop: 8, padding: 12, borderRadius: 12, background: isMedium ? CU_DIM : BG, border: `1px solid ${BORDER}` }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: tone }}>{passwordStrength.label}</span>
+        <span style={{ fontSize: 10, color: MUTED }}>{passwordStrength.passed}/{passwordStrength.total}</span>
+      </div>
+      <div style={{ height: 4, borderRadius: 999, background: CARD, border: `1px solid ${BORDER}`, overflow: "hidden", marginBottom: 8 }}>
+        <div style={{ height: "100%", width: progressWidth, background: tone, transition: "width 0.18s ease" }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px" }}>
+        {getPasswordRequirements().map((req) => {
+          const ok = passwordStrength.checks[req.key];
+          return (
+            <div key={req.key} style={{ fontSize: 10, color: ok ? CU : MUTED, lineHeight: 1.25 }}>
+              {ok ? "OK" : "-"} {req.label}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function TorneosAuthScreen({ initialTab = "login" }) {
   const auth = useAuth();
   const [tab, setTab]     = useState(initialTab);
-  const [form, setForm]   = useState({ nombre: "", email: "", password: "" });
+  const [form, setForm]   = useState({ nombre: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]     = useState(null);
@@ -57,13 +90,13 @@ function TorneosAuthScreen({ initialTab = "login" }) {
   };
 
   const handleLogin = async () => {
-    const { errors: errs, cleanData } = validateTorneosInlineLogin(form);
+    const errs = validateLoginForm(form);
     setErrors(errs);
-    if (!cleanData) return;
+    if (Object.keys(errs).length) return;
     try {
       setLoading(true);
       setMsg(null);
-      const { error } = await auth.signIn(cleanData.email, cleanData.password);
+      const { error } = await auth.signIn(form.email, form.password);
       if (error) { setMsg({ type: "error", text: error }); return; }
       // Auth state update handled by AuthProvider listener
     } catch (error) {
@@ -74,16 +107,16 @@ function TorneosAuthScreen({ initialTab = "login" }) {
   };
 
   const handleRegister = async () => {
-    const { errors: errs, cleanData } = validateTorneosInlineRegister(form);
+    const errs = validateRegisterForm(form);
     setErrors(errs);
-    if (!cleanData) return;
+    if (Object.keys(errs).length) return;
     try {
       setLoading(true);
       setMsg(null);
       const { error } = await auth.signUp({
-        email: cleanData.email,
-        password: cleanData.password,
-        fullName: cleanData.nombre,
+        email: form.email,
+        password: form.password,
+        fullName: form.nombre,
         role: "admin",
       });
       if (error) { setMsg({ type: "error", text: error }); return; }
@@ -95,12 +128,30 @@ function TorneosAuthScreen({ initialTab = "login" }) {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setMsg(null);
+      const { error } = await signInWithGoogle(`${window.location.origin}/torneos`);
+      if (error) setMsg({ type: "error", text: error });
+    } catch (error) {
+      setMsg({ type: "error", text: error?.message || "No se pudo iniciar sesión con Google" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inp = (hasErr) => ({
     width: "100%", boxSizing: "border-box",
     border: `1px solid ${hasErr ? PALETTE.danger : BORDER}`,
     borderRadius: 10, padding: "11px 13px",
     fontSize: 13, color: TEXT, fontFamily: FONT,
     background: BG, outline: "none",
+  });
+
+  const passwordStrength = evaluatePasswordStrength(form.password, {
+    email: form.email,
+    nombre: form.nombre,
   });
 
   return (
@@ -181,6 +232,15 @@ function TorneosAuthScreen({ initialTab = "login" }) {
               color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 600,
               fontFamily: FONT, cursor: loading ? "wait" : "pointer",
             }}>{loading ? "Verificando..." : "Ingresar"}</button>
+            <button onClick={handleGoogleLogin} disabled={loading} style={{
+              width: "100%", minHeight: 46, marginTop: 10, borderRadius: 12,
+              border: `1px solid ${BORDER}`, background: CARD, color: TEXT,
+              fontSize: 12, fontWeight: 700, fontFamily: FONT,
+              cursor: loading ? "wait" : "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center", gap: 8,
+            }}>
+              <Mail size={14} /> Continuar con Google
+            </button>
           </>
         ) : (
           <>
@@ -202,8 +262,22 @@ function TorneosAuthScreen({ initialTab = "login" }) {
               <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONTRASEÑA</label>
               <input style={inp(errors.password)} type="password" value={form.password}
                 onChange={e => update("password", e.target.value)}
-                placeholder="Mínimo 6 caracteres" />
+                placeholder="Minimo 10 caracteres" />
               {errors.password && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.password}</div>}
+              <PasswordStrengthIndicator password={form.password} passwordStrength={passwordStrength} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 10, fontWeight: 600, color: MUTED, display: "block", marginBottom: 5 }}>CONFIRMAR CONTRASEÑA</label>
+              <input style={inp(errors.confirmPassword)} type="password" value={form.confirmPassword}
+                onChange={e => update("confirmPassword", e.target.value)}
+                placeholder="Repite tu contrasena" />
+              {errors.confirmPassword && <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 3 }}>{errors.confirmPassword}</div>}
+            </div>
+            <div style={{ marginBottom: 20, padding: 16, borderRadius: 14, background: "#FFFCF7", border: `1px solid ${BORDER}` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Autorizacion de datos</div>
+              <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.55 }}>
+                Al crear tu cuenta aceptas la Politica de Tratamiento de Datos Personales para gestionar torneos y comunicaciones operativas.
+              </div>
             </div>
             <button onClick={handleRegister} disabled={loading} style={{
               width: "100%", padding: "12px 0", borderRadius: 12, border: "none",
@@ -211,6 +285,15 @@ function TorneosAuthScreen({ initialTab = "login" }) {
               color: loading ? MUTED : "#FFF", fontSize: 13, fontWeight: 600,
               fontFamily: FONT, cursor: loading ? "wait" : "pointer",
             }}>{loading ? "Creando cuenta..." : "Crear cuenta"}</button>
+            <button onClick={handleGoogleLogin} disabled={loading} style={{
+              width: "100%", minHeight: 46, marginTop: 10, borderRadius: 12,
+              border: `1px solid ${BORDER}`, background: CARD, color: TEXT,
+              fontSize: 12, fontWeight: 700, fontFamily: FONT,
+              cursor: loading ? "wait" : "pointer", display: "flex",
+              alignItems: "center", justifyContent: "center", gap: 8,
+            }}>
+              <Mail size={14} /> Continuar con Google
+            </button>
           </>
         )}
       </motion.div>
@@ -355,42 +438,38 @@ export default function TorneosApp() {
 
     async function init() {
       try {
-        if (!isSupabaseReady || !supabase) {
+        if (!isSupabaseReady) {
           throw new Error("Supabase no está configurado para cargar ALTTEZ Torneos");
         }
 
-        setInitialLoading(true);
         setRequiresAuth(false);
         setInitError(null);
         setInitStatus("idle");
 
-        console.log("[TORNEOS] inicio carga");
+        if (auth.loadingAuth || auth.loadingProfile) {
+          return;
+        }
 
-        const { data: sessionData, error: sessionError } = await withInitTimeout(
-          supabase.auth.getSession(),
-          "sesión"
-        );
-        console.log("[TORNEOS] sesión obtenida", sessionData?.session ?? null);
-
-        if (sessionError) throw sessionError;
-
-        if (!sessionData?.session) {
+        if (!auth.user) {
           if (!cancelled) {
             setSessionUser(null);
             setRequiresAuth(true);
-            navigate("/torneos?auth=login", { replace: true });
+            setInitialLoading(false);
+            navigate(`/torneos?auth=${initialAuthTab}`, { replace: true });
           }
           return;
         }
 
-        const user = sessionData.session.user ?? null;
+        setInitialLoading(true);
+
+        const user = auth.user;
         console.log("[TORNEOS] usuario", user ?? null);
 
         if (!user) {
           if (!cancelled) {
             setSessionUser(null);
             setRequiresAuth(true);
-            navigate("/torneos?auth=login", { replace: true });
+            navigate(`/torneos?auth=${initialAuthTab}`, { replace: true });
           }
           return;
         }
@@ -402,13 +481,8 @@ export default function TorneosApp() {
           }
         }
 
-        const { data: profile, error: profileError } = await withInitTimeout(
-          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-          "perfil"
-        );
+        const profile = auth.profile;
         console.log("[TORNEOS] perfil", profile ?? null);
-
-        if (profileError) throw profileError;
 
         if (!profile) {
           if (!cancelled) {
@@ -457,7 +531,7 @@ export default function TorneosApp() {
     return () => {
       cancelled = true;
     };
-  }, [auth.user?.id, loadTorneos, location.search, navigate]);
+  }, [auth.loadingAuth, auth.loadingProfile, auth.user, auth.profile, loadTorneos, location.search, navigate]);
 
   const goTo      = (mod) => setActiveModule(mod);
   const goTorneos = ()    => setActiveModule("torneos");
@@ -508,7 +582,7 @@ export default function TorneosApp() {
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   // Loading state while checking Supabase session
-  if (initialLoading || storeLoading) {
+  if (auth.loadingAuth || auth.loadingProfile || initialLoading || storeLoading) {
     return <AlttezLoader fullScreen text="Cargando torneos..." />;
   }
 
@@ -547,6 +621,14 @@ export default function TorneosApp() {
     );
   }
 
+  const accountEmail = sessionUser?.email ?? auth.user?.email ?? "";
+  const accountDisplayName =
+    auth.profile?.full_name ||
+    auth.user?.user_metadata?.full_name ||
+    auth.user?.user_metadata?.name ||
+    torneoActivo?.nombre ||
+    "Administrador";
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, fontFamily: FONT }}>
       <TorneosSidebar
@@ -555,7 +637,8 @@ export default function TorneosApp() {
         torneoActivo={torneoActivo}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-        userName={sessionUser?.email ?? auth.user?.email ?? ""}
+        userName={accountDisplayName}
+        userEmail={accountEmail}
         onLogout={handleLogout}
         onDeleteAccount={handleDeleteAccount}
       />
@@ -564,7 +647,8 @@ export default function TorneosApp() {
         <TorneosHeader
           onLogout={handleLogout}
           onDeleteAccount={handleDeleteAccount}
-          userName={sessionUser?.email ?? auth.user?.email ?? ""}
+          userName={accountDisplayName}
+          userEmail={accountEmail}
         />
 
         <main style={{ flex: 1, overflowY: "auto", padding: "24px 28px 48px" }}>

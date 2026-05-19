@@ -25,9 +25,9 @@ const NAV_ITEMS = [
   { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
-export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", onLogout, onDeleteAccount }) {
+export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapsed, onToggle, userName = "", userEmail = "", onLogout, onDeleteAccount }) {
   const [openUser, setOpenUser] = useState(false);
-  const displayName = userName.includes("@") ? userName.split("@")[0] : userName || "Administrador";
+  const displayName = userName || "Administrador";
 
   return (
     <motion.div 
@@ -140,8 +140,13 @@ export default function TorneosSidebar({ active, onNav, torneoActivo, isCollapse
               <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
                 <div style={{ fontSize: 11, color: MUTED }}>Cuenta conectada</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {userName || "—"}
+                  {displayName}
                 </div>
+                {userEmail && userEmail !== displayName && (
+                  <div style={{ fontSize: 10, color: MUTED, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {userEmail}
+                  </div>
+                )}
               </div>
 
               <div style={{ padding: 4 }}>

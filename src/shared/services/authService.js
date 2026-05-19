@@ -57,6 +57,29 @@ export async function signUp({ email, password, fullName, nombre, role = "admin"
   return { user: data.user, session: data.session, error: null };
 }
 
+export async function signInWithGoogle(redirectTo) {
+  if (!isSupabaseReady) return { error: "Supabase no disponible" };
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
+    },
+  });
+
+  if (error) {
+    const msg = mapAuthError(error);
+    reportError(msg, error);
+    return { error: msg };
+  }
+
+  return { error: null };
+}
+
 // ════════════════════════════════════════════════
 // LOGIN
 // ════════════════════════════════════════════════
