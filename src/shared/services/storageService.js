@@ -11,6 +11,7 @@
 import {
   DEMO_ATHLETES, DEMO_HISTORIAL, DEMO_CLUB_INFO, DEMO_MATCH_STATS, DEMO_FINANZAS,
   EMPTY_ATHLETES, EMPTY_HISTORIAL, EMPTY_MATCH_STATS, EMPTY_FINANZAS,
+  DEMO_PROPOSALS, EMPTY_PROPOSALS,
   createEmptyClubInfo, STORAGE_KEYS,
 } from "../constants/initialStates";
 import { validateSesion } from "../constants/schemas";
@@ -67,6 +68,7 @@ export function loadDemoState() {
   write("alttez_clubInfo", DEMO_CLUB_INFO);
   write("alttez_matchStats", DEMO_MATCH_STATS);
   write("alttez_finanzas", DEMO_FINANZAS);
+  write("alttez_proposals", DEMO_PROPOSALS);
   write("alttez_mode", "demo");
 }
 
@@ -78,6 +80,7 @@ export function loadProductionState(form) {
   write("alttez_clubInfo", createEmptyClubInfo(form));
   write("alttez_matchStats", EMPTY_MATCH_STATS);
   write("alttez_finanzas", EMPTY_FINANZAS);
+  write("alttez_proposals", EMPTY_PROPOSALS);
   write("alttez_mode", "production");
 }
 

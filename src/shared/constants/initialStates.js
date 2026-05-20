@@ -126,6 +126,87 @@ export function createEmptyClubInfo(form) {
 // KEYS DE LOCALSTORAGE — para limpieza selectiva
 // ─────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────
+// PROPUESTAS — Estado inicial vacío y demo
+// ─────────────────────────────────────────────────────────────
+
+export const EMPTY_PROPOSALS = [];
+
+/** @type {import('../services/proposalsService').Proposal[]} */
+export const DEMO_PROPOSALS = [
+  {
+    id: "demo-juan-perez",
+    club_id: "demo",
+    client_name: "Juan Pérez",
+    title: "Construyamos juntos el futuro de ALTTEZ.",
+    subtitle: "Una alianza estratégica para impulsar ALTTEZ.",
+    description: "Gracias a tu red, contactos y visión comercial, podemos abrir juntos las puertas del próximo nivel. Esta es una invitación a ser parte del proyecto desde el inicio.",
+    fecha: "2024-05-15",
+    rol: "Serás el puente clave para que ALTTEZ ingrese al piloto con el club.",
+    participacion_pct: 10,
+    impacto: "Serás parte fundamental del crecimiento y éxito de ALTTEZ desde el inicio.",
+    beneficios: [
+      "Acceso a oportunidades y contactos claves en el mundo del fútbol.",
+      "Apertura de puertas para el piloto con el club.",
+      "Validación de nuestro modelo de negocio en un entorno real.",
+      "Inicio de una relación estratégica a largo plazo.",
+    ],
+    status: "enviada",
+    signed_name: null,
+    signed_at: null,
+    contrapropuesta_text: null,
+    created_at: "2024-05-15T00:00:00Z",
+    updated_at: "2024-05-15T00:00:00Z",
+  },
+  {
+    id: "fabian-mora",
+    club_id: "demo",
+    client_name: "Fabián Mora",
+    title: "Construyamos juntos el futuro de ALTTEZ.",
+    subtitle: "Una alianza estratégica para impulsar ALTTEZ.",
+    description: "Gracias a tu red, contactos y visión comercial, podemos abrir juntos las puertas del próximo nivel. Esta es una invitación a ser parte del proyecto desde el inicio.",
+    fecha: "2026-05-19",
+    rol: "Serás el puente clave para que ALTTEZ ingrese al piloto con el club.",
+    participacion_pct: 10,
+    impacto: "Serás parte fundamental del crecimiento y éxito de ALTTEZ desde el inicio.",
+    beneficios: [
+      "Acceso a oportunidades y contactos claves en el mundo del fútbol.",
+      "Apertura de puertas para el piloto con el club.",
+      "Validación de nuestro modelo de negocio en un entorno real.",
+      "Inicio de una relación estratégica a largo plazo.",
+    ],
+    status: "enviada",
+    signed_name: null,
+    signed_at: null,
+  },
+  {
+    id: "maria-camila-martinez",
+    club_id: "demo",
+    client_name: "María Camila Martínez",
+    title: "Construyamos juntos el futuro de ALTTEZ.",
+    subtitle: "Una alianza estratégica en tecnología y operación.",
+    description: "Gracias a tu sólida experiencia en tecnología, desarrollo web, bases de datos, ingeniería de datos, estructuración y documentación de proyectos, podemos consolidar una infraestructura técnica y operativa premium. Esta es una invitación a co-crear y liderar el desarrollo del proyecto desde sus cimientos.",
+    fecha: "2026-05-19",
+    rol: "Tecnología, funcionalidad crítica, estructura y operación.",
+    participacion_pct: 20,
+    impacto: "Serás el pilar tecnológico y operativo de ALTTEZ, liderando la escalabilidad del software y la estructuración técnica del proyecto.",
+    beneficios: [
+      "Liderazgo técnico en la arquitectura y desarrollo de la plataforma ALTTEZ.",
+      "Estructuración y optimización de bases de datos e ingeniería de datos.",
+      "Documentación técnica y metodológica para el escalamiento del negocio.",
+      "Participación activa del 20% sujeta a un esquema de Vesting de 2 años con Cliff.",
+    ],
+    objeto_pdf: "Integrar, validar y escalar el software de gestión y operación deportiva de ALTTEZ, consolidando su arquitectura tecnológica y bases de datos para garantizar la escalabilidad técnica y operativa del proyecto. El Aliado aportará su experiencia en ingeniería de datos, desarrollo de páginas web, bases de datos y estructuración/documentación técnica para acelerar el desarrollo del software. En particular, el Aliado se desempeñará en el rol de: Tecnología, funcionalidad crítica, estructura y operación.",
+    cliff_pdf: "Se establece un periodo de carencia o \"Cliff\" estricto de seis (6) meses, o hasta la entrega formal de la primera fase de la arquitectura técnica (lo que ocurra primero). Si el Aliado abandona el proyecto, es desvinculado o la alianza se disuelve antes de cumplirse este hito, la participación consolidada será del 0%, sin derecho a reclamación económica, indemnización o emisión de acciones.",
+    status: "enviada",
+    signed_name: null,
+    signed_at: null,
+    contrapropuesta_text: null,
+    created_at: "2026-05-19T00:00:00Z",
+    updated_at: "2026-05-19T00:00:00Z",
+  },
+];
+
 export const STORAGE_KEYS = [
   "alttez_athletes",
   "alttez_historial",
@@ -140,4 +221,5 @@ export const STORAGE_KEYS = [
   "alttez_healthSnapshots",
   "alttez_schema_version",
   "alttez_club_id",
+  "alttez_proposals",
 ];

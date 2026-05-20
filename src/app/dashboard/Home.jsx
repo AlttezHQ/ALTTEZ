@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { key: "admin", label: "Administracion", navigable: true },
   { key: "reportes", label: "Reportes", navigable: true },
   { key: "miclub", label: "Mi Club", navigable: true },
+  { key: "propuestas", label: "Propuestas", navigable: true },
 ];
 
 const EVENT_COLORS = { match: COLORS.copper, training: COLORS.warning, club: COLORS.success };

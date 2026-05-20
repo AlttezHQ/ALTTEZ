@@ -19,8 +19,9 @@ export const ROLES = {
     permissions: [
       "view:home", "view:entrenamiento", "view:plantilla", "view:admin",
       "view:miclub", "view:reportes", "view:calendario", "view:partidos",
+      "view:propuestas",
       "edit:athletes", "edit:sesion", "edit:finanzas", "edit:clubInfo",
-      "edit:tactical", "export:backup", "manage:roles",
+      "edit:tactical", "edit:propuestas", "export:backup", "manage:roles",
     ],
   },
   coach: {
