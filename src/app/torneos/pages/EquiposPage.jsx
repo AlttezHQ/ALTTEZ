@@ -4,7 +4,7 @@ import {
   Users, Plus, Search, Filter, MoreVertical, 
   ChevronDown, Download, Info, CheckCircle2, 
   AlertCircle, Clock, Trash2, Edit2, Shield, Trophy, X,
-  Upload, FileText, ChevronRight, UserPlus, Save
+  Upload, FileText, ChevronRight, UserPlus, Save, Link as LinkIcon
 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
@@ -66,8 +66,8 @@ function EquipoModal({ isOpen, onClose, onSave, initialData = null }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} style={{ background: CARD, borderRadius: 24, width: 440, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "0 16px" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} style={{ background: CARD, borderRadius: 24, width: "100%", maxWidth: 440, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: CU_DIM, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -150,8 +150,8 @@ function EquipoModal({ isOpen, onClose, onSave, initialData = null }) {
 function ImportModal({ isOpen, onClose, onImport }) {
   if (!isOpen) return null;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: CARD, borderRadius: 24, width: 500, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "0 16px" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: CARD, borderRadius: 24, width: "100%", maxWidth: 500, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: `${PALETTE.success}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -219,8 +219,8 @@ function TeamPlayersModal({ isOpen, onClose, team, onUpdate }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: CARD, borderRadius: 24, width: 500, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "0 16px" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: CARD, borderRadius: 24, width: "100%", maxWidth: 500, padding: 32, boxShadow: ELEVATION.panel, border: `1px solid ${BORDER}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: CU_DIM, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -322,6 +322,52 @@ function StatItem({ icon: Icon, label, value, color = CU }) {
       <div>
         <div style={{ fontSize: 13, fontWeight: 800, color: TEXT }}>{value}</div>
         <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, letterSpacing: "0.02em" }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile Team Card ─────────────────────────────────────────────────────────
+
+function TeamCard({ eq, onAction }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <div style={{ background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, boxShadow: ELEV }}>
+      {/* Logo / Initial */}
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: CU, flexShrink: 0, overflow: "hidden" }}>
+        {eq.logo ? <img src={eq.logo} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={eq.nombre} /> : eq.nombre.charAt(0)}
+      </div>
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{eq.nombre}</div>
+        <div style={{ fontSize: 11, color: MUTED, marginTop: 2 }}>{eq.grupo || "Sin categoría"} · {eq.numJugadores} jugadores</div>
+      </div>
+      {/* Status badge */}
+      <StatusBadge status={eq.estado} />
+      {/* Actions */}
+      <div style={{ position: "relative" }}>
+        <button onClick={() => setMenuOpen(m => !m)} style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 8, padding: 6, cursor: "pointer", color: MUTED }}>
+          <MoreVertical size={14} />
+        </button>
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, x: 10 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95, x: 10 }}
+              style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 100, background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, boxShadow: ELEVATION.panel, padding: 6, minWidth: 170 }}
+            >
+              <button onClick={() => { setMenuOpen(false); onAction(eq.id, "jugadores"); }} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
+                <UserPlus size={14} color={CU} /> Plantilla / Jugadores
+              </button>
+              <button onClick={() => { setMenuOpen(false); onAction(eq.id, "editar"); }} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: MUTED, fontWeight: 600, borderRadius: 8 }}>
+                <Edit2 size={14} color={MUTED} /> Editar información
+              </button>
+              <div style={{ height: 1, background: BORDER, margin: "4px 0" }} />
+              <button onClick={() => { setMenuOpen(false); onAction(eq.id, "eliminar"); }} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: PALETTE.danger, fontWeight: 600, borderRadius: 8 }}>
+                <Trash2 size={14} /> Eliminar equipo
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -450,6 +496,12 @@ export default function EquiposPage({ onGoTorneos }) {
       setEditingEquipo(eq);
       setPlayersOpen(true);
     }
+    if (action === "link") {
+      const url = `${window.location.origin}/t/${torneo?.slug}/registro-equipo/${eq.id}`;
+      navigator.clipboard.writeText(url).then(() => {
+        showToast("Link público copiado al portapapeles", "success");
+      }).catch(() => showToast("Error al copiar link", "error"));
+    }
   };
 
   return (
@@ -475,9 +527,9 @@ export default function EquiposPage({ onGoTorneos }) {
       </div>
 
       {/* Filters Bar */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        {/* Tournament Selector (Read Only here) */}
-        <div style={{ flex: 1.2, background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        {/* Tournament Selector */}
+        <div className="flex items-center gap-2 h-11 px-3 rounded-xl flex-1" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           <Trophy size={16} color={CU} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: HINT, letterSpacing: "0.04em" }}>TORNEO ACTUAL</div>
@@ -486,13 +538,13 @@ export default function EquiposPage({ onGoTorneos }) {
         </div>
 
         {/* Search */}
-        <div style={{ flex: 1.5, background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
+        <div className="flex items-center gap-2 h-11 px-3 rounded-xl flex-[1.5]" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
           <Search size={16} color={HINT} />
           <input type="text" placeholder="Buscar equipo..." value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, border: "none", background: "none", outline: "none", fontSize: 12, color: TEXT, fontWeight: 500, fontFamily: FONT }} />
         </div>
 
         {/* State Filter */}
-        <div style={{ flex: 0.8, background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, padding: "0 14px", display: "flex", alignItems: "center", gap: 10, height: 44 }}>
+        <div className="flex items-center gap-2 h-11 px-3 rounded-xl" style={{ background: CARD, border: `1px solid ${BORDER}`, minWidth: 160 }}>
           <Filter size={16} color={HINT} />
           <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ flex: 1, border: "none", background: "none", outline: "none", fontSize: 12, color: TEXT, fontWeight: 600, appearance: "none", fontFamily: FONT }}>
             <option value="todos">Todos los estados</option>
@@ -502,25 +554,36 @@ export default function EquiposPage({ onGoTorneos }) {
           </select>
         </div>
 
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setEditingEquipo(null); setModalOpen(true); }} style={{ padding: "0 20px", background: CU, color: "#FFF", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, height: 44, boxShadow: `0 4px 12px ${CU}33` }}>
-          Nuevo equipo <Plus size={16} />
-        </motion.button>
-
-        <motion.button whileHover={{ background: BG }} whileTap={{ scale: 0.98 }} onClick={() => setImportOpen(true)} style={{ padding: "0 20px", background: CARD, color: CU, border: `1.5px solid ${CU_BOR}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, height: 44 }}>
-          Importar <Download size={16} />
-        </motion.button>
+        <div className="flex gap-2">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { setEditingEquipo(null); setModalOpen(true); }} style={{ padding: "0 20px", background: CU, color: "#FFF", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, height: 44, boxShadow: `0 4px 12px ${CU}33`, whiteSpace: "nowrap" }}>
+            Nuevo <Plus size={16} />
+          </motion.button>
+          <motion.button whileHover={{ background: BG }} whileTap={{ scale: 0.98 }} onClick={() => setImportOpen(true)} style={{ padding: "0 16px", background: CARD, color: CU, border: `1.5px solid ${CU_BOR}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, height: 44, whiteSpace: "nowrap" }}>
+            Importar <Download size={16} />
+          </motion.button>
+        </div>
       </div>
 
-      {/* Main Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 24, alignItems: "flex-start" }}>
-        
+      {/* Main Grid: table + sidebar. Stack on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start">
+
         {/* Table Content */}
         <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, boxShadow: ELEV, position: "relative" }}>
           <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}` }}>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Listado de equipos</h3>
           </div>
-          
-          <div style={{ overflowX: "auto" }}>
+
+          {/* Mobile cards — hidden on sm+ */}
+          {equipos.length > 0 && (
+            <div className="flex flex-col gap-3 p-4 sm:hidden">
+              {equipos.map(eq => (
+                <TeamCard key={eq.id} eq={eq} onAction={handleAction} />
+              ))}
+            </div>
+          )}
+
+          {/* Desktop table — hidden on mobile */}
+          <div className="hidden sm:block overflow-x-auto">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
@@ -559,7 +622,10 @@ export default function EquiposPage({ onGoTorneos }) {
                             <button onClick={() => handleAction(eq.id, "jugadores")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
                               <UserPlus size={14} color={CU} /> Plantilla / Jugadores
                             </button>
-                            <button onClick={() => handleAction(eq.id, "editar")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
+                            <button onClick={() => handleAction(eq.id, "link")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: TEXT, fontWeight: 600, borderRadius: 8 }}>
+                              <LinkIcon size={14} color={CU} /> Copiar link de registro
+                            </button>
+                            <button onClick={() => handleAction(eq.id, "editar")} style={{ width: "100%", padding: "10px", display: "flex", alignItems: "center", gap: 10, border: "none", background: "none", cursor: "pointer", fontSize: 12, color: MUTED, fontWeight: 600, borderRadius: 8 }}>
                               <Edit2 size={14} color={MUTED} /> Editar información
                             </button>
                             <div style={{ height: 1, background: BORDER, margin: "4px 0" }} />

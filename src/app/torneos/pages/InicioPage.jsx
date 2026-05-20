@@ -1,11 +1,14 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Download, CheckCircle, Trophy, Globe,
   BarChart2, Users, Calendar, Clock, MapPin, ArrowRight,
+  Pencil, ChevronRight, Settings, Upload, FileDown,
+  Shirt, LayoutGrid, Zap,
 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 
+// ── Tokens ────────────────────────────────────────────────────────────────────
 const CU     = PALETTE.bronce;
 const CU_DIM = PALETTE.bronceDim;
 const CU_BOR = PALETTE.bronceBorder;
@@ -15,11 +18,12 @@ const TEXT   = PALETTE.text;
 const MUTED  = PALETTE.textMuted;
 const HINT   = PALETTE.textHint;
 const BORDER = PALETTE.border;
-const ELEV   = ELEVATION?.card ?? "0 10px 28px rgba(23,26,28,0.07)";
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 const EASE   = [0.22, 1, 0.36, 1];
 
-const STEPS_STRIP = ["Crear torneo", "Agregar equipos", "Configurar fases", "Publicar"];
+const ELEV_SM  = "0 1px 4px rgba(23,26,28,0.06), 0 2px 8px rgba(23,26,28,0.04)";
+const ELEV_MD  = "0 4px 16px rgba(23,26,28,0.08), 0 1px 4px rgba(23,26,28,0.04)";
+const ELEV_CU  = `0 4px 16px ${CU}22, 0 1px 4px ${CU}11`;
 
 const FORMATO_LABELS = {
   todos_contra_todos: "Liga",
@@ -27,118 +31,315 @@ const FORMATO_LABELS = {
   grupos_playoffs: "Grupos + Playoffs",
 };
 
-function MiniTorneosPreview() {
-  const rounds = [{ label: "Cuartos", n: 4 }, { label: "Semis", n: 2 }, { label: "Final", n: 1 }];
+const STEPS_STRIP = ["Crear torneo", "Agregar equipos", "Configurar fases", "Publicar"];
+
+// ── Spring animation preset ───────────────────────────────────────────────────
+const spring = { type: "spring", stiffness: 380, damping: 30 };
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.38, ease: EASE, delay },
+});
+
+// ── Stat Chip ─────────────────────────────────────────────────────────────────
+function StatChip({ value, label, icon: Icon, iconColor, iconBg }) {
   return (
     <motion.div
-      animate={{ y: [0, -4, 0] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      whileHover={{ y: -2, boxShadow: ELEV_MD }}
+      transition={spring}
       style={{
-        background: CARD, borderRadius: 10, padding: "14px 16px",
-        boxShadow: ELEV, border: `1px solid ${BORDER}`, width: 210, flexShrink: 0, fontFamily: FONT,
+        flex: "0 1 auto", minWidth: 100,
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "12px 16px", background: CARD, borderRadius: 12,
+        border: `1px solid ${BORDER}`, boxShadow: ELEV_SM, cursor: "default",
       }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: CU, letterSpacing: "0.08em", marginBottom: 10 }}>
-        FIXTURE · FASE ELIMINATORIA
+      <div style={{
+        width: 36, height: 36, borderRadius: 9, background: iconBg, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <Icon size={16} color={iconColor} />
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        {rounds.map(({ label, n }) => (
-          <div key={label} style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, color: HINT, fontWeight: 600, marginBottom: 5, letterSpacing: "0.06em" }}>{label}</div>
-            {Array.from({ length: n }).map((_, i) => (
-              <div key={i} style={{ height: 20, background: BG, borderRadius: 4, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", padding: "0 6px", gap: 4, marginBottom: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: CU_DIM, border: `1px solid ${CU_BOR}` }} />
-                <div style={{ flex: 1, height: 4, borderRadius: 2, background: BORDER }} />
-              </div>
-            ))}
-          </div>
-        ))}
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: iconColor, letterSpacing: "-0.03em", lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: 9, color: HINT, fontWeight: 700, marginTop: 3, letterSpacing: "0.07em" }}>
+          {label}
+        </div>
       </div>
-      <div style={{ marginTop: 8, fontSize: 9, color: CU, fontWeight: 600, letterSpacing: "0.06em" }}>● EN PROGRESO</div>
     </motion.div>
   );
 }
 
-function InfoCards({ onInfoClick }) {
+// ── Meta pill row ─────────────────────────────────────────────────────────────
+function MetaRow({ torneo }) {
+  const items = [
+    torneo.temporada  && { label: "Año",         value: torneo.temporada },
+    torneo.formato    && { label: "Formato",      value: FORMATO_LABELS[torneo.formato] ?? torneo.formato },
+    torneo.sedePrincipal && { label: "Sede",      value: torneo.sedePrincipal },
+    torneo.organizador   && { label: "Organizador", value: torneo.organizador },
+  ].filter(Boolean);
+
+  if (!items.length) return null;
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginTop: 20 }}>
-      {[
-        { icon: Globe,     title: "Página pública",    desc: "Comparte el torneo con una URL pública",             mod: "publica" },
-        { icon: BarChart2, title: "Estadísticas",       desc: "Rendimiento de equipos y jugadores en tiempo real", mod: "estadisticas" },
-        { icon: Users,     title: "Gestión de equipos", desc: "Administra equipos, jugadores y cuerpos técnicos",  mod: "equipos" },
-      ].map(({ icon: Icon, title, desc, mod }, i) => (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18, marginTop: 6 }}>
+      {items.map(({ label, value }) => (
+        <div key={label} style={{
+          display: "flex", alignItems: "center", gap: 5,
+          background: BG, border: `1px solid ${BORDER}`,
+          borderRadius: 8, padding: "4px 10px",
+        }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: HINT, letterSpacing: "0.06em" }}>
+            {label.toUpperCase()}
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Check Item ────────────────────────────────────────────────────────────────
+function CheckItem({ done, label, sublabel, actionLabel, onAction, delay = 0 }) {
+  return (
+    <motion.div
+      {...fadeUp(delay)}
+      style={{
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "11px 0", borderBottom: `1px solid ${BORDER}`,
+      }}
+    >
+      {/* Indicator */}
+      <div style={{
+        width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+        background: done ? CU : "transparent",
+        border: `2px solid ${done ? CU : BORDER}`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "all 0.25s",
+      }}>
+        <AnimatePresence>
+          {done && (
+            <motion.span
+              initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+              transition={spring}
+            >
+              <CheckCircle size={13} color="#FFF" strokeWidth={2.5} />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Text */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 13, fontWeight: done ? 600 : 500,
+          color: done ? TEXT : MUTED,
+        }}>
+          {label}
+        </div>
+        {sublabel && (
+          <div style={{ fontSize: 11, color: HINT, marginTop: 1, lineHeight: 1.4 }}>{sublabel}</div>
+        )}
+      </div>
+
+      {/* Right */}
+      {done
+        ? <ChevronRight size={14} color={BORDER} style={{ flexShrink: 0 }} />
+        : actionLabel
+          ? (
+            <motion.button
+              whileHover={{ scale: 1.04, background: CU_DIM }}
+              whileTap={{ scale: 0.96 }}
+              transition={spring}
+              onClick={onAction}
+              style={{
+                flexShrink: 0, background: "transparent", color: CU,
+                border: `1.5px solid ${CU_BOR}`, borderRadius: 8,
+                padding: "5px 14px", fontSize: 11, fontWeight: 700,
+                fontFamily: FONT, cursor: "pointer", whiteSpace: "nowrap",
+                transition: "background 0.15s",
+              }}
+            >
+              {actionLabel}
+            </motion.button>
+          )
+          : null
+      }
+    </motion.div>
+  );
+}
+
+// ── Info Cards ────────────────────────────────────────────────────────────────
+function InfoCards({ onInfoClick }) {
+  const cards = [
+    {
+      icon: Globe, title: "Página pública",
+      desc: "Comparte el torneo con una URL pública.",
+      mod: "publica", cta: "Ver página",
+      iconColor: "#3B82F6", iconBg: "#EFF6FF",
+    },
+    {
+      icon: BarChart2, title: "Estadísticas",
+      desc: "Rendimiento de equipos y jugadores en tiempo real",
+      mod: "estadisticas", cta: "Ver estadísticas",
+      iconColor: CU, iconBg: CU_DIM,
+    },
+    {
+      icon: Users, title: "Gestión de equipos",
+      desc: "Administra equipos, jugadores y cuerpos técnicos",
+      mod: "equipos", cta: "Ir a gestión",
+      iconColor: "#8B5CF6", iconBg: "#F5F3FF",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" style={{ marginTop: "40px" }}>
+      {cards.map(({ icon: Icon, title, desc, mod, cta, iconColor, iconBg }, i) => (
         <motion.div
           key={title}
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: EASE, delay: 0.25 + i * 0.07 }}
-          whileHover={{ y: -2 }}
+          {...fadeUp(0.12 + i * 0.05)}
+          whileHover={{ y: -1, boxShadow: ELEV_MD }}
+          transition={spring}
           onClick={() => onInfoClick(mod)}
-          style={{ background: CARD, borderRadius: 12, border: `1px solid ${BORDER}`, padding: 20, fontFamily: FONT, cursor: "pointer" }}
+          style={{
+            background: CARD, borderRadius: 8, border: `1px solid ${BORDER}`,
+            padding: "10px 12px", fontFamily: FONT, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 10, boxShadow: ELEV_SM,
+          }}
         >
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: CU_DIM, border: `1px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
-            <Icon size={16} color={CU} />
+          {/* Icon */}
+          <div style={{
+            width: 26, height: 26, borderRadius: 6, background: iconBg, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Icon size={12} color={iconColor} />
           </div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 4 }}>{title}</div>
-          <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{desc}</div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, marginBottom: 1 }}>{title}</div>
+            <div style={{
+              fontSize: 10, color: MUTED, lineHeight: 1.3,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{desc}</div>
+          </div>
+
+          {/* CTA */}
+          <motion.div
+            whileHover={{ x: 2 }}
+            transition={spring}
+            style={{ display: "flex", alignItems: "center", gap: 2, color: CU, fontSize: 10, fontWeight: 700, flexShrink: 0 }}
+          >
+            {cta} <ArrowRight size={9} />
+          </motion.div>
         </motion.div>
       ))}
     </div>
   );
 }
 
-// ── Dashboard (torneo activo) ─────────────────────────────────────────────────
-
-function CheckItem({ done, label, sublabel }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `1px solid ${BORDER}` }}>
-      <div style={{
-        width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
-        background: done ? CU : "transparent",
-        border: `1.5px solid ${done ? CU : BORDER}`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.2s",
-      }}>
-        {done && <CheckCircle size={12} color="#FFF" />}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: done ? 600 : 400, color: done ? TEXT : MUTED }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 11, color: HINT, marginTop: 1 }}>{sublabel}</div>}
-      </div>
-    </div>
-  );
-}
-
-function StatChip({ value, label }) {
-  return (
-    <div style={{ textAlign: "center", padding: "10px 16px", background: BG, borderRadius: 8, border: `1px solid ${BORDER}` }}>
-      <div style={{ fontSize: 20, fontWeight: 800, color: CU, letterSpacing: "-0.02em" }}>{value}</div>
-      <div style={{ fontSize: 10, color: HINT, fontWeight: 600, marginTop: 2, letterSpacing: "0.04em" }}>{label}</div>
-    </div>
-  );
-}
-
-function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNavigate, onCreate }) {
-  const finalizados  = partidos.filter(p => p.estado === "finalizado").length;
-  const programados  = partidos.filter(p => p.fechaHora).length;
-  const schedPct     = partidos.length > 0 ? programados / partidos.length : 0;
-
-  const checks = [
-    { done: true,                         label: "Torneo creado",           sublabel: torneo.deporte },
-    { done: equipos.length >= 2,          label: "Equipos",                 sublabel: equipos.length >= 2 ? `${equipos.length} equipos registrados` : "Agrega al menos 2 equipos" },
-    { done: partidos.length > 0,          label: "Fixture generado",        sublabel: partidos.length > 0 ? `${partidos.length} partidos` : "Genera el fixture desde Fixtures" },
-    { done: schedPct >= 0.5,              label: "Calendario programado",   sublabel: partidos.length > 0 ? `${programados} de ${partidos.length} partidos programados` : "Configura el calendario" },
-    { done: torneo.publicado,             label: "Torneo publicado",        sublabel: torneo.publicado ? "URL pública activa" : "Publica para compartir el fixture" },
+// ── Acciones Rápidas ──────────────────────────────────────────────────────────
+function AccionesRapidas({ onNavigate }) {
+  const actions = [
+    { icon: Users,    label: "Gestionar equipos",  mod: "equipos",    color: "#F97316", bg: "#FFF7ED" },
+    { icon: Trophy,   label: "Ver fixture",         mod: "fixtures",   color: "#3B82F6", bg: "#EFF6FF" },
+    { icon: Settings, label: "Configurar reglas",   mod: "ajustes",    color: "#8B5CF6", bg: "#F5F3FF" },
+    { icon: Upload,   label: "Importar equipos",    mod: "equipos",    color: "#10B981", bg: "#ECFDF5" },
+    { icon: FileDown, label: "Exportar datos",      mod: "equipos",    color: MUTED,     bg: BG },
   ];
 
-  const nextStep = checks.find(c => !c.done);
+  return (
+    <motion.div
+      {...fadeUp(0.2)}
+      style={{
+        background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`,
+        boxShadow: ELEV_SM, overflow: "hidden", marginTop: 10,
+      }}
+    >
+      <div style={{
+        padding: "12px 16px", borderBottom: `1px solid ${BORDER}`,
+        display: "flex", alignItems: "center", gap: 7,
+      }}>
+        <Zap size={13} color={CU} />
+        <span style={{ fontSize: 11, fontWeight: 800, color: TEXT, letterSpacing: "-0.01em" }}>
+          Acciones rápidas
+        </span>
+      </div>
+      {actions.map(({ icon: Icon, label, mod, color, bg }, i) => (
+        <motion.button
+          key={label}
+          whileHover={{ background: BG, x: 2 }}
+          whileTap={{ scale: 0.98 }}
+          transition={spring}
+          onClick={() => onNavigate(mod)}
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 10,
+            padding: "9px 16px", border: "none", background: "transparent",
+            borderBottom: i < actions.length - 1 ? `1px solid ${BORDER}` : "none",
+            cursor: "pointer", textAlign: "left", fontFamily: FONT,
+          }}
+        >
+          <div style={{
+            width: 26, height: 26, borderRadius: 7, background: bg,
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <Icon size={12} color={color} />
+          </div>
+          <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: TEXT }}>{label}</span>
+          <ChevronRight size={13} color={HINT} />
+        </motion.button>
+      ))}
+    </motion.div>
+  );
+}
 
-  const NEXT_ACTIONS = {
-    "Equipos":               { label: "Agregar equipos", mod: "equipos" },
-    "Fixture generado":      { label: "Generar fixture",  mod: "fixtures" },
-    "Calendario programado": { label: "Programar partidos", mod: "fixtures" },
-    "Torneo publicado":      { label: "Publicar torneo",  mod: "ajustes" },
-  };
-  const nextAction = nextStep ? NEXT_ACTIONS[nextStep.label] : null;
+// ── Active Dashboard ──────────────────────────────────────────────────────────
+function ActiveDashboard({ torneo, equipos, partidos, onInfoClick, onNavigate, onCreate }) {
+  const finalizados = partidos.filter(p => p.estado === "finalizado").length;
+  const programados = partidos.filter(p => p.fechaHora).length;
+  const schedPct    = partidos.length > 0 ? programados / partidos.length : 0;
+
+  const isGrupos = torneo.formato === "grupos_playoffs";
+
+  const checks = [
+    {
+      done: true,
+      label: "Torneo creado",
+      sublabel: "El torneo ha sido creado correctamente.",
+    },
+    {
+      done: equipos.length >= 2,
+      label: "Equipos",
+      sublabel: equipos.length >= 2 ? `${equipos.length} equipos registrados.` : "Agrega al menos 2 equipos.",
+      actionLabel: equipos.length < 2 ? "Agregar" : undefined,
+      mod: "equipos",
+    },
+    {
+      done: partidos.length > 0,
+      label: isGrupos ? "Fase de grupos" : "Fixture generado",
+      sublabel: partidos.length > 0 ? `${partidos.length} partidos generados.` : "Genera el fixture desde Fixtures.",
+      actionLabel: partidos.length === 0 ? "Generar" : undefined,
+      mod: "fixtures",
+    },
+    {
+      done: schedPct >= 0.5,
+      label: "Calendario programado",
+      sublabel: "Configura el calendario del torneo.",
+      actionLabel: schedPct < 0.5 ? "Configurar" : undefined,
+      mod: "fixtures",
+    },
+    {
+      done: torneo.publicado,
+      label: "Torneo publicado",
+      sublabel: torneo.publicado ? "URL pública activa." : "Publica para compartir el torneo.",
+      actionLabel: !torneo.publicado ? "Publicar" : undefined,
+      mod: "ajustes",
+    },
+  ];
+
+  const pendingFixture = partidos.length === 0 && equipos.length >= 2;
 
   // Próximo partido
   const now = new Date();
@@ -146,223 +347,419 @@ function ActiveDashboard({ torneo, equipos, partidos, _sedes, onInfoClick, onNav
     .filter(p => p.fechaHora && new Date(p.fechaHora) > now && p.equipoLocalId && p.equipoVisitaId)
     .sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))[0];
 
-  const getEquipoNombre = id => equipos.find(e => e.id === id)?.nombre ?? "TBD";
+  const getEquipo = id => equipos.find(e => e.id === id);
+  const getEquipoNombre = id => getEquipo(id)?.nombre ?? "TBD";
 
   return (
     <>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-        {/* Main dashboard card */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+
+        {/* ── Main card ── */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: EASE }}
-          style={{ flex: 1, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 28, minWidth: 0 }}
+          {...fadeUp(0)}
+          style={{
+            flex: 1, background: CARD, borderRadius: 14,
+            boxShadow: ELEV_MD, border: `1px solid ${BORDER}`,
+            padding: "18px 20px 16px", minWidth: 0, fontFamily: FONT,
+          }}
         >
-          {/* Torneo header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: CU, background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 7px", letterSpacing: "0.08em" }}>
-                  {torneo.deporte.toUpperCase()}
-                </span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: MUTED, background: BG, border: `1px solid ${BORDER}`, borderRadius: 4, padding: "2px 7px", letterSpacing: "0.08em" }}>
-                  {(FORMATO_LABELS[torneo.formato] ?? torneo.formato).toUpperCase()}
-                </span>
-                <span style={{
-                  fontSize: 9, fontWeight: 700,
-                  color: torneo.publicado ? (PALETTE.success ?? "#22C55E") : HINT,
-                  background: torneo.publicado ? (PALETTE.successDim ?? "#F0FDF4") : BG,
-                  border: `1px solid ${torneo.publicado ? (PALETTE.successBorder ?? "#BBF7D0") : BORDER}`,
-                  borderRadius: 4, padding: "2px 7px", letterSpacing: "0.08em",
-                }}>
-                  {torneo.publicado ? "● PUBLICADO" : "○ BORRADOR"}
-                </span>
+          {/* Header */}
+          <div style={{
+            display: "flex", alignItems: "flex-start",
+            justifyContent: "space-between", gap: 12, marginBottom: 4,
+          }}>
+            <div style={{ minWidth: 0 }}>
+              {/* Badges */}
+              <div style={{ display: "flex", gap: 5, marginBottom: 8, flexWrap: "wrap" }}>
+                {[
+                  { text: torneo.deporte?.toUpperCase(), color: CU, bg: CU_DIM, border: CU_BOR },
+                  { text: (FORMATO_LABELS[torneo.formato] ?? torneo.formato ?? "").toUpperCase(), color: MUTED, bg: BG, border: BORDER },
+                  torneo.publicado
+                    ? { text: "● PUBLICADO", color: PALETTE.success ?? "#22C55E", bg: PALETTE.successDim ?? "#F0FDF4", border: PALETTE.successBorder ?? "#BBF7D0" }
+                    : { text: "○ BORRADOR",  color: HINT, bg: BG, border: BORDER },
+                ].map(({ text, color, bg, border }) => text ? (
+                  <span key={text} style={{
+                    fontSize: 9, fontWeight: 700, color, background: bg,
+                    border: `1px solid ${border}`, borderRadius: 5,
+                    padding: "2px 8px", letterSpacing: "0.08em",
+                  }}>{text}</span>
+                ) : null)}
               </div>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: "-0.02em", fontFamily: FONT }}>
-                {torneo.nombre}
-              </h2>
-              {(torneo.temporada || torneo.organizador || torneo.sedePrincipal) && (
-                <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 12, color: MUTED }}>
-                  {torneo.temporada && <span>📅 {torneo.temporada}</span>}
-                  {torneo.organizador && <span>👤 {torneo.organizador}</span>}
-                  {torneo.sedePrincipal && <span>📍 {torneo.sedePrincipal}</span>}
-                </div>
-              )}
+
+              {/* Name + edit */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <h2 style={{
+                  margin: 0, fontSize: 22, fontWeight: 800,
+                  color: TEXT, letterSpacing: "-0.025em", lineHeight: 1,
+                }}>
+                  {torneo.nombre}
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1, background: CU_DIM }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={spring}
+                  onClick={() => onNavigate("ajustes")}
+                  title="Editar ajustes"
+                  style={{
+                    background: BG, border: `1px solid ${BORDER}`,
+                    borderRadius: 7, padding: "4px 6px", cursor: "pointer",
+                    display: "flex", alignItems: "center", color: HINT,
+                  }}
+                >
+                  <Pencil size={12} />
+                </motion.button>
+              </div>
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.03, background: CU_DIM, borderColor: CU }}
+              whileTap={{ scale: 0.96 }}
+              transition={spring}
               onClick={onCreate}
               style={{
-                display: "flex", alignItems: "center", gap: 7,
-                background: "transparent", color: CU, border: `1px solid ${CU_BOR}`,
-                borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700,
-                fontFamily: FONT, cursor: "pointer"
+                flexShrink: 0, display: "flex", alignItems: "center", gap: 5,
+                background: "transparent", color: CU, border: `1.5px solid ${CU_BOR}`,
+                borderRadius: 9, padding: "7px 13px",
+                fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
               }}
             >
-              <Plus size={14} /> Crear otro torneo
+              <Plus size={12} /> Nuevo torneo
             </motion.button>
           </div>
 
-          {/* Stats row */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            <StatChip value={equipos.length} label="EQUIPOS" />
-            <StatChip value={partidos.length} label="PARTIDOS" />
-            <StatChip value={`${finalizados}/${partidos.length}`} label="JUGADOS" />
+          {/* Meta pills */}
+          <MetaRow torneo={torneo} />
+
+          {/* Stat chips — flex, not full-width */}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
+            <StatChip value={equipos.length}                  label="EQUIPOS"  icon={Users}       iconColor="#F97316" iconBg="#FFF7ED" />
+            <StatChip value={partidos.length}                  label="PARTIDOS" icon={Shirt}       iconColor="#3B82F6" iconBg="#EFF6FF" />
+            <StatChip value={`${finalizados}/${partidos.length}`} label="JUGADOS"  icon={LayoutGrid}  iconColor="#10B981" iconBg="#ECFDF5" />
           </div>
 
-          {/* Progress checklist */}
-          <div style={{ borderTop: `1px solid ${BORDER}` }}>
-            {checks.map(c => (
-              <CheckItem key={c.label} done={c.done} label={c.label} sublabel={c.sublabel} />
+          {/* Checklist header */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 7, marginBottom: 2,
+            paddingBottom: 8, borderBottom: `1px solid ${BORDER}`,
+          }}>
+            <div style={{
+              width: 18, height: 18, borderRadius: 5, background: CU_DIM,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <CheckCircle size={10} color={CU} />
+            </div>
+            <span style={{ fontSize: 10, fontWeight: 800, color: HINT, letterSpacing: "0.07em" }}>
+              CONFIGURACIÓN DEL TORNEO
+            </span>
+          </div>
+
+          <div>
+            {checks.map((c, i) => (
+              <CheckItem
+                key={c.label}
+                done={c.done}
+                label={c.label}
+                sublabel={c.sublabel}
+                actionLabel={c.actionLabel}
+                onAction={() => onNavigate(c.mod)}
+                delay={i * 0.04}
+              />
             ))}
           </div>
 
-          {/* Next action CTA */}
-          {nextAction && (
-            <motion.button
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-              onClick={() => onNavigate(nextAction.mod)}
-              style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 8, background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
-            >
-              {nextAction.label} <ArrowRight size={13} />
-            </motion.button>
-          )}
+          {/* CTA */}
+          <AnimatePresence>
+            {pendingFixture && (
+              <motion.button
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
+                whileTap={{ scale: 0.97 }}
+                transition={spring}
+                onClick={() => onNavigate("fixtures")}
+                style={{
+                  marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
+                  background: CU, color: "#FFF", border: "none",
+                  borderRadius: 10, padding: "10px 20px",
+                  fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+                  boxShadow: ELEV_CU,
+                }}
+              >
+                Generar fixture <ArrowRight size={14} />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </motion.div>
 
-        {/* Right — Próximo partido card */}
+        {/* ── Right column ── */}
         <motion.div
-          initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, ease: EASE, delay: 0.1 }}
-          style={{ width: 280, flexShrink: 0, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
+          {...fadeUp(0.08)}
+          className="w-full lg:w-[264px] lg:flex-shrink-0"
+          style={{ display: "flex", flexDirection: "column" }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-            <Calendar size={14} color={CU} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, letterSpacing: "-0.01em" }}>Próximo partido</span>
-          </div>
+          {/* Próximo partido */}
+          <div style={{
+            background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`,
+            boxShadow: ELEV_SM, overflow: "hidden", fontFamily: FONT,
+          }}>
+            {/* Header strip */}
+            <div style={{
+              padding: "10px 14px", borderBottom: `1px solid ${BORDER}`,
+              display: "flex", alignItems: "center", gap: 7,
+              background: BG,
+            }}>
+              <Calendar size={12} color={CU} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>Próximo partido</span>
+            </div>
 
-          {proximoPartido ? (
-            <>
-              <div style={{ textAlign: "center", padding: "12px 0" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, textAlign: "right", flex: 1 }}>
-                    {getEquipoNombre(proximoPartido.equipoLocalId)}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: CU, background: CU_DIM, border: `1px solid ${CU_BOR}`, borderRadius: 6, padding: "3px 8px" }}>
-                    vs
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, textAlign: "left", flex: 1 }}>
-                    {getEquipoNombre(proximoPartido.equipoVisitaId)}
-                  </span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 12, color: MUTED }}>
-                    <Clock size={11} />
-                    {new Date(proximoPartido.fechaHora).toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short" })}
-                    {" · "}
-                    {new Date(proximoPartido.fechaHora).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
-                  </div>
-                  {proximoPartido.lugar && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 11, color: HINT }}>
-                      <MapPin size={10} />{proximoPartido.lugar}
+            <div style={{ padding: "14px 16px" }}>
+              {proximoPartido ? (
+                <>
+                  {proximoPartido.ronda && (
+                    <div style={{
+                      fontSize: 9, fontWeight: 700, color: HINT, textAlign: "center",
+                      letterSpacing: "0.08em", marginBottom: 12,
+                    }}>
+                      JORNADA {proximoPartido.ronda}
                     </div>
                   )}
-                </div>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={() => onNavigate("fixtures")}
-                style={{ width: "100%", marginTop: 10, background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "9px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
-              >
-                Ver programación completa
-              </motion.button>
-            </>
-          ) : (
-            <>
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <Calendar size={28} color={CU} style={{ opacity: 0.3, marginBottom: 10 }} />
-                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 6 }}>Sin partidos programados</div>
-                <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
-                  Configura el calendario para programar los partidos automáticamente.
-                </div>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={() => onNavigate("fixtures")}
-                style={{ width: "100%", background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
-              >
-                Ir a Gestión de Partidos
-              </motion.button>
-            </>
-          )}
+
+                  {/* Teams */}
+                  <div style={{
+                    display: "flex", alignItems: "center",
+                    justifyContent: "space-between", gap: 6, marginBottom: 10,
+                  }}>
+                    {/* Local */}
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: "50%",
+                        background: BG, border: `2px solid ${BORDER}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto 5px",
+                        fontSize: 15, fontWeight: 900, color: CU,
+                        overflow: "hidden",
+                      }}>
+                        {getEquipo(proximoPartido.equipoLocalId)?.logo
+                          ? <img src={getEquipo(proximoPartido.equipoLocalId).logo} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                          : getEquipoNombre(proximoPartido.equipoLocalId).charAt(0)
+                        }
+                      </div>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, color: TEXT,
+                        lineHeight: 1.2, overflow: "hidden",
+                        textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        maxWidth: 70, margin: "0 auto",
+                      }}>
+                        {getEquipoNombre(proximoPartido.equipoLocalId)}
+                      </div>
+                    </div>
+
+                    {/* VS */}
+                    <div style={{
+                      fontSize: 11, fontWeight: 900, color: CU,
+                      background: CU_DIM, border: `1.5px solid ${CU_BOR}`,
+                      borderRadius: 7, padding: "4px 8px", flexShrink: 0,
+                    }}>VS</div>
+
+                    {/* Visita */}
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: "50%",
+                        background: BG, border: `2px solid ${BORDER}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        margin: "0 auto 5px",
+                        fontSize: 15, fontWeight: 900, color: MUTED,
+                        overflow: "hidden",
+                      }}>
+                        {getEquipo(proximoPartido.equipoVisitaId)?.logo
+                          ? <img src={getEquipo(proximoPartido.equipoVisitaId).logo} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
+                          : getEquipoNombre(proximoPartido.equipoVisitaId).charAt(0)
+                        }
+                      </div>
+                      <div style={{
+                        fontSize: 10, fontWeight: 700, color: TEXT,
+                        lineHeight: 1.2, overflow: "hidden",
+                        textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        maxWidth: 70, margin: "0 auto",
+                      }}>
+                        {getEquipoNombre(proximoPartido.equipoVisitaId)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date + venue */}
+                  <div style={{
+                    background: BG, borderRadius: 8, border: `1px solid ${BORDER}`,
+                    padding: "8px 10px", marginBottom: 12, textAlign: "center",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 11, color: MUTED, marginBottom: 2 }}>
+                      <Clock size={10} />
+                      {new Date(proximoPartido.fechaHora).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {" · "}
+                      {new Date(proximoPartido.fechaHora).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                    {proximoPartido.lugar && (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10, color: HINT }}>
+                        <MapPin size={9} />{proximoPartido.lugar}
+                      </div>
+                    )}
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02, background: CU_DIM }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
+                    onClick={() => onNavigate("fixtures")}
+                    style={{
+                      width: "100%", background: "transparent", color: CU,
+                      border: `1.5px solid ${CU_BOR}`, borderRadius: 9,
+                      padding: "8px 0", fontSize: 11, fontWeight: 700,
+                      fontFamily: FONT, cursor: "pointer",
+                    }}
+                  >
+                    Ver calendario completo
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: "center", padding: "10px 0 12px" }}>
+                    <Calendar size={28} color={CU} style={{ opacity: 0.18, marginBottom: 8 }} />
+                    <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
+                      Sin partidos programados
+                    </div>
+                    <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
+                      Configura el calendario para programar los partidos automáticamente.
+                    </div>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
+                    onClick={() => onNavigate("fixtures")}
+                    style={{
+                      width: "100%", background: CU, color: "#FFF", border: "none",
+                      borderRadius: 9, padding: "9px 0", fontSize: 11, fontWeight: 700,
+                      fontFamily: FONT, cursor: "pointer", boxShadow: ELEV_CU,
+                    }}
+                  >
+                    Ir a Gestión de Partidos
+                  </motion.button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Acciones rápidas */}
+          <AccionesRapidas onNavigate={onNavigate} />
         </motion.div>
       </div>
 
+      {/* Info cards */}
       <InfoCards onInfoClick={onInfoClick} />
     </>
   );
 }
 
-// ── Static welcome (no torneos) ───────────────────────────────────────────────
-
+// ── Welcome Screen ────────────────────────────────────────────────────────────
 function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
   return (
     <>
-      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-        {/* Welcome card */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
         <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
-          style={{ flex: 1, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 32, display: "flex", flexDirection: "column", gap: 20, minWidth: 0 }}
+          {...fadeUp(0)}
+          style={{
+            flex: 1, background: CARD, borderRadius: 16,
+            boxShadow: ELEV_MD, border: `1px solid ${BORDER}`,
+            padding: 28, display: "flex", flexDirection: "column",
+            gap: 20, minWidth: 0, fontFamily: FONT,
+          }}
         >
-          <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: TEXT, lineHeight: 1.15, letterSpacing: "-0.02em", fontFamily: FONT }}>
-                Bienvenido a<br />ALTTEZ Torneos
-              </h1>
-              <p style={{ margin: "10px 0 0", fontSize: 14, color: MUTED, lineHeight: 1.6, fontFamily: FONT }}>
-                Gestiona torneos, fases y fixtures desde un solo lugar.
-              </p>
-              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onCreate}
-                  style={{ display: "flex", alignItems: "center", gap: 7, background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
-                  <Plus size={14} />Crear torneo
-                </motion.button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onImport}
-                  style={{ display: "flex", alignItems: "center", gap: 7, background: "transparent", color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
-                  <Download size={14} />Importar datos
-                </motion.button>
-              </div>
+          <div>
+            <h1 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800, color: TEXT, letterSpacing: "-0.025em" }}>
+              Bienvenido a ALTTEZ Torneos
+            </h1>
+            <p style={{ margin: 0, fontSize: 13, color: MUTED, lineHeight: 1.6 }}>
+              Gestiona torneos, fases y fixtures desde un solo lugar.
+            </p>
+            <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
+                whileTap={{ scale: 0.97 }}
+                transition={spring}
+                onClick={onCreate}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  background: CU, color: "#FFF", border: "none",
+                  borderRadius: 9, padding: "9px 18px",
+                  fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+                  boxShadow: ELEV_CU,
+                }}
+              >
+                <Plus size={14} />Crear torneo
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02, background: CU_DIM }}
+                whileTap={{ scale: 0.97 }}
+                transition={spring}
+                onClick={onImport}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  background: "transparent", color: CU,
+                  border: `1.5px solid ${CU_BOR}`, borderRadius: 9, padding: "9px 18px",
+                  fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+                }}
+              >
+                <Download size={14} />Importar datos
+              </motion.button>
             </div>
-            <MiniTorneosPreview />
           </div>
-          {/* Steps strip */}
-          <div style={{ display: "flex", alignItems: "center", borderTop: `1px solid ${BORDER}`, paddingTop: 18 }}>
+
+          {/* Steps */}
+          <div style={{ display: "flex", alignItems: "center", borderTop: `1px solid ${BORDER}`, paddingTop: 16 }}>
             {STEPS_STRIP.map((s, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", flex: i < 3 ? 1 : "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: i === 0 ? CU : CU_DIM, border: `1.5px solid ${i === 0 ? CU : CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {i === 0 ? <CheckCircle size={12} color="#FFF" /> : <span style={{ fontSize: 10, fontWeight: 700, color: CU }}>{i + 1}</span>}
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <div style={{
+                    width: 20, height: 20, borderRadius: "50%",
+                    background: i === 0 ? CU : CU_DIM, border: `1.5px solid ${i === 0 ? CU : CU_BOR}`,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  }}>
+                    {i === 0
+                      ? <CheckCircle size={11} color="#FFF" />
+                      : <span style={{ fontSize: 9, fontWeight: 700, color: CU }}>{i + 1}</span>
+                    }
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? TEXT : HINT, fontFamily: FONT, whiteSpace: "nowrap" }}>{s}</span>
+                  <span style={{ fontSize: 11, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? TEXT : HINT, whiteSpace: "nowrap" }}>
+                    {s}
+                  </span>
                 </div>
-                {i < 3 && <div style={{ flex: 1, height: 1.5, margin: "0 8px", background: `linear-gradient(90deg, ${CU_BOR}, ${BORDER})` }} />}
+                {i < 3 && (
+                  <div style={{ flex: 1, height: 1.5, margin: "0 8px", background: `linear-gradient(90deg, ${CU_BOR}, ${BORDER})` }} />
+                )}
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Quick start card */}
         <motion.div
-          initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, ease: EASE, delay: 0.15 }}
-          style={{ width: 300, flexShrink: 0, background: CARD, borderRadius: 16, boxShadow: ELEV, border: `1px solid ${BORDER}`, padding: 24, fontFamily: FONT }}
+          {...fadeUp(0.1)}
+          className="w-full lg:w-[264px] lg:flex-shrink-0"
+          style={{ background: CARD, borderRadius: 14, boxShadow: ELEV_SM, border: `1px solid ${BORDER}`, padding: 20, fontFamily: FONT }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 8 }}>Crear tu primer torneo</div>
-          <p style={{ margin: "0 0 16px", fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: TEXT, marginBottom: 6 }}>Crear tu primer torneo</div>
+          <p style={{ margin: "0 0 14px", fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
             Completa el formulario para crear tu primer torneo en minutos.
           </p>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onCreate}
-            style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px 0", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
+          <motion.button
+            whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
+            whileTap={{ scale: 0.97 }}
+            transition={spring}
+            onClick={onCreate}
+            style={{
+              width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+              background: CU, color: "#FFF", border: "none", borderRadius: 9, padding: "10px 0",
+              fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer", boxShadow: ELEV_CU,
+            }}
+          >
             Comenzar →
           </motion.button>
         </motion.div>
@@ -370,18 +767,27 @@ function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
 
       <InfoCards onInfoClick={onInfoClick} />
 
-      {/* Empty state */}
       <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-        style={{ marginTop: 32, padding: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, fontFamily: FONT }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+        style={{ marginTop: 28, padding: "32px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, fontFamily: FONT }}
       >
-        <Trophy size={32} color={CU} style={{ opacity: 0.3 }} />
-        <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginTop: 4 }}>Aún no hay torneos creados</div>
-        <div style={{ fontSize: 12, color: MUTED, textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>
+        <Trophy size={28} color={CU} style={{ opacity: 0.25 }} />
+        <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginTop: 4 }}>Aún no hay torneos creados</div>
+        <div style={{ fontSize: 12, color: MUTED, textAlign: "center", maxWidth: 300, lineHeight: 1.6 }}>
           Crea tu primer torneo para comenzar.
         </div>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onCreate}
-          style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 7, background: "transparent", color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "9px 20px", fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}>
+        <motion.button
+          whileHover={{ scale: 1.02, background: CU_DIM }}
+          whileTap={{ scale: 0.97 }}
+          transition={spring}
+          onClick={onCreate}
+          style={{
+            marginTop: 6, display: "flex", alignItems: "center", gap: 7,
+            background: "transparent", color: CU, border: `1.5px solid ${CU_BOR}`,
+            borderRadius: 9, padding: "8px 18px",
+            fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
+          }}
+        >
           <Plus size={14} />Crear torneo
         </motion.button>
       </motion.div>
@@ -390,7 +796,6 @@ function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
 }
 
 // ── Root export ───────────────────────────────────────────────────────────────
-
 export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate }) {
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
@@ -418,10 +823,6 @@ export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate
   }
 
   return (
-    <WelcomeScreen
-      onCreate={onCreate}
-      onImport={onImport}
-      onInfoClick={onInfoClick}
-    />
+    <WelcomeScreen onCreate={onCreate} onImport={onImport} onInfoClick={onInfoClick} />
   );
 }

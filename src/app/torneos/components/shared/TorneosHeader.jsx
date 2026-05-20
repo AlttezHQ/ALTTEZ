@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, User, LogOut, Trash2, ChevronDown } from "lucide-react";
+import { Trophy, User, LogOut, Trash2, ChevronDown, Menu } from "lucide-react";
 import { PALETTE } from "../../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -13,27 +13,38 @@ const BORDER = PALETTE.border;
 const BG     = PALETTE.bg;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
-export default function TorneosHeader({ onLogout, onDeleteAccount, userName = "" }) {
+export default function TorneosHeader({ onLogout, onDeleteAccount, userName = "", userEmail = "", onMenuToggle }) {
   const [open, setOpen] = useState(false);
 
-  const displayName = userName.includes("@")
-    ? userName.split("@")[0]
-    : userName || "Administrador";
+  const displayName = userName || "Administrador";
 
   return (
     <div style={{
       height: 56, background: CARD, borderBottom: `1px solid ${BORDER}`,
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "0 24px", flexShrink: 0, fontFamily: FONT, position: "relative", zIndex: 40,
+      padding: "0 16px", flexShrink: 0, fontFamily: FONT, position: "relative", zIndex: 40,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <Trophy size={18} color={CU} />
-        <span style={{ fontWeight: 700, fontSize: 14, color: TEXT, letterSpacing: "-0.01em" }}>Torneos</span>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 7px" }}>ALTTEZ</span>
+      {/* Left side: hamburger (mobile only) + brand */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger menu — only visible on mobile */}
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden flex items-center justify-center rounded-lg p-2 transition-colors"
+          style={{ background: BG, border: `1px solid ${BORDER}`, color: MUTED, cursor: "pointer", minHeight: 36 }}
+          aria-label="Abrir menú"
+        >
+          <Menu size={18} />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <Trophy size={18} color={CU} />
+          <span style={{ fontWeight: 700, fontSize: 14, color: TEXT, letterSpacing: "-0.01em" }}>Torneos</span>
+          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", background: CU_DIM, color: CU, border: `1px solid ${CU_BOR}`, borderRadius: 4, padding: "2px 7px" }}>ALTTEZ</span>
+        </div>
       </div>
 
+      {/* Right: user dropdown */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* User dropdown */}
         <div style={{ position: "relative" }}>
           <button
             onClick={() => setOpen(o => !o)}
@@ -44,7 +55,7 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
             }}
           >
             <User size={13} color={MUTED} />
-            <span style={{ fontSize: 12, color: TEXT, fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span className="hidden sm:inline" style={{ fontSize: 12, color: TEXT, fontWeight: 500, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {displayName}
             </span>
             <ChevronDown size={11} color={MUTED} style={{ transition: "transform 0.15s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }} />
@@ -61,14 +72,19 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
                   position: "absolute", top: "calc(100% + 6px)", right: 0,
                   background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10,
                   boxShadow: "0 8px 24px rgba(23,26,28,0.12)",
-                  minWidth: 190, overflow: "hidden",
+                  minWidth: 190, overflow: "hidden", zIndex: 50,
                 }}
               >
                 <div style={{ padding: "10px 14px", borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ fontSize: 11, color: MUTED }}>Cuenta</div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {userName || "—"}
+                    {displayName}
                   </div>
+                  {userEmail && userEmail !== displayName && (
+                    <div style={{ fontSize: 10, color: MUTED, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {userEmail}
+                    </div>
+                  )}
                 </div>
 
                 <button
