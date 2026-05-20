@@ -26,6 +26,7 @@ import { canAccessModule } from "../../shared/constants/roles";
 
 import { isSupabaseReady } from "../../shared/lib/supabase";
 import { createClub as sbCreateClub, setClubId, migrateLocalToSupabase, loadClubIdFromProfile } from "../../shared/services/supabaseService";
+import { setProposalsClubId } from "../../shared/services/proposalsService";
 import { exportBackupJSON } from "../../shared/services/backupService";
 import { signUp, signIn } from "../../shared/services/authService";
 import OfflineBanner from "../../shared/ui/OfflineBanner";
@@ -44,6 +45,7 @@ const MatchCenter = lazy(() => import("../competition/MatchCenter"));
 const DemoGate = lazy(() => import("./DemoGate"));
 const KioskMode = lazy(() => import("../experience/KioskMode"));
 const Reportes = lazy(() => import("../analytics/Reportes"));
+const ProposalsAdminModule = lazy(() => import("../proposals/ProposalsAdminModule"));
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
@@ -126,6 +128,7 @@ export function CRMApp() {
     if (auth.clubId) {
       setClubId(auth.clubId);
       setHealthClubId(auth.clubId);
+      setProposalsClubId(auth.clubId);
       loadClubIdFromProfile();
     }
   }, [auth.clubId]);
@@ -406,6 +409,13 @@ export function CRMApp() {
                 <ErrorBoundary>
                   <_MiniTopbarLocal title="Reportes" />
                   <Reportes onNavigate={navigateTo} />
+                </ErrorBoundary>
+              )}
+
+              {activeModule === "propuestas" && (
+                <ErrorBoundary>
+                  <_MiniTopbarLocal title="Propuestas" accent={C.bronce} accentBg="rgba(206, 137, 70,0.06)" />
+                  <ProposalsAdminModule clubId={auth.clubId || ""} mode={mode} />
                 </ErrorBoundary>
               )}
             </motion.div>

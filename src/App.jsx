@@ -31,6 +31,7 @@ const Contacto       = lazy(() => import("./marketing/pages/Contacto"));
 const PrivacyPolicy  = lazy(() => import("./marketing/pages/PrivacyPolicy"));
 const PricingPage    = lazy(() => import("./marketing/pages/PricingPage"));
 const ConfirmarAsistencia = lazy(() => import("./marketing/pages/ConfirmarAsistencia"));
+const PublicProposalPage  = lazy(() => import("./marketing/pages/PublicProposalPage"));
 
 // ── CRM Shell ──
 const CRMApp = lazy(() => import("./app/shell/CRMApp"));
@@ -93,6 +94,23 @@ export default function App() {
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <ConfirmarAsistencia />
+              </Suspense>
+            }
+          />
+          {/* Propuesta Comercial — confidencial por UUID, sin navbar */}
+          <Route
+            path="/propuesta/:id"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PublicProposalPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/propuestas/:id"
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <PublicProposalPage />
               </Suspense>
             }
           />
