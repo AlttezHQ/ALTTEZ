@@ -397,7 +397,7 @@ function SignModal({ proposal, onSign, onComplete, onClose, colors, isDark, logo
               <input
                 ref={nameInputRef}
                 type="text"
-                placeholder="Ej. Fabián Mora"
+                placeholder="Ej. Juan Pérez"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 style={inputStyle}
@@ -411,7 +411,7 @@ function SignModal({ proposal, onSign, onComplete, onClose, colors, isDark, logo
               <label style={labelStyle}>C.C. / Documento de Identidad</label>
               <input
                 type="text"
-                placeholder="Ej. 1020456789"
+                placeholder="Ej. 123456789"
                 value={cc}
                 onChange={e => setCc(e.target.value)}
                 style={inputStyle}
@@ -425,7 +425,7 @@ function SignModal({ proposal, onSign, onComplete, onClose, colors, isDark, logo
               <label style={labelStyle}>Correo Electrónico</label>
               <input
                 type="email"
-                placeholder="Ej. fabian.mora@correo.com"
+                placeholder="Ej. juan.perez@correo.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 style={inputStyle}
