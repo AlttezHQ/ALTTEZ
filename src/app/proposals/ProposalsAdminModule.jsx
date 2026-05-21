@@ -60,6 +60,24 @@ function fmtDate(iso) {
   return d.toLocaleDateString("es-CO", { day:"2-digit", month:"short", year:"numeric" });
 }
 
+function slugifyName(value) {
+  return String(value || "propuesta")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72) || "propuesta";
+}
+
+function buildProposalPath(proposal) {
+  return `/propuesta/${slugifyName(proposal.client_name)}--${proposal.id}`;
+}
+
+function buildProposalLink(proposal) {
+  return `${window.location.origin}${buildProposalPath(proposal)}`;
+}
+
 function StatusBadge({ status }) {
   const s = STATUS_MAP[status] || STATUS_MAP.creada;
   return (
@@ -95,13 +113,23 @@ const EMPTY_FORM = {
   client_name:"", title:"Construyamos juntos el futuro de ALTTEZ.", subtitle:"Una alianza estratégica para impulsar ALTTEZ.",
   description:"Gracias a tu red, contactos y visión comercial, podemos abrir juntos las puertas del próximo nivel. Esta es una invitación a ser parte del proyecto desde el inicio.",
   fecha: new Date().toISOString().slice(0,10),
-  rol:"", participacion_pct: 10, impacto:"", beneficios:["","","",""],
+  rol:"Serás el puente clave para que ALTTEZ ingrese al piloto con el club.",
+  participacion_pct: 10,
+  impacto:"Serás parte fundamental del crecimiento y éxito de ALTTEZ desde el inicio.",
+  beneficios:[
+    "Acceso a oportunidades y contactos claves en el mundo del fútbol.",
+    "Apertura de puertas para el piloto con el club.",
+    "Validación de nuestro modelo de negocio en un entorno real.",
+    "Inicio de una relación estratégica a largo plazo.",
+  ],
+  objeto_pdf:"Integrar, validar y escalar el software de gestión y operación deportiva de ALTTEZ, iniciando en un club deportivo piloto para validar el modelo de negocio en un entorno real, y posteriormente expandirlo a nivel regional. El Aliado aportará su red de contactos y visión comercial para acelerar la tracción de La Compañía.",
+  cliff_pdf:"Se establece un periodo de carencia o \"Cliff\" estricto de seis (6) meses, o hasta la firma formal del contrato de integración con el primer club piloto (lo que ocurra primero). Si el Aliado abandona el proyecto, es desvinculado o la alianza se disuelve antes de cumplirse este hito, la participación consolidada será del 0%, sin derecho a reclamación económica, indemnización o emisión de acciones.",
 };
 
 function CreateModal({ clubId, onCreated, onClose }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
-  const [step, setStep] = useState(1); // 1: datos cliente, 2: términos, 3: revisión
+  const [step, setStep] = useState(1); // 1: portada, 2: términos, 3: legal, 4: revisión
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const setBeneficio = (i, v) => setForm(f => { const b = [...f.beneficios]; b[i] = v; return { ...f, beneficios: b }; });
@@ -113,12 +141,16 @@ function CreateModal({ clubId, onCreated, onClose }) {
       showToast("El nombre del cliente y el título son obligatorios.", "warning");
       return;
     }
+    if (Number(form.participacion_pct) < 0 || Number(form.participacion_pct) > 100) {
+      showToast("La participación debe estar entre 0% y 100%.", "warning");
+      return;
+    }
     setSaving(true);
     try {
       const p = await insertProposal({
         club_id: clubId || "local",
         ...form,
-        beneficios: form.beneficios.filter(b => b.trim()),
+        beneficios: form.beneficios.map(b => b.trim()).filter(Boolean),
         participacion_pct: Number(form.participacion_pct),
         status,
       });
@@ -138,10 +170,13 @@ function CreateModal({ clubId, onCreated, onClose }) {
 
   const labelStyle = { fontFamily: FONT, fontSize:12, fontWeight:700, color: MUTED, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6 };
 
+  const fieldNoteStyle = { fontFamily: FONT, fontSize:12, color: HINT, marginTop:6, lineHeight:1.45 };
+
   const steps = [
-    { n:1, label:"Cliente" },
+    { n:1, label:"Portada" },
     { n:2, label:"Términos" },
-    { n:3, label:"Revisar" },
+    { n:3, label:"Legal" },
+    { n:4, label:"Revisar" },
   ];
 
   return (
@@ -150,7 +185,7 @@ function CreateModal({ clubId, onCreated, onClose }) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div initial={{ opacity:0, scale:0.95, y:16 }} animate={{ opacity:1, scale:1, y:0 }} exit={{ opacity:0, scale:0.97, y:8 }} transition={{ duration:0.35, ease: EASE }}
-        style={{ width:"100%", maxWidth:580, background: CARD, borderRadius:22, overflow:"hidden", boxShadow:"0 32px 80px rgba(0,0,0,0.22)", display:"flex", flexDirection:"column", maxHeight:"90vh" }}
+        style={{ width:"100%", maxWidth:720, background: CARD, borderRadius:22, overflow:"hidden", boxShadow:"0 32px 80px rgba(0,0,0,0.22)", display:"flex", flexDirection:"column", maxHeight:"90vh" }}
       >
         {/* Header */}
         <div style={{ padding:"22px 24px 18px", borderBottom:`1px solid ${BORDER}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
@@ -160,7 +195,7 @@ function CreateModal({ clubId, onCreated, onClose }) {
             </div>
             <div>
               <div style={{ fontFamily: FONT, fontWeight:800, fontSize:16, color: TEXT }}>Nueva propuesta</div>
-              <div style={{ fontFamily: FONT, fontSize:12, color: MUTED, marginTop:2 }}>Enlace confidencial único</div>
+              <div style={{ fontFamily: FONT, fontSize:12, color: MUTED, marginTop:2 }}>Configura portada, términos y acuerdo PDF</div>
             </div>
           </div>
           <button onClick={onClose} style={{ width:36, height:36, minHeight:36, borderRadius:10, border:`1px solid ${BORDER}`, background: BG, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -194,7 +229,7 @@ function CreateModal({ clubId, onCreated, onClose }) {
             <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
               <div>
                 <label style={labelStyle}>Nombre del cliente / inversionista *</label>
-                <input style={inputStyle} value={form.client_name} onChange={e => set("client_name", e.target.value)} placeholder="Ej. Juan Pérez" onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <input style={inputStyle} value={form.client_name} onChange={e => set("client_name", e.target.value)} placeholder="Ej. Fabián Mora" onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
               </div>
               <div>
                 <label style={labelStyle}>Fecha de la propuesta</label>
@@ -205,8 +240,14 @@ function CreateModal({ clubId, onCreated, onClose }) {
                 <input style={inputStyle} value={form.title} onChange={e => set("title", e.target.value)} placeholder="Ej. Construyamos juntos el futuro de ALTTEZ." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
               </div>
               <div>
-                <label style={labelStyle}>Descripción / párrafo introductorio</label>
+                <label style={labelStyle}>Subtítulo</label>
+                <input style={inputStyle} value={form.subtitle} onChange={e => set("subtitle", e.target.value)} placeholder="Ej. Una alianza estratégica para impulsar ALTTEZ." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Aparece como contexto editorial en la propuesta y en la información interna.</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Descripción de apertura</label>
                 <textarea rows={3} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.description} onChange={e => set("description", e.target.value)} onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Es el primer párrafo que lee el aliado al abrir el enlace confidencial.</div>
               </div>
             </div>
           )}
@@ -214,8 +255,9 @@ function CreateModal({ clubId, onCreated, onClose }) {
           {step === 2 && (
             <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
               <div>
-                <label style={labelStyle}>Tu rol (descripción del rol del cliente)</label>
+                <label style={labelStyle}>Rol del aliado</label>
                 <textarea rows={2} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.rol} onChange={e => set("rol", e.target.value)} placeholder="Ej. Serás el puente clave para que ALTTEZ ingrese al piloto con el club." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Este texto alimenta la tarjeta “Tu rol” y también el objeto del acuerdo PDF.</div>
               </div>
               <div>
                 <label style={labelStyle}>% de participación</label>
@@ -249,6 +291,27 @@ function CreateModal({ clubId, onCreated, onClose }) {
           )}
 
           {step === 3 && (
+            <div style={{ display:"flex", flexDirection:"column", gap:18 }}>
+              <div style={{ padding:"16px 18px", borderRadius:14, background: BG, border:`1px solid ${BORDER}` }}>
+                <div style={{ fontFamily: FONT, fontSize:13, fontWeight:800, color: TEXT, marginBottom:6 }}>Cláusulas del PDF firmado</div>
+                <div style={{ fontFamily: FONT, fontSize:12, color: MUTED, lineHeight:1.55 }}>
+                  Estos textos se usan en el documento descargable que firma el aliado. Si los dejas con el valor sugerido, el acuerdo queda listo para una alianza comercial estándar.
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Objeto de la alianza</label>
+                <textarea rows={5} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.objeto_pdf} onChange={e => set("objeto_pdf", e.target.value)} onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Describe qué aporta ALTTEZ, qué aporta el aliado y cuál es el hito comercial principal.</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Cliff y condiciones de salida</label>
+                <textarea rows={5} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.cliff_pdf} onChange={e => set("cliff_pdf", e.target.value)} onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Define el periodo de carencia y qué ocurre si la alianza termina antes del hito.</div>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
             <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
               <div style={{ padding:"18px 20px", borderRadius:14, background: BG, border:`1px solid ${BORDER}` }}>
                 <div style={{ fontFamily: FONT, fontSize:12, fontWeight:700, color: MUTED, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:12 }}>Resumen de la propuesta</div>
@@ -257,8 +320,11 @@ function CreateModal({ clubId, onCreated, onClose }) {
                     { label:"Cliente", value: form.client_name },
                     { label:"Fecha", value: form.fecha },
                     { label:"Título", value: form.title },
+                    { label:"Subtítulo", value: form.subtitle },
                     { label:"Participación", value: `${form.participacion_pct}% de ALTTEZ` },
+                    { label:"Rol", value: form.rol || "Sin rol definido" },
                     { label:"Beneficios", value: `${form.beneficios.filter(b => b.trim()).length} puntos configurados` },
+                    { label:"PDF legal", value: form.objeto_pdf && form.cliff_pdf ? "Objeto y cliff configurados" : "Faltan textos legales" },
                   ].map(({ label, value }) => (
                     <div key={label} style={{ display:"flex", gap:12, alignItems:"baseline" }}>
                       <span style={{ fontFamily: FONT, fontSize:12, color: MUTED, fontWeight:700, minWidth:90, flexShrink:0 }}>{label}</span>
@@ -284,12 +350,12 @@ function CreateModal({ clubId, onCreated, onClose }) {
               ← Anterior
             </button>
           )}
-          {step < 3 && (
+          {step < 4 && (
             <button onClick={() => setStep(s => s+1)} style={{ flex:2, padding:"12px 20px", borderRadius:12, border:"none", background:`linear-gradient(135deg, ${CU} 0%, #B7832D 100%)`, color: CARD, fontSize:14, fontWeight:800, fontFamily: FONT, cursor:"pointer", boxShadow:`0 6px 18px rgba(206,137,70,0.26)` }}>
               Continuar →
             </button>
           )}
-          {step === 3 && (
+          {step === 4 && (
             <>
               <button
                 onClick={() => handleSave("creada")}
@@ -321,7 +387,7 @@ function CreateModal({ clubId, onCreated, onClose }) {
 // ════════════════════════════════════════════════
 function DetailPanel({ proposal, onClose, onStatusChange }) {
   const [markingStatus, setMarkingStatus] = useState(false);
-  const link = `${window.location.origin}/propuesta/${proposal.id}`;
+  const link = buildProposalLink(proposal);
 
   function copyLink() {
     navigator.clipboard.writeText(link).then(() => showToast("Enlace copiado al portapapeles.", "success")).catch(() => showToast("No se pudo copiar el enlace.", "error"));
@@ -376,9 +442,12 @@ function DetailPanel({ proposal, onClose, onStatusChange }) {
         {/* Details */}
         {[
           { label:"Título", value: proposal.title },
+          { label:"Subtítulo", value: proposal.subtitle },
           { label:"Rol asignado", value: proposal.rol },
           { label:"Participación", value: `${proposal.participacion_pct}% de ALTTEZ` },
           { label:"Impacto", value: proposal.impacto },
+          { label:"Objeto PDF", value: proposal.objeto_pdf },
+          { label:"Cliff PDF", value: proposal.cliff_pdf },
         ].filter(d => d.value).map(({ label, value }) => (
           <div key={label}>
             <div style={{ fontFamily: FONT, fontSize:11, fontWeight:700, color: MUTED, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:6 }}>{label}</div>
@@ -489,8 +558,8 @@ export default function ProposalsAdminModule({ clubId, mode }) {
     showToast("Propuesta eliminada.", "success");
   }
 
-  function copyLink(id) {
-    const link = `${window.location.origin}/propuesta/${id}`;
+  function copyLink(proposal) {
+    const link = buildProposalLink(proposal);
     navigator.clipboard.writeText(link).then(() => showToast("Enlace copiado.", "success")).catch(() => showToast("No se pudo copiar.", "error"));
   }
 
@@ -562,7 +631,7 @@ export default function ProposalsAdminModule({ clubId, mode }) {
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             {filtered.map((p, i) => {
-              const link = `${window.location.origin}/propuesta/${p.id}`;
+              const link = buildProposalLink(p);
               const isDemo = p.id === "demo-juan-perez";
               return (
                 <motion.div key={p.id} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.3, ease: EASE, delay: i * 0.04 }}
@@ -605,7 +674,7 @@ export default function ProposalsAdminModule({ clubId, mode }) {
                   <div style={{ display:"flex", gap:8, flexShrink:0 }} onClick={(e) => e.stopPropagation()}>
                     <button
                       title="Copiar enlace"
-                      onClick={() => copyLink(p.id)}
+                      onClick={() => copyLink(p)}
                       style={{ width:36, height:36, minHeight:36, borderRadius:10, border:`1px solid ${BORDER}`, background: BG, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
                       onMouseEnter={(e) => { e.currentTarget.style.background=CU_DIM; e.currentTarget.style.borderColor=CU_BOR; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background=BG; e.currentTarget.style.borderColor=BORDER; }}

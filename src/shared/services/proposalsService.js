@@ -16,6 +16,8 @@
  * @property {number}  participacion_pct
  * @property {string}  impacto
  * @property {string[]} beneficios
+ * @property {string}  objeto_pdf
+ * @property {string}  cliff_pdf
  * @property {'creada'|'enviada'|'aceptada'|'contrapropuesta'|'rechazada'} status
  * @property {string|null} signed_name
  * @property {string|null} signed_at
@@ -51,6 +53,11 @@ function lsWrite(proposals) {
 
 function genId() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function resolveProposalId(idOrSlug) {
+  const value = String(idOrSlug || "");
+  return value.includes("--") ? value.split("--").pop() : value;
 }
 
 // ── Obtener club_id desde el servicio de supabase ──
@@ -104,13 +111,14 @@ export async function getProposals() {
  * @returns {Promise<Proposal|null>}
  */
 export async function getProposalById(id) {
+  const proposalId = resolveProposalId(id);
   // Primero: buscar en localStorage (soporta modo offline y demo)
   const cached = lsRead();
-  const local = cached.find((p) => p.id === id);
+  const local = cached.find((p) => p.id === proposalId || p.id === id);
 
   // Propuesta demo especial (hardcoded para tests y demo sin Supabase)
   if (!local) {
-    const demo = DEMO_PROPOSALS.find((p) => p.id === id);
+    const demo = DEMO_PROPOSALS.find((p) => p.id === proposalId || p.id === id);
     if (demo) return demo;
   }
 
@@ -119,7 +127,7 @@ export async function getProposalById(id) {
       const { data, error } = await supabase
         .from("propuestas")
         .select("*")
-        .eq("id", id)
+        .eq("id", proposalId)
         .single();
       if (!error && data) return data;
     } catch {
@@ -180,6 +188,7 @@ export async function insertProposal(proposal) {
  * @returns {Promise<Proposal|null>}
  */
 export async function updateProposal(id, fields) {
+  const proposalId = resolveProposalId(id);
   const now = new Date().toISOString();
   const updates = { ...fields, updated_at: now };
 
@@ -188,7 +197,7 @@ export async function updateProposal(id, fields) {
       const { data, error } = await supabase
         .from("propuestas")
         .update(updates)
-        .eq("id", id)
+        .eq("id", proposalId)
         .select()
         .single();
       if (!error && data) {
@@ -203,7 +212,7 @@ export async function updateProposal(id, fields) {
 
   // Offline: actualizar en localStorage
   const all = lsRead();
-  const idx = all.findIndex((p) => p.id === id);
+  const idx = all.findIndex((p) => p.id === proposalId || p.id === id);
   if (idx !== -1) {
     const updated = { ...all[idx], ...updates };
     all[idx] = updated;
@@ -212,7 +221,7 @@ export async function updateProposal(id, fields) {
   }
 
   // Propuesta demo: simular actualización en memoria (no persiste entre recargas en demo)
-  const demo = DEMO_PROPOSALS.find((p) => p.id === id);
+  const demo = DEMO_PROPOSALS.find((p) => p.id === proposalId || p.id === id);
   if (demo) {
     return { ...demo, ...updates };
   }
@@ -226,12 +235,13 @@ export async function updateProposal(id, fields) {
  * @returns {Promise<boolean>}
  */
 export async function deleteProposal(id) {
+  const proposalId = resolveProposalId(id);
   if (isSupabaseReady && _clubId) {
     try {
       const { error } = await supabase
         .from("propuestas")
         .delete()
-        .eq("id", id)
+        .eq("id", proposalId)
         .eq("club_id", _clubId);
       if (!error) {
         const all = lsRead();
@@ -245,7 +255,7 @@ export async function deleteProposal(id) {
 
   // Offline
   const all = lsRead();
-  lsWrite(all.filter((p) => p.id !== id));
+  lsWrite(all.filter((p) => p.id !== proposalId && p.id !== id));
   return true;
 }
 

@@ -1268,22 +1268,197 @@ async function sendPDFNotification(proposal, name, email, cc, pdfBlob) {
   try {
     const formData = new FormData();
     formData.append("nombre_colaborador", name);
-    formData.append("correo_colaborador", email);
+    formData.append("email", email);
     formData.append("documento_colaborador", cc);
     formData.append("propuesta_titulo", proposal.title || "Alianza Estratégica");
     formData.append("mensaje", `¡Excelente noticia! El colaborador ${name} (${email}), con documento de identidad C.C. ${cc}, ha firmado y aceptado la propuesta de Alianza Estratégica.\n\nSe adjunta el PDF del acuerdo comercial con la firma digitalizada.`);
     formData.append("attachment", pdfBlob, `propuesta_firmada_${name.toLowerCase().replace(/[^a-z0-9]/g, "_")}.pdf`);
     formData.append("_subject", `¡Propuesta Aceptada y Firmada! - ${name}`);
-    formData.append("_honey", ""); 
-    formData.append("_captcha", "false"); 
+    formData.append("_cc", email);
+    formData.append("_honey", "");
+    formData.append("_captcha", "false");
 
-    await fetch("https://formsubmit.co/ajax/alttezsas@gmail.com", {
+    const res = await fetch("https://formsubmit.co/ajax/alttezsas@gmail.com", {
       method: "POST",
       body: formData,
     });
+    if (!res.ok) console.warn("FormSubmit error:", await res.text());
   } catch (error) {
     console.error("Error al enviar notificación por correo:", error);
   }
+}
+
+// ══════════════════════════════════════════════════
+// INTERACTIVE ENVELOPE EXPERIENCE (ACTUALIZADO - ESTÁNDAR MODULAR ELEVADO)
+// ══════════════════════════════════════════════════
+function InteractiveEnvelope({ clientName, onOpen }) {
+  const [phase, setPhase] = useState("closed");
+  // phases: "closed" → "opening-flap" → "sliding-letter" → "zooming"
+
+  const handleOpen = () => {
+    if (phase !== "closed") return;
+    setPhase("opening-flap");
+    setTimeout(() => setPhase("sliding-letter"), 600); // Ligeramente más rápido para no perder retención
+    setTimeout(() => setPhase("zooming"), 1500);
+    setTimeout(() => onOpen(), 2100);
+  };
+
+  const isOpening = phase !== "closed";
+  const isSliding = phase === "sliding-letter" || phase === "zooming";
+  const isZooming = phase === "zooming";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 2000,
+        background: "linear-gradient(160deg, #0E0E0C 0%, #070705 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontFamily: FONT, overflow: "hidden",
+        perspective: "1200px" // CRÍTICO: Añade profundidad 3D real al giro de la solapa
+      }}
+    >
+      {/* Glow ambiental con latido sutil para invitar a la acción */}
+      <motion.div 
+        animate={{ opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 55% 45% at 50% 50%, rgba(206,137,70,0.08) 0%, transparent 100%)", pointerEvents:"none" }} 
+      />
+
+      {/* Contenedor del sobre — hace zoom al salir */}
+      <motion.div
+        animate={isZooming ? { scale: 1.6, opacity: 0, y: -40, transition: { duration: 0.65, ease: [0.4, 0, 1, 1] } } : { scale: 1, opacity: 1 }}
+        style={{ 
+          position:"relative", width:"min(520px, 90vw)", height:360, 
+          display:"flex", alignItems:"center", justifyContent:"center",
+          transformStyle: "preserve-3d" // Mantiene los hijos en el espacio 3D
+        }}
+      >
+        {/* ── CUERPO DEL SOBRE (fondo) ── */}
+        <div style={{
+          position:"absolute", inset:0,
+          background:"#131311",
+          borderRadius:20,
+          border:"1.5px solid rgba(206,137,70,0.22)",
+          boxShadow:"0 40px 100px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04)",
+          zIndex:1,
+        }} />
+
+        {/* ── CARTA (emerge hacia arriba) ── */}
+        <motion.div
+          animate={isSliding
+            ? { y: -180, scale: 1, zIndex: 10, transition: { duration: 0.85, ease: [0.16, 1, 0.3, 1] } }
+            : { y: 0, scale: 0.92, zIndex: 2 }
+          }
+          style={{
+            position:"absolute",
+            width:"84%", height:"80%",
+            background:"#FAFAF8", // Ajuste a tono marfil premium
+            borderRadius:12,
+            padding:"22px 26px",
+            boxShadow:"0 -4px 20px rgba(0,0,0,0.4)",
+            display:"flex", flexDirection:"column", justifyContent:"space-between",
+          }}
+        >
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={{ fontSize:9.5, fontWeight:W.bold, color:B.bronce, letterSpacing:"0.18em", textTransform:"uppercase" }}>Documento Confidencial</div>
+              <div style={{ fontSize:17, fontWeight:W.bold, color:"#1F1F1D", marginTop:4 }}>Alianza Estratégica</div>
+            </div>
+            <img src={IMG_LOGO} alt="ALTTEZ" style={{ height:17, opacity:0.7, filter: "brightness(0)" }} onError={e => { e.currentTarget.style.display="none"; }} />
+          </div>
+          <div>
+            <div style={{ fontSize:11, color:"#888", fontWeight:W.medium }}>Estimado(a)</div>
+            <div style={{ fontSize:20, fontWeight:W.bold, color:"#1F1F1D", marginTop:3, lineHeight:1.2 }}>{clientName}</div>
+            <div style={{ fontSize:11, color:"#666", lineHeight:1.6, marginTop:10 }}>Hemos preparado una propuesta exclusiva de alianza estratégica para ti. La apertura digital garantiza la confidencialidad de este documento.</div>
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:"1px solid #EBE6DF", paddingTop:12 }}>
+            <div style={{ fontSize:9, color:"#A5A098", fontWeight:W.semibold, letterSpacing:"0.1em" }}>VIGENCIA · 30 DÍAS</div>
+            <div style={{ fontSize:9, color:B.bronce, fontWeight:W.bold, letterSpacing:"0.1em" }}>ALTTEZ S.A.S. ✦</div>
+          </div>
+        </motion.div>
+
+        {/* ── SOLAPAS LATERALES ── */}
+        <div style={{ position:"absolute", inset:0, background:"#161614", clipPath:"polygon(0% 0%, 50% 52%, 0% 100%)", borderRadius:"20px 0 0 20px", zIndex:3 }} />
+        <div style={{ position:"absolute", inset:0, background:"#161614", clipPath:"polygon(100% 0%, 50% 52%, 100% 100%)", borderRadius:"0 20px 20px 0", zIndex:3 }} />
+
+        {/* ── SOLAPA INFERIOR ── */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, #121210 0%, #1A1A18 100%)", clipPath:"polygon(0% 100%, 50% 50%, 100% 100%)", borderRadius:"0 0 20px 20px", zIndex:4 }} />
+
+        {/* ── SOLAPA SUPERIOR — gira al abrir en 3D real ── */}
+        <motion.div
+          animate={isOpening
+            ? { rotateX: 180, zIndex: 0, transition: { duration: 0.8, ease: [0.34, 1.2, 0.64, 1] } } // Efecto spring sutil al abrir
+            : { rotateX: 0, zIndex: 6 }
+          }
+          style={{
+            position:"absolute", top:0, left:0, right:0, height:"50%",
+            background:"linear-gradient(to bottom, #1E1D1B 0%, #151412 100%)",
+            clipPath:"polygon(0% 0%, 50% 100%, 100% 0%)",
+            borderRadius:"20px 20px 0 0",
+            transformOrigin:"top center",
+            backfaceVisibility:"hidden",
+            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.06)" // Borde superior sutil (Glassmorphism de profundidad)
+          }}
+        />
+
+        {/* ── SELLO DE LACRE ── */}
+        <AnimatePresence>
+          {phase === "closed" && (
+            <motion.div
+              key="seal"
+              exit={{ scale: 0, opacity: 0, transition: { duration: 0.25 } }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.93 }}
+              onClick={handleOpen}
+              style={{
+                position:"absolute",
+                top:"50%", left:"50%",
+                x: "-50%", y: "-50%", // SOLUCIÓN: Control nativo de ejes en Framer Motion
+                zIndex:7, cursor:"pointer",
+                width:84, height:84, borderRadius:"50%",
+                background:"radial-gradient(circle at 38% 35%, #EAA95E 0%, #CE8946 50%, #A06830 100%)",
+                boxShadow:"0 8px 28px rgba(206,137,70,0.5), inset 0 2px 5px rgba(255,255,255,0.25), inset 0 -3px 5px rgba(0,0,0,0.2)",
+                display:"flex", alignItems:"center", justifyContent:"center",
+              }}
+            >
+              <div style={{ position:"absolute", inset:6, borderRadius:"50%", border:"1.5px solid rgba(255,255,255,0.2)" }} />
+              <img
+                src={IMG_LOGO} alt="ALTTEZ"
+                // Logo en bajo relieve oscuro en lugar de negro plano
+                style={{ width:42, height:42, objectFit:"contain", filter:"brightness(0) opacity(0.65) drop-shadow(0px 1px 0px rgba(255,255,255,0.3))", pointerEvents:"none" }}
+                onError={e => { e.currentTarget.style.display="none"; }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ── TEXTO CTA ── */}
+      <AnimatePresence>
+        {phase === "closed" && (
+          <motion.div
+            key="cta"
+            initial={{ opacity:0, y:10 }}
+            animate={{ opacity:1, y:0, transition:{ delay:0.5, duration:0.4 } }}
+            exit={{ opacity:0, transition:{ duration:0.2 } }}
+            style={{
+              position:"absolute",
+              top:"calc(50% + 58px)", left:"50%",
+              x: "-50%", // SOLUCIÓN: Anclaje correcto del eje X sin afectar la animación de Y
+              zIndex:20, pointerEvents:"none",
+              display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+              whiteSpace:"nowrap",
+            }}
+          >
+            <div style={{ fontSize:11, fontWeight:W.bold, color:B.bronce, letterSpacing:"0.14em", textTransform:"uppercase" }}>Presiona el sello</div>
+            <div style={{ fontSize:10.5, color:"rgba(246,241,234,0.35)", fontWeight:W.medium }}>Para abrir tu propuesta confidencial</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
 }
 
 // ══════════════════════════════════════════════════
@@ -1298,6 +1473,7 @@ export default function PublicProposalPage() {
 
   // Switch de tema: Default OSCURO
   const [isDark, setIsDark]           = useState(true);
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
 
   // Estados interactivos para Vesting y decisiones
   const [vestingOpen, setVestingOpen] = useState(false);
@@ -1387,7 +1563,7 @@ export default function PublicProposalPage() {
   async function handleSignConfirm(serializedPayload) {
     // Al realizar la firma digital
     try {
-      const u = await signProposal(id, serializedPayload);
+      const u = await signProposal(proposal?.id || id, serializedPayload);
       if (u) {
         setProposal(u);
 
@@ -1420,7 +1596,7 @@ export default function PublicProposalPage() {
     setCounterLoading(true);
     setCounterErr("");
     try {
-      const u = await sendCounterProposal(id, counterText.trim());
+      const u = await sendCounterProposal(proposal?.id || id, counterText.trim());
       if (u) {
         setProposal(u);
         setFinalStatus("contrapropuesta");
@@ -1435,7 +1611,9 @@ export default function PublicProposalPage() {
   if (!proposal) return <NotFoundPage colors={colors} isDark={isDark} />;
   if (finalStatus) return <SuccessScreen type={finalStatus} proposal={proposal} colors={colors} isDark={isDark} />;
 
-  const { client_name, title, fecha, rol, participacion_pct, impacto, beneficios = [], description } = proposal;
+  const { client_name, title, subtitle, fecha, rol, participacion_pct, impacto, beneficios = [], description } = proposal;
+
+  if (!envelopeOpened) return <InteractiveEnvelope clientName={client_name} onOpen={() => setEnvelopeOpened(true)} />;
   const pct      = Number(participacion_pct || 0);
   const bensRaw  = Array.isArray(beneficios) ? beneficios.filter(b => b?.trim()) : [];
   const isClosed = proposal.status === "rechazada";
@@ -1660,7 +1838,7 @@ export default function PublicProposalPage() {
             {/* Description */}
             <motion.p variants={fadeUp}
               style={{ margin:"30px 0 52px", fontSize:18.5, color:B.heroW80, lineHeight:1.75, maxWidth:580, fontWeight:W.regular }}>
-              {description}
+              {description || subtitle}
             </motion.p>
 
             {/* Meta pills */}
@@ -1739,7 +1917,7 @@ export default function PublicProposalPage() {
               {[
                 {
                   Icon: Ico.Person, n:"01", title:"Tu rol",
-                  body: "Serás el conector clave para integrar el software de ALTTEZ en el club deportivo piloto, abriendo las puertas a la validación en el mercado real.",
+                  body: rol || "Serás el conector clave para integrar el software de ALTTEZ en el club deportivo piloto, abriendo las puertas a la validación en el mercado real.",
                   accent: false,
                 },
                 {

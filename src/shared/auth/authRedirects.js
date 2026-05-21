@@ -35,8 +35,8 @@ export function getPostLoginRedirect({ redirectPath, currentPath } = {}) {
 
   // 2. Mantener en el producto actual
   if (currentPath) {
-    if (currentPath.startsWith("/torneos")) return "/torneos";
-    if (currentPath.startsWith("/crm")) return "/crm";
+    if (currentPath.startsWith("/torneos")) return currentPath;
+    if (currentPath.startsWith("/crm")) return currentPath;
   }
 
   // 3. Default: CRM
