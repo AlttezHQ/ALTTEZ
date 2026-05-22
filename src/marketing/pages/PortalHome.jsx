@@ -1,20 +1,18 @@
 /**
  * @component PortalHome
  * @description Home del Portal Corporativo ALTTEZ.
- * SOLO Hero + Ecosistema. Servicios y Journal viven en sus propias rutas.
- * @author @Arquitecto (Julian) + @Desarrollador (Andres)
- * @version 2.0 — Multi-ruta (veto v1 one-page)
+ * @version 3.0 — Dual Ecosystem + Bento Box Features
  */
 import HeroSection from "../sections/HeroSection";
-import EcosystemSection from "../sections/EcosystemSection";
-import ModulesSection from "../sections/ModulesSection";
+import DualEcosystemSection from "../sections/DualEcosystemSection";
+import BentoFeatures from "../sections/BentoFeatures";
 
 export default function PortalHome() {
   return (
     <>
       <HeroSection />
-      <EcosystemSection />
-      <ModulesSection />
+      <DualEcosystemSection />
+      <BentoFeatures />
     </>
   );
 }

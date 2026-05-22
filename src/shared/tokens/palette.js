@@ -17,20 +17,20 @@ export const PALETTE = {
   blueFocus: "rgba(206, 137, 70, 0.34)",
   blueIce: "#F6F1EA",
 
-  bg: "#F6F1EA",
-  bgDeep: "#EDE8D0",
-  bgPanel: "#EDE8D0",
-  bgElevated: "#FFFFFF",
-  surface: "#FFFFFF",
-  surfaceGlass: "linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(246,241,234,0.96) 100%)",
+  bg: "var(--color-bg, #F6F1EA)",
+  bgDeep: "var(--color-bg-panel, #EDE8D0)",
+  bgPanel: "var(--color-bg-panel, #EDE8D0)",
+  bgElevated: "var(--color-bg-elevated, #FFFFFF)",
+  surface: "var(--color-surface, #FFFFFF)",
+  surfaceGlass: "var(--color-surface-glass)",
 
-  text: "#1F1F1D",
-  textMuted: "#667085",
-  textHint: "#98A2B3",
-  bgDark: "#1F1F1D",
+  text: "var(--color-text, #1F1F1D)",
+  textMuted: "var(--color-text-muted, #667085)",
+  textHint: "var(--color-text-hint, #98A2B3)",
+  bgDark: "var(--color-bg, #1F1F1D)", /* Maps to adaptive bg now */
 
-  border: "#EDE8D0",
-  borderHi: "#E1D6C7",
+  border: "var(--color-border, #EDE8D0)",
+  borderHi: "var(--color-border-hi, #E1D6C7)",
   borderFocus: "rgba(206, 137, 70, 0.34)",
 
   success: "#2FA56F",

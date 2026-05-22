@@ -71,29 +71,29 @@ export default function Button({
           background: `linear-gradient(135deg, ${accent} 0%, ${C.blueDeep} 100%)`,
           color: "#FFFFFF",
           border: `1px solid ${accent}`,
-          boxShadow: "0 10px 24px rgba(206, 137, 70,0.18)",
+          boxShadow: "var(--shadow-bronce)",
         };
       case "ghost":
         return {
-          background: "#FFFFFF",
-          color: C.text,
-          border: `1px solid ${C.border}`,
-          boxShadow: "0 4px 14px rgba(23,26,28,0.05)",
+          background: "var(--color-surface)",
+          color: "var(--color-text)",
+          border: `1px solid var(--color-border)`,
+          boxShadow: "var(--shadow-subtle)",
         };
       case "capsule":
         return {
-          background: C.blueDim,
+          background: "var(--color-bronce-dim)",
           color: accent,
-          border: `1px solid ${C.blueBorder}`,
+          border: `1px solid var(--color-bronce-border)`,
           borderRadius: "var(--radius-pill)",
           letterSpacing: "var(--ls-caps-sm)",
           boxShadow: "none",
         };
       case "icon":
         return {
-          background: C.bgDeep,
-          color: C.textMuted,
-          border: `1px solid ${C.border}`,
+          background: "var(--color-bg-panel)",
+          color: "var(--color-text-muted)",
+          border: `1px solid var(--color-border)`,
           borderRadius: "var(--radius-md)",
           boxShadow: "none",
         };

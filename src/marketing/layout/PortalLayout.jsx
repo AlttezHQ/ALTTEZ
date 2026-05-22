@@ -1,585 +1,31 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useResponsive } from "../../shared/hooks/useResponsive";
-import OfflineBanner from "../../shared/ui/OfflineBanner";
-import UpdateToast from "../../shared/ui/UpdateToast";
-import InstallAppBanner from "../../shared/ui/InstallAppBanner";
-import { buildWhatsAppUrl } from "../data/contactConfig";
-import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand.js";
+import { useState, useEffect } from "react";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
 const SERVICES = [
   {
     to: "/producto/alttezcrm",
     label: "ALTTEZ CRM",
-    tag: "Core Platform",
-    description: "Plantilla, entrenamiento, calendario, operación y administración en una sola capa operativa.",
+    tag: "Para Clubes",
   },
+  {
+    to: "/torneos",
+    label: "ALTTEZ Torneos",
+    tag: "Para Organizadores",
+  }
 ];
-
-const FOOTER_LINKS = [
-  { to: "/", label: "Home", exact: true },
-  { to: "/quienes-somos", label: "Quiénes somos", exact: false },
-  { to: "/producto/alttezcrm", label: "Plataforma", exact: false },
-  { to: "/precios", label: "Precios", exact: false },
-  { to: "/journal", label: "Journal", exact: false },
-  { to: "/contacto", label: "Contacto", exact: false },
-  { to: "/privacidad", label: "Privacidad", exact: false },
-];
-
-function LoadingFallback() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            border: `2px solid ${B.primary}`,
-            borderTop: "2px solid transparent",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-            margin: "0 auto 12px",
-          }}
-        />
-        <div style={{ fontSize: 10, color: B.textMuted, textTransform: "uppercase", letterSpacing: "2px" }}>
-          Inicializando
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BrandMark() {
-  return (
-    <img
-      src="/branding/alttez-symbol-transparent.png"
-      alt="ALTTEZ"
-      style={{ width: 30, height: 30, objectFit: "contain", flexShrink: 0 }}
-    />
-  );
-}
-
-function NavItem({ to, label, exact, onClick }) {
-  return (
-    <NavLink
-      to={to}
-      end={exact}
-      onClick={onClick}
-      style={({ isActive }) => ({
-        position: "relative",
-        color: isActive ? B.text : B.textMuted,
-        textDecoration: "none",
-        fontSize: 12,
-        fontWeight: isActive ? 700 : 500,
-        letterSpacing: "0.4px",
-        padding: "8px 0",
-      })}
-    >
-      {({ isActive }) => (
-        <>
-          {label}
-          {isActive && (
-            <motion.div
-              layoutId="portal-nav-indicator"
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: -1,
-                height: 2,
-                borderRadius: 999,
-                background: `linear-gradient(90deg, ${B.primary}, ${B.primaryHover})`,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-        </>
-      )}
-    </NavLink>
-  );
-}
-
-function ServicesDropdown() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const active = location.pathname.startsWith("/servicios");
-
-  useEffect(() => {
-    const handleOutside = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        onClick={() => setOpen((value) => !value)}
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "8px 0",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          fontFamily: "inherit",
-          color: open || active ? B.text : B.textMuted,
-          fontSize: 12,
-          fontWeight: active ? 700 : 500,
-          letterSpacing: "0.4px",
-        }}
-      >
-        Producto
-        <motion.svg
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-        >
-          <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </motion.svg>
-        {active && !open && (
-          <motion.div
-            layoutId="portal-nav-indicator"
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: -1,
-              height: 2,
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${B.primary}, ${B.primaryHover})`,
-            }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
-            style={{
-              position: "absolute",
-              top: "calc(100% + 14px)",
-              left: "50%",
-              transform: "translateX(-50%)",
-              width: 410,
-              padding: 10,
-              borderRadius: 18,
-              background: "rgba(255,255,255,0.98)",
-              border: `1px solid ${B.border}`,
-              boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              zIndex: 120,
-            }}
-          >
-            <div style={{ padding: "12px 14px 10px", color: B.textHint, fontSize: 9, textTransform: "uppercase", letterSpacing: "2px" }}>
-              Ecosistema ALTTEZ
-            </div>
-            {SERVICES.map((service) => (
-              <button
-                key={service.to}
-                onClick={() => {
-                  navigate(service.to);
-                  setOpen(false);
-                }}
-                style={{
-                  width: "100%",
-                  display: "grid",
-                  gridTemplateColumns: "44px 1fr",
-                  gap: 14,
-                  padding: "14px",
-                  borderRadius: 14,
-                  border: `1px solid ${B.border}`,
-                  background: "rgba(255,255,255,0.02)",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  marginBottom: 8,
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 14,
-                    background: B.primarySoft,
-                    border: `1px solid ${B.border}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: B.text,
-                    fontSize: 12,
-                    fontWeight: 800,
-                  }}
-                >
-                  {service.label === "Journal" ? "J" : "A"}
-                </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ color: B.text, fontSize: 13, fontWeight: 700 }}>{service.label}</span>
-                    <span
-                      style={{
-                        padding: "2px 7px",
-                        borderRadius: 999,
-                        fontSize: 8,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                        letterSpacing: "1.3px",
-                        color: B.text,
-                        background: B.primarySoft,
-                        border: `1px solid ${B.border}`,
-                      }}
-                    >
-                      {service.tag}
-                    </span>
-                  </div>
-                  <div style={{ color: B.textMuted, fontSize: 11, lineHeight: 1.55 }}>{service.description}</div>
-                </div>
-              </button>
-            ))}
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={() => {
-                navigate("/crm");
-                setOpen(false);
-              }}
-              style={{
-                width: "100%",
-                marginTop: 4,
-                padding: "11px 14px",
-                borderRadius: 12,
-                border: `1px solid ${B.border}`,
-                background: B.primarySoft,
-                color: B.text,
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "1.5px",
-                cursor: "pointer",
-              }}
-            >
-              Acceder al CRM
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function HamburgerIcon({ open }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-      <motion.line
-        x1="3"
-        y1="6"
-        x2="19"
-        y2="6"
-        stroke={B.text}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        animate={open ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-        style={{ originX: "50%", originY: "50%" }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      />
-      <motion.line
-        x1="3"
-        y1="11"
-        x2="19"
-        y2="11"
-        stroke={B.text}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-        transition={{ duration: 0.18 }}
-      />
-      <motion.line
-        x1="3"
-        y1="16"
-        x2="19"
-        y2="16"
-        stroke={B.text}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        animate={open ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
-        style={{ originX: "50%", originY: "50%" }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      />
-    </svg>
-  );
-}
-
-function MobileDrawer({ open, onClose, navigate, onLoginClick }) {
-  const [servicesOpen, setServicesOpen] = useState(false);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 120 }}
-          />
-          <motion.nav
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 380, damping: 38 }}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: "min(360px, 88vw)",
-              zIndex: 121,
-              background: "rgba(255,255,255,0.98)",
-              borderRight: `1px solid ${B.border}`,
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              display: "flex",
-              flexDirection: "column",
-              paddingTop: 72,
-            }}
-          >
-            <div style={{ padding: "0 24px 24px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <BrandMark />
-                <div>
-                  <div style={{ color: B.text, fontSize: 15, fontWeight: 800, letterSpacing: "1.8px" }}>ALTTEZ</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              {[
-                { to: "/quienes-somos", label: "Sobre Nosotros" },
-                { to: "/precios",       label: "Precios" },
-                { to: "/contacto",      label: "Contáctanos" },
-              ].map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={onClose}
-                  style={({ isActive }) => ({
-                    display: "block",
-                    padding: "14px 24px",
-                    textDecoration: "none",
-                    color: isActive ? B.text : B.textMuted,
-                    fontSize: 13,
-                    fontWeight: isActive ? 700 : 500,
-                    borderTop: `1px solid ${B.border}`,
-                  })}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-
-              <button
-                onClick={() => setServicesOpen((value) => !value)}
-                style={{
-                  width: "100%",
-                  padding: "14px 24px",
-                  background: "none",
-                  border: "none",
-                  borderTop: `1px solid ${B.border}`,
-                  color: B.textMuted,
-                  fontSize: 13,
-                  fontWeight: 500,
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-              >
-                Producto
-              </button>
-
-              <AnimatePresence>
-                {servicesOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 380, damping: 34 }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    {SERVICES.map((service) => (
-                      <button
-                        key={service.to}
-                        onClick={() => {
-                          navigate(service.to);
-                          onClose();
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: "14px 32px",
-                          background: "rgba(255,255,255,0.02)",
-                          border: "none",
-                          borderTop: `1px solid ${B.border}`,
-                          color: B.text,
-                          textAlign: "left",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 3 }}>{service.label}</div>
-                        <div style={{ fontSize: 10, color: B.textHint, lineHeight: 1.5 }}>{service.description}</div>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div style={{ padding: 24, borderTop: `1px solid ${B.border}` }}>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  onClose();
-                  if(onLoginClick) onLoginClick();
-                  else navigate("/crm");
-                }}
-                style={{
-                  width: "100%",
-                  padding: "14px 0",
-                  borderRadius: 12,
-                  border: `1px solid ${B.borderStrong}`,
-                  background: G.button,
-                  color: "white",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: "1.6px",
-                  textTransform: "uppercase",
-                  cursor: "pointer",
-                }}
-              >
-                Acceder al CRM
-              </motion.button>
-            </div>
-          </motion.nav>
-        </>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function WhatsAppCTA() {
-  const [hovered, setHovered] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const waUrl = buildWhatsAppUrl();
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => setVisible(true), 1200);
-    return () => clearTimeout(timeoutId);
-  }, []);
-
-  if (!visible || !waUrl) return null;
-
-  return (
-    <AnimatePresence>
-      <motion.a
-        key="wa-cta"
-        href={waUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Habla con nosotros por WhatsApp"
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 360, damping: 28 }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          position: "fixed",
-          right: 28,
-          bottom: 28,
-          zIndex: 110,
-          width: 54,
-          height: 54,
-          borderRadius: "50%",
-          background: G.button,
-          boxShadow: hovered ? `0 12px 32px ${B.primaryGlow}` : "0 8px 22px rgba(15,23,42,0.38)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textDecoration: "none",
-        }}
-        whileHover={{ scale: 1.08, rotate: 8 }}
-        whileTap={{ scale: 0.96 }}
-      >
-        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path
-            fillRule="evenodd"
-            clipRule="evenodd"
-            d="M13 2C7.477 2 3 6.477 3 12c0 1.85.502 3.58 1.376 5.06L3 23l6.12-1.348A10 10 0 0013 22c5.523 0 10-4.477 10-10S18.523 2 13 2zm-3.09 5.5c.178 0 .373.003.543.007.234.005.464.018.679.5.247.551.835 2.028.909 2.177.074.148.123.322.025.518-.1.197-.148.32-.296.494-.148.172-.311.385-.444.517-.148.148-.302.309-.13.606.173.296.77 1.27 1.655 2.057.96.85 1.77 1.112 2.066 1.234.296.124.47.104.643-.062.172-.166.74-.863.937-1.159.198-.296.395-.247.667-.148.271.099 1.723.812 2.019.96.296.147.493.222.567.345.074.123.074.714-.173 1.404-.247.69-1.432 1.332-1.974 1.38-.518.046-1.005.23-3.39-.707-2.852-1.1-4.645-4.01-4.78-4.198-.134-.19-1.104-1.467-1.104-2.798 0-1.33.699-1.983.947-2.255.247-.271.543-.34.724-.34z"
-            fill="white"
-          />
-        </svg>
-
-        <AnimatePresence>
-          {hovered && (
-            <motion.div
-              initial={{ opacity: 0, x: 8, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              style={{
-                position: "absolute",
-                right: "calc(100% + 12px)",
-                top: "50%",
-                transform: "translateY(-50%)",
-                padding: "7px 12px",
-                borderRadius: 10,
-                whiteSpace: "nowrap",
-                background: "rgba(255,255,255,0.96)",
-                border: `1px solid ${B.border}`,
-                color: B.text,
-                fontSize: 11,
-                fontWeight: 600,
-                boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
-                pointerEvents: "none",
-              }}
-            >
-              Habla con nosotros
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.a>
-    </AnimatePresence>
-  );
-}
 
 export default function PortalLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isMobile } = useResponsive();
+  const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const goToAuthHub = () => navigate("/crm");
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const navLinks = useMemo(
-    () => [
-      { to: "/quienes-somos", label: "Sobre Nosotros",  exact: false },
-      { to: "/precios",       label: "Precios",          exact: false },
-      { to: "/contacto",      label: "Contáctanos",     exact: false },
-    ],
-    [],
-  );
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -587,218 +33,199 @@ export default function PortalLayout() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [drawerOpen]);
-
-  useEffect(() => {
-    const el = document.createElement("style");
-    el.id = "portal-layout-styles";
-    el.textContent = `
-      .portal-footer-link { transition: color 0.18s ease; }
-      .portal-footer-link:hover { color: #CE8946 !important; }
-    `;
-    document.head.appendChild(el);
-    return () => el.remove();
-  }, []);
-
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: B.bg,
-        color: B.text,
-        fontFamily: F.body,
-      }}
-    >
-      <OfflineBanner />
-      <UpdateToast />
-      <InstallAppBanner />
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: B.bg, position: "relative" }}>
+      
+      {/* CSS Noise Overlay */}
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 9999, pointerEvents: "none",
+        backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')",
+        opacity: 0.03, mixBlendMode: "overlay"
+      }} />
 
-      <motion.nav
-        animate={{
-          backgroundColor: scrolled ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.92)",
-          boxShadow: scrolled
-            ? "0 8px 32px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.09)"
-            : "0 4px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.06)",
-        }}
-        transition={{ duration: 0.3 }}
+      {/* Fluid Island Nav */}
+      <motion.header
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
         style={{
           position: "fixed",
-          top: 14,
-          left: 24,
-          right: 24,
-          zIndex: 100,
-          height: 52,
-          borderRadius: 16,
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          top: 24,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none", // Allow clicking through the empty space
+        }}
+      >
+        <div style={{
+          pointerEvents: "auto",
+          background: scrolled ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.9)",
+          backdropFilter: scrolled ? "blur(24px) saturate(180%)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(24px) saturate(180%)" : "none",
+          borderRadius: 999,
+          border: `1px solid ${scrolled ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.04)'}`,
+          boxShadow: scrolled ? "0 16px 40px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)" : "0 4px 12px rgba(0,0,0,0.02)",
+          padding: "8px 8px 8px 24px",
           display: "flex",
           alignItems: "center",
-          padding: isMobile ? "0 16px" : "0 28px",
-        }}
-      >
-        <NavLink
-          to="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            textDecoration: "none",
-            marginRight: isMobile ? 0 : 42,
-            flex: isMobile ? 1 : "none",
-          }}
-        >
-          <BrandMark />
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                color: B.text,
-                fontSize: 15,
-                fontWeight: 800,
-                letterSpacing: "2px",
-                fontFamily: F.display,
-                lineHeight: 1,
-              }}
-            >
-              ALTTEZ
-            </span>
-          </div>
-        </NavLink>
+          gap: 32,
+          transition: "all 0.4s cubic-bezier(0.32,0.72,0,1)"
+        }}>
+          
+          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ height: 20 }} />
+            <span style={{ fontFamily: F.display, fontWeight: 800, fontSize: 16, color: B.text, letterSpacing: "-0.04em" }}>ALTTEZ.</span>
+          </Link>
 
-        {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 28, flex: 1 }}>
-            <NavItem to="/" label="Inicio" exact={true} />
-            <ServicesDropdown />
-            {navLinks.map((item) => (
-              <NavItem key={item.to} to={item.to} label={item.label} exact={item.exact} />
-            ))}
-          </div>
-        )}
+          {/* Desktop Nav */}
+          <nav className="desktop-nav" style={{ display: "none", alignItems: "center", gap: 28 }}>
+            <Link to="/" style={navLinkStyle(location.pathname === "/")}>Inicio</Link>
+            
+            <div className="nav-dropdown-trigger" style={{ position: "relative", cursor: "pointer", ...navLinkStyle(location.pathname.includes("/producto") || location.pathname.includes("/torneos")) }}>
+              Ecosistema
+              <div className="nav-dropdown-menu" style={{
+                position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+                paddingTop: 20, opacity: 0, visibility: "hidden", transition: "all 0.2s ease"
+              }}>
+                <div style={{
+                  background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(0,0,0,0.06)", borderRadius: 20,
+                  boxShadow: "0 24px 64px rgba(0,0,0,0.08)", padding: 8,
+                  width: 280, display: "flex", flexDirection: "column", gap: 4
+                }}>
+                  {SERVICES.map((s) => (
+                    <Link key={s.to} to={s.to} style={{
+                      padding: "14px 16px", borderRadius: 12, textDecoration: "none",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      color: B.text, transition: "background 0.2s"
+                    }} className="nav-dropdown-item">
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: F.body }}>{s.label}</div>
+                        <div style={{ fontSize: 12, color: B.textMuted, marginTop: 2 }}>{s.tag}</div>
+                      </div>
+                      <ArrowUpRight size={14} color={B.textMuted} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-        {!isMobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <InstallAppBanner compact />
-            <motion.button
-              onClick={goToAuthHub}
-              whileHover={{ color: B.text, x: 1 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                background: "none",
-                border: "none",
-                color: B.textMuted,
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
-                padding: "6px 8px",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Iniciar sesión
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.03, boxShadow: `0 12px 28px ${B.primaryGlow}` }}
-              whileTap={{ scale: 0.98 }}
+            <Link to="/quienes-somos" style={navLinkStyle(location.pathname === "/quienes-somos")}>Compañía</Link>
+            <Link to="/precios" style={navLinkStyle(location.pathname === "/precios")}>Precios</Link>
+          </nav>
+
+          <div className="desktop-nav" style={{ display: "none", alignItems: "center", gap: 12 }}>
+            <Link to="/auth/login" style={{
+              color: B.text, fontSize: 13, fontWeight: 700, textDecoration: "none", padding: "8px 16px"
+            }}>Log in</Link>
+            <button 
+              className="btn-premium"
               onClick={() => navigate("/contacto")}
               style={{
-                padding: "9px 22px",
-                borderRadius: 10,
-                border: `1px solid ${B.borderStrong}`,
-                background: G.button,
-                color: "white",
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "1.4px",
-                textTransform: "uppercase",
-                cursor: "pointer",
+                background: B.text, color: "white", border: "none", padding: "10px 20px",
+                borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                transition: "all 0.3s cubic-bezier(0.32,0.72,0,1)"
               }}
             >
-              Solicitar demo
-            </motion.button>
+              Contactar ventas
+            </button>
           </div>
-        )}
 
-        {isMobile && (
-          <button
-            onClick={() => setDrawerOpen((value) => !value)}
-            aria-label={drawerOpen ? "Cerrar menú" : "Abrir menú"}
+          <button className="mobile-toggle" onClick={() => setIsOpen(true)} style={{
+            background: "transparent", border: "none", display: "flex", alignItems: "center", justifyContent: "center",
+            width: 40, height: 40, padding: 0, cursor: "pointer"
+          }}>
+            <Menu size={20} color={B.text} />
+          </button>
+        </div>
+      </motion.header>
+
+      {/* Massive Full-Screen Mobile Menu overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             style={{
-              background: "none",
-              border: "none",
-              padding: 8,
-              cursor: "pointer",
-              borderRadius: 8,
+              position: "fixed", inset: 0, zIndex: 100,
+              background: "rgba(255,255,255,0.9)", backdropFilter: "blur(32px)",
+              WebkitBackdropFilter: "blur(32px)",
+              display: "flex", flexDirection: "column"
             }}
           >
-            <HamburgerIcon open={drawerOpen} />
-          </button>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "32px 32px" }}>
+              <span style={{ fontFamily: F.display, fontWeight: 800, fontSize: 16, color: B.text, letterSpacing: "-0.04em" }}>ALTTEZ.</span>
+              <button onClick={() => setIsOpen(false)} style={{ background: "transparent", border: "none", padding: 8 }}>
+                <X size={24} color={B.text} />
+              </button>
+            </div>
+            
+            <div style={{ flex: 1, padding: "0 32px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 32 }}>
+              {[
+                { to: "/", label: "Inicio" },
+                { to: "/producto/alttezcrm", label: "ALTTEZ CRM" },
+                { to: "/torneos", label: "ALTTEZ Torneos" },
+                { to: "/quienes-somos", label: "Compañía" },
+                { to: "/precios", label: "Precios" },
+                { to: "/contacto", label: "Contacto" }
+              ].map((item, i) => (
+                <motion.div
+                  key={item.to}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: i * 0.08, ease: [0.32, 0.72, 0, 1] }}
+                >
+                  <Link to={item.to} onClick={() => setIsOpen(false)} style={{
+                    fontSize: 32, fontWeight: 800, fontFamily: F.display, color: B.text, textDecoration: "none",
+                    letterSpacing: "-0.04em"
+                  }}>
+                    {item.label}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         )}
-      </motion.nav>
+      </AnimatePresence>
 
-      <MobileDrawer open={drawerOpen && isMobile} onClose={() => setDrawerOpen(false)} navigate={navigate} location={location} onLoginClick={goToAuthHub} />
-
-      <main style={{ paddingTop: 80 }}>
-        <Suspense fallback={<LoadingFallback />}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-        </Suspense>
+      <main style={{ flex: 1 }}>
+        <Outlet />
       </main>
 
-      <WhatsAppCTA />
-
-      <footer
-        style={{
-          padding: isMobile ? "32px 20px 24px" : "48px 32px 32px",
-          borderTop: `1px solid ${B.border}`,
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "center",
-          gap: 20,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 13, color: B.textMuted, marginBottom: 4 }}>
-            ALTTEZ &mdash; infraestructura operativa para clubes de alto rendimiento
-          </div>
-          <div style={{ fontSize: 10, color: B.textHint }}>&copy; 2026 ALTTEZ. Todos los derechos reservados.</div>
-        </div>
-        <div style={{ display: "flex", gap: isMobile ? 16 : 20, flexWrap: "wrap" }}>
-          {FOOTER_LINKS.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.exact}
-              className="portal-footer-link"
-              style={{
-                color: B.textMuted,
-                textDecoration: "none",
-                fontSize: 11,
-                letterSpacing: "0.45px",
-              }}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
-      </footer>
+      <style>{`
+        @media (min-width: 900px) {
+          .desktop-nav { display: flex !important; }
+          .mobile-toggle { display: none !important; }
+        }
+        .nav-dropdown-trigger:hover .nav-dropdown-menu {
+          opacity: 1 !important;
+          visibility: visible !important;
+          transform: translateX(-50%) translateY(4px) !important;
+        }
+        .nav-dropdown-item:hover {
+          background: rgba(0,0,0,0.03) !important;
+        }
+        .btn-premium:hover {
+          transform: scale(0.97);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+        }
+      `}</style>
     </div>
   );
+}
+
+function navLinkStyle(isActive) {
+  return {
+    fontSize: 13,
+    fontWeight: 600,
+    color: isActive ? B.text : B.textMuted,
+    textDecoration: "none",
+    transition: "color 0.2s",
+    fontFamily: F.body
+  };
 }
