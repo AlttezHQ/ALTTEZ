@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: fct_match_results
+    description: Completed fixture results for performance and scouting analytics.
+    columns:
+      - name: fixture_id
+        tests:
+          - unique
+          - not_null
+      - name: tournament_id
+        tests:
+          - not_null
+  - name: fct_tiebreaker_events
+    description: Competition decisions where a tiebreaker affected standings or qualification.
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: tiebreaker_criterion
+        tests:
+          - not_null
+  - name: fct_round_advancements
+    description: Round advancement events emitted by knockout progression logic.
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+  - name: fct_team_fair_play
+    description: Fair-play points by fixture and team.
+    columns:
+      - name: team_id
+        tests:
+          - not_null

@@ -6,6 +6,8 @@
  */
 
 // ── Re-exports de utilidades existentes ──────────────────────────────────────
+import { LEGACY_MATCH_STATUS, MATCH_STATUS, isMatchCompleted } from "../domain/fixtureState.js";
+
 export {
   calcularPosiciones,
   distribuirEnGrupos,
@@ -63,6 +65,7 @@ export const ASSIGNMENT_METHOD_OPTIONS = [
 ];
 
 export const CROSSING_METHOD_OPTIONS = [
+  { id: "seeded",         label: "Sembrado por mérito deportivo" },
   { id: "auto_position",  label: "Automático por posición en grupos" },
   { id: "ranking_general", label: "Ranking general" },
   { id: "manual",          label: "Manual" },
@@ -95,7 +98,7 @@ export const DEFAULT_GROUPS_PLUS_KNOCKOUT_CONFIG = {
 
   // Fase final
   initialKnockoutRound: "auto",
-  crossingMethod:       "auto_position",
+  crossingMethod:       "seeded",
   knockoutTiebreakRule: "penalties",
   playoffLegs:          1,
   finalLegs:            1,
@@ -200,7 +203,8 @@ export function generateRoundRobinFixtures(groupedTeams, config = {}) {
             equipoVisitaId: visita.id,
             golesLocal:     null,
             golesVisita:    null,
-            estado:         "pendiente",
+            estado:         LEGACY_MATCH_STATUS.PENDING,
+            status:         MATCH_STATUS.DRAFT,
             fechaHora:      null,
             lugar:          null,
             sedeId:         null,
@@ -248,7 +252,7 @@ export function calculateGroupStandings(matches, teams, pointsConfig = DEFAULT_P
   // Filtrar partidos de fase de grupos finalizados
   const grupoMatches = matches.filter(p =>
     p.fase === "grupos" &&
-    p.estado === "finalizado" &&
+    isMatchCompleted(p) &&
     p.golesLocal  != null &&
     p.golesVisita != null &&
     (!groupFilter || p.grupo === groupFilter)
@@ -296,55 +300,9 @@ export function calculateGroupStandings(matches, teams, pointsConfig = DEFAULT_P
  * @param {Array}  allMatches   - Todos los partidos (necesario para h2h)
  * @returns {Array} Equipos ordenados de mayor a menor
  */
-export function applyTiebreakers(teams, tiebreakers = DEFAULT_TIEBREAKERS, allMatches = []) {
-  return [...teams].sort((a, b) => {
-    for (const criterion of tiebreakers) {
-      let diff = 0;
-
-      switch (criterion) {
-        case "points":
-          diff = b.pts - a.pts;
-          break;
-
-        case "goal_diff":
-          diff = b.dg - a.dg;
-          break;
-
-        case "goals_for":
-          diff = b.gf - a.gf;
-          break;
-
-        case "h2h": {
-          // Resultado entre los dos equipos empatados
-          const h2hMatch = allMatches.find(m =>
-            m.fase === "grupos" && m.estado === "finalizado" &&
-            ((m.equipoLocalId === a.equipoId && m.equipoVisitaId === b.equipoId) ||
-             (m.equipoLocalId === b.equipoId && m.equipoVisitaId === a.equipoId))
-          );
-          if (h2hMatch) {
-            const aIsLocal = h2hMatch.equipoLocalId === a.equipoId;
-            const aGoals = aIsLocal ? h2hMatch.golesLocal : h2hMatch.golesVisita;
-            const bGoals = aIsLocal ? h2hMatch.golesVisita : h2hMatch.golesLocal;
-            diff = bGoals - aGoals; // b - a → mayor primero
-          }
-          break;
-        }
-
-        case "fair_play":
-          // Si existe campo de tarjetas, usarlo; si no, sin desempate por este criterio
-          diff = (a.yellowCards ?? 0) - (b.yellowCards ?? 0); // menos tarjetas = mejor
-          break;
-
-        case "draw":
-        default:
-          diff = 0;
-          break;
-      }
-
-      if (diff !== 0) return diff;
-    }
-    return 0;
-  });
+export function applyTiebreakers(teams, tiebreakers = DEFAULT_TIEBREAKERS, allMatches = [], options = {}) {
+  const resolvedOptions = Array.isArray(options) ? { matchEvents: options } : options;
+  return resolveTiebreakerGroup([...teams], tiebreakers, 0, allMatches, resolvedOptions);
 }
 
 // ── 5. getQualifiedTeams() ───────────────────────────────────────────────────
@@ -370,7 +328,7 @@ export function getQualifiedTeams(groupStandings, config = {}, allMatches = []) 
   const thirds          = []; // para mejores terceros
 
   Object.entries(groupStandings).forEach(([groupLabel, rows]) => {
-    const sorted = applyTiebreakers(rows, tiebreakers, allMatches);
+    const sorted = applyTiebreakers(rows, tiebreakers, allMatches, config);
 
     sorted.forEach((row, idx) => {
       const position = idx + 1;
@@ -415,7 +373,7 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
   const {
     torneoId,
     categoriaId       = null,
-    crossingMethod    = "auto_position",
+    crossingMethod    = "seeded",
     playoffLegs       = 1,
     finalLegs         = 1,
   } = config;
@@ -426,16 +384,10 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
   // Determinar rondas necesarias (potencia de 2 más cercana)
   const slots = nextPow2(n);
 
-  // Ordenar clasificados para los cruces
-  let seeded = [...qualifiedTeams];
-  if (crossingMethod === "ranking_general") {
-    // Ordenar globalmente por pts → dg → gf
-    seeded.sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
-  } else {
-    // auto_position: orden natural (1A, 2A, 1B, 2B...) ya viene ordenado
-    // Solo reordenar para generar cruces clásicos: 1A vs 2B, 1B vs 2A, etc.
-    seeded = reorderForClassicCrossing(qualifiedTeams);
-  }
+  const rankedTeams = rankQualifiedTeamsForSeeding(qualifiedTeams, crossingMethod);
+  const seedOrder = buildSeedOrder(slots);
+  const teamsBySeed = new Map(rankedTeams.map((team, idx) => [idx + 1, { ...team, seed: idx + 1 }]));
+  const seeded = seedOrder.map(seed => teamsBySeed.get(seed) ?? null);
 
   const phases    = phasesFromSlots(slots);
   const matches   = [];
@@ -463,12 +415,20 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
         equipoVisitaId: visitaTeam?.equipoId ?? null,
         golesLocal:     null,
         golesVisita:    null,
-        estado:         localTeam && visitaTeam ? "pendiente" : "bye",
+        estado:         localTeam && visitaTeam ? LEGACY_MATCH_STATUS.PENDING : LEGACY_MATCH_STATUS.BYE,
+        status:         localTeam && visitaTeam ? MATCH_STATUS.DRAFT : MATCH_STATUS.COMPLETED,
         fechaHora:      null,
         sedeId:         null,
         arbitroId:      null,
         orden:          globalOrder++,
         source:         "knockout",
+        metadata:       {
+          seeding: {
+            localSeed:  localTeam?.seed ?? null,
+            visitaSeed: visitaTeam?.seed ?? null,
+            method:     crossingMethod,
+          },
+        },
         createdAt:      NOW(),
       });
     }
@@ -495,7 +455,8 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
           equipoVisitaId: null,
           golesLocal:     null,
           golesVisita:    null,
-          estado:         "pendiente",
+          estado:         LEGACY_MATCH_STATUS.PENDING,
+          status:         MATCH_STATUS.DRAFT,
           fechaHora:      null,
           sedeId:         null,
           arbitroId:      null,
@@ -525,7 +486,7 @@ export function advanceKnockoutWinner(knockoutMatches, matchId, winnerTeamId) {
   const match = knockoutMatches.find(m => m.id === matchId);
   if (!match) return knockoutMatches;
 
-  const phases  = ["octavos","cuartos","semis","final"];
+  const phases  = ["treintaidosavos","octavos","cuartos","semis","final"];
   const curIdx  = phases.indexOf(match.fase);
   if (curIdx === -1 || curIdx === phases.length - 1) return knockoutMatches;
 
@@ -553,6 +514,63 @@ export function advanceKnockoutWinner(knockoutMatches, matchId, winnerTeamId) {
       equipoVisitaId: isLocalSlot ? m.equipoVisitaId : winnerTeamId,
     };
   });
+}
+
+export function createTiebreakerAppliedEvent({ torneoId, tournamentId, group, criterion, teamIds, resolvedOrder, metadata = {} }) {
+  return {
+    tournamentId: tournamentId ?? torneoId ?? null,
+    eventType: "competition.tiebreaker_applied",
+    payload: {
+      criterion,
+      group,
+      teamIds: teamIds ?? [],
+      resolvedOrder: resolvedOrder ?? [],
+      ...metadata,
+    },
+    createdAt: NOW(),
+  };
+}
+
+export function createBracketSeededEvent({ torneoId, tournamentId, stageId = null, seededTeams = [], matches = [], method = "seeded" }) {
+  return {
+    tournamentId: tournamentId ?? torneoId ?? null,
+    eventType: "competition.bracket_seeded",
+    payload: {
+      stageId,
+      method,
+      seededTeams: seededTeams.map((team, idx) => ({
+        seed: team.seed ?? idx + 1,
+        equipoId: team.equipoId,
+        nombre: team.nombre,
+        group: team.group,
+        position: team.position,
+      })),
+      matches: matches.map(match => ({
+        id: match.id,
+        fase: match.fase,
+        ronda: match.ronda,
+        equipoLocalId: match.equipoLocalId,
+        equipoVisitaId: match.equipoVisitaId,
+        seeding: match.metadata?.seeding ?? null,
+      })),
+    },
+    createdAt: NOW(),
+  };
+}
+
+export function createRoundAdvancedEvent({ torneoId, tournamentId, matchId, winnerTeamId, fromPhase, toPhase, targetMatchId = null }) {
+  return {
+    tournamentId: tournamentId ?? torneoId ?? null,
+    eventType: "competition.round_advanced",
+    payload: {
+      matchId,
+      winnerTeamId,
+      fromPhase,
+      toPhase,
+      targetMatchId,
+    },
+    createdAt: NOW(),
+  };
 }
 
 // ── 8. Validaciones (guards) ──────────────────────────────────────────────────
@@ -583,7 +601,7 @@ export function canGenerateFixture(teams, config = {}) {
  */
 export function canCloseGroupStage(groupMatches) {
   const pending = (groupMatches ?? []).filter(m =>
-    m.fase === "grupos" && m.estado !== "finalizado"
+    m.fase === "grupos" && !isMatchCompleted(m)
   ).length;
 
   if (pending > 0) {
@@ -633,6 +651,177 @@ function phasesFromSlots(slots) {
     32: ["treintaidosavos", "octavos", "cuartos", "semis", "final"],
   };
   return map[slots] ?? ["cuartos","semis","final"];
+}
+
+function rankQualifiedTeamsForSeeding(qualifiedTeams, crossingMethod) {
+  if (crossingMethod === "manual") return [...qualifiedTeams];
+
+  if (crossingMethod === "auto_position") {
+    return reorderForClassicCrossing(qualifiedTeams).map((team, idx) => ({ ...team, seed: idx + 1 }));
+  }
+
+  return [...qualifiedTeams]
+    .sort((a, b) =>
+      (a.seed ?? Infinity) - (b.seed ?? Infinity) ||
+      (a.position ?? Infinity) - (b.position ?? Infinity) ||
+      (b.pts ?? 0) - (a.pts ?? 0) ||
+      (b.dg ?? 0) - (a.dg ?? 0) ||
+      (b.gf ?? 0) - (a.gf ?? 0) ||
+      String(a.group ?? "").localeCompare(String(b.group ?? "")) ||
+      String(a.equipoId ?? "").localeCompare(String(b.equipoId ?? ""))
+    )
+    .map((team, idx) => ({ ...team, seed: idx + 1 }));
+}
+
+function buildSeedOrder(slots) {
+  if (slots <= 2) return [1, 2];
+  const previous = buildSeedOrder(slots / 2);
+  return previous.flatMap(seed => [seed, slots + 1 - seed]);
+}
+
+function resolveTiebreakerGroup(rows, tiebreakers, criterionIndex, allMatches, options) {
+  if (rows.length <= 1 || criterionIndex >= tiebreakers.length) return rows;
+
+  const criterion = tiebreakers[criterionIndex];
+  if (criterion === "draw") return rows;
+
+  const buckets = bucketRowsByCriterion(rows, criterion, allMatches, options);
+  return buckets.flatMap(bucket =>
+    bucket.rows.length <= 1
+      ? bucket.rows
+      : resolveTiebreakerGroup(bucket.rows, tiebreakers, criterionIndex + 1, allMatches, options)
+  );
+}
+
+function bucketRowsByCriterion(rows, criterion, allMatches, options) {
+  const decorated = rows.map((row, idx) => ({
+    row,
+    idx,
+    key: tiebreakerKey(row, rows, criterion, allMatches, options),
+  }));
+
+  decorated.sort((a, b) => compareCriterionKeys(a.key, b.key) || a.idx - b.idx);
+
+  const buckets = [];
+  for (const item of decorated) {
+    const last = buckets[buckets.length - 1];
+    if (last && sameCriterionKey(last.key, item.key)) {
+      last.rows.push(item.row);
+    } else {
+      buckets.push({ key: item.key, rows: [item.row] });
+    }
+  }
+  return buckets;
+}
+
+function tiebreakerKey(row, tiedRows, criterion, allMatches, options) {
+  switch (criterion) {
+    case "points":
+      return { value: row.pts ?? 0, direction: "desc" };
+    case "goal_diff":
+      return { value: row.dg ?? 0, direction: "desc" };
+    case "goals_for":
+      return { value: row.gf ?? 0, direction: "desc" };
+    case "h2h": {
+      const miniTable = calculateHeadToHeadMiniTable(tiedRows, allMatches, options.pointsConfig ?? DEFAULT_POINTS_CONFIG);
+      const h2h = miniTable[row.equipoId] ?? { pts: 0, dg: 0, gf: 0 };
+      return { value: [h2h.pts, h2h.dg, h2h.gf], direction: "desc" };
+    }
+    case "fair_play":
+      return { value: getFairPlayPoints(row, options.matchEvents ?? []), direction: "asc" };
+    default:
+      return { value: 0, direction: "desc" };
+  }
+}
+
+function compareCriterionKeys(a, b) {
+  const aValues = Array.isArray(a.value) ? a.value : [a.value];
+  const bValues = Array.isArray(b.value) ? b.value : [b.value];
+  const direction = a.direction === "asc" ? 1 : -1;
+  const len = Math.max(aValues.length, bValues.length);
+
+  for (let i = 0; i < len; i++) {
+    const av = aValues[i] ?? 0;
+    const bv = bValues[i] ?? 0;
+    if (av === bv) continue;
+    return av > bv ? direction : -direction;
+  }
+  return 0;
+}
+
+function sameCriterionKey(a, b) {
+  return compareCriterionKeys(a, b) === 0;
+}
+
+function calculateHeadToHeadMiniTable(tiedRows, allMatches, pointsConfig) {
+  const ids = new Set(tiedRows.map(row => row.equipoId));
+  const table = {};
+  tiedRows.forEach(row => {
+    table[row.equipoId] = { pts: 0, dg: 0, gf: 0, gc: 0, pj: 0 };
+  });
+
+  allMatches
+    .filter(match =>
+      match.fase === "grupos" &&
+      isMatchCompleted(match) &&
+      ids.has(match.equipoLocalId) &&
+      ids.has(match.equipoVisitaId) &&
+      match.golesLocal != null &&
+      match.golesVisita != null
+    )
+    .forEach(match => {
+      const local = table[match.equipoLocalId];
+      const visita = table[match.equipoVisitaId];
+      if (!local || !visita) return;
+
+      local.pj++;
+      visita.pj++;
+      local.gf += match.golesLocal;
+      local.gc += match.golesVisita;
+      visita.gf += match.golesVisita;
+      visita.gc += match.golesLocal;
+
+      if (match.golesLocal > match.golesVisita) {
+        local.pts += pointsConfig.win ?? DEFAULT_POINTS_CONFIG.win;
+        visita.pts += pointsConfig.loss ?? DEFAULT_POINTS_CONFIG.loss;
+      } else if (match.golesLocal < match.golesVisita) {
+        visita.pts += pointsConfig.win ?? DEFAULT_POINTS_CONFIG.win;
+        local.pts += pointsConfig.loss ?? DEFAULT_POINTS_CONFIG.loss;
+      } else {
+        local.pts += pointsConfig.draw ?? DEFAULT_POINTS_CONFIG.draw;
+        visita.pts += pointsConfig.draw ?? DEFAULT_POINTS_CONFIG.draw;
+      }
+    });
+
+  Object.values(table).forEach(row => {
+    row.dg = row.gf - row.gc;
+  });
+  return table;
+}
+
+function getFairPlayPoints(row, matchEvents) {
+  if (row.fairPlayPoints != null) return row.fairPlayPoints;
+  if (row.fairPlay != null) return row.fairPlay;
+  if (row.yellowCards != null || row.redCards != null) {
+    return (row.yellowCards ?? 0) + (row.secondYellowCards ?? 0) * 3 + (row.redCards ?? 0) * 4;
+  }
+
+  return matchEvents
+    .filter(event => (event.teamId ?? event.team_id) === row.equipoId)
+    .reduce((sum, event) => sum + fairPlayWeight(event), 0);
+}
+
+function fairPlayWeight(event) {
+  const type = String(event.type ?? event.eventType ?? event.event_type ?? "").toUpperCase();
+  if (type === "YELLOW_CARD") return 1;
+  if (type === "SECOND_YELLOW" || type === "SECOND_YELLOW_CARD") return 3;
+  if (type === "RED_CARD") return 4;
+
+  const card = String(event.payload?.card ?? event.card ?? "").toLowerCase();
+  if (card === "yellow") return 1;
+  if (card === "second_yellow") return 3;
+  if (card === "red") return 4;
+  return 0;
 }
 
 /**

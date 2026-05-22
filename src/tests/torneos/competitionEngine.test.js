@@ -13,12 +13,25 @@ import {
   getQualifiedTeams,
   generateKnockoutBracket,
   advanceKnockoutWinner,
+  createBracketSeededEvent,
+  createRoundAdvancedEvent,
+  createTiebreakerAppliedEvent,
   canGenerateFixture,
   canCloseGroupStage,
   canGenerateKnockout,
   DEFAULT_POINTS_CONFIG,
   DEFAULT_TIEBREAKERS,
 } from "../../app/torneos/utils/competitionEngine.js";
+import {
+  optimizeSchedule,
+  SCHEDULE_OPTIMIZER_KIND,
+} from "../../app/torneos/utils/scheduleOptimizer.js";
+import {
+  MATCH_STATUS,
+  canTransitionMatchStatus,
+  normalizeMatchStatus,
+  toLegacyMatchStatus,
+} from "../../app/torneos/domain/fixtureState.js";
 
 // ── Helpers de test ──────────────────────────────────────────────────────────
 
@@ -128,6 +141,7 @@ describe("generateRoundRobinFixtures()", () => {
       expect(m.fase).toBe("grupos");
       expect(m.torneoId).toBe("torneo-x");
       expect(m.estado).toBe("pendiente");
+      expect(m.status).toBe(MATCH_STATUS.DRAFT);
     });
   });
 
@@ -217,6 +231,37 @@ describe("applyTiebreakers()", () => {
     ];
     const sorted = applyTiebreakers(teams, DEFAULT_TIEBREAKERS);
     expect(sorted[0].equipoId).toBe("b");
+  });
+
+  it("resuelve triple empate con mini-tabla head-to-head", () => {
+    const teams = [
+      { equipoId: "a", pts: 6, dg: 0, gf: 5 },
+      { equipoId: "b", pts: 6, dg: 0, gf: 5 },
+      { equipoId: "c", pts: 6, dg: 0, gf: 5 },
+    ];
+    const matches = [
+      makeMatch("a", "b", 2, 0, "A"),
+      makeMatch("b", "c", 1, 0, "A"),
+      makeMatch("c", "a", 0, 3, "A"),
+    ];
+
+    const sorted = applyTiebreakers(teams, ["points", "h2h", "goal_diff"], matches);
+    expect(sorted.map(t => t.equipoId)).toEqual(["a", "b", "c"]);
+  });
+
+  it("usa fair play desde match_events como último desempate", () => {
+    const teams = [
+      { equipoId: "a", pts: 3, dg: 0, gf: 2 },
+      { equipoId: "b", pts: 3, dg: 0, gf: 2 },
+    ];
+    const events = [
+      { teamId: "a", type: "YELLOW_CARD" },
+      { teamId: "b", type: "YELLOW_CARD" },
+      { teamId: "b", type: "RED_CARD" },
+    ];
+
+    const sorted = applyTiebreakers(teams, ["points", "goal_diff", "goals_for", "fair_play"], [], { matchEvents: events });
+    expect(sorted[0].equipoId).toBe("a");
   });
 });
 
@@ -320,6 +365,30 @@ describe("generateKnockoutBracket()", () => {
     // 2 partidos × 2 patas = 4 rows
     expect(semis).toHaveLength(4);
   });
+
+  it("siembra 8 clasificados como 1v8, 4v5, 2v7, 3v6 y separa 1 y 2", () => {
+    const q8 = Array.from({ length: 8 }, (_, i) => ({
+      equipoId: `q${i + 1}`,
+      nombre: `Q${i + 1}`,
+      group: "A",
+      position: i + 1,
+      pts: 8 - i,
+      dg: 8 - i,
+      gf: 8 - i,
+    }));
+
+    const matches = generateKnockoutBracket(q8, { torneoId: "t1", crossingMethod: "seeded" });
+    const cuartos = matches.filter(m => m.fase === "cuartos").sort((a, b) => a.orden - b.orden);
+
+    expect(cuartos.map(m => [m.equipoLocalId, m.equipoVisitaId])).toEqual([
+      ["q1", "q8"],
+      ["q4", "q5"],
+      ["q2", "q7"],
+      ["q3", "q6"],
+    ]);
+    expect(cuartos[0].metadata.seeding.localSeed).toBe(1);
+    expect(cuartos[2].metadata.seeding.localSeed).toBe(2);
+  });
 });
 
 // ── 7. advanceKnockoutWinner ─────────────────────────────────────────────────
@@ -334,7 +403,7 @@ describe("advanceKnockoutWinner()", () => {
 
     // Simular resultado del primer partido de semis
     const semiIdx   = matches.indexOf(semiMatch);
-    const resultMatch = { ...semiMatch, golesLocal: 2, golesVisita: 0, estado: "finalizado" };
+    const resultMatch = { ...semiMatch, golesLocal: 2, golesVisita: 0, estado: "finalizado", status: MATCH_STATUS.COMPLETED };
     const updatedMatches = [
       ...matches.slice(0, semiIdx),
       resultMatch,
@@ -404,5 +473,91 @@ describe("canGenerateKnockout()", () => {
     const qualified = [{ equipoId:"a" }, { equipoId:"b" }];
     const { ok }    = canGenerateKnockout(matches, qualified);
     expect(ok).toBe(true);
+  });
+});
+
+// ── 9. Fixture state machine ────────────────────────────────────────────────
+
+describe("fixtureState", () => {
+  it("normaliza estados legacy hacia el enum canónico", () => {
+    expect(normalizeMatchStatus("pendiente")).toBe(MATCH_STATUS.DRAFT);
+    expect(normalizeMatchStatus("programado")).toBe(MATCH_STATUS.SCHEDULED);
+    expect(normalizeMatchStatus("finalizado")).toBe(MATCH_STATUS.COMPLETED);
+  });
+
+  it("mantiene compatibilidad de salida hacia estado legacy durante la transición", () => {
+    expect(toLegacyMatchStatus(MATCH_STATUS.COMPLETED)).toBe("finalizado");
+  });
+
+  it("bloquea transiciones inválidas desde COMPLETED", () => {
+    expect(canTransitionMatchStatus(MATCH_STATUS.COMPLETED, MATCH_STATUS.DRAFT)).toBe(false);
+    expect(canTransitionMatchStatus(MATCH_STATUS.SCHEDULED, MATCH_STATUS.IN_PLAY)).toBe(true);
+  });
+});
+
+// ── 10. Telemetría analítica ────────────────────────────────────────────────
+
+describe("competition analytics events", () => {
+  it("crea eventos de desempate, seeding y avance con payload estructurado", () => {
+    const tieEvent = createTiebreakerAppliedEvent({
+      torneoId: "t1",
+      group: "A",
+      criterion: "h2h",
+      teamIds: ["a", "b", "c"],
+      resolvedOrder: ["a", "b", "c"],
+    });
+    expect(tieEvent.eventType).toBe("competition.tiebreaker_applied");
+    expect(tieEvent.payload.criterion).toBe("h2h");
+
+    const seededEvent = createBracketSeededEvent({
+      torneoId: "t1",
+      seededTeams: [{ equipoId: "q1", seed: 1 }],
+      matches: [{ id: "m1", fase: "final", ronda: 1, equipoLocalId: "q1", equipoVisitaId: "q2", metadata: { seeding: { localSeed: 1, visitaSeed: 2 } } }],
+    });
+    expect(seededEvent.eventType).toBe("competition.bracket_seeded");
+    expect(seededEvent.payload.matches[0].seeding.localSeed).toBe(1);
+
+    const advanceEvent = createRoundAdvancedEvent({
+      torneoId: "t1",
+      matchId: "m1",
+      winnerTeamId: "q1",
+      fromPhase: "semis",
+      toPhase: "final",
+    });
+    expect(advanceEvent.eventType).toBe("competition.round_advanced");
+    expect(advanceEvent.payload.winnerTeamId).toBe("q1");
+  });
+});
+
+// ── 11. Schedule optimizer adapter ──────────────────────────────────────────
+
+describe("optimizeSchedule()", () => {
+  it("usa el adapter local por defecto y devuelve patches estandarizados", async () => {
+    const result = await optimizeSchedule({
+      torneo: {
+        id: "t1",
+        fechaInicio: "2026-06-06",
+        fechaFin: "2026-06-07",
+        schedulingConfig: {
+          diasDisponibles: [6, 0],
+          horaInicio: "10:00",
+          horaFin: "13:00",
+          duracionMin: 90,
+          descansoDias: 0,
+          maxPartidosDia: 2,
+        },
+      },
+      partidos: [
+        { id: "m1", ronda: 1, orden: 1, equipoLocalId: "a", equipoVisitaId: "b" },
+      ],
+      equipos: [{ id: "a" }, { id: "b" }],
+      sedes: [{ id: "s1", nombre: "Cancha 1" }],
+      arbitros: [{ id: "r1", nombre: "Árbitro 1" }],
+    });
+
+    expect(result.kind).toBe(SCHEDULE_OPTIMIZER_KIND.LOCAL_HEURISTIC);
+    expect(result.feasible).toBe(true);
+    expect(result.patches).toHaveLength(1);
+    expect(result.patches[0].id).toBe("m1");
   });
 });

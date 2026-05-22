@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: raw_fixtures
+    database: ALTTEZ_RAW
+    schema: FIXTURES
+    tables:
+      - name: fixture_outbox_raw
+        description: Raw immutable fixture and competition events loaded from transactional outbox.
+        columns:
+          - name: event_id
+            tests:
+              - unique
+              - not_null
+          - name: event_type
+            tests:
+              - not_null
+      - name: match_events_raw
+        description: Raw in-game events loaded from match_events.
+        columns:
+          - name: event_id
+            tests:
+              - unique
+              - not_null
+      - name: fixtures_snapshot_raw
+        description: Optional latest fixture snapshot for result and schedule marts.
+        columns:
+          - name: fixture_id
+            tests:
+              - unique
+              - not_null

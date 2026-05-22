@@ -3,6 +3,8 @@
  * Funciones puras. Sin imports del store ni servicios.
  */
 
+import { LEGACY_MATCH_STATUS, MATCH_STATUS } from "../domain/fixtureState.js";
+
 const ID  = () => crypto.randomUUID();
 const NOW = () => new Date().toISOString();
 
@@ -73,7 +75,8 @@ function generarLiga(equipos, torneoId, grupo, vueltas = 1) {
           equipoLocalId:  local.id,
           equipoVisitaId: visita.id,
           golesLocal: null, golesVisita: null,
-          estado: "pendiente",
+          estado: LEGACY_MATCH_STATUS.PENDING,
+          status: MATCH_STATUS.DRAFT,
           fechaHora: null, lugar: null,
           orden: orden++,
           createdAt: NOW(),
@@ -106,7 +109,8 @@ function generarEliminacion(equipos, torneoId) {
       equipoLocalId:  local?.id  ?? null,
       equipoVisitaId: visita?.id ?? null,
       golesLocal: null, golesVisita: null,
-      estado: local && visita ? "programado" : "bye",
+      estado: local && visita ? LEGACY_MATCH_STATUS.SCHEDULED : LEGACY_MATCH_STATUS.BYE,
+      status: local && visita ? MATCH_STATUS.SCHEDULED : MATCH_STATUS.COMPLETED,
       fechaHora: null, lugar: null,
       orden: orden++,
       createdAt: NOW(),
@@ -122,7 +126,8 @@ function generarEliminacion(equipos, torneoId) {
         fase: fases[f], ronda: f + 1, grupo: null,
         equipoLocalId: null, equipoVisitaId: null,
         golesLocal: null, golesVisita: null,
-        estado: "pendiente",
+        estado: LEGACY_MATCH_STATUS.PENDING,
+        status: MATCH_STATUS.DRAFT,
         fechaHora: null, lugar: null,
         orden: orden++,
         createdAt: NOW(),
@@ -150,7 +155,8 @@ function generarBracketsVacios(torneo, grupos) {
         fase: fases[f], ronda: f + 1, grupo: null,
         equipoLocalId: null, equipoVisitaId: null,
         golesLocal: null, golesVisita: null,
-        estado: "pendiente",
+        estado: LEGACY_MATCH_STATUS.PENDING,
+        status: MATCH_STATUS.DRAFT,
         fechaHora: null, lugar: null,
         orden: orden++,
         createdAt: NOW(),
@@ -194,7 +200,7 @@ export function calcularPosiciones(partidos, equipos) {
   });
 
   partidos
-    .filter(p => p.estado === "finalizado" && p.golesLocal != null && p.golesVisita != null)
+    .filter(p => (p.status === MATCH_STATUS.COMPLETED || p.estado === LEGACY_MATCH_STATUS.COMPLETED) && p.golesLocal != null && p.golesVisita != null)
     .forEach(p => {
       const local   = map[p.equipoLocalId];
       const visita  = map[p.equipoVisitaId];

@@ -76,10 +76,13 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
   const teamLastMatch = {};    // equipoId → dateStr
   const dayCount      = {};    // dateStr → count
   const slotCount     = {};    // dateStr_timeStr → count
-  const sedeIndex     = { v: 0 };
+  const venueSlotUse  = {};
+  const venueDayCount = {};
+  const refereeSlotUse = {};
   const arbitroIndex  = { v: 0 };
   
   const slotCapacity = Math.max(1, sedes.length);
+  const maxMatchesPerVenueDay = cfg.maxPartidosCanchaDia ?? cfg.maxPartidosPorCanchaDia ?? Infinity;
 
   const patches = [];
 
@@ -108,6 +111,22 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
 
     if (!assigned) continue; // no slot found, skip
 
+    const sede = sedes.find(candidate => {
+      const usedSlots = venueSlotUse[candidate.id] ?? new Set();
+      const usedDay = venueDayCount[`${candidate.id}_${assigned.dateStr}`] ?? 0;
+      return !usedSlots.has(assigned.key) && usedDay < maxMatchesPerVenueDay;
+    }) ?? null;
+
+    if (sedes.length > 0 && !sede) continue;
+
+    const arbitro = arbitros.find((_, idx) => {
+      const candidate = arbitros[(arbitroIndex.v + idx) % arbitros.length];
+      const usedSlots = refereeSlotUse[candidate.id] ?? new Set();
+      return !usedSlots.has(assigned.key);
+    }) ?? null;
+
+    if (arbitros.length > 0 && !arbitro) continue;
+
     // Mark slot consumed
     dayCount[assigned.dateStr] = (dayCount[assigned.dateStr] ?? 0) + 1;
     slotCount[assigned.key] = (slotCount[assigned.key] ?? 0) + 1;
@@ -115,10 +134,17 @@ export function autoSchedule({ partidos, sedes, arbitros, torneo }) {
     teamLastMatch[visita] = assigned.dateStr;
 
     // Round-robin sede & árbitro
-    const sede    = sedes.length    > 0 ? sedes[sedeIndex.v % sedes.length]       : null;
-    const arbitro = arbitros.length > 0 ? arbitros[arbitroIndex.v % arbitros.length] : null;
-    sedeIndex.v++;
-    arbitroIndex.v++;
+    if (sede) {
+      if (!venueSlotUse[sede.id]) venueSlotUse[sede.id] = new Set();
+      venueSlotUse[sede.id].add(assigned.key);
+      venueDayCount[`${sede.id}_${assigned.dateStr}`] = (venueDayCount[`${sede.id}_${assigned.dateStr}`] ?? 0) + 1;
+    }
+
+    if (arbitro) {
+      if (!refereeSlotUse[arbitro.id]) refereeSlotUse[arbitro.id] = new Set();
+      refereeSlotUse[arbitro.id].add(assigned.key);
+      arbitroIndex.v = (arbitroIndex.v + 1) % arbitros.length;
+    }
 
     patches.push({
       id:        partido.id,
