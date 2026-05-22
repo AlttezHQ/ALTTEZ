@@ -25,6 +25,7 @@ import { PALETTE as C } from "./shared/tokens/palette";
 const PortalLayout   = lazy(() => import("./marketing/layout/PortalLayout"));
 const PortalHome     = lazy(() => import("./marketing/pages/PortalHome"));
 const SportsCRMPage  = lazy(() => import("./marketing/pages/SportsCRMPage"));
+const TemporaryPortal = lazy(() => import("./marketing/pages/TemporaryPortal"));
 const JournalPage    = lazy(() => import("./marketing/pages/JournalPage"));
 const QuienesSomos   = lazy(() => import("./marketing/pages/QuienesSomos"));
 const Contacto       = lazy(() => import("./marketing/pages/Contacto"));
@@ -35,6 +36,13 @@ const PublicProposalPage  = lazy(() => import("./marketing/pages/PublicProposalP
 
 // ── CRM Shell ──
 const CRMApp = lazy(() => import("./app/shell/CRMApp"));
+
+// ── Auth & SSO ──
+const AuthPortal        = lazy(() => import("./app/auth/AuthPortal"));
+const AuthLoginForm     = lazy(() => import("./shared/auth/components/AuthLoginForm"));
+const AuthRegisterForm  = lazy(() => import("./shared/auth/components/AuthRegisterForm"));
+const RecoverPasswordForm = lazy(() => import("./shared/auth/components/RecoverPasswordForm"));
+const AppLauncher       = lazy(() => import("./app/auth/AppLauncher"));
 
 // ── ALTTEZ Torneos ──
 const TorneosApp = lazy(() => import("./app/torneos/TorneosApp"));
@@ -70,9 +78,12 @@ export default function App() {
       <AuthProvider>
         <ToastContainer />
         <Routes>
-          {/* Portal Corporativo — rutas con navbar compartida */}
+          {/* Portal de Acceso Temporal (Reemplaza la Landing Page) */}
+          <Route path="/" element={<Suspense fallback={<LoadingFallback />}><TemporaryPortal /></Suspense>} />
+
+          {/* Portal Corporativo — rutas ocultas temporalmente */}
           <Route element={<Suspense fallback={<LoadingFallback />}><PortalLayout /></Suspense>}>
-            <Route index element={<PortalHome />} />
+            {/* <Route index element={<PortalHome />} /> */}
             <Route path="quienes-somos" element={<QuienesSomos />} />
             <Route path="contacto" element={<Contacto />} />
             <Route path="producto/alttezcrm" element={<SportsCRMPage />} />
@@ -115,6 +126,13 @@ export default function App() {
               </Suspense>
             }
           />
+          {/* SSO Portal */}
+          <Route path="/auth" element={<Suspense fallback={<LoadingFallback />}><AuthPortal /></Suspense>}>
+            <Route path="login" element={<AuthLoginForm />} />
+            <Route path="register" element={<AuthRegisterForm />} />
+            <Route path="recover" element={<RecoverPasswordForm />} />
+          </Route>
+          <Route path="/launcher" element={<Suspense fallback={<LoadingFallback />}><AppLauncher /></Suspense>} />
           {/* CRM App — sistema de gestion deportiva */}
           <Route path="/crm/*" element={<Suspense fallback={<LoadingFallback />}><CRMApp /></Suspense>} />
           {/* ALTTEZ Torneos — producto independiente */}

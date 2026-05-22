@@ -120,7 +120,8 @@ export async function signOut() {
 
   const { error } = await supabase.auth.signOut();
   if (error) {
-    reportError("Error al cerrar sesion", error);
+    console.warn("Advertencia al cerrar sesion (Supabase):", error.message);
+    // No disparamos reportError para evitar el toast rojo
     return false;
   }
   return true;

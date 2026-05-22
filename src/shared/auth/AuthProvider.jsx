@@ -27,7 +27,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { isSupabaseReady, supabase } from "../lib/supabase";
+import { isSupabaseReady, supabase, getStoredSession } from "../lib/supabase";
 import {
   signIn as authSignIn,
   signUp as authSignUp,
@@ -45,20 +45,28 @@ import { AuthContext } from "./AuthContext";
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export default function AuthProvider({ children }) {
+  // Leer la sesion guardada de forma sincrona al inicializar
+  // para evitar el flash de loading cuando el usuario vuelve a la ventana.
+  const storedUser = isSupabaseReady ? getStoredSession() : null;
+
   // undefined = checking initial session, null = no session, object = authenticated
-  const [user, setUser] = useState(isSupabaseReady ? undefined : null);
+  // Si ya habia usuario guardado, arrancamos con el user pre-cargado (sin flicker).
+  const [user, setUser] = useState(storedUser ?? (isSupabaseReady ? undefined : null));
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
 
   // Granular loading states
-  const [loadingAuth, setLoadingAuth] = useState(isSupabaseReady);
+  // Si ya habia sesion guardada, no necesitamos bloquear la UI con loadingAuth.
+  const [loadingAuth, setLoadingAuth] = useState(isSupabaseReady && !storedUser);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Error states
   const [authError, setAuthError] = useState(null);
   const [profileError, setProfileError] = useState(null);
   const authCheckId = useRef(0);
-  const authenticatedOnce = useRef(false);
+  // Si ya habia usuario guardado al arrancar, marcamos authenticatedOnce=true
+  // para que el guard de SIGNED_OUT no limpie el estado incorrectamente.
+  const authenticatedOnce = useRef(!!storedUser);
   const explicitSignOut = useRef(false);
 
   const loadProfile = useCallback(async () => {
@@ -89,8 +97,8 @@ export default function AuthProvider({ children }) {
     setAuthError(null);
     setLoadingAuth(false);
 
-    await loadProfile();
-    return signedUser;
+    const prof = await loadProfile();
+    return prof;
   }, [loadProfile]);
 
   // ── Bootstrap: check existing session + subscribe to changes ──
@@ -107,6 +115,17 @@ export default function AuthProvider({ children }) {
     // 1. Check existing session
     const bootstrap = async () => {
       try {
+        // Si ya tenemos un usuario del token guardado, cargar perfil inmediatamente
+        // sin esperar a getUser(). getUser() sigue corriendo para validar con Supabase.
+        if (storedUser && mounted) {
+          authenticatedOnce.current = true;
+          setLoadingProfile(true);
+          setUser(storedUser);
+          setLoadingAuth(false);
+          // Cargar perfil en background (no bloquea render)
+          loadProfile();
+        }
+
         // Safety timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 5000)
@@ -121,11 +140,17 @@ export default function AuthProvider({ children }) {
 
         if (existingUser) {
           authenticatedOnce.current = true;
-          setLoadingProfile(true);
-          setUser(existingUser);
-          setLoadingAuth(false);
-
-          await loadProfile();
+          // Solo actualizar user si no lo habiamos pre-cargado (o si cambio)
+          if (!storedUser || existingUser.id !== storedUser.id) {
+            setLoadingProfile(true);
+            setUser(existingUser);
+            setLoadingAuth(false);
+            await loadProfile();
+          } else {
+            // storedUser ya cargado — confirmar con el user del servidor
+            setUser(existingUser);
+            setLoadingAuth(false);
+          }
         } else {
           if (authenticatedOnce.current) return;
           setUser(null);
@@ -134,7 +159,10 @@ export default function AuthProvider({ children }) {
       } catch (err) {
         console.error("[Auth] Bootstrap error:", err);
         if (mounted && currentAuthCheck === authCheckId.current) {
-          setUser(null);
+          // Solo limpiar si no habia sesion guardada valida
+          if (!storedUser) {
+            setUser(null);
+          }
           setLoadingAuth(false);
           setAuthError(err.message === "AUTH_TIMEOUT" 
             ? "No se pudo conectar con el servidor de autenticación" 
@@ -178,7 +206,8 @@ export default function AuthProvider({ children }) {
   const handleSignIn = useCallback(async (email, password) => {
     const result = await authSignIn(email, password);
     if (!result?.error) {
-      await applyAuthenticatedSession(result.session, result.user);
+      const profile = await applyAuthenticatedSession(result.session, result.user);
+      result.profile = profile;
     }
 
     return result;

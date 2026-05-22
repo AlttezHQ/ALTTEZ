@@ -5,7 +5,7 @@
  *
  * Política:
  *  - Email: trim + lowercase + sanitize + regex
- *  - Password: mínimo 6 caracteres
+ *  - Password: mínimo 8 caracteres
  *  - Campos requeridos: varían según producto (CRM vs Torneos)
  *  - Mensajes: español consistente
  *
@@ -17,7 +17,7 @@ import { sanitizeEmail, sanitizeTextFinal } from "../utils/sanitize";
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD_LENGTH = 8;
 
 /**
  * Campos requeridos según producto/source.
@@ -75,43 +75,50 @@ export function validateLoginForm(form) {
  * @param {{ consentData: boolean, consentGuardian: boolean }} consents
  * @returns {{ errors: Object, cleanData: Object | null }}
  */
-export function validateRegisterForm(form, source = "crm", consents = {}) {
+export function validateRegisterForm(form, source = "universal", { consentData, consentGuardian } = {}) {
   const errors = {};
-  const requiredFields = REQUIRED_FIELDS[source] || REQUIRED_FIELDS.crm;
 
-  // Campos requeridos según producto
-  requiredFields.forEach((key) => {
-    if (!form[key] || !String(form[key]).trim()) {
-      errors[key] = "Campo obligatorio";
+  if (!form.nombre?.trim()) {
+    errors.nombre = "El nombre es obligatorio.";
+  }
+
+  const cleanEmail = String(form.email || "").trim().toLowerCase();
+  if (!cleanEmail) {
+    errors.email = "El email es obligatorio.";
+  } else if (!EMAIL_RE.test(cleanEmail)) {
+    errors.email = "Ingresa un email válido.";
+  }
+
+  const cleanPassword = String(form.password || "");
+  if (!cleanPassword) {
+    errors.password = "La contraseña es obligatoria.";
+  } else if (cleanPassword.length < MIN_PASSWORD_LENGTH) {
+    errors.password = `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+  }
+
+  if (cleanPassword !== String(form.confirmPassword || "")) {
+    errors.confirmPassword = "Las contraseñas no coinciden.";
+  }
+
+  if (source === "universal") {
+    if (!consentData) {
+      errors.consentData = "Debes aceptar la política de privacidad.";
     }
-  });
-
-  // Email
-  const cleanEmail = normalizeEmail(form.email);
-  if (!cleanEmail || !EMAIL_RE.test(cleanEmail)) {
-    errors.email = "Email obligatorio y válido";
-  }
-
-  // Password
-  if (!form.password || form.password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`;
-  }
-
-  // Rol (solo CRM)
-  if (source === "crm" && form.role) {
-    // Validación básica — el módulo roles.js tiene la lista completa
-    const validRoles = ["admin", "coach", "staff"];
-    if (!validRoles.includes(form.role)) {
-      errors.role = "Rol inválido";
+  } else if (source === "torneos") {
+    if (!form.ciudad?.trim()) errors.ciudad = "La ciudad es obligatoria.";
+    if (!consentData) {
+      errors.consentData = "Debes aceptar la política de privacidad.";
     }
-  }
-
-  // Consentimientos
-  if (!consents.consentData) {
-    errors.consentData = "Debes aceptar la política de tratamiento de datos";
-  }
-  if (source === "crm" && !consents.consentGuardian) {
-    errors.consentGuardian = "Debes certificar la autorización parental";
+  } else if (source === "crm") {
+    if (!form.ciudad?.trim()) errors.ciudad = "La ciudad es obligatoria.";
+    if (!form.entrenador?.trim()) errors.entrenador = "El nombre del director técnico es obligatorio.";
+    if (!form.categorias?.trim()) errors.categorias = "Debes especificar al menos una categoría.";
+    if (!consentData) {
+      errors.consentData = "Debes aceptar la política de privacidad.";
+    }
+    if (!consentGuardian) {
+      errors.consentGuardian = "Debes confirmar la autorización de datos de menores.";
+    }
   }
 
   const hasErrors = Object.keys(errors).length > 0;

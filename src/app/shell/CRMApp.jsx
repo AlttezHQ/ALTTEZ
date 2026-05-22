@@ -24,7 +24,7 @@ import { clearSnapshots, setHealthClubId } from "../../shared/services/healthSer
 import { PALETTE as C } from "../../shared/tokens/palette";
 import { canAccessModule } from "../../shared/constants/roles";
 
-import { isSupabaseReady } from "../../shared/lib/supabase";
+import { isSupabaseReady, supabase } from "../../shared/lib/supabase";
 import { createClub as sbCreateClub, setClubId, migrateLocalToSupabase, loadClubIdFromProfile } from "../../shared/services/supabaseService";
 import { setProposalsClubId } from "../../shared/services/proposalsService";
 import { exportBackupJSON } from "../../shared/services/backupService";
@@ -34,7 +34,7 @@ import UpdateToast from "../../shared/ui/UpdateToast";
 import MiniTopbar from "./MiniTopbar";
 
 // ── React.lazy: code-splitting por modulo ──
-const LandingPage = lazy(() => import("../../shared/auth/LandingPage"));
+const CrmOnboarding = lazy(() => import("./CrmOnboarding"));
 const Home = lazy(() => import("../dashboard/Home"));
 const Entrenamiento = lazy(() => import("../training/Entrenamiento"));
 const GestionPlantilla = lazy(() => import("../roster/GestionPlantilla"));
@@ -48,6 +48,22 @@ const Reportes = lazy(() => import("../analytics/Reportes"));
 const ProposalsAdminModule = lazy(() => import("../proposals/ProposalsAdminModule"));
 
 const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
+
+/**
+ * Lee el `mode` que Zustand persiste en localStorage de forma sincrona.
+ * Esto evita mostrar el spinner mientras Supabase re-verifica la sesion.
+ * Devuelve null si no hay nada guardado o el dato es invalido.
+ */
+function readPersistedMode() {
+  try {
+    const raw = localStorage.getItem("alttez-store");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.mode ?? null;
+  } catch {
+    return null;
+  }
+}
 
 const URL_TO_MODULE = {
   home: "home",
@@ -147,11 +163,32 @@ export function CRMApp() {
   const setMatchStats = useStore(state => state.setMatchStats);
   const setFinanzas = useStore(state => state.setFinanzas);
   const _clearStore = useStore(state => state.clearStore);
+
+  const persistedMode = useState(() => readPersistedMode())[0];
+  const [authVerifying, setAuthVerifying] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   // Role: demo siempre admin; sin Supabase configurado modo offline también admin
   // Con Supabase usa el role del AuthProvider global.
   const userRole = mode === "demo" || (mode && !isSupabaseReady)
     ? "admin"
     : (auth.role ?? null);
+
+  useEffect(() => {
+    if (!persistedMode || persistedMode === "demo" || !isSupabaseReady) return;
+    let cancelled = false;
+    setAuthVerifying(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      setAuthVerifying(false);
+      if (!session) {
+        setMode(null);
+      }
+    }).catch(() => {
+      if (!cancelled) setAuthVerifying(false);
+    });
+    return () => { cancelled = true; };
+  }, [persistedMode, setMode]);
 
   useEffect(() => {
     if (mode || !auth.isAuthenticated || !auth.isProfileReady) return;
@@ -171,6 +208,20 @@ export function CRMApp() {
       loadClubIdFromProfile();
     }
   }, [auth.clubId]);
+
+  // Auto-migrate legacy clubs to new role system
+  useEffect(() => {
+    const userRoles = auth.user?.user_metadata?.roles || [];
+    const hasClubRole = userRoles.includes("club");
+    const isLegacyClub = !hasClubRole && !!auth.clubId;
+
+    if (isLegacyClub && isSupabaseReady && supabase) {
+      const newRoles = Array.from(new Set([...userRoles, "club"]));
+      supabase.auth.updateUser({ data: { roles: newRoles } }).then(() => {
+        supabase.auth.refreshSession();
+      }).catch(e => console.error("Error auto-migrating legacy club:", e));
+    }
+  }, [auth.clubId, auth.user]);
 
   // URL segment → activeModule. Permite deep-link a /crm/<modulo>.
   // Kiosk se maneja aparte (bloque dedicado abajo).
@@ -305,6 +356,7 @@ export function CRMApp() {
   }, [setSession, setMode, navigate, auth, location.pathname]);
 
   const handleLogout = useCallback(async () => {
+    setIsLoggingOut(true);
     // Cerrar sesion via AuthProvider (maneja Supabase Auth)
     await auth.signOut();
     logoutService();
@@ -324,15 +376,14 @@ export function CRMApp() {
 
   // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado,
   // y tanto auth como profile ya terminaron de cargar, forzar logout.
-  // FIX: no dispara logout mientras loadingAuth o loadingProfile están activos.
   useEffect(() => {
-    if (mode && !userRole && !auth.loadingAuth && !auth.loadingProfile) {
+    if (mode && !userRole && !auth.loadingAuth && !auth.loadingProfile && !authVerifying) {
       const logoutId = setTimeout(() => {
         handleLogout();
       }, 0);
       return () => clearTimeout(logoutId);
     }
-  }, [mode, userRole, auth.loadingAuth, auth.loadingProfile, handleLogout]);
+  }, [mode, userRole, auth.loadingAuth, auth.loadingProfile, authVerifying, handleLogout]);
 
   // Auto-demo: si llegan desde el portal con ?demo=true
   useEffect(() => {
@@ -355,16 +406,26 @@ export function CRMApp() {
     );
   }
 
-  // ── Landing: directo al formulario de login/registro ──
-  if (!mode) {
+  // ── Redirect a Login si no hay modo ──
+  if (!mode && !persistedMode) {
+    if (auth.loadingAuth || auth.loadingProfile || auth.isAuthenticated) {
+      return <LoadingFallback />;
+    }
+    return <Navigate to="/auth/login?redirect=/crm" replace />;
+  }
+
+  // ── Verificacion rapida mientras Supabase confirma sesion en background ──
+  if (!mode && persistedMode && authVerifying) {
+    return <LoadingFallback />;
+  }
+
+  // ── Onboarding (Progressive Profiling) ──
+  if (mode === "production" && auth.isProfileReady && !auth.clubId && userRole !== "admin") {
     return (
       <div style={{ minHeight:"100vh", background:"#FAFAF8", position:"relative" }}>
-        <FieldBackground />
         <ToastContainer />
-        <OfflineBanner />
-        <UpdateToast />
         <Suspense fallback={<LoadingFallback />}>
-          <LandingPage onRegister={handleRegister} onLogin={handleLogin} />
+          <CrmOnboarding onComplete={() => window.location.reload()} />
         </Suspense>
       </div>
     );
@@ -383,6 +444,10 @@ export function CRMApp() {
   );
 
   const isHomeModule = activeModule === "home";
+
+  if (isLoggingOut) {
+    return <LoadingFallback />;
+  }
 
   // ── Routing con ErrorBoundary + Suspense por modulo ──
   return (

@@ -7,9 +7,9 @@ const PAGE_BG = {
   alignItems: "center",
   justifyContent: "center",
   background: `
-    radial-gradient(circle at 12% 12%, rgba(201,151,58,0.08), transparent 24%),
-    radial-gradient(circle at 88% 18%, rgba(201,151,58,0.10), transparent 22%),
-    linear-gradient(180deg, #F6F1EA 0%, #FDFDFB 100%)
+    radial-gradient(circle at 15% 15%, var(--color-bronce-dim), transparent 30%),
+    radial-gradient(circle at 85% 85%, rgba(216,154,43,0.08), transparent 30%),
+    var(--color-bg)
   `,
   padding: "40px 24px",
   position: "relative",
@@ -20,9 +20,10 @@ const GRID = {
   position: "absolute",
   inset: 0,
   pointerEvents: "none",
-  backgroundImage: "linear-gradient(rgba(23,26,28,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(23,26,28,0.018) 1px, transparent 1px)",
-  backgroundSize: "60px 60px",
-  maskImage: "linear-gradient(180deg, rgba(0,0,0,0.52), transparent 92%)",
+  backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)",
+  backgroundSize: "64px 64px",
+  maskImage: "radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, transparent 80%)",
+  WebkitMaskImage: "radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, transparent 80%)",
 };
 
 /**

@@ -3,77 +3,76 @@
  * @description Lógica centralizada de navegación post-auth para ALTTEZ.
  * Define destinos correctos después de login, registro y logout.
  *
- * Principios:
- *  - Login desde /crm → queda en /crm
- *  - Login desde /torneos → queda en /torneos
- *  - Login con ?redirect= → respeta el redirect
- *  - Logout → vuelve al auth gate del producto donde estaba
- *  - Nunca redirige al portal marketing ("/") después de logout de producto
- *
- * @version 1.0.0
+ * @version 2.0.0
  */
 
-// ── Rutas válidas para redirect ─────────────────────────────────────────────
-
-const ALLOWED_REDIRECTS = ["/crm", "/torneos"];
+const ALLOWED_REDIRECTS = ["/crm", "/torneos", "/launcher"];
 
 /**
- * Determina el destino post-login.
- * Prioridad: redirectPath explícito > ruta del producto > /crm por defecto.
+ * Determina el destino post-login implementando Smart Routing.
  *
  * @param {Object} options
  * @param {string|null} options.redirectPath - Ruta explícita solicitada
  * @param {string|null} options.currentPath  - Ruta actual del usuario
- * @param {Object|null} options.profile      - Perfil con club_id, role, etc.
+ * @param {Object|null} options.userMetadata - Metadata (roles) de Supabase Auth
  * @returns {string} Ruta destino
  */
-export function getPostLoginRedirect({ redirectPath, currentPath } = {}) {
-  // 1. Redirect explícito (si es válido)
+export function getPostLoginRedirect({ redirectPath, currentPath, userMetadata, profile } = {}) {
+  const roles = userMetadata?.roles || [];
+  
+  // Detección de roles implícitos para cuentas Legacy
+  const impliedClubRole = roles.includes("club") || Boolean(profile?.club_id);
+  const impliedOrganizadorRole = roles.includes("organizador");
+
+  // 1. Prioridad Máxima: Usuarios Multi-Entorno siempre pasan por el App Launcher
+  if (impliedClubRole && impliedOrganizadorRole) {
+    return "/launcher";
+  }
+
+  // 2. Redirect explícito (si es válido)
   if (redirectPath && ALLOWED_REDIRECTS.some(r => redirectPath.startsWith(r))) {
     return redirectPath;
   }
 
-  // 2. Mantener en el producto actual
+  // 3. Si venía de una ruta de producto válida
   if (currentPath) {
     if (currentPath.startsWith("/torneos")) return currentPath;
     if (currentPath.startsWith("/crm")) return currentPath;
   }
 
-  // 3. Default: CRM
-  return "/crm";
+  // 4. Smart Routing basado en roles (explícitos o implícitos)
+  if (impliedClubRole && !impliedOrganizadorRole) return "/crm";
+  if (impliedOrganizadorRole && !impliedClubRole) return "/torneos";
+
+  if (userMetadata && userMetadata.current_app === "torneos") return "/torneos";
+  if (userMetadata && userMetadata.current_app === "crm") return "/crm";
+
+  // 5. Default fallback para el ecosistema: App Launcher
+  // Esto permite que usuarios legacy sin roles definidos, o usuarios nuevos,
+  // elijan a dónde quieren ir.
+  return "/launcher";
 }
 
 /**
  * Determina el destino post-logout.
- * El usuario debe volver al auth gate del producto donde estaba,
- * NO al portal marketing.
+ * Single Sign-Out: siempre expulsa al portal de autenticación único.
  *
- * @param {string} currentPath - Ruta actual del usuario
  * @returns {string} Ruta destino
  */
-export function getPostLogoutRedirect(currentPath) {
-  // Si estaba en Torneos, vuelve al auth gate de Torneos
-  if (currentPath && currentPath.startsWith("/torneos")) {
-    return "/torneos";
-  }
-  // Si estaba en CRM, vuelve al auth gate de CRM
-  if (currentPath && currentPath.startsWith("/crm")) {
-    return "/crm";
-  }
-  // Fallback: portal
-  return "/";
+export function getPostLogoutRedirect() {
+  return "/auth/login";
 }
 
 /**
  * Determina el destino post-registro.
- * Registro para torneos → /torneos
- * Registro para CRM → /crm (el CRMApp maneja el setup de estado)
+ * El registro universal envía a CRM por defecto para su Onboarding,
+ * o si sabemos que venía para Torneos, lo mandamos a Torneos.
  *
- * @param {string} source - "torneos" | "crm" | null
+ * @param {string} source - "universal" | "torneos" | "crm"
  * @returns {string} Ruta destino
  */
 export function getPostRegisterRedirect(source) {
-  if (source === "torneos") return "/torneos";
+  // Con el SSO, el source suele ser universal. El routing lo enviará a CRM para onboarding
   return "/crm";
 }
 
