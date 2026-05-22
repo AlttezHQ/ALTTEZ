@@ -7,9 +7,11 @@ import {
 import { useTorneosStore } from "../store/useTorneosStore";
 import { generarFixture, calcularPosiciones } from "../utils/fixturesEngine";
 import { generateGroups, generateRoundRobinFixtures } from "../utils/competitionEngine";
+import { LEGACY_MATCH_STATUS, MATCH_STATUS } from "../domain/fixtureState";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
 import AlttezLoader from "../components/shared/AlttezLoader";
 import { showToast } from "../../../shared/ui/Toast";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 
 const CU     = PALETTE.bronce;
@@ -263,9 +265,41 @@ function ResultModal({ partido, equipos, onSave, onClose }) {
   );
 }
 
-function GenerateFixtureModal({ torneo, category, equipos, onConfirm, onClose }) {
+function estimateRoundRobinMatches(teamCount, groupCount = 1, legs = 1) {
+  if (teamCount < 2) return 0;
+  const groupsCount = Math.max(1, Number(groupCount) || 1);
+  const baseSize = Math.floor(teamCount / groupsCount);
+  const extraTeams = teamCount % groupsCount;
+  let total = 0;
+  for (let i = 0; i < groupsCount; i++) {
+    const size = baseSize + (i < extraTeams ? 1 : 0);
+    total += (size * (size - 1)) / 2;
+  }
+  return total * Math.max(1, Number(legs) || 1);
+}
+
+function GenerateFixtureModal({ torneo, category, categoryConfig, equipos, existingMatches = 0, onConfirm, onClose }) {
   const [ini, setIni] = useState(torneo.fechaInicio || "");
   const [fin, setFin] = useState(torneo.fechaFin    || "");
+  const isGroupsPlayoffs = categoryConfig?.format === "grupos_playoffs";
+  const [settings, setSettings] = useState(() => ({
+    groupsCount: Number(categoryConfig?.groupsCount ?? categoryConfig?.grupos ?? 1) || 1,
+    groupLegs: Number(categoryConfig?.groupLegs ?? categoryConfig?.vueltas ?? 1) || 1,
+    assignmentMethod: categoryConfig?.assignmentMethod ?? "auto_serpentina",
+    qualifyPerGroup: Number(categoryConfig?.qualifyPerGroup ?? categoryConfig?.cpg ?? 2) || 2,
+    allowBestThirds: Boolean(categoryConfig?.allowBestThirds),
+    bestThirdsCount: Number(categoryConfig?.bestThirdsCount ?? 0) || 0,
+  }));
+  const updateSetting = (key, value) => setSettings(prev => ({ ...prev, [key]: value }));
+  const groupsCount = settings.groupsCount;
+  const groupLegs = settings.groupLegs;
+  const estimatedMatches = equipos.length < 2
+    ? 0
+    : isGroupsPlayoffs
+      ? estimateRoundRobinMatches(equipos.length, groupsCount, groupLegs)
+      : estimateRoundRobinMatches(equipos.length, 1, groupLegs);
+  const maxGroups = Math.max(1, Math.floor(equipos.length / 2));
+  const canConfirm = Boolean(ini && fin && equipos.length >= 2 && (!fin || !ini || fin >= ini));
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(23,26,28,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, fontFamily: FONT }}>
@@ -286,13 +320,71 @@ function GenerateFixtureModal({ torneo, category, equipos, onConfirm, onClose })
               <input type="date" value={fin} onChange={e => setFin(e.target.value)} style={inputStyle} />
             </div>
           </div>
-          <div style={{ padding: 12, background: BG, borderRadius: 10, border: `1px solid ${BORDER}` }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>Equipos en {category}: {equipos.length}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {isGroupsPlayoffs && (
+              <div>
+                <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>GRUPOS</label>
+                <select value={settings.groupsCount} onChange={e => updateSetting("groupsCount", Number(e.target.value))} style={inputStyle}>
+                  {Array.from({ length: Math.min(16, maxGroups) }, (_, i) => i + 1).map(n => (
+                    <option key={n} value={n}>{n} grupo{n !== 1 ? "s" : ""}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>VUELTAS</label>
+              <select value={settings.groupLegs} onChange={e => updateSetting("groupLegs", Number(e.target.value))} style={inputStyle}>
+                <option value={1}>Una vuelta</option>
+                <option value={2}>Ida y vuelta</option>
+              </select>
+            </div>
+            {isGroupsPlayoffs && (
+              <>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>ASIGNACION</label>
+                  <select value={settings.assignmentMethod} onChange={e => updateSetting("assignmentMethod", e.target.value)} style={inputStyle}>
+                    <option value="auto_serpentina">Serpentina</option>
+                    <option value="auto_random">Aleatoria</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>CLASIFICAN</label>
+                  <select value={settings.qualifyPerGroup} onChange={e => updateSetting("qualifyPerGroup", Number(e.target.value))} style={inputStyle}>
+                    {[1,2,3,4].map(n => <option key={n} value={n}>{n} por grupo</option>)}
+                  </select>
+                </div>
+                <label style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: 10, padding: 12, background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, cursor: "pointer" }}>
+                  <input type="checkbox" checked={settings.allowBestThirds} onChange={e => updateSetting("allowBestThirds", e.target.checked)} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>Permitir mejores terceros</span>
+                  {settings.allowBestThirds && (
+                    <input type="number" min="1" max="8" value={settings.bestThirdsCount} onChange={e => updateSetting("bestThirdsCount", Number(e.target.value) || 0)} style={{ ...inputStyle, width: 72, marginLeft: "auto" }} />
+                  )}
+                </label>
+              </>
+            )}
           </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {[
+              { label: "Equipos", value: equipos.length },
+              { label: "Formato", value: isGroupsPlayoffs ? `${groupsCount} grupos` : "Fixture base" },
+              { label: "Vueltas", value: groupLegs },
+              { label: "Partidos", value: estimatedMatches },
+            ].map(item => (
+              <div key={item.label} style={{ padding: 12, background: BG, borderRadius: 10, border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: "0.04em", textTransform: "uppercase" }}>{item.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: TEXT, marginTop: 3 }}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+          {existingMatches > 0 && (
+            <div style={{ padding: 12, background: "#FFF7ED", borderRadius: 10, border: "1px solid #FED7AA", color: "#9A3412", fontSize: 12, fontWeight: 700, lineHeight: 1.45 }}>
+              Se reemplazaran {existingMatches} partido{existingMatches !== 1 ? "s" : ""} existentes de esta categoria.
+            </div>
+          )}
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={onClose} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${BORDER}`, background: "none", fontSize: 13, fontWeight: 700, color: MUTED, cursor: "pointer" }}>Cancelar</button>
-          <button onClick={() => onConfirm(ini, fin)} style={{ flex: 2, padding: "12px", borderRadius: 10, border: "none", background: CU, fontSize: 13, fontWeight: 700, color: "#FFF", cursor: "pointer" }}>Generar Fixture</button>
+          <button disabled={!canConfirm} onClick={() => onConfirm(ini, fin, settings)} style={{ flex: 2, padding: "12px", borderRadius: 10, border: "none", background: canConfirm ? CU : BORDER, fontSize: 13, fontWeight: 700, color: "#FFF", cursor: canConfirm ? "pointer" : "not-allowed" }}>Generar Fixture</button>
         </div>
       </motion.div>
     </div>
@@ -310,15 +402,19 @@ export default function FixturesPage({ onGoTorneos }) {
   const allPartidos        = useTorneosStore(s => s.partidos);
   const allSedes           = useTorneosStore(s => s.sedes);
   const allArbitros        = useTorneosStore(s => s.arbitros);
+  const allCategorias      = useTorneosStore(s => s.categorias);
   
   const setPartidos        = useTorneosStore(s => s.setPartidos);
   const registrarResultado = useTorneosStore(s => s.registrarResultado);
+  const registrarEventoCompeticion = useTorneosStore(s => s.registrarEventoCompeticion);
+  const autoSchedulePartidos = useTorneosStore(s => s.autoSchedulePartidos);
   const actualizarCfg      = useTorneosStore(s => s.actualizarSchedulingConfig);
   const agregarSede        = useTorneosStore(s => s.agregarSede);
   const eliminarSede       = useTorneosStore(s => s.eliminarSede);
   const agregarArbitro     = useTorneosStore(s => s.agregarArbitro);
   const eliminarArbitro    = useTorneosStore(s => s.eliminarArbitro);
   const actualizarTorneo   = useTorneosStore(s => s.actualizarTorneo);
+  const actualizarCategoria = useTorneosStore(s => s.actualizarCategoria);
   const actualizarEquiposBatch = useTorneosStore(s => s.actualizarEquiposBatch);
   const getCompetitionConfig   = useTorneosStore(s => s.getCompetitionConfig);
 
@@ -327,6 +423,8 @@ export default function FixturesPage({ onGoTorneos }) {
   const [modalPartido, setModalPartido] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [showGenModal, setShowGenModal] = useState(false);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [scheduleReport, setScheduleReport] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [newSede, setNewSede] = useState({ nombre: "" });
   const [newArbitro, setNewArbitro] = useState({ nombre: "" });
@@ -344,14 +442,30 @@ export default function FixturesPage({ onGoTorneos }) {
 
   const categories = useMemo(() => {
     if (!torneoActivoId) return [];
+    const configured = allCategorias
+      .filter(c => c.torneoId === torneoActivoId)
+      .map(c => c.nombre)
+      .filter(Boolean);
+    if (configured.length > 0) return configured.sort();
     return [...new Set(allEquipos.filter(e => e.torneoId === torneoActivoId).map(e => e.grupo || "General"))].sort();
-  }, [allEquipos, torneoActivoId]);
+  }, [allCategorias, allEquipos, torneoActivoId]);
+
+  const activeCat = selectedCat || categories[0];
+  const activeCatConfig = useMemo(() => {
+    if (!torneoActivoId || !activeCat) return null;
+    return allCategorias.find(c => c.torneoId === torneoActivoId && c.nombre === activeCat) ?? null;
+  }, [activeCat, allCategorias, torneoActivoId]);
 
   const partidosCat = useMemo(() => {
     if (!torneoActivoId || !selectedCat && categories.length === 0) return [];
     const active = selectedCat || categories[0];
-    return allPartidos.filter(p => p.torneoId === torneoActivoId && (p.grupo || "General") === active);
-  }, [allPartidos, torneoActivoId, selectedCat, categories]);
+    const categoryConfig = allCategorias.find(c => c.torneoId === torneoActivoId && c.nombre === active);
+    return allPartidos.filter(p => {
+      if (p.torneoId !== torneoActivoId) return false;
+      if (categoryConfig?.id) return p.categoriaId === categoryConfig.id;
+      return (p.grupo || "General") === active;
+    });
+  }, [allCategorias, allPartidos, torneoActivoId, selectedCat, categories]);
 
   const maxRound = useMemo(() => Math.max(0, ...partidosCat.map(p => p.ronda || 0)), [partidosCat]);
 
@@ -376,8 +490,18 @@ export default function FixturesPage({ onGoTorneos }) {
     });
   }, [groups]);
 
-  const activeCat = selectedCat || categories[0];
-  const equiposCat = allEquipos.filter(e => e.torneoId === torneoActivoId && (e.grupo || "General") === activeCat);
+  const partidosCatTeamIds = useMemo(() => {
+    const ids = new Set();
+    partidosCat.forEach(p => {
+      if (p.equipoLocalId) ids.add(p.equipoLocalId);
+      if (p.equipoVisitaId) ids.add(p.equipoVisitaId);
+    });
+    return ids;
+  }, [partidosCat]);
+  const equiposCat = allEquipos.filter(e =>
+    e.torneoId === torneoActivoId &&
+    ((e.grupo || "General") === activeCat || partidosCatTeamIds.has(e.id))
+  );
   const tabla = useMemo(() => calcularPosiciones(partidosCat, equiposCat), [partidosCat, equiposCat]);
 
   // Enforce first group expanded by default if not set
@@ -405,33 +529,50 @@ export default function FixturesPage({ onGoTorneos }) {
     actualizarCfg(torneoActivoId, { diasDisponibles: nuevos });
   };
 
-  const handleConfirmGenerar = async (fechaInicio, fechaFin) => {
+  const handleConfirmGenerar = async (fechaInicio, fechaFin, fixtureOptions = {}) => {
     if (!fechaFin) { showToast("Debes especificar la fecha de fin", "error"); return; }
+    if (fechaInicio && fechaFin && fechaFin < fechaInicio) { showToast("La fecha de fin no puede ser anterior al inicio", "error"); return; }
     setShowGenModal(false);
     setIsGenerating(true);
     try {
       await actualizarTorneo(torneoActivoId, { fechaInicio, fechaFin });
       
-      const catConfig = torneo?.categorias?.find(c => c.nombre === activeCat);
+      const baseCatConfig = activeCatConfig ?? torneo?.categorias?.find(c => c.nombre === activeCat);
+      const catConfig = baseCatConfig ? { ...baseCatConfig, ...fixtureOptions } : null;
+      if (baseCatConfig?.id && Object.keys(fixtureOptions).length > 0) {
+        await actualizarCategoria(baseCatConfig.id, fixtureOptions);
+      }
       const tempTorneo = { ...torneo, fechaInicio, fechaFin };
       if (catConfig) {
         tempTorneo.formato = catConfig.format;
         tempTorneo.fases = catConfig.fases;
-        tempTorneo.vueltas = catConfig.vueltas;
+        tempTorneo.vueltas = catConfig.groupLegs ?? catConfig.vueltas;
       }
       
-      const others = allPartidos.filter(p => p.torneoId === torneoActivoId && (p.grupo || "General") !== activeCat);
+      const others = allPartidos.filter(p => {
+        if (p.torneoId !== torneoActivoId) return false;
+        if (catConfig?.id) return p.categoriaId !== catConfig.id;
+        return (p.grupo || "General") !== activeCat;
+      });
 
       if (catConfig?.format === "grupos_playoffs") {
         // 1. Obtener configuración extendida
-        const config = getCompetitionConfig(catConfig.id);
+        const config = {
+          ...(getCompetitionConfig(catConfig.id) ?? {}),
+          torneoId: torneoActivoId,
+          categoriaId: catConfig.id,
+        };
         
         // 2. Generar y asignar grupos
         const groupsMap = generateGroups(equiposCat, config);
+        if (groupsMap.length === 0) {
+          showToast("No se pudo generar grupos con la configuracion actual", "error");
+          return;
+        }
         
         // Actualizar los equipos con su nuevo grupo
         const updatedTeams = [];
-        Object.entries(groupsMap).forEach(([grupo, teams]) => {
+        groupsMap.forEach(({ label: grupo, teams }) => {
           teams.forEach(t => {
             updatedTeams.push({ ...t, grupo });
           });
@@ -449,12 +590,49 @@ export default function FixturesPage({ onGoTorneos }) {
         }));
 
         await setPartidos(torneoActivoId, [...others, ...mappedMatches]);
+        await registrarEventoCompeticion({
+          tournamentId: torneoActivoId,
+          eventType: "competition.fixture_generated",
+          payload: {
+            categoryId: catConfig.id,
+            categoryName: activeCat,
+            format: catConfig.format,
+            groupCount: groupsMap.length,
+            groupLegs: config.groupLegs ?? 1,
+            assignmentMethod: config.assignmentMethod ?? "auto_serpentina",
+            qualifyPerGroup: config.qualifyPerGroup ?? 2,
+            allowBestThirds: Boolean(config.allowBestThirds),
+            bestThirdsCount: config.bestThirdsCount ?? 0,
+            matchCount: mappedMatches.length,
+            groups: groupsMap.map(g => ({
+              label: g.label,
+              teamIds: g.teams.map(t => t.id),
+            })),
+          },
+        });
         showToast(`Grupos y fixture de ${activeCat} generados con éxito`, "success");
 
       } else {
         // Lógica tradicional (Todos contra Todos, etc)
         const ps = generarFixture(tempTorneo, equiposCat);
-        await setPartidos(torneoActivoId, [...others, ...ps.map(p => ({ ...p, grupo: activeCat }))]);
+        const mappedMatches = ps.map(p => ({
+          ...p,
+          torneoId: torneoActivoId,
+          categoriaId: catConfig?.id ?? p.categoriaId ?? null,
+          grupo: activeCat,
+          status: p.status ?? MATCH_STATUS.DRAFT,
+        }));
+        await setPartidos(torneoActivoId, [...others, ...mappedMatches]);
+        await registrarEventoCompeticion({
+          tournamentId: torneoActivoId,
+          eventType: "competition.fixture_generated",
+          payload: {
+            categoryId: catConfig?.id ?? null,
+            categoryName: activeCat,
+            format: catConfig?.format ?? tempTorneo.formato ?? "legacy",
+            matchCount: mappedMatches.length,
+          },
+        });
         showToast("Fixture generado con éxito", "success");
       }
       
@@ -463,13 +641,16 @@ export default function FixturesPage({ onGoTorneos }) {
 
   const handleGenerar = () => {
     if (equiposCat.length < 2) { showToast("Necesitas al menos 2 equipos en esta categoría", "error"); return; }
-    if (partidosCat.length > 0 && !window.confirm(`Se borrará el fixture de ${activeCat}. ¿Continuar?`)) return;
-    
-    if (torneo?.fechaInicio && torneo?.fechaFin) {
-      handleConfirmGenerar(torneo.fechaInicio, torneo.fechaFin);
-    } else {
-      setShowGenModal(true);
+    const hasCompleted = partidosCat.some(p => p.estado === "finalizado" || p.status === MATCH_STATUS.COMPLETED);
+    if (hasCompleted) {
+      showToast("No se puede regenerar esta categoría porque ya tiene partidos finalizados. Contacta a soporte.", "error");
+      return;
     }
+    if (partidosCat.length > 0) {
+      setShowReplaceConfirm(true);
+      return;
+    }
+    setShowGenModal(true);
   };
 
   const toggleDate = (key) => setExpandedDates(prev => ({ ...prev, [key]: !prev[key] }));
@@ -505,15 +686,49 @@ export default function FixturesPage({ onGoTorneos }) {
       // Avanzar intervalo
       currentDate = new Date(currentDate.getTime() + intervaloMin * 60000);
       
-      return { ...match, fechaHora, sedeId, arbitroId, estado: "programado" };
+      return { ...match, fechaHora, sedeId, arbitroId, estado: LEGACY_MATCH_STATUS.SCHEDULED, status: MATCH_STATUS.SCHEDULED };
     });
     
     // Merge con los demás partidos
-    const others = allPartidos.filter(p => 
-      !(p.torneoId === torneoActivoId && (p.grupo||"General") === activeCat && p.ronda === Number(schedRound))
-    );
-    await setPartidos(torneoActivoId, [...others.filter(p=>p.torneoId===torneoActivoId), ...scheduled]);
+    const others = allPartidos.filter(p => {
+      if (p.torneoId !== torneoActivoId) return false;
+      const sameCategory = activeCatConfig?.id
+        ? p.categoriaId === activeCatConfig.id
+        : (p.grupo || "General") === activeCat;
+      return !(sameCategory && p.ronda === Number(schedRound));
+    });
+    await setPartidos(torneoActivoId, [...others, ...scheduled]);
+    await registrarEventoCompeticion({
+      tournamentId: torneoActivoId,
+      eventType: "competition.fixture_round_scheduled",
+      payload: {
+        categoryId: activeCatConfig?.id ?? null,
+        categoryName: activeCat,
+        roundNumber: Number(schedRound),
+        matchCount: scheduled.length,
+        fromDate: schedFrom,
+        toDate: schedTo || null,
+        matchIds: scheduled.map(m => m.id),
+      },
+    });
     showToast(`Fecha ${schedRound}: ${scheduled.length} partidos programados`, "success");
+  };
+
+  const handleGlobalSchedule = async () => {
+    if (!allPartidos.some(p => p.torneoId === torneoActivoId)) {
+      showToast("Primero genera fixtures para una o mas categorias", "error");
+      return;
+    }
+    if (!sedes.length) {
+      showToast("Agrega al menos una cancha o sede para programar el torneo", "error");
+      return;
+    }
+    const report = await autoSchedulePartidos(torneoActivoId);
+    setScheduleReport(report ?? null);
+    showToast(
+      `Programacion global lista: ${report?.scheduled || 0} de ${report?.total || 0} partidos asignados`,
+      report?.scheduled ? "success" : "error"
+    );
   };
 
 
@@ -870,6 +1085,77 @@ export default function FixturesPage({ onGoTorneos }) {
                               <div style={{ flex: 1 }}><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>INICIO</label><input type="time" value={cfg.horaInicio} onChange={e => actualizarCfg(torneoActivoId, { horaInicio: e.target.value })} style={inputStyle} /></div>
                               <div style={{ flex: 1 }}><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>FIN</label><input type="time" value={cfg.horaFin} onChange={e => actualizarCfg(torneoActivoId, { horaFin: e.target.value })} style={inputStyle} /></div>
                             </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+                              <div><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>DURACION MIN</label><input type="number" min="20" value={cfg.duracionMin ?? 90} onChange={e => actualizarCfg(torneoActivoId, { duracionMin: Number(e.target.value) || 90 })} style={inputStyle} /></div>
+                              <div><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>DESCANSO DIAS</label><input type="number" min="0" value={cfg.descansoDias ?? 0} onChange={e => actualizarCfg(torneoActivoId, { descansoDias: Number(e.target.value) || 0 })} style={inputStyle} /></div>
+                              <div><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>MAX DIA</label><input type="number" min="1" value={cfg.maxPartidosDia ?? 12} onChange={e => actualizarCfg(torneoActivoId, { maxPartidosDia: Number(e.target.value) || 12 })} style={inputStyle} /></div>
+                              <div><label style={{ fontSize: 10, fontWeight: 700, color: MUTED, display: "block", marginBottom: 5 }}>MAX CANCHA/DIA</label><input type="number" min="1" value={cfg.maxPartidosCanchaDia ?? ""} onChange={e => actualizarCfg(torneoActivoId, { maxPartidosCanchaDia: Number(e.target.value) || null })} style={inputStyle} /></div>
+                            </div>
+                          </section>
+
+                          <section style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, padding: 20 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                              <Zap size={18} color={CU} /><h4 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: TEXT }}>Programacion global</h4>
+                            </div>
+                            <p style={{ margin: "0 0 14px", fontSize: 12, lineHeight: 1.5, color: MUTED }}>
+                              Ordena todas las categorias del torneo usando canchas, arbitros, dias habilitados y descanso entre equipos.
+                            </p>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+                              <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10 }}>
+                                <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>CATEGORIAS</div>
+                                <div style={{ fontSize: 16, fontWeight: 900, color: TEXT }}>{allCategorias.filter(c => c.torneoId === torneoActivoId).length || categories.length}</div>
+                              </div>
+                              <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10 }}>
+                                <div style={{ fontSize: 10, fontWeight: 800, color: MUTED }}>CANCHAS</div>
+                                <div style={{ fontSize: 16, fontWeight: 900, color: TEXT }}>{sedes.length}</div>
+                              </div>
+                            </div>
+                            <button onClick={handleGlobalSchedule} style={{ width: "100%", background: CU, color: "#FFF", border: "none", borderRadius: 8, padding: "10px", fontWeight: 800, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              <CalendarPlus size={14} /> Programar torneo completo
+                            </button>
+                            {scheduleReport && (
+                              <div style={{ marginTop: 14, borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 10 }}>
+                                  {[
+                                    { label: "Total", value: scheduleReport.total ?? 0 },
+                                    { label: "Programados", value: scheduleReport.scheduled ?? 0 },
+                                    { label: "No programados", value: scheduleReport.unscheduled ?? 0 },
+                                  ].map(item => (
+                                    <div key={item.label} style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 8 }}>
+                                      <div style={{ fontSize: 15, fontWeight: 900, color: TEXT }}>{item.value}</div>
+                                      <div style={{ fontSize: 9, fontWeight: 800, color: MUTED }}>{item.label.toUpperCase()}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                                {(scheduleReport.unscheduledMatches ?? []).length > 0 && (
+                                  <div style={{ maxHeight: 180, overflow: "auto", border: `1px solid ${BORDER}`, borderRadius: 10 }}>
+                                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                                      <thead>
+                                        <tr style={{ background: BG, color: MUTED }}>
+                                          <th style={{ padding: 8, textAlign: "left" }}>Partido</th>
+                                          <th style={{ padding: 8, textAlign: "left" }}>Ronda</th>
+                                          <th style={{ padding: 8, textAlign: "left" }}>Estado</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {scheduleReport.unscheduledMatches.map(match => {
+                                          const local = allEquipos.find(e => e.id === match.equipoLocalId)?.nombre ?? "TBD";
+                                          const visita = allEquipos.find(e => e.id === match.equipoVisitaId)?.nombre ?? "TBD";
+                                          const categoria = allCategorias.find(c => c.id === match.categoriaId)?.nombre ?? match.grupo ?? "General";
+                                          return (
+                                            <tr key={match.id} style={{ borderTop: `1px solid ${BORDER}` }}>
+                                              <td style={{ padding: 8, color: TEXT, fontWeight: 700 }}>{categoria}: {local} vs {visita}</td>
+                                              <td style={{ padding: 8, color: MUTED }}>{match.ronda ?? "-"}</td>
+                                              <td style={{ padding: 8, color: MUTED }}>{match.estado ?? "pendiente"}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </section>
 
                           {/* Sedes */}
@@ -968,10 +1254,24 @@ export default function FixturesPage({ onGoTorneos }) {
 
       <AnimatePresence>
         {modalPartido && (
-          <ResultModal partido={modalPartido} equipos={allEquipos} onSave={async (gl, gv) => { await registrarResultado(modalPartido.id, gl, gv); setModalPartido(null); }} onClose={() => setModalPartido(null)} />
+          <ResultModal partido={modalPartido} equipos={allEquipos} onSave={async (gl, gv, eventos) => { await registrarResultado(modalPartido.id, gl, gv, eventos); setModalPartido(null); }} onClose={() => setModalPartido(null)} />
         )}
         {showGenModal && (
-          <GenerateFixtureModal torneo={torneo} category={activeCat} equipos={equiposCat} onConfirm={handleConfirmGenerar} onClose={() => setShowGenModal(false)} />
+          <GenerateFixtureModal torneo={torneo} category={activeCat} categoryConfig={activeCatConfig} equipos={equiposCat} existingMatches={partidosCat.length} onConfirm={handleConfirmGenerar} onClose={() => setShowGenModal(false)} />
+        )}
+        {showReplaceConfirm && (
+          <ConfirmModal
+            title="Regenerar fixture"
+            message={`Se reemplazarán ${partidosCat.length} partidos existentes de ${activeCat}. Esta acción solo está permitida porque no hay partidos finalizados.`}
+            confirmLabel="Continuar"
+            cancelLabel="Cancelar"
+            accentColor={CU}
+            onCancel={() => setShowReplaceConfirm(false)}
+            onConfirm={() => {
+              setShowReplaceConfirm(false);
+              setShowGenModal(true);
+            }}
+          />
         )}
         {selectedMatch && (
           <MatchDetailsModal 

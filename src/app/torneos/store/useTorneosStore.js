@@ -5,10 +5,14 @@ import {
   calculateGroupStandings,
   applyTiebreakers,
   getQualifiedTeams,
+  createBracketSeededEvent,
+  createRoundAdvancedEvent,
+  createTiebreakerAppliedEvent,
   DEFAULT_POINTS_CONFIG,
   DEFAULT_TIEBREAKERS,
 } from "../utils/competitionEngine";
-import { autoSchedule } from "../utils/schedulingEngine";
+import { LEGACY_MATCH_STATUS, MATCH_STATUS, toLegacyMatchStatus } from "../domain/fixtureState";
+import { optimizeSchedule } from "../utils/scheduleOptimizer";
 import * as svc from "../services/torneosService";
 import { showToast } from "../../../shared/ui/Toast";
 
@@ -279,11 +283,13 @@ export const useTorneosStore = create(
 
       async registrarResultado(partidoId, golesLocal, golesVisita, eventos = []) {
         let torneoId = null;
+        let updatedMatch = null;
         set(s => {
           const updated = s.partidos.map(p => {
             if (p.id === partidoId) {
               torneoId = p.torneoId;
-              return { ...p, golesLocal, golesVisita, estado: "finalizado", eventos };
+              updatedMatch = { ...p, golesLocal, golesVisita, estado: toLegacyMatchStatus(MATCH_STATUS.COMPLETED), status: MATCH_STATUS.COMPLETED, eventos };
+              return updatedMatch;
             }
             return p;
           });
@@ -292,6 +298,29 @@ export const useTorneosStore = create(
         if (torneoId) {
           const torneoPartidos = get().partidos.filter(p => p.torneoId === torneoId);
           await svc.savePartidos(torneoId, torneoPartidos);
+          if (updatedMatch) {
+            const winnerTeamId = golesLocal > golesVisita
+              ? updatedMatch.equipoLocalId
+              : golesVisita > golesLocal
+                ? updatedMatch.equipoVisitaId
+                : null;
+            await svc.enqueueCompetitionEvent({
+              tournamentId: torneoId,
+              eventType: "competition.match_result_recorded",
+              payload: {
+                tournamentId: torneoId,
+                matchId: partidoId,
+                categoryId: updatedMatch.categoriaId ?? null,
+                phase: updatedMatch.fase ?? null,
+                homeTeamId: updatedMatch.equipoLocalId ?? null,
+                awayTeamId: updatedMatch.equipoVisitaId ?? null,
+                homeScore: golesLocal,
+                awayScore: golesVisita,
+                winnerTeamId,
+                recordedAt: NOW(),
+              },
+            });
+          }
         }
       },
 
@@ -323,10 +352,10 @@ export const useTorneosStore = create(
         
         const updatedPartidos = s.partidos.map(p => {
           if (p.id === partidoId) {
-            return { ...p, estado: "aplazado", fechaHora: null, ronda: partidoFuturo ? partidoFuturo.ronda : p.ronda };
+            return { ...p, estado: LEGACY_MATCH_STATUS.POSTPONED, status: MATCH_STATUS.DRAFT, fechaHora: null, ronda: partidoFuturo ? partidoFuturo.ronda : p.ronda };
           }
           if (partidoFuturo && p.id === partidoFuturo.id) {
-            return { ...p, fechaHora: partido.fechaHora, ronda: partido.ronda, estado: "propuesto" };
+            return { ...p, fechaHora: partido.fechaHora, ronda: partido.ronda, estado: LEGACY_MATCH_STATUS.PROPOSED, status: MATCH_STATUS.DRAFT };
           }
           return p;
         });
@@ -346,10 +375,10 @@ export const useTorneosStore = create(
         const torneoId = original.torneoId;
         const updatedPartidos = s.partidos.map(p => {
           if (p.id === partidoOriginalId) {
-            return { ...p, estado: "aplazado", fechaHora: null };
+            return { ...p, estado: LEGACY_MATCH_STATUS.POSTPONED, status: MATCH_STATUS.DRAFT, fechaHora: null };
           }
           if (p.id === partidoReemplazoId) {
-            return { ...p, estado: "programado", fechaHora: original.fechaHora, sedeId: original.sedeId, arbitroId: original.arbitroId };
+            return { ...p, estado: toLegacyMatchStatus(MATCH_STATUS.SCHEDULED), status: MATCH_STATUS.SCHEDULED, fechaHora: original.fechaHora, sedeId: original.sedeId, arbitroId: original.arbitroId };
           }
           return p;
         });
@@ -370,11 +399,12 @@ export const useTorneosStore = create(
         const sedes    = s.sedes.filter(se => se.torneoId === torneoId);
         const arbitros = s.arbitros.filter(a => a.torneoId === torneoId);
 
-        const patches = autoSchedule({ partidos, equipos, sedes, arbitros, torneo });
+        const optimization = await optimizeSchedule({ partidos, equipos, sedes, arbitros, torneo });
+        const patches = optimization.patches;
 
         const updatedPartidos = s.partidos.map(p => {
           const patch = patches.find(pt => pt.id === p.id);
-          return patch ? { ...p, ...patch, estado: "propuesto" } : p;
+          return patch ? { ...p, ...patch, estado: LEGACY_MATCH_STATUS.SCHEDULED, status: MATCH_STATUS.SCHEDULED } : p;
         });
 
         set({ partidos: updatedPartidos });
@@ -382,8 +412,40 @@ export const useTorneosStore = create(
         // Sync the updated ones of this tournament
         const torneoPartidos = updatedPartidos.filter(p => p.torneoId === torneoId);
         await svc.savePartidos(torneoId, torneoPartidos);
+        const scheduledIds = new Set(patches.map(patch => patch.id));
+        const unscheduledMatches = partidos
+          .filter(partido => !scheduledIds.has(partido.id))
+          .map(partido => ({
+            id: partido.id,
+            categoriaId: partido.categoriaId ?? null,
+            fase: partido.fase ?? null,
+            ronda: partido.ronda ?? null,
+            grupo: partido.grupo ?? null,
+            estado: partido.estado ?? null,
+            equipoLocalId: partido.equipoLocalId ?? null,
+            equipoVisitaId: partido.equipoVisitaId ?? null,
+          }));
+        await svc.enqueueCompetitionEvent({
+          tournamentId: torneoId,
+          eventType: "competition.fixture_global_scheduled",
+          payload: {
+            optimizer: optimization.kind,
+            feasible: optimization.feasible,
+            scheduledCount: patches.length,
+            unscheduledCount: Math.max(0, partidos.length - patches.length),
+            categoryIds: [...new Set(partidos.map(p => p.categoriaId).filter(Boolean))],
+            venueIds: sedes.map(sede => sede.id),
+            refereeIds: arbitros.map(arbitro => arbitro.id),
+            diagnostics: optimization.diagnostics ?? {},
+          },
+        });
 
-        return patches.length;
+        return {
+          total: partidos.length,
+          scheduled: patches.length,
+          unscheduled: unscheduledMatches.length,
+          unscheduledMatches,
+        };
       },
 
       // ── Categorías ─────────────────────────────────────────────────────
@@ -519,6 +581,26 @@ export const useTorneosStore = create(
 
       // ── Wizard draft ─────────────────────────────────────────────────────
 
+      async registrarEventoCompeticion(event) {
+        const { ok, error } = await svc.enqueueCompetitionEvent(event);
+        if (!ok && error) {
+          console.warn("[TORNEOS] No se pudo encolar evento de competencia", error);
+        }
+        return { ok, error };
+      },
+
+      async registrarBracketSeeded(payload) {
+        return get().registrarEventoCompeticion(createBracketSeededEvent(payload));
+      },
+
+      async registrarAvanceFase(payload) {
+        return get().registrarEventoCompeticion(createRoundAdvancedEvent(payload));
+      },
+
+      async registrarDesempateAplicado(payload) {
+        return get().registrarEventoCompeticion(createTiebreakerAppliedEvent(payload));
+      },
+
       setWizardDraft(data) {
         set(s => ({ wizardDraft: { ...s.wizardDraft, ...data } }));
       },
@@ -573,7 +655,6 @@ export const useTorneosStore = create(
       },
 
       async loadTorneosFromSupabase() {
-        console.log("[TORNEOS] inicio carga");
         set({ loading: true, error: null });
         try {
           const results = await svc.fetchAllTorneos();
@@ -591,9 +672,6 @@ export const useTorneosStore = create(
           const torneoActivoId = allTorneos.some(t => t.id === currentActivoId)
             ? currentActivoId
             : (allTorneos[0]?.id ?? null);
-
-          console.log("[TORNEOS] torneos", allTorneos);
-          console.log("[TORNEOS] categorías", allCategorias);
 
           set({
             torneos: allTorneos, 
@@ -619,7 +697,6 @@ export const useTorneosStore = create(
           throw err;
         } finally {
           set({ loading: false });
-          console.log("[TORNEOS] loading false");
         }
       },
     }),

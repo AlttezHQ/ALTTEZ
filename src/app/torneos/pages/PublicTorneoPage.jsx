@@ -4,7 +4,7 @@ import { Trophy, BarChart2, Calendar, Users, Info, Phone, Gift, Eye, LayoutGrid 
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 import { useState, useMemo, useEffect } from "react";
 import { calculateGroupStandings, applyTiebreakers, DEFAULT_POINTS_CONFIG, DEFAULT_TIEBREAKERS } from "../utils/competitionEngine";
-import { supabase, isSupabaseReady } from "../../../shared/lib/supabase";
+import { getTorneoPublico } from "../services/torneosService";
 
 const CU = PALETTE.bronce;
 const CU_DIM = PALETTE.bronce + "15";
@@ -56,106 +56,20 @@ export default function PublicTorneoPage() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [activeCatId, setActiveCatId] = useState(null);
 
-  // Cargar datos dinámicamente desde Supabase (para followers públicos sin localStorage)
+  // Cargar datos desde vistas publicas estrictas; nunca desde tablas completas.
   useEffect(() => {
     async function loadPublicData() {
-      if (!isSupabaseReady) {
-        setLoading(false);
-        return;
-      }
       try {
-        const { data: tData, error: tErr } = await supabase
-          .from("torneos")
-          .select("*")
-          .eq("slug", slug)
-          .single();
-        
-        if (tErr || !tData) {
+        const data = await getTorneoPublico(slug);
+        if (!data?.torneo) {
           setLoading(false);
           return;
         }
 
-        setTorneo({
-          id: tData.id,
-          nombre: tData.nombre,
-          deporte: tData.deporte,
-          temporada: tData.temporada,
-          formato: tData.formato,
-          estado: tData.estado,
-          fechaInicio: tData.fecha_inicio,
-          fechaFin: tData.fecha_fin,
-          sedePrincipal: tData.sede_principal,
-          organizador: tData.organizador_nombre,
-          slug: tData.slug,
-          numGrupos: tData.num_groups,
-          publicado: tData.publicado,
-          descripcion: tData.descripcion,
-          portada: tData.portada,
-          perfil: tData.perfil,
-          contacto: tData.contacto,
-          premios: tData.premios,
-          patrocinadores: tData.patrocinadores || [],
-          visibilidad: tData.visibilidad,
-          reglamentoUrl: tData.reglamento_url,
-          vistasCount: tData.vistas_count || 0
-        });
-
-        const [eqRes, partRes, catRes] = await Promise.all([
-          supabase.from("torneo_equipos").select("*").eq("torneo_id", tData.id),
-          supabase.from("torneo_partidos").select("*").eq("torneo_id", tData.id).order("orden"),
-          supabase.from("torneo_categorias").select("*").eq("torneo_id", tData.id)
-        ]);
-
-        if (eqRes.data) {
-          setTorneoEquipos(eqRes.data.map(r => ({
-            id: r.id,
-            torneoId: r.torneo_id,
-            nombre: r.nombre,
-            logo: r.escudo,
-            escudo: r.escudo,
-            color: r.color,
-            grupo: r.grupo,
-            entrenador: r.entrenador,
-            delegado: r.delegado,
-            jugadores: r.jugadores || [],
-            categoriaId: r.categoria_id
-          })));
-        }
-
-        if (partRes.data) {
-          setTorneoPartidos(partRes.data.map(r => ({
-            id: r.id,
-            torneoId: r.torneo_id,
-            fase: r.fase,
-            ronda: r.ronda,
-            grupo: r.grupo,
-            equipoLocalId: r.equipo_local_id,
-            equipoVisitaId: r.equipo_visita_id,
-            golesLocal: r.goles_local,
-            golesVisita: r.goles_visita,
-            estado: r.estado,
-            fechaHora: r.fecha_hora,
-            cancha: r.cancha,
-            arbitroId: r.arbitro_id,
-            rondaNombre: r.ronda_nombre,
-            source: r.source,
-            orden: r.orden
-          })));
-        }
-
-        if (catRes.data) {
-          setTorneoCats(catRes.data.map(c => ({
-            id: c.id,
-            torneoId: c.torneo_id,
-            nombre: c.nombre,
-            format: c.format,
-            groupsCount: c.groups_count,
-            groupLegs: c.group_legs,
-            qualifyPerGroup: c.qualify_per_group,
-            pointsConfig: c.points_config,
-            tiebreakers: c.tiebreakers
-          })));
-        }
+        setTorneo(data.torneo);
+        setTorneoEquipos(data.equipos ?? []);
+        setTorneoPartidos(data.partidos ?? []);
+        setTorneoCats(data.categorias ?? []);
       } catch (err) {
         console.error("Error loading public tournament data:", err);
       } finally {
@@ -165,7 +79,6 @@ export default function PublicTorneoPage() {
 
     loadPublicData();
   }, [slug]);
-
   // Si hay cambios en defaultTab por URL, reaccionar
   useEffect(() => {
     if (searchParams.get("tab")) {

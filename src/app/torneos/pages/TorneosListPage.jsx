@@ -1,7 +1,9 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Plus, Play, Trash2, Clock, CheckCircle, Edit3 } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
 
 const CU     = PALETTE.bronce;
 const CU_DIM = PALETTE.bronceDim;
@@ -35,6 +37,7 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
   const torneoActivoId  = useTorneosStore(s => s.torneoActivoId);
   const setTorneoActivo = useTorneosStore(s => s.setTorneoActivo);
   const eliminarTorneo  = useTorneosStore(s => s.eliminarTorneo);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   if (torneos.length === 0) {
     return (
@@ -159,7 +162,7 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.02, background: "#FFF0F0" }} whileTap={{ scale: 0.97 }}
-                  onClick={async () => { if (window.confirm(`¿Eliminar "${t.nombre}"?`)) await eliminarTorneo(t.id); }}
+                  onClick={() => setPendingDelete(t)}
                   style={{ width: 36, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                 >
                   <Trash2 size={13} color={MUTED} />
@@ -169,6 +172,22 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
           );
         })}
       </div>
+      <AnimatePresence>
+        {pendingDelete && (
+          <ConfirmModal
+            title="Eliminar torneo"
+            message={`¿Eliminar "${pendingDelete.nombre}"? Esta acción no se puede deshacer.`}
+            confirmLabel="Eliminar"
+            cancelLabel="Cancelar"
+            accentColor={PALETTE.danger ?? "#EF4444"}
+            onCancel={() => setPendingDelete(null)}
+            onConfirm={async () => {
+              await eliminarTorneo(pendingDelete.id);
+              setPendingDelete(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

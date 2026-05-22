@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Trophy, LayoutGrid, CheckCircle, ChevronRight, Clock } from "lucide-react";
+import { Trophy, LayoutGrid, CheckCircle, ChevronRight, Clock, X } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
@@ -78,6 +78,65 @@ function MatchNode({ match, equipos, onRegisterResult }) {
 
 // ── FaseFinalPage ──────────────────────────────────────────────────────────────
 
+function KnockoutResultModal({ match, equipos, onSave, onClose }) {
+  const local = equipos.find(e => e.id === match.equipoLocalId);
+  const visita = equipos.find(e => e.id === match.equipoVisitaId);
+  const [golesLocal, setGolesLocal] = useState(match.golesLocal ?? 0);
+  const [golesVisita, setGolesVisita] = useState(match.golesVisita ?? 0);
+  const [winnerId, setWinnerId] = useState("");
+  const isDraw = Number(golesLocal) === Number(golesVisita);
+  const inferredWinner = Number(golesLocal) > Number(golesVisita)
+    ? match.equipoLocalId
+    : Number(golesVisita) > Number(golesLocal)
+      ? match.equipoVisitaId
+      : "";
+  const selectedWinner = isDraw ? winnerId : inferredWinner;
+  const canSave = Number.isFinite(Number(golesLocal)) && Number.isFinite(Number(golesVisita)) && (!isDraw || Boolean(winnerId));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.68)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} style={{ width: "100%", maxWidth: 430, background: CARD, border: `1px solid ${BORDER}`, borderTop: `3px solid ${CU}`, borderRadius: 16, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.25)", fontFamily: FONT }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: TEXT }}>Registrar resultado</div>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>{local?.nombre ?? "Local"} vs {visita?.nombre ?? "Visita"}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
+          {[
+            { label: local?.nombre ?? "Local", value: golesLocal, setValue: setGolesLocal },
+            { label: visita?.nombre ?? "Visita", value: golesVisita, setValue: setGolesVisita },
+          ].map(field => (
+            <label key={field.label} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: MUTED }}>{field.label.toUpperCase()}</span>
+              <input type="number" min={0} value={field.value} onChange={e => field.setValue(Math.max(0, Number(e.target.value)))} style={{ width: "100%", boxSizing: "border-box", padding: "12px", borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 22, fontWeight: 900, textAlign: "center", outline: "none" }} />
+            </label>
+          ))}
+        </div>
+
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: MUTED, marginBottom: 8 }}>GANADOR</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[local, visita].filter(Boolean).map(team => (
+              <label key={team.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: `1px solid ${selectedWinner === team.id ? CU_BOR : BORDER}`, background: selectedWinner === team.id ? CU_DIM : BG, color: selectedWinner === team.id ? CU : TEXT, fontSize: 13, fontWeight: 800 }}>
+                <input type="radio" checked={selectedWinner === team.id} disabled={!isDraw} onChange={() => setWinnerId(team.id)} />
+                {team.nombre}
+              </label>
+            ))}
+          </div>
+          {isDraw && <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>El marcador esta empatado. Selecciona el ganador definido por penales o reglamento.</div>}
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: 10, border: `1px solid ${BORDER}`, background: "transparent", color: MUTED, fontWeight: 800, cursor: "pointer" }}>Cancelar</button>
+          <button disabled={!canSave} onClick={() => onSave(Number(golesLocal), Number(golesVisita), selectedWinner)} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: canSave ? CU : BORDER, color: "#FFF", fontWeight: 900, cursor: canSave ? "pointer" : "not-allowed" }}>Guardar</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 export default function FaseFinalPage({ onGoTorneos }) {
   const torneoActivoId  = useTorneosStore(s => s.torneoActivoId);
   const allPartidos     = useTorneosStore(s => s.partidos);
@@ -86,6 +145,7 @@ export default function FaseFinalPage({ onGoTorneos }) {
   const setPartidos     = useTorneosStore(s => s.setPartidos);
 
   const [activeCatId, setActiveCatId] = useState(null);
+  const [resultMatch, setResultMatch] = useState(null);
 
   if (!torneoActivoId) {
     return <ModuleEmptyState icon={Trophy} title="Selecciona un torneo" subtitle="Debes abrir un torneo para ver la fase final." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
@@ -119,24 +179,41 @@ export default function FaseFinalPage({ onGoTorneos }) {
   // Identificar las fases que tienen partidos
   const activePhases = Object.keys(matchPhases).filter(k => matchPhases[k].length > 0);
 
-  const handleRegisterResult = (match) => {
-    // Para simplificar, abrimos prompt, pero idealmente usamos el mismo ResultModal de FixturesPage
-    const gl = parseInt(prompt(`Goles para ${equipos.find(e => e.id === match.equipoLocalId)?.nombre}:`), 10);
-    const gv = parseInt(prompt(`Goles para ${equipos.find(e => e.id === match.equipoVisitaId)?.nombre}:`), 10);
-
-    if (isNaN(gl) || isNaN(gv)) return;
-
+  const saveKnockoutResult = async (match, gl, gv, winnerId) => {
     // Actualizar resultado
-    useTorneosStore.getState().registrarResultado(match.id, gl, gv);
+    await useTorneosStore.getState().registrarResultado(match.id, gl, gv);
 
     // Avanzar ganador
-    const winnerId = gl > gv ? match.equipoLocalId : (gv > gl ? match.equipoVisitaId : null);
     if (winnerId) {
       const storeState = useTorneosStore.getState();
       const currentMatches = storeState.partidos.filter(p => p.torneoId === torneoActivoId);
       const nextMatches = advanceKnockoutWinner(currentMatches, match.id, winnerId);
-      setPartidos(torneoActivoId, nextMatches);
+      const targetMatch = nextMatches.find(next => {
+        const current = currentMatches.find(prev => prev.id === next.id);
+        if (!current || next.id === match.id) return false;
+        const changedSlot =
+          current.equipoLocalId !== next.equipoLocalId ||
+          current.equipoVisitaId !== next.equipoVisitaId;
+        const containsWinner =
+          next.equipoLocalId === winnerId ||
+          next.equipoVisitaId === winnerId;
+        return changedSlot && containsWinner;
+      });
+
+      await setPartidos(torneoActivoId, nextMatches);
+
+      if (targetMatch) {
+        await storeState.registrarAvanceFase({
+          torneoId: torneoActivoId,
+          matchId: match.id,
+          winnerTeamId: winnerId,
+          fromPhase: match.fase,
+          toPhase: targetMatch.fase,
+          targetMatchId: targetMatch.id,
+        });
+      }
     }
+    setResultMatch(null);
   };
 
   return (
@@ -184,13 +261,21 @@ export default function FaseFinalPage({ onGoTorneos }) {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 32, justifyContent: "space-around", flex: 1 }}>
                 {phaseMatches.map(m => (
-                  <MatchNode key={m.id} match={m} equipos={equipos} onRegisterResult={handleRegisterResult} />
+                  <MatchNode key={m.id} match={m} equipos={equipos} onRegisterResult={setResultMatch} />
                 ))}
               </div>
             </div>
           );
         })}
       </div>
+      {resultMatch && (
+        <KnockoutResultModal
+          match={resultMatch}
+          equipos={equipos}
+          onClose={() => setResultMatch(null)}
+          onSave={(gl, gv, winnerId) => saveKnockoutResult(resultMatch, gl, gv, winnerId)}
+        />
+      )}
     </motion.div>
   );
 }

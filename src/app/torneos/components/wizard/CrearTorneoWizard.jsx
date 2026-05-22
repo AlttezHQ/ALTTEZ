@@ -756,6 +756,33 @@ function GroupsPlusFinalConfig({ s, tCount, onUpdate }) {
 
 // ── Main Wizard ──────────────────────────────────────────────────────────────
 
+function TextInputModal({ title, fields, onCancel, onSubmit }) {
+  const [values, setValues] = useState(() => Object.fromEntries(fields.map(field => [field.id, field.value ?? ""])));
+  const requiredOk = fields.every(field => !field.required || String(values[field.id] ?? "").trim());
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.68)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} style={{ width: "100%", maxWidth: 420, background: CARD, border: `1px solid ${BORDER}`, borderTop: `3px solid ${CU}`, borderRadius: 16, padding: 24, boxShadow: "0 24px 64px rgba(0,0,0,0.24)", fontFamily: FONT }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: TEXT }}>{title}</div>
+          <button onClick={onCancel} style={{ background: "none", border: "none", color: MUTED, cursor: "pointer", padding: 4 }}><X size={18} /></button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {fields.map(field => (
+            <label key={field.id} style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: MUTED }}>{field.label.toUpperCase()}</span>
+              <input autoFocus={field.autoFocus} value={values[field.id] ?? ""} onChange={e => setValues(prev => ({ ...prev, [field.id]: e.target.value }))} placeholder={field.placeholder ?? ""} style={{ width: "100%", boxSizing: "border-box", padding: "11px 12px", borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, color: TEXT, outline: "none", fontSize: 13, fontFamily: FONT }} />
+            </label>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: "11px", borderRadius: 10, border: `1px solid ${BORDER}`, background: "transparent", color: MUTED, fontWeight: 800, cursor: "pointer" }}>Cancelar</button>
+          <button disabled={!requiredOk} onClick={() => requiredOk && onSubmit(values)} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: requiredOk ? CU : BORDER, color: "#FFF", fontWeight: 900, cursor: requiredOk ? "pointer" : "not-allowed" }}>Guardar</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 export default function CrearTorneoWizard({ onFinish, onBack, initialData = null }) {
   const crearTorneo = useTorneosStore(s => s.crearTorneo);
   const currentYear = new Date().getFullYear();
@@ -850,6 +877,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
   const [collapsedCats, setCollapsedCats] = useState({});
   const [toast, setToast] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [inputPrompt, setInputPrompt] = useState(null);
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
 
@@ -1226,7 +1254,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
   };
 
   const handleDownloadFixture = () => {
-    console.log("Iniciando generación de PDF...");
     const doc = new jsPDF();
     const primaryColor = [181, 143, 76]; // B58F4C - Bronce
     const textColor = [44, 44, 44];
@@ -1326,7 +1353,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       currentY = doc.lastAutoTable.finalY + 15;
     });
 
-    console.log("¿Tiene contenido?", hasContent);
 
     if (!hasContent) {
       alert("No hay suficientes equipos cargados para generar un fixture.");
@@ -1342,7 +1368,6 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
   };
 
   const handleDownloadCalendar = () => {
-    console.log("Generando PDF de Calendario...");
     const doc = new jsPDF();
     const primaryColor = [181, 143, 76]; // B58F4C - Bronce
     const textColor = [44, 44, 44];
@@ -1935,8 +1960,11 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <input style={{ ...inputStyle, paddingRight: 40, borderColor: step1Errors.sedePrincipal ? PALETTE.danger : BORDER }} value={data.sedePrincipal} onChange={e => update("sedePrincipal", e.target.value)} placeholder="Ej: Complejo Deportivo Central" />
                     <button 
                       onClick={() => {
-                        const url = window.prompt("Pega el enlace de Google Maps o la ubicación de la sede:", data.sedeUbicacion);
-                        if (url !== null) update("sedeUbicacion", url);
+                        setInputPrompt({
+                          title: "Ubicación de la sede",
+                          fields: [{ id: "url", label: "Google Maps o dirección", value: data.sedeUbicacion, autoFocus: true }],
+                          onSubmit: values => update("sedeUbicacion", values.url),
+                        });
                       }} 
                       style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: data.sedeUbicacion ? CU_DIM : "#F1F1F1", border: `1px solid ${data.sedeUbicacion ? CU_BOR : BORDER}`, borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: data.sedeUbicacion ? CU : HINT }}
                       title="Agregar ubicación en Google Maps"
@@ -2660,13 +2688,19 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <h4 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700 }}>Acciones rápidas</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <button onClick={() => {
-                        const name = window.prompt("Nombre del equipo:");
-                        if (!name?.trim()) return;
-                        const delegate = window.prompt("Nombre del delegado (opcional):") || "";
-                        const next = { ...teams };
-                        if (!next[catId]) next[catId] = [];
-                        next[catId] = [...next[catId], { id: Date.now() + Math.random(), name: name.trim(), delegate: delegate.trim(), players: 0, status: "Completo" }];
-                        setTeams(next);
+                        setInputPrompt({
+                          title: "Nuevo equipo",
+                          fields: [
+                            { id: "name", label: "Nombre del equipo", required: true, autoFocus: true },
+                            { id: "delegate", label: "Delegado", placeholder: "Opcional" },
+                          ],
+                          onSubmit: values => {
+                            const next = { ...teams };
+                            if (!next[catId]) next[catId] = [];
+                            next[catId] = [...next[catId], { id: Date.now() + Math.random(), name: values.name.trim(), delegate: (values.delegate ?? "").trim(), players: 0, status: "Completo" }];
+                            setTeams(next);
+                          },
+                        });
                       }} style={{ width: "100%", padding: "12px", borderRadius: 12, background: CU, color: "#FFF", border: "none", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Plus size={16} /> Nuevo equipo</button>
                       <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: "none" }} onChange={handleFileChange} />
                       <button onClick={() => fileInputRef.current?.click()} style={{ width: "100%", padding: "12px", borderRadius: 12, background: "none", border: `1px solid ${CU_BOR}`, color: CU, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><Upload size={16} /> Importar Excel</button>
@@ -4113,6 +4147,19 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
           </div>
         </div>
       )}
+      <AnimatePresence>
+        {inputPrompt && (
+          <TextInputModal
+            title={inputPrompt.title}
+            fields={inputPrompt.fields}
+            onCancel={() => setInputPrompt(null)}
+            onSubmit={(values) => {
+              inputPrompt.onSubmit(values);
+              setInputPrompt(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

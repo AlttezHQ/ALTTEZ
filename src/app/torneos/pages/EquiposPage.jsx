@@ -10,6 +10,7 @@ import { useTorneosStore } from "../store/useTorneosStore";
 import ModuleEmptyState from "../components/shared/ModuleEmptyState";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 import { showToast } from "../../../shared/ui/Toast";
+import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { uploadImage } from "../utils/storageHelper";
 import * as XLSX from "xlsx";
 
@@ -391,6 +392,7 @@ export default function EquiposPage({ onGoTorneos }) {
   const [importOpen, setImportOpen] = useState(false);
   const [playersOpen, setPlayersOpen] = useState(false);
   const [editingEquipo, setEditingEquipo] = useState(null);
+  const [pendingDeleteEquipo, setPendingDeleteEquipo] = useState(null);
 
   const torneo  = allTorneos.find(t => t.id === torneoActivoId) ?? null;
   const equiposRaw = allEquipos.filter(e => e.torneoId === torneoActivoId);
@@ -483,10 +485,7 @@ export default function EquiposPage({ onGoTorneos }) {
     if (!eq) return;
 
     if (action === "eliminar") {
-      if (window.confirm(`¿Estás seguro de eliminar "${eq.nombre}"?`)) {
-        eliminarEquipo(id);
-        showToast("Equipo eliminado", "success");
-      }
+      setPendingDeleteEquipo(eq);
     }
     if (action === "editar") {
       setEditingEquipo(eq);
@@ -510,6 +509,23 @@ export default function EquiposPage({ onGoTorneos }) {
       <EquipoModal key={editingEquipo?.id || "new"} isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingEquipo(null); }} onSave={handleSaveModal} initialData={editingEquipo} />
       <ImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} onImport={handleImport} />
       <TeamPlayersModal isOpen={playersOpen} onClose={() => { setPlayersOpen(false); setEditingEquipo(null); }} team={editingEquipo} onUpdate={(patch) => actualizarEquipo(editingEquipo.id, patch)} />
+      <AnimatePresence>
+        {pendingDeleteEquipo && (
+          <ConfirmModal
+            title="Eliminar equipo"
+            message={`¿Eliminar "${pendingDeleteEquipo.nombre}"? Esta acción no se puede deshacer.`}
+            confirmLabel="Eliminar"
+            cancelLabel="Cancelar"
+            accentColor={PALETTE.danger ?? "#EF4444"}
+            onCancel={() => setPendingDeleteEquipo(null)}
+            onConfirm={async () => {
+              await eliminarEquipo(pendingDeleteEquipo.id);
+              setPendingDeleteEquipo(null);
+              showToast("Equipo eliminado", "success");
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Breadcrumbs */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 11, fontWeight: 600 }}>

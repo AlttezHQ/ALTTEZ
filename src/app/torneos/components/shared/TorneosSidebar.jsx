@@ -119,30 +119,46 @@ export default function TorneosSidebar({
       <div style={{ height: 1, background: BORDER, margin: "0 12px 8px" }} />
 
       {/* Nav items */}
-      <nav style={{ flex: 1, padding: "4px 8px", overflowX: "hidden", overflowY: "auto" }}>
+      <nav style={{ flex: 1, padding: "8px", overflowX: "hidden", overflowY: "auto", position: "relative" }}>
         {NAV_ITEMS.map(({ id, icon: Icon, label }) => {
           const isActive = active === id;
           return (
-            <motion.button
-              key={id}
-              whileHover={{ x: collapsed ? 0 : 2 }}
-              onClick={() => onNav(id)}
-              title={collapsed ? label : ""}
-              style={{
-                width: "100%", display: "flex", alignItems: "center", gap: 10,
-                justifyContent: collapsed ? "center" : "flex-start",
-                padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
-                background: isActive ? CU_DIM : "transparent",
-                color: isActive ? CU : MUTED,
-                fontSize: 13, fontWeight: isActive ? 600 : 400,
-                fontFamily: FONT, textAlign: "left",
-                borderLeft: isActive ? `2px solid ${CU}` : "2px solid transparent",
-                marginBottom: 1, transition: "background 0.15s",
-              }}
-            >
-              <Icon size={18} style={{ flexShrink: 0 }} />
-              {!collapsed && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
-            </motion.button>
+            <div key={id} style={{ position: "relative", marginBottom: 4 }}>
+              {isActive && (
+                <motion.div
+                  layoutId="activeTorneosNav"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "var(--color-bronce-dim)",
+                    borderRadius: 8,
+                    zIndex: 0,
+                  }}
+                />
+              )}
+              <motion.button
+                whileHover={{ x: collapsed ? 0 : 2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onNav(id)}
+                title={collapsed ? label : ""}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 10,
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                  background: "transparent",
+                  color: isActive ? "var(--color-bronce)" : "var(--color-text-muted)",
+                  fontSize: 13, fontWeight: isActive ? 700 : 500,
+                  fontFamily: FONT, textAlign: "left",
+                  position: "relative", zIndex: 1,
+                  transition: "color 0.2s"
+                }}
+              >
+                <Icon size={18} style={{ flexShrink: 0 }} />
+                {!collapsed && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
+              </motion.button>
+            </div>
           );
         })}
       </nav>

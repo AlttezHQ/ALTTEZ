@@ -39,6 +39,8 @@ supabase/config.toml
 # Python virtual environments
 .venv/
 venv/
+__pycache__/
+*.pyc
 
 # Artifacts de trabajo (no versionar)
 mockup-landing.html

@@ -5,6 +5,7 @@
  */
 
 import { isSupabaseReady, supabase } from "../../../shared/lib/supabase";
+import { MATCH_STATUS, normalizeMatchStatus, toLegacyMatchStatus } from "../domain/fixtureState";
 
 const QUERY_TIMEOUT_MS = 12000;
 
@@ -75,7 +76,6 @@ export async function saveEquipos(torneoId, equipos) {
     jugadores: Array.isArray(e.jugadores) ? e.jugadores : [],
   }));
 
-  console.log("[svc] saveEquipos attempt:", rows);
   const { data, error } = await supabase.from("torneo_equipos").upsert(rows);
   
   if (error) {
@@ -125,6 +125,7 @@ export async function savePartidos(torneoId, partidos) {
     goles_local: p.golesLocal,
     goles_visita: p.golesVisita,
     estado: p.estado,
+    status: normalizeMatchStatus(p.status ?? p.estado),
     fecha_hora: p.fechaHora,
     lugar: p.lugar,
     orden: p.orden,
@@ -143,11 +144,42 @@ export async function updateResultado(partidoId, golesLocal, golesVisita, evento
     .update({ 
       goles_local: golesLocal, 
       goles_visita: golesVisita, 
-      estado: "finalizado",
+      estado: toLegacyMatchStatus(MATCH_STATUS.COMPLETED),
+      status: MATCH_STATUS.COMPLETED,
       eventos 
     })
     .eq("id", partidoId);
   return { ok: !error, error };
+}
+
+// Eventos analiticos del motor de competencia. Usa el outbox transaccional
+// para que Airflow/Snowflake/dbt los consuman fuera del flujo operativo.
+export async function enqueueCompetitionEvent(event) {
+  if (!isSupabaseReady || !event) return { ok: false };
+
+  const tournamentId = event.tournamentId ?? event.torneoId ?? null;
+  const eventType = event.eventType ?? event.event_type ?? null;
+  if (!tournamentId || !eventType) {
+    return { ok: false, error: { message: "Missing tournamentId or eventType" } };
+  }
+
+  const { data, error } = await supabase.rpc("enqueue_competition_event", {
+    p_tournament_id: tournamentId,
+    p_event_type: eventType,
+    p_payload: event.payload ?? {},
+    p_fixture_id: event.fixtureId ?? event.fixture_id ?? null,
+  });
+
+  return { ok: !error, data, error };
+}
+
+export async function enqueueCompetitionEvents(events = []) {
+  const results = [];
+  for (const event of events) {
+    results.push(await enqueueCompetitionEvent(event));
+  }
+  const firstError = results.find(r => !r.ok)?.error ?? null;
+  return { ok: !firstError, results, error: firstError };
 }
 
 // ── Sedes ───────────────────────────────────────────────────────────────────
@@ -236,28 +268,35 @@ export async function saveCategorias(torneoId, categorias) {
 export async function getTorneoPublico(slug) {
   if (!isSupabaseReady) return null;
   const { data: torneoRow, error: te } = await supabase
-    .from("torneos")
-    .select("*")
+    .from("vw_torneo_publico_info")
+    .select("slug,nombre,deporte,temporada,formato,estado,fecha_inicio,fecha_fin,sede_principal,organizador_nombre,publicado,descripcion,portada,perfil,contacto,premios,patrocinadores,visibilidad,reglamento_url")
     .eq("slug", slug)
-    .eq("publicado", true)
     .single();
   if (te || !torneoRow) return null;
 
-  const { data: equiposRows } = await supabase
-    .from("torneo_equipos")
-    .select("*")
-    .eq("torneo_id", torneoRow.id);
+  const [equiposRes, partidosRes, categoriasRes] = await Promise.all([
+    supabase
+      .from("vw_torneo_publico_equipos")
+      .select("slug,categoria_id,categoria_nombre,nombre,escudo,color,grupo")
+      .eq("slug", slug),
+    supabase
+      .from("vw_torneo_publico_partidos")
+      .select("slug,id_partido,categoria_id,categoria_nombre,fase,ronda,grupo,equipo_local_nombre,equipo_visita_nombre,cancha,hora_inicio,goles_local,goles_visita,estado_partido,orden")
+      .eq("slug", slug)
+      .order("orden"),
+    supabase
+      .from("vw_torneo_publico_categorias")
+      .select("slug,categoria_id,nombre,format")
+      .eq("slug", slug),
+  ]);
 
-  const { data: partidosRows } = await supabase
-    .from("torneo_partidos")
-    .select("*")
-    .eq("torneo_id", torneoRow.id)
-    .order("orden");
+  if (equiposRes.error || partidosRes.error || categoriasRes.error) return null;
 
   return {
-    torneo:   mapTorneo(torneoRow),
-    equipos:  (equiposRows ?? []).map(mapEquipo),
-    partidos: (partidosRows ?? []).map(mapPartido),
+    torneo:   mapPublicTorneo(torneoRow),
+    equipos:  (equiposRes.data ?? []).map(mapPublicEquipo),
+    partidos: (partidosRes.data ?? []).map(mapPublicPartido),
+    categorias: (categoriasRes.data ?? []).map(mapPublicCategoria),
   };
 }
 
@@ -307,16 +346,6 @@ export async function fetchAllTorneos() {
     if (arbitrosError && !arbitrosMissing) throw arbitrosError;
     if (categoriasError && !categoriasMissing) throw categoriasError;
 
-    if (sedesMissing) {
-      console.log("[TORNEOS] tabla opcional ausente: torneo_sedes");
-    }
-    if (arbitrosMissing) {
-      console.log("[TORNEOS] tabla opcional ausente: torneo_arbitros");
-    }
-    if (categoriasMissing) {
-      console.log("[TORNEOS] tabla opcional ausente: torneo_categorias");
-    }
-
     results.push({
       torneo: mapTorneo(t),
       equipos: (equiposRows ?? []).map(mapEquipo),
@@ -347,6 +376,75 @@ function withTimeout(promise, label) {
 function isMissingOptionalTableError(error) {
   if (!error) return false;
   return error.code === "PGRST205" || /Could not find the table/i.test(error.message || "");
+}
+
+function mapPublicTorneo(r) {
+  return {
+    nombre: r.nombre,
+    deporte: r.deporte,
+    temporada: r.temporada,
+    formato: r.formato,
+    estado: r.estado,
+    fechaInicio: r.fecha_inicio,
+    fechaFin: r.fecha_fin,
+    sedePrincipal: r.sede_principal,
+    organizador: r.organizador_nombre,
+    slug: r.slug,
+    publicado: r.publicado,
+    descripcion: r.descripcion,
+    portada: r.portada,
+    perfil: r.perfil,
+    contacto: r.contacto,
+    premios: r.premios,
+    patrocinadores: Array.isArray(r.patrocinadores) ? r.patrocinadores : [],
+    visibilidad: r.visibilidad,
+    reglamentoUrl: r.reglamento_url,
+    vistasCount: 0,
+  };
+}
+
+function mapPublicEquipo(r) {
+  return {
+    id: r.nombre,
+    nombre: r.nombre,
+    logo: r.escudo,
+    escudo: r.escudo,
+    color: r.color,
+    grupo: r.grupo,
+    categoriaId: r.categoria_id ?? null,
+    categoriaNombre: r.categoria_nombre ?? null,
+  };
+}
+
+function mapPublicPartido(r) {
+  const localKey = r.equipo_local_nombre || "TBD";
+  const visitaKey = r.equipo_visita_nombre || "TBD";
+  return {
+    id: r.id_partido,
+    categoriaId: r.categoria_id ?? null,
+    categoriaNombre: r.categoria_nombre ?? null,
+    fase: r.fase,
+    ronda: r.ronda,
+    grupo: r.grupo,
+    equipoLocalId: localKey,
+    equipoVisitaId: visitaKey,
+    golesLocal: r.goles_local,
+    golesVisita: r.goles_visita,
+    estado: r.estado_partido,
+    fechaHora: r.hora_inicio,
+    cancha: r.cancha,
+    lugar: r.cancha,
+    orden: r.orden,
+    source: ["octavos", "cuartos", "semis", "final", "tercer_puesto"].includes(r.fase) ? "knockout" : "group",
+  };
+}
+
+function mapPublicCategoria(r) {
+  return {
+    id: r.categoria_id,
+    nombre: r.nombre,
+    format: r.format,
+  };
 }
 
 function mapTorneo(r) {
@@ -381,6 +479,7 @@ function mapPartido(r) {
     id: r.id, torneoId: r.torneo_id, fase: r.fase, ronda: r.ronda, grupo: r.grupo,
     equipoLocalId: r.equipo_local_id, equipoVisitaId: r.equipo_visita_id,
     golesLocal: r.goles_local, golesVisita: r.goles_visita, estado: r.estado,
+    status: normalizeMatchStatus(r.status ?? r.estado),
     fechaHora: r.fecha_hora, lugar: r.lugar, orden: r.orden,
     sedeId: r.sede_id, arbitroId: r.arbitro_id,
     eventos: r.eventos ?? [],
