@@ -1,28 +1,46 @@
-# Alttez
+# ALTTEZ
 
-Repositorio privado de la plataforma de gestión deportiva Alttez.
+Repositorio privado del ecosistema operativo deportivo ALTTEZ.
 
-## 🚀 Desarrollo Local
+## Desarrollo Local
 
-1. **Instalar dependencias:**
+1. Instala dependencias:
+
    ```bash
    npm install
    ```
 
-2. **Variables de entorno:**
-   Crea un archivo `.env` basado en `.env.example` con tus credenciales de Supabase.
+2. Crea `.env` desde `.env.example` y completa las variables `NEXT_PUBLIC_*`.
 
-3. **Iniciar el servidor local:**
+3. Inicia Next.js:
+
    ```bash
    npm run dev:local
    ```
 
-## 🛠️ Comandos
+   Si Turbopack presenta problemas en Windows, usa:
 
-- `npm run dev` - Servidor de desarrollo estándar.
-- `npm run build` - Compilación para producción.
-- `npm run lint` - Ejecución de ESLint.
+   ```bash
+   npm run dev:webpack
+   ```
 
----
+## Comandos
 
-*Para guías detalladas y reglas destinadas a agentes de IA, por favor consulta el archivo [AGENTS.md](./AGENTS.md).*
+- `npm run dev` - Servidor Next.js de desarrollo.
+- `npm run dev:local` - Next.js en `127.0.0.1:3000`.
+- `npm run dev:webpack` - Desarrollo con Webpack como fallback.
+- `npm run build` - Build de produccion.
+- `npm run start` - Servir el build de produccion.
+- `npm run lint` - ESLint.
+
+## Rutas Principales
+
+- `/` - Landing ALTTEZ.
+- `/auth/login`, `/auth/register`, `/auth/recover` - Autenticacion.
+- `/crm` y `/crm/<modulo>` - ALTTEZ CRM.
+- `/torneos` - ALTTEZ Torneos.
+- `/t/[slug]` y `/t/[slug]/registro-equipo/[equipoId]` - Portal publico de torneos.
+- `/propuesta/[id]` y `/propuestas/[id]` - Propuestas comerciales.
+- `/confirmar/[clubId]/[eventId]` - Confirmacion publica de asistencia.
+
+Consulta [AGENTS.md](./AGENTS.md) para reglas de trabajo con agentes.
