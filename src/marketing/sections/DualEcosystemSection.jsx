@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { motion, useScroll, useSpring } from "framer-motion";
 import { ArrowRight, Users, Trophy, ShieldCheck, PieChart, Activity, Megaphone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
 const CONTENT = [
@@ -36,7 +36,7 @@ const CONTENT = [
 export default function DualEcosystemSection() {
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -171,7 +171,7 @@ export default function DualEcosystemSection() {
                     </div>
 
                     <button 
-                      onClick={() => navigate(item.path)}
+                      onClick={() => router.push(item.path)}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",

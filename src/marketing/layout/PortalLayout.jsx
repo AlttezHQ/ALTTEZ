@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
@@ -17,15 +20,15 @@ const SERVICES = [
   }
 ];
 
-export default function PortalLayout() {
+export default function PortalLayout({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setIsOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -74,16 +77,16 @@ export default function PortalLayout() {
           transition: "all 0.4s cubic-bezier(0.32,0.72,0,1)"
         }}>
           
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ height: 20 }} />
             <span style={{ fontFamily: F.display, fontWeight: 800, fontSize: 16, color: B.text, letterSpacing: "-0.04em" }}>ALTTEZ.</span>
           </Link>
 
           {/* Desktop Nav */}
           <nav className="desktop-nav" style={{ display: "none", alignItems: "center", gap: 28 }}>
-            <Link to="/" style={navLinkStyle(location.pathname === "/")}>Inicio</Link>
+            <Link href="/" style={navLinkStyle(pathname === "/")}>Inicio</Link>
             
-            <div className="nav-dropdown-trigger" style={{ position: "relative", cursor: "pointer", ...navLinkStyle(location.pathname.includes("/producto") || location.pathname.includes("/torneos")) }}>
+            <div className="nav-dropdown-trigger" style={{ position: "relative", cursor: "pointer", ...navLinkStyle(pathname.includes("/producto") || pathname.includes("/torneos")) }}>
               Ecosistema
               <div className="nav-dropdown-menu" style={{
                 position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
@@ -96,7 +99,7 @@ export default function PortalLayout() {
                   width: 280, display: "flex", flexDirection: "column", gap: 4
                 }}>
                   {SERVICES.map((s) => (
-                    <Link key={s.to} to={s.to} style={{
+                    <Link key={s.to} href={s.to} style={{
                       padding: "14px 16px", borderRadius: 12, textDecoration: "none",
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       color: B.text, transition: "background 0.2s"
@@ -112,17 +115,17 @@ export default function PortalLayout() {
               </div>
             </div>
 
-            <Link to="/quienes-somos" style={navLinkStyle(location.pathname === "/quienes-somos")}>Compañía</Link>
-            <Link to="/precios" style={navLinkStyle(location.pathname === "/precios")}>Precios</Link>
+            <Link href="/quienes-somos" style={navLinkStyle(pathname === "/quienes-somos")}>Compañía</Link>
+            <Link href="/precios" style={navLinkStyle(pathname === "/precios")}>Precios</Link>
           </nav>
 
           <div className="desktop-nav" style={{ display: "none", alignItems: "center", gap: 12 }}>
-            <Link to="/auth/login" style={{
+            <Link href="/auth/login" style={{
               color: B.text, fontSize: 13, fontWeight: 700, textDecoration: "none", padding: "8px 16px"
             }}>Log in</Link>
             <button 
               className="btn-premium"
-              onClick={() => navigate("/contacto")}
+              onClick={() => router.push("/contacto")}
               style={{
                 background: B.text, color: "white", border: "none", padding: "10px 20px",
                 borderRadius: 999, fontSize: 13, fontWeight: 700, cursor: "pointer",
@@ -180,7 +183,7 @@ export default function PortalLayout() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: i * 0.08, ease: [0.32, 0.72, 0, 1] }}
                 >
-                  <Link to={item.to} onClick={() => setIsOpen(false)} style={{
+                  <Link href={item.to} onClick={() => setIsOpen(false)} style={{
                     fontSize: 32, fontWeight: 800, fontFamily: F.display, color: B.text, textDecoration: "none",
                     letterSpacing: "-0.04em"
                   }}>
@@ -194,7 +197,7 @@ export default function PortalLayout() {
       </AnimatePresence>
 
       <main style={{ flex: 1 }}>
-        <Outlet />
+        {children}
       </main>
 
       <style>{`

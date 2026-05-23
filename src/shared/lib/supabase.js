@@ -1,7 +1,7 @@
 /**
  * @module supabase
  * @description Cliente Supabase singleton para ALTTEZ.
- * Lee credenciales de variables de entorno VITE_SUPABASE_*.
+ * Lee credenciales de variables de entorno NEXT_PUBLIC_SUPABASE_*.
  *
  * @author @Data (Mateo-Data_Engine)
  * @version 1.1.0
@@ -13,8 +13,8 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // Export status
 export const isSupabaseReady = !!(supabaseUrl && supabaseKey);
@@ -55,5 +55,5 @@ export function getStoredSession() {
 }
 
 if (!isSupabaseReady) {
-  console.warn("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — falling back to localStorage if applicable");
+  console.warn("[supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — falling back to localStorage if applicable");
 }

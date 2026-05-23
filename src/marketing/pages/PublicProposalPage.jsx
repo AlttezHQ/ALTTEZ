@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import {
   motion, AnimatePresence, useInView,
   useScroll, useTransform, animate as fmAnimate,

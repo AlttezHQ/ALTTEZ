@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
@@ -49,7 +49,7 @@ const PLANS = [
 ];
 
 export default function PricingPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   usePageTitle("Precios — ALTTEZ");
   const [isAnnual, setIsAnnual] = useState(true);
 
@@ -157,7 +157,7 @@ export default function PricingPage() {
                 </div>
 
                 <button 
-                  onClick={() => navigate("/contacto")}
+                  onClick={() => router.push("/contacto")}
                   style={{
                     width: "100%",
                     padding: 16,

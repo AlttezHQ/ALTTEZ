@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { PALETTE } from "../tokens/palette";
 
 import AuthShell       from "./components/AuthShell";
@@ -18,22 +18,22 @@ const CU = PALETTE.bronce;
  *   Recibe los datos del formulario para que CRMApp cree el club y vincule el perfil.
  */
 export default function LandingPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleAction = (actionType, module) => {
     // actionType = "login" | "register"
     // module = "crm" | "torneos" (aunque ahora ambos van al SSO central)
     // Pasamos el módulo destino como ?redirect= (o lo asume el SSO)
-    const dest = module === "torneos" ? "/torneos" : "/crm";
-    navigate(`/auth/${actionType}?redirect=${dest}`);
+    const dest = module === "torneos" ? "/torneos" : "/dashboard";
+    router.push(`/auth/${actionType}?redirect=${dest}`);
   };
 
   const goBack = () => {
-    navigate("/");
+    router.push("/");
   };
 
   return (
-    <AuthShell maxWidth={step === "landing" ? 1240 : 960}>
+    <AuthShell maxWidth={1240}>
 
       {/* Botón superior de retorno */}
       <button

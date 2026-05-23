@@ -1,5 +1,3 @@
-import { PALETTE } from "../../tokens/palette";
-
 /**
  * @component AuthFormField
  * @description Campo de formulario reutilizable para pantallas de auth.
@@ -7,16 +5,13 @@ import { PALETTE } from "../../tokens/palette";
  */
 export function AuthFormField({ label, error, children }) {
   return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{
-        display: "block", fontSize: 10,
-        color: PALETTE.textMuted, marginBottom: 6, fontWeight: 600,
-      }}>
+    <div className="mb-4">
+      <label className="block text-xs font-bold text-[#1F1F1D]/70 mb-1.5 ml-1">
         {label}
       </label>
       {children}
       {error && (
-        <div style={{ fontSize: 10, color: PALETTE.danger, marginTop: 4 }}>
+        <div className="text-[11px] font-medium text-[#D95C5C] mt-1.5 ml-1">
           {error}
         </div>
       )}
@@ -25,21 +20,25 @@ export function AuthFormField({ label, error, children }) {
 }
 
 /**
- * Estilo base para inputs de auth. Acepta hasError para border rojo.
+ * Retorna las clases de Tailwind base para inputs de auth.
  */
 export function mkAuthInput(hasError) {
+  // En lugar de retornar un objeto de estilos, ahora retorna un string con las clases.
+  // El código legacy puede seguir usando style={mkAuthInput()} y fallará si no lo actualizamos.
+  // Para evitar romper los archivos que aún no hemos actualizado, vamos a hacer un truco temporal
+  // devolviendo estilos en línea, PERO idealmente los componentes deberían usar className.
   return {
     width: "100%",
     fontSize: "14px",
-    padding: "12px 16px",
-    background: "var(--color-surface)",
-    border: `1px solid ${hasError ? "var(--color-danger)" : "var(--color-border-hi)"}`,
-    borderRadius: 12,
-    color: "var(--color-text)",
+    padding: "14px 16px",
+    backgroundColor: "#FFFFFF",
+    border: `1px solid ${hasError ? "#D95C5C" : "#EDE8D0"}`,
+    borderRadius: "12px",
+    color: "#1F1F1D",
     fontFamily: "inherit",
     outline: "none",
     boxSizing: "border-box",
-    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-    boxShadow: "var(--shadow-subtle)",
+    transition: "all 0.2s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
   };
 }

@@ -1,40 +1,19 @@
 import { motion } from "framer-motion";
-import { PALETTE } from "../../tokens/palette";
 
-const PAGE_BG = {
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: `
-    radial-gradient(circle at 15% 15%, var(--color-bronce-dim), transparent 30%),
-    radial-gradient(circle at 85% 85%, rgba(216,154,43,0.08), transparent 30%),
-    var(--color-bg)
-  `,
-  padding: "40px 24px",
-  position: "relative",
-  overflow: "hidden",
-};
-
-const GRID = {
-  position: "absolute",
-  inset: 0,
-  pointerEvents: "none",
-  backgroundImage: "linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)",
-  backgroundSize: "64px 64px",
-  maskImage: "radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, transparent 80%)",
-  WebkitMaskImage: "radial-gradient(circle at center, rgba(0,0,0,0.6) 0%, transparent 80%)",
-};
-
-/**
- * @component AuthShell
- * @description Contenedor base para todas las pantallas de autenticación (Login, Registro, Recuperación).
- * Incluye el fondo con gradiente editorial y la grilla sutil de ALTTEZ.
- */
 export default function AuthShell({ children, maxWidth = 1240 }) {
   return (
-    <div style={PAGE_BG}>
-      <div style={GRID} />
+    <div className="min-h-screen bg-[#F6F1EA] flex items-center justify-center p-6 sm:p-10 relative overflow-hidden">
+      {/* Grilla sutil de fondo */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-40"
+        style={{
+          backgroundImage: "linear-gradient(#EDE8D0 1px, transparent 1px), linear-gradient(90deg, #EDE8D0 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+          maskImage: "radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 80%)"
+        }}
+      />
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

@@ -1,9 +1,9 @@
 const DEFAULT_COMMERCIAL_EMAIL = "hola@alttez.co";
 
-export const COMMERCIAL_EMAIL = import.meta.env.VITE_MARKETING_CONTACT_EMAIL?.trim() || DEFAULT_COMMERCIAL_EMAIL;
-export const PRIVACY_EMAIL = import.meta.env.VITE_MARKETING_PRIVACY_EMAIL?.trim() || COMMERCIAL_EMAIL;
-export const WHATSAPP_NUMBER = import.meta.env.VITE_MARKETING_WA_NUMBER?.trim() || "";
-export const CALENDAR_URL = import.meta.env.VITE_MARKETING_CALENDAR_URL?.trim() || "";
+export const COMMERCIAL_EMAIL = process.env.NEXT_PUBLIC_MARKETING_CONTACT_EMAIL?.trim() || DEFAULT_COMMERCIAL_EMAIL;
+export const PRIVACY_EMAIL = process.env.NEXT_PUBLIC_MARKETING_PRIVACY_EMAIL?.trim() || COMMERCIAL_EMAIL;
+export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_MARKETING_WA_NUMBER?.trim() || "";
+export const CALENDAR_URL = process.env.NEXT_PUBLIC_MARKETING_CALENDAR_URL?.trim() || "";
 
 const DEFAULT_WA_MESSAGE = "Hola, quiero conocer ALTTEZ para mi club.";
 

@@ -1,27 +1,23 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { LogIn, ArrowLeft } from "lucide-react";
-import { PALETTE } from "../../tokens/palette";
 import { useAuth } from "../useAuth";
 import { getPostLoginRedirect, getRedirectParam } from "../authRedirects";
 import { validateLoginForm } from "../authValidation";
 import { AuthFormField, mkAuthInput } from "./AuthFormField";
 import PasswordInput from "./PasswordInput";
 import GoogleLoginButton from "./GoogleLoginButton";
-import Button from "../../../shared/ui/Button";
-
-const EASE = [0.22, 1, 0.36, 1];
-const CU = PALETTE.bronce;
 
 export default function AuthLoginForm({ onRegisterClick, onRecoverClick }) {
-  const auth     = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [form, setForm]     = useState({ email: "", password: "" });
+  const auth = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg]       = useState(null);
+  const [msg, setMsg] = useState(null);
 
   const update = (k, v) => {
     setForm(p => ({ ...p, [k]: v }));
@@ -41,139 +37,110 @@ export default function AuthLoginForm({ onRegisterClick, onRecoverClick }) {
       setMsg({ type: "error", text: error });
       return;
     }
-    const currentPath = location.pathname;
-    navigate(getPostLoginRedirect({
-      redirectPath: getRedirectParam(),
+    const currentPath = pathname;
+    router.replace(getPostLoginRedirect({
+      redirectPath: getRedirectParam() || searchParams.get('redirect'),
       currentPath,
       userMetadata: user?.user_metadata,
       profile: profile
-    }), { replace: true });
+    }));
   };
 
-  const googleRedirect = window.location.origin;
+  const googleRedirect = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 440, margin: "0 auto" }}>
+    <div className="relative w-full max-w-[440px] mx-auto font-sans">
       <button
-        onClick={() => navigate("/")}
+        onClick={() => router.push("/")}
         type="button"
-        style={{
-          border: "none", background: "none", padding: 0,
-          marginBottom: 16, cursor: "pointer",
-          color: CU, fontSize: 11, fontWeight: 700,
-          display: "flex", alignItems: "center", gap: 6,
-          position: "absolute", top: -32, left: 0,
-        }}
+        className="absolute -top-12 left-0 flex items-center gap-2 text-xs font-bold text-[#CE8946] hover:text-[#D8A06B] transition-colors bg-transparent border-none cursor-pointer"
       >
-        <ArrowLeft size={12} strokeWidth={3} />
+        <ArrowLeft size={14} strokeWidth={3} />
         Volver al ecosistema
       </button>
 
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE }}
-        className="glass-panel"
-        style={{
-          width: "100%",
-          padding: "40px 32px",
-          border: `1px solid var(--color-border)`,
-          boxShadow: "var(--shadow-panel)",
-        }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-[24px] p-8 sm:p-10 shadow-xl border border-[#EDE8D0]"
       >
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-        <div style={{
-          width: 42, height: 42, borderRadius: 12,
-          background: "linear-gradient(135deg, #F6F1EA, #FFFFFF)",
-          border: `1px solid ${PALETTE.border}`,
-          display: "flex", alignItems: "center", justifyContent: "center", color: CU,
-        }}>
-          <LogIn size={20} />
-        </div>
-        <div>
-          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.05em", color: PALETTE.text }}>
-            Iniciar sesión
+        <div className="flex flex-col items-center gap-3 mb-8 text-center">
+          <div className="w-14 h-14 rounded-[14px] bg-[#F6F1EA] border border-[#EDE8D0] flex items-center justify-center text-[#CE8946] mb-2">
+            <LogIn size={24} />
           </div>
-          <div style={{ fontSize: 11, color: PALETTE.textMuted }}>
-            Ingresa tus credenciales para continuar
+          <div>
+            <h1 className="text-[26px] font-extrabold tracking-tight text-[#1F1F1D] leading-tight">
+              Iniciar sesión
+            </h1>
+            <p className="text-xs text-[#1F1F1D]/60 mt-1.5 font-medium">
+              Ingresa tus credenciales para continuar
+            </p>
           </div>
         </div>
-      </div>
 
-      {msg && (
-        <div style={{
-          padding: "10px 14px", borderRadius: 10, marginBottom: 18,
-          fontSize: 12, fontWeight: 600,
-          background: msg.type === "error" ? "rgba(217,92,92,0.08)" : "rgba(47,165,111,0.08)",
-          color: msg.type === "error" ? PALETTE.danger : "#2FA56F",
-          border: `1px solid ${msg.type === "error" ? "rgba(217,92,92,0.15)" : "rgba(47,165,111,0.15)"}`,
-        }}>
-          {msg.text}
+        {msg && (
+          <div className={`p-3 rounded-xl mb-6 text-xs font-bold border ${msg.type === "error" ? "bg-[#D95C5C]/10 text-[#D95C5C] border-[#D95C5C]/20" : "bg-[#2FA56F]/10 text-[#2FA56F] border-[#2FA56F]/20"}`}>
+            {msg.text}
+          </div>
+        )}
+
+        <AuthFormField label="Correo electrónico" error={errors.email}>
+          <input
+            style={mkAuthInput(!!errors.email)}
+            value={form.email}
+            onChange={e => update("email", e.target.value)}
+            placeholder="tu@email.com"
+            maxLength={80}
+            type="email"
+            autoComplete="email"
+            className="focus:border-[#CE8946] focus:ring-1 focus:ring-[#CE8946]"
+          />
+        </AuthFormField>
+
+        <AuthFormField label="Contraseña" error={errors.password}>
+          <PasswordInput
+            id="login-password"
+            value={form.password}
+            onChange={e => update("password", e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            placeholder="Tu contraseña"
+            hasError={!!errors.password}
+            autoComplete="current-password"
+          />
+        </AuthFormField>
+
+        <div
+          onClick={onRecoverClick}
+          className="text-right -mt-1 mb-6 text-[11px] text-[#CE8946] font-bold cursor-pointer hover:text-[#D8A06B] transition-colors"
+        >
+          ¿Olvidaste tu contraseña?
         </div>
-      )}
 
-      <AuthFormField label="Email" error={errors.email}>
-        <input
-          style={mkAuthInput(!!errors.email)}
-          value={form.email}
-          onChange={e => update("email", e.target.value)}
-          placeholder="tu@email.com"
-          maxLength={80}
-          type="email"
-          autoComplete="email"
-        />
-      </AuthFormField>
+        <button
+          onClick={handleLogin}
+          disabled={loading}
+          className="w-full bg-[#CE8946] hover:bg-[#D8A06B] disabled:bg-[#EDE8D0] disabled:text-[#1F1F1D]/40 text-white min-h-[52px] rounded-xl font-bold text-sm tracking-wide uppercase transition-all shadow-md hover:shadow-lg disabled:shadow-none mb-6 flex items-center justify-center"
+        >
+          {loading ? "Iniciando..." : "Ingresar"}
+        </button>
 
-      <AuthFormField label="Contraseña" error={errors.password}>
-        <PasswordInput
-          id="login-password"
-          value={form.password}
-          onChange={e => update("password", e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleLogin()}
-          placeholder="Tu contraseña"
-          hasError={!!errors.password}
-          autoComplete="current-password"
-        />
-      </AuthFormField>
+        {/* Separador */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex-1 h-[1px] bg-[#EDE8D0]" />
+          <span className="text-[10px] text-[#1F1F1D]/40 font-bold uppercase tracking-wider">O</span>
+          <div className="flex-1 h-[1px] bg-[#EDE8D0]" />
+        </div>
 
-      <div
-        onClick={onRecoverClick}
-        style={{
-          textAlign: "right", marginTop: -6, marginBottom: 18,
-          fontSize: 11, color: CU, fontWeight: 700, cursor: "pointer",
-        }}
-      >
-        ¿Olvidaste tu contraseña?
-      </div>
+        <GoogleLoginButton redirectTo={googleRedirect} disabled={loading} />
 
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={handleLogin}
-        loading={loading}
-        style={{ width: "100%", minHeight: 52, borderRadius: 14, marginBottom: 12 }}
-      >
-        Ingresar
-      </Button>
-
-      {/* Separador */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <div style={{ flex: 1, height: 1, background: PALETTE.border }} />
-        <span style={{ fontSize: 10, color: PALETTE.textMuted, fontWeight: 600 }}>O</span>
-        <div style={{ flex: 1, height: 1, background: PALETTE.border }} />
-      </div>
-
-      <GoogleLoginButton redirectTo={googleRedirect} disabled={loading} />
-
-      <div
-        onClick={onRegisterClick}
-        style={{ marginTop: 22, textAlign: "center", fontSize: 12, color: PALETTE.textMuted, cursor: "pointer" }}
-      >
-        No tengo cuenta.{" "}
-        <span style={{ color: CU, fontWeight: 700 }}>
-          Crear cuenta
-        </span>
-      </div>
+        <div
+          onClick={onRegisterClick}
+          className="mt-8 text-center text-xs text-[#1F1F1D]/60 cursor-pointer hover:text-[#1F1F1D] transition-colors"
+        >
+          No tengo cuenta.{" "}
+          <span className="text-[#CE8946] font-bold hover:text-[#D8A06B]">Crear cuenta</span>
+        </div>
       </motion.div>
     </div>
   );

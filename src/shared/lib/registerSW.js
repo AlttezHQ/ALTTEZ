@@ -7,7 +7,7 @@
  *   - "sw-update-available" (CustomEvent): { detail: { registration } }
  *     Escuchado por UpdateToast.jsx para mostrar el toast de actualización.
  *
- * Uso: llamar registerSW() una vez en main.jsx (o App root effect).
+ * Uso: llamar registerSW() una vez desde el bootstrap cliente de Next.
  * @author @Andres (UI) — PWA Sprint
  */
 
@@ -31,7 +31,7 @@ export function registerSW() {
 
   // Only register in production builds to avoid dev cache confusion.
   // Remove the NODE_ENV check if you want SW in dev as well.
-  if (import.meta.env.PROD) {
+  if (process.env.NODE_ENV === "production") {
     window.addEventListener("load", () => {
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (refreshing) return;

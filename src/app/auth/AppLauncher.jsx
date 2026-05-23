@@ -1,4 +1,6 @@
-import { useNavigate } from "react-router-dom";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2, Trophy, LogOut } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
@@ -14,7 +16,7 @@ import FadeIn from "../../shared/ui/animations/FadeIn";
  * Rediseñada con Glassmorphism y animaciones.
  */
 export default function AppLauncher() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const auth = useAuth();
 
   return (
@@ -36,7 +38,7 @@ export default function AppLauncher() {
             whileTap={{ scale: 0.95 }}
             onClick={async () => {
               await auth.signOut();
-              navigate("/auth/login");
+              router.push("/auth/login");
             }}
             style={{
               position: "absolute", top: 0, right: 0,
@@ -55,7 +57,7 @@ export default function AppLauncher() {
             <motion.div
               whileHover={{ y: -6, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate("/crm")}
+              onClick={() => router.push("/crm")}
               className="glass-panel"
               style={{
                 display: "flex", flexDirection: "column",
@@ -91,7 +93,7 @@ export default function AppLauncher() {
             <motion.div
               whileHover={{ y: -6, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => navigate("/torneos")}
+              onClick={() => router.push("/torneos")}
               className="glass-panel"
               style={{
                 display: "flex", flexDirection: "column",

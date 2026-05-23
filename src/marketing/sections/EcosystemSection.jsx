@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { BookOpen, Compass, Layers } from "lucide-react";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
@@ -42,7 +42,7 @@ const SOLUTIONS = [
 ];
 
 export default function EcosystemSection() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -194,7 +194,7 @@ export default function EcosystemSection() {
 
                 <button
                   className="eco-cta"
-                  onClick={() => navigate(to)}
+                  onClick={() => router.push(to)}
                   style={{
                     width: "100%", padding: "12px 16px", borderRadius: 10,
                     border: "1px solid rgba(0,0,0,0.10)",

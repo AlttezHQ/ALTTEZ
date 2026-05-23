@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+@theme {
+  --color-alttez-grafito: #111315;
+  --color-alttez-marfil: #F5F7F8;
+  --color-alttez-cobre: #C27A42;
+  --color-alttez-azul: #3F6DB5;
+  --color-alttez-exito: #22C55E;
+  --color-alttez-advertencia: #F5BE05;
+  --color-alttez-riesgo: #EF4444;
+  --color-alttez-informacion: #3F6DB5;
+  --color-alttez-neutro: #6B7280;
+
+  --color-background: var(--color-alttez-grafito);
+  --color-foreground: var(--color-alttez-marfil);
+  
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-sora);
+}
+
+:root {
+  --background: #111315;
+  --foreground: #F5F7F8;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), sans-serif;
+}
+
+/* Glassmorphism utilities para tema oscuro */
+@layer utilities {
+  .glass-panel {
+    background: rgba(17, 19, 21, 0.7);
+    border: 1px solid rgba(245, 247, 248, 0.1);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  }
+}

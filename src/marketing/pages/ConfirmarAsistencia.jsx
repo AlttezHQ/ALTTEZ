@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase, isSupabaseReady } from "../../shared/lib/supabase";
 import { MARKETING_BRAND as B, MARKETING_GRADIENTS as G, MARKETING_FONTS as F } from "../theme/brand";

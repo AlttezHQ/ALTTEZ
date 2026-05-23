@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
 import { ArrowRight, LogIn, Activity, Trophy } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
 
 export default function TemporaryPortal() {
   usePageTitle("Portal de Acceso — ALTTEZ");
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <div style={{
@@ -66,7 +66,7 @@ export default function TemporaryPortal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
-            onClick={() => navigate("/auth/login")}
+            onClick={() => router.push("/auth/login")}
             className="portal-card"
             style={{
               background: "rgba(255,255,255,0.03)",
@@ -104,7 +104,7 @@ export default function TemporaryPortal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            onClick={() => navigate("/auth/login")}
+            onClick={() => router.push("/auth/login")}
             className="portal-card"
             style={{
               background: "rgba(255,255,255,0.03)",

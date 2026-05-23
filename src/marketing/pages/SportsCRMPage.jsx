@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import {
   Home, Users, Zap, Calendar, DollarSign, BarChart2, Settings,
   Bell, Shield, Cloud, Building2, CheckCircle,
@@ -233,7 +233,7 @@ function CRMPreview() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SportsCRMPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   usePageTitle("ALTTEZ CRM — Plataforma deportiva integral");
 
   return (
@@ -279,7 +279,7 @@ export default function SportsCRMPage() {
               <motion.button
                 whileHover={{ scale: 1.02, boxShadow: `0 10px 28px ${B.primaryGlow}` }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/contacto")}
+                onClick={() => router.push("/contacto")}
                 style={{
                   padding: "12px 22px", borderRadius: 10,
                   border: "none", background: G.button,
@@ -292,7 +292,7 @@ export default function SportsCRMPage() {
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => navigate("/crm?demo=true")}
+                onClick={() => router.push("/crm?demo=true")}
                 style={{
                   padding: "12px 22px", borderRadius: 10,
                   border: `1px solid ${B.borderStrong}`,

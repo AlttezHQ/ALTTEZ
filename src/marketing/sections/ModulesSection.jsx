@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { BarChart3, Calendar, Dumbbell, Users, Wallet } from "lucide-react";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
@@ -40,7 +40,7 @@ const MODULES = [
 ];
 
 export default function ModulesSection() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const el = document.createElement("style");
@@ -163,7 +163,7 @@ export default function ModulesSection() {
               {/* Ver más → link */}
               <button
                 className="mod-ver-mas"
-                onClick={() => navigate(to)}
+                onClick={() => router.push(to)}
                 style={{
                   background: "none", border: "none", padding: 0,
                   color: B.text, fontSize: 13, fontWeight: 700,
