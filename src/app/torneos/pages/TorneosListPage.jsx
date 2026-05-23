@@ -161,7 +161,7 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
                   <Plus size={13} color={MUTED} style={{ transform: "rotate(45deg)" }} />
                 </motion.button>
                 <motion.button
-                  whileHover={{ scale: 1.02, background: "#FFF0F0" }} whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.02, background: "rgba(239, 68, 68, 0.1)" }} whileTap={{ scale: 0.97 }}
                   onClick={() => setPendingDelete(t)}
                   style={{ width: 36, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
                 >

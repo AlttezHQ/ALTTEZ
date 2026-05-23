@@ -44,7 +44,7 @@ function MatchNode({ match, equipos, onRegisterResult }) {
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "6px 12px", borderBottom: isLocal ? `1px solid ${BORDER}` : "none",
-        background: isWinner ? "#FDFDFB" : "transparent",
+        background: isWinner ? CU_DIM : "transparent",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: team?.color ?? BORDER }} />
@@ -186,10 +186,11 @@ export default function FaseFinalPage({ onGoTorneos }) {
     // Avanzar ganador
     if (winnerId) {
       const storeState = useTorneosStore.getState();
-      const currentMatches = storeState.partidos.filter(p => p.torneoId === torneoActivoId);
-      const nextMatches = advanceKnockoutWinner(currentMatches, match.id, winnerId);
-      const targetMatch = nextMatches.find(next => {
-        const current = currentMatches.find(prev => prev.id === next.id);
+      const tournamentMatches = storeState.partidos.filter(p => p.torneoId === torneoActivoId);
+      const currentCategoryMatches = tournamentMatches.filter(p => p.categoriaId === activeCat.id && p.source === "knockout");
+      const nextCategoryMatches = advanceKnockoutWinner(currentCategoryMatches, match.id, winnerId);
+      const targetMatch = nextCategoryMatches.find(next => {
+        const current = currentCategoryMatches.find(prev => prev.id === next.id);
         if (!current || next.id === match.id) return false;
         const changedSlot =
           current.equipoLocalId !== next.equipoLocalId ||
@@ -200,7 +201,8 @@ export default function FaseFinalPage({ onGoTorneos }) {
         return changedSlot && containsWinner;
       });
 
-      await setPartidos(torneoActivoId, nextMatches);
+      const preserved = tournamentMatches.filter(p => !(p.categoriaId === activeCat.id && p.source === "knockout"));
+      await setPartidos(torneoActivoId, [...preserved, ...nextCategoryMatches]);
 
       if (targetMatch) {
         await storeState.registrarAvanceFase({
@@ -239,7 +241,7 @@ export default function FaseFinalPage({ onGoTorneos }) {
               style={{
                 padding: "7px 16px", borderRadius: 10, fontSize: 12, fontWeight: 700,
                 border: `1px solid ${activeCat.id === cat.id ? CU : BORDER}`,
-                background: activeCat.id === cat.id ? CU_DIM : "#FFF",
+                background: activeCat.id === cat.id ? CU_DIM : CARD,
                 color: activeCat.id === cat.id ? CU : MUTED,
                 cursor: "pointer", fontFamily: FONT,
               }}

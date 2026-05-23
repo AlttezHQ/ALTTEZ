@@ -12,7 +12,7 @@ const TEXT   = PALETTE.text;
 const MUTED  = PALETTE.textMuted;
 const HINT   = PALETTE.textHint;
 const BORDER = PALETTE.border;
-const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT   = "var(--font-inter), sans-serif";
 
 const BASE_NAV_ITEMS = [
   { id: "inicio",        icon: LayoutDashboard, label: "Inicio" },
@@ -75,7 +75,12 @@ export default function TorneosSidebar({
         gap: 8,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
+          <div style={{ 
+            width: 26, height: 26, flexShrink: 0, backgroundColor: CU, 
+            maskImage: "url(/branding/alttez-symbol-transparent.png)", WebkitMaskImage: "url(/branding/alttez-symbol-transparent.png)", 
+            maskSize: "contain", WebkitMaskSize: "contain", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", 
+            maskPosition: "center", WebkitMaskPosition: "center" 
+          }} />
           <AnimatePresence>
             {!collapsed && (
               <motion.div
@@ -175,7 +180,7 @@ export default function TorneosSidebar({
             justifyContent: collapsed ? "center" : "flex-start",
             transition: "background 0.2s",
           }}
-          onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
+          onMouseOver={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"}
           onMouseOut={e => e.currentTarget.style.background = "transparent"}
         >
           <User size={16} color={MUTED} />
@@ -203,7 +208,7 @@ export default function TorneosSidebar({
                 overflow: "hidden", zIndex: 50,
               }}
             >
-              <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
+              <div style={{ padding: "12px 14px", borderBottom: `1px solid ${BORDER}`, background: "var(--color-bg-panel)" }}>
                 <div style={{ fontSize: 11, color: MUTED }}>Cuenta conectada</div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {displayName}
@@ -224,7 +229,7 @@ export default function TorneosSidebar({
                     cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600, color: MUTED,
                     textAlign: "left", transition: "background 0.15s",
                   }}
-                  onMouseOver={e => e.currentTarget.style.background = "#F8F9FA"}
+                  onMouseOver={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"}
                   onMouseOut={e => e.currentTarget.style.background = "transparent"}
                 >
                   <LogOut size={14} /> Cerrar sesión
@@ -238,7 +243,7 @@ export default function TorneosSidebar({
                     cursor: "pointer", fontFamily: FONT, fontSize: 12, fontWeight: 600,
                     color: PALETTE.danger, textAlign: "left", transition: "background 0.15s", marginTop: 2,
                   }}
-                  onMouseOver={e => e.currentTarget.style.background = "#FEF2F2"}
+                  onMouseOver={e => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"}
                   onMouseOut={e => e.currentTarget.style.background = "transparent"}
                 >
                   <Trash2 size={14} /> Eliminar cuenta

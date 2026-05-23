@@ -377,7 +377,7 @@ function GenerateFixtureModal({ torneo, category, categoryConfig, equipos, exist
             ))}
           </div>
           {existingMatches > 0 && (
-            <div style={{ padding: 12, background: "#FFF7ED", borderRadius: 10, border: "1px solid #FED7AA", color: "#9A3412", fontSize: 12, fontWeight: 700, lineHeight: 1.45 }}>
+            <div style={{ padding: 12, background: PALETTE.amberDim, borderRadius: 10, border: `1px solid ${PALETTE.amberBorder}`, color: PALETTE.amber, fontSize: 12, fontWeight: 700, lineHeight: 1.45 }}>
               Se reemplazaran {existingMatches} partido{existingMatches !== 1 ? "s" : ""} existentes de esta categoria.
             </div>
           )}
@@ -1039,7 +1039,7 @@ export default function FixturesPage({ onGoTorneos }) {
                                           return (
                                             <motion.div 
                                               key={m.id} 
-                                              whileHover={{ scale: 1.01, backgroundColor: "#FDFBF7", borderColor: CU_BOR }}
+                                              whileHover={{ scale: 1.01, backgroundColor: BG, borderColor: CU_BOR }}
                                               onClick={() => setSelectedMatch({ partido: m, local, visita, sede, arbitro: arb, hora })}
                                               style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", borderRadius: 8, transition: "all 0.2s" }}
                                             >
@@ -1322,7 +1322,7 @@ function MatchDetailsModal({ partido, local, visita, sede, arbitro, hora, onClos
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}><MapPin size={18} color={CU} /></div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 10, fontWeight: 800, color: MUTED, letterSpacing: "0.04em" }}>SEDE / CANCHA</div><div style={{ fontSize: 14, fontWeight: 700 }}>{sede}</div></div>
-              <a href={mapLink} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 12px", background: "#E8F0FE", color: "#1A73E8", borderRadius: 8, fontSize: 12, fontWeight: 800, textDecoration: "none", display: "flex", alignItems: "center", gap: 6, transition: "background 0.2s" }}><MapPin size={14} /> Ver mapa</a>
+              <a href={mapLink} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 12px", background: "rgba(59, 130, 246, 0.1)", color: "#3B82F6", borderRadius: 8, fontSize: 12, fontWeight: 800, textDecoration: "none", display: "flex", alignItems: "center", gap: 6, transition: "background 0.2s" }}><MapPin size={14} /> Ver mapa</a>
             </div>
           )}
           {arbitro && (

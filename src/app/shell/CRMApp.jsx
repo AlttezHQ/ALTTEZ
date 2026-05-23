@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * @component CRMApp
  * @description Shell principal del sistema CRM de ALTTEZ.
@@ -8,7 +10,7 @@
  */
 
 import { useState, useCallback, useEffect, lazy, Suspense } from "react";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "../../shared/store/useStore";
 import { useAuth } from "../../shared/auth";
@@ -147,9 +149,17 @@ const LoadingFallback = () => (
   </div>
 );
 
+function ClientRedirect({ href }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(href);
+  }, [href, router]);
+  return <LoadingFallback />;
+}
+
 export function CRMApp() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname() || "/crm";
   const auth = useAuth();
   const mode = useStore(state => state.mode);
   const setMode = useStore(state => state.setMode);
@@ -192,12 +202,12 @@ export function CRMApp() {
 
   useEffect(() => {
     if (mode || !auth.isAuthenticated || !auth.isProfileReady) return;
-    const requestedModule = getModuleFromCrmPath(location.pathname);
+    const requestedModule = getModuleFromCrmPath(pathname);
     if (requestedModule && canAccessModule(auth.role, requestedModule)) {
       setActiveModule(requestedModule);
     }
     setMode("production");
-  }, [mode, auth.isAuthenticated, auth.isProfileReady, auth.role, location.pathname, setActiveModule, setMode]);
+  }, [mode, auth.isAuthenticated, auth.isProfileReady, auth.role, pathname, setActiveModule, setMode]);
 
   // Sync club_id from AuthProvider to services when profile loads/changes
   useEffect(() => {
@@ -227,12 +237,12 @@ export function CRMApp() {
   // Kiosk se maneja aparte (bloque dedicado abajo).
   useEffect(() => {
     if (!mode) return;
-    const mod = getModuleFromCrmPath(location.pathname);
+    const mod = getModuleFromCrmPath(pathname);
     if (!mod) return;
     if (!userRole && (auth.loadingAuth || auth.loadingProfile)) return;
     if (!canAccessModule(userRole, mod)) return;
     if (mod !== activeModule) setActiveModule(mod);
-  }, [location.pathname, mode, userRole, activeModule, auth.loadingAuth, auth.loadingProfile]);
+  }, [pathname, mode, userRole, activeModule, auth.loadingAuth, auth.loadingProfile]);
 
   // Navegacion con control de acceso por rol
   const navigateTo = useCallback((mod) => {
@@ -242,8 +252,8 @@ export function CRMApp() {
     }
     setActiveModule(mod);
     const nextPath = MODULE_TO_URL[mod] || "/crm";
-    if (location.pathname !== nextPath) navigate(nextPath);
-  }, [userRole, location.pathname, navigate]);
+    if (pathname !== nextPath) router.push(nextPath);
+  }, [userRole, pathname, router]);
 
   const handleDemo = useCallback(() => {
     loadDemoState();
@@ -257,7 +267,7 @@ export function CRMApp() {
     setClubInfo(demoClubInfo);
     setMatchStats(demoMatchStats);
     setFinanzas(demoFinanzas);
-    const requestedModule = getModuleFromCrmPath(location.pathname);
+    const requestedModule = getModuleFromCrmPath(pathname);
     setActiveModule(requestedModule && canAccessModule("admin", requestedModule) ? requestedModule : "home");
     setMode("demo");
     // Sync demo data to Supabase in background
@@ -267,7 +277,7 @@ export function CRMApp() {
         finanzas: demoFinanzas, matchStats: demoMatchStats, mode: "demo",
       }).then(r => r.success && showToast("Entorno demo sincronizado con la nube.", "info"));
     }
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, location.pathname]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, pathname]);
 
   const handleRegister = useCallback(async (form) => {
     // 1. Registrar en Supabase Auth (si disponible)
@@ -294,7 +304,7 @@ export function CRMApp() {
 
     // Torneos flow: skip CRM state setup, navigate directly
     if (form.redirectPath) {
-      navigate(form.redirectPath);
+      router.push(form.redirectPath);
       return;
     }
 
@@ -306,7 +316,7 @@ export function CRMApp() {
     setClubInfo(newClubInfo);
     setMatchStats(EMPTY_MATCH_STATS);
     setFinanzas(EMPTY_FINANZAS);
-    const requestedModule = getModuleFromCrmPath(location.pathname);
+    const requestedModule = getModuleFromCrmPath(pathname);
     setActiveModule(requestedModule && canAccessModule(form.role || "admin", requestedModule) ? requestedModule : "home");
     setMode("production");
 
@@ -319,12 +329,12 @@ export function CRMApp() {
         showToast("Club registrado y sincronizado en la nube.", "info");
       }
     }
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, auth, navigate, location.pathname]);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, auth, router, pathname]);
 
   const handleLogin = useCallback(async ({ email, password, redirectPath }) => {
     if (!isSupabaseReady) {
       showToast("Supabase no disponible — usa modo demo", "warning");
-      if (redirectPath) navigate(redirectPath);
+      if (redirectPath) router.push(redirectPath);
       return;
     }
     const { user, error } = await signIn(email, password);
@@ -336,7 +346,7 @@ export function CRMApp() {
     // Non-CRM destination: skip CRM state setup
     if (redirectPath) {
       showToast(`Bienvenido`, "success");
-      navigate(redirectPath);
+      router.push(redirectPath);
       return;
     }
 
@@ -350,10 +360,10 @@ export function CRMApp() {
     }
 
     setMode("production");
-    const requestedModule = getModuleFromCrmPath(location.pathname);
+    const requestedModule = getModuleFromCrmPath(pathname);
     setActiveModule(requestedModule && canAccessModule(auth.role || "admin", requestedModule) ? requestedModule : "home");
     showToast(`Bienvenido, ${auth.fullName || user.email}`, "success");
-  }, [setSession, setMode, navigate, auth, location.pathname]);
+  }, [setSession, setMode, router, auth, pathname]);
 
   const handleLogout = useCallback(async () => {
     setIsLoggingOut(true);
@@ -370,9 +380,9 @@ export function CRMApp() {
     setFinanzas(EMPTY_FINANZAS);
     setActiveModule("home");
     setMode(null);
-    const dest = getPostLogoutRedirect(location.pathname);
-    navigate(dest);
-  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, navigate, auth, location]);
+    const dest = getPostLogoutRedirect(pathname);
+    router.push(dest);
+  }, [setAthletes, setHistorial, setClubInfo, setMatchStats, setFinanzas, setMode, setSession, router, auth, pathname]);
 
   // Guard: si el usuario esta en el CRM (mode activo) pero no tiene rol verificado,
   // y tanto auth como profile ya terminaron de cargar, forzar logout.
@@ -390,14 +400,14 @@ export function CRMApp() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") === "true" && !mode) {
       handleDemo();
-      window.history.replaceState({}, "", location.pathname);
+      window.history.replaceState({}, "", pathname);
     }
-  }, [handleDemo, mode, location.pathname]);
+  }, [handleDemo, mode, pathname]);
 
   // ── Kiosk mode: URL directa /crm/kiosk — sin auth, sin wrapper ──
-  if (location.pathname === "/crm/kiosk") {
+  if (pathname === "/crm/kiosk") {
     if (!mode) {
-      return <Navigate to="/crm" replace />;
+      return <ClientRedirect href="/crm" />;
     }
     return (
       <Suspense fallback={<LoadingFallback />}>
@@ -411,7 +421,7 @@ export function CRMApp() {
     if (auth.loadingAuth || auth.loadingProfile || auth.isAuthenticated) {
       return <LoadingFallback />;
     }
-    return <Navigate to="/auth/login?redirect=/crm" replace />;
+    return <ClientRedirect href="/auth/login?redirect=/crm" />;
   }
 
   // ── Verificacion rapida mientras Supabase confirma sesion en background ──

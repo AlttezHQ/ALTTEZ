@@ -1,4 +1,7 @@
-import { useParams, Link, useSearchParams } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Trophy, BarChart2, Calendar, Users, Info, Phone, Gift, Eye, LayoutGrid } from "lucide-react";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
@@ -24,7 +27,7 @@ function BracketNode({ match, equipos }) {
   const renderTeam = (team, isLocal) => {
     const isWinner = isDone && ((isLocal && match.golesLocal > match.golesVisita) || (!isLocal && match.golesVisita > match.golesLocal));
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 12px", borderBottom: isLocal ? `1px solid ${BORDER}` : "none", background: isWinner ? "#FDFDFB" : "transparent" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 12px", borderBottom: isLocal ? `1px solid ${BORDER}` : "none", background: isWinner ? CU_DIM : "transparent" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: team?.color || BORDER }} />
           <span style={{ fontSize: 12, fontWeight: isWinner ? 800 : 600, color: team ? TEXT : MUTED }}>{team?.nombre || "TBD"}</span>
@@ -44,7 +47,7 @@ function BracketNode({ match, equipos }) {
 
 export default function PublicTorneoPage() {
   const { slug } = useParams();
-  const [searchParams] = useSearchParams();
+  const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "fixture";
 
   const [loading, setLoading] = useState(true);
@@ -157,7 +160,7 @@ export default function PublicTorneoPage() {
         <Trophy size={48} color={MUTED} />
         <h2>Torneo no encontrado</h2>
         <p style={{ color: MUTED }}>El torneo que buscas no existe o aún no ha sido publicado.</p>
-        <Link to="/" style={{ color: CU, textDecoration: "none", fontWeight: 700 }}>Volver al inicio</Link>
+        <Link href="/" style={{ color: CU, textDecoration: "none", fontWeight: 700 }}>Volver al inicio</Link>
       </div>
     );
   }
@@ -269,7 +272,7 @@ export default function PublicTorneoPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                 {Object.entries(standings.data).sort().map(([grp, rows]) => (
                   <div key={grp} style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
-                    <div style={{ padding: "14px 20px", background: "#FDFDFB", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ padding: "14px 20px", background: CARD, borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: 10 }}>
                       <LayoutGrid size={16} color={CU} /><h3 style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>Grupo {grp}</h3>
                     </div>
                     <div style={{ overflowX: "auto" }}>

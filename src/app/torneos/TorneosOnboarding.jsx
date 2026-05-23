@@ -60,14 +60,14 @@ export default function TorneosOnboarding({ onComplete }) {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "#F6F1EA", padding: 24, fontFamily: "Manrope, sans-serif"
+      background: PALETTE.bg, padding: 24, fontFamily: "Manrope, sans-serif"
     }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: EASE }}
         style={{
-          width: "100%", maxWidth: 460, background: "#FFFFFF",
+          width: "100%", maxWidth: 460, background: PALETTE.surface,
           borderRadius: 24, padding: "40px 32px",
           border: `1px solid ${PALETTE.border}`,
           boxShadow: "0 24px 64px rgba(23,26,28,0.06)",
@@ -76,7 +76,7 @@ export default function TorneosOnboarding({ onComplete }) {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
             width: 64, height: 64, borderRadius: 18, margin: "0 auto 20px",
-            background: "linear-gradient(135deg, #F6F1EA, #FFFFFF)",
+            background: `linear-gradient(135deg, ${PALETTE.bgElevated}, ${PALETTE.surface})`,
             border: `1px solid ${PALETTE.border}`,
             display: "flex", alignItems: "center", justifyContent: "center", color: PALETTE.bronce,
           }}>

@@ -34,8 +34,7 @@ export function generarFixture(torneo, equipos) {
       const partidosGrupos = grupos.flatMap((grp, i) =>
         generarLiga(grp, torneo.id, GRUPOS_LABELS[i] ?? String(i + 1), vueltas)
       );
-      const partidosPlayoffs = generarBracketsVacios(torneo, grupos);
-      return [...partidosGrupos, ...partidosPlayoffs];
+      return partidosGrupos;
     }
     default:
       return generarLiga(equipos, torneo.id, null);

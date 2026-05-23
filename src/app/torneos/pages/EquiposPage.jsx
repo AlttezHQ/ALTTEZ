@@ -163,7 +163,7 @@ function ImportModal({ isOpen, onClose, onImport }) {
           <button onClick={onClose} style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 8, cursor: "pointer", color: MUTED }}><X size={18} /></button>
         </div>
 
-        <div style={{ padding: 20, background: "#FDFDFB", borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 24 }}>
+        <div style={{ padding: 20, background: BG, borderRadius: 16, border: `1px solid ${BORDER}`, marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 12 }}>FORMATO DEL ARCHIVO</div>
           <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.6, marginBottom: 16 }}>
             El archivo debe ser **Excel (.xlsx)** o **CSV** y contener las siguientes columnas exactas en la primera fila:
@@ -602,7 +602,7 @@ export default function EquiposPage({ onGoTorneos }) {
           <div className="hidden sm:block overflow-x-auto">
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB" }}>
+                <tr style={{ borderBottom: `1px solid ${BORDER}`, background: BG }}>
                   {["Escudo", "Equipo", "Categoría", "Delegado", "Jugadores", "Estado", "Acciones"].map((h, i) => (
                     <th key={h} style={{ 
                       padding: "14px 24px", fontSize: 11, fontWeight: 700, color: HINT, textTransform: "uppercase", letterSpacing: "0.04em",

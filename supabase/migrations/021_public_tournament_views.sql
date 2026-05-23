@@ -85,7 +85,9 @@ LEFT JOIN torneo_categorias c
   ON c.id = p.categoria_id
   OR (p.categoria_id IS NULL AND c.torneo_id = t.id AND c.nombre = p.grupo)
 LEFT JOIN torneo_sedes s ON s.id = p.sede_id
-WHERE t.publicado = true;
+WHERE t.publicado = true
+  AND p.equipo_local_id IS NOT NULL
+  AND p.equipo_visita_id IS NOT NULL;
 
 GRANT SELECT ON vw_torneo_publico_info TO anon, authenticated;
 GRANT SELECT ON vw_torneo_publico_categorias TO anon, authenticated;

@@ -299,362 +299,191 @@ function AccionesRapidas({ onNavigate }) {
 function ActiveDashboard({ torneo, equipos, partidos, onInfoClick, onNavigate, onCreate }) {
   const finalizados = partidos.filter(p => p.estado === "finalizado").length;
   const programados = partidos.filter(p => p.fechaHora).length;
-  const schedPct    = partidos.length > 0 ? programados / partidos.length : 0;
-
-  const isGrupos = torneo.formato === "grupos_playoffs";
-
-  const checks = [
-    {
-      done: true,
-      label: "Torneo creado",
-      sublabel: "El torneo ha sido creado correctamente.",
-    },
-    {
-      done: equipos.length >= 2,
-      label: "Equipos",
-      sublabel: equipos.length >= 2 ? `${equipos.length} equipos registrados.` : "Agrega al menos 2 equipos.",
-      actionLabel: equipos.length < 2 ? "Agregar" : undefined,
-      mod: "equipos",
-    },
-    {
-      done: partidos.length > 0,
-      label: isGrupos ? "Fase de grupos" : "Fixture generado",
-      sublabel: partidos.length > 0 ? `${partidos.length} partidos generados.` : "Genera el fixture desde Fixtures.",
-      actionLabel: partidos.length === 0 ? "Generar" : undefined,
-      mod: "fixtures",
-    },
-    {
-      done: schedPct >= 0.5,
-      label: "Calendario programado",
-      sublabel: "Configura el calendario del torneo.",
-      actionLabel: schedPct < 0.5 ? "Configurar" : undefined,
-      mod: "fixtures",
-    },
-    {
-      done: torneo.publicado,
-      label: "Torneo publicado",
-      sublabel: torneo.publicado ? "URL pública activa." : "Publica para compartir el torneo.",
-      actionLabel: !torneo.publicado ? "Publicar" : undefined,
-      mod: "ajustes",
-    },
-  ];
-
-  const pendingFixture = partidos.length === 0 && equipos.length >= 2;
-
-  // Próximo partido
-  const now = new Date();
-  const proximoPartido = partidos
-    .filter(p => p.fechaHora && new Date(p.fechaHora) > now && p.equipoLocalId && p.equipoVisitaId)
-    .sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))[0];
+  const totalJugadores = equipos.reduce((sum, e) => sum + (e.jugadores?.length || 0), 0);
 
   const getEquipo = id => equipos.find(e => e.id === id);
   const getEquipoNombre = id => getEquipo(id)?.nombre ?? "TBD";
 
+  // Próximos partidos (next 3)
+  const now = new Date();
+  const proximosPartidos = partidos
+    .filter(p => p.fechaHora && new Date(p.fechaHora) > now && p.equipoLocalId && p.equipoVisitaId)
+    .sort((a, b) => new Date(a.fechaHora) - new Date(b.fechaHora))
+    .slice(0, 3);
+
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-4 items-start">
-
-        {/* ── Main card ── */}
-        <motion.div
-          {...fadeUp(0)}
-          style={{
-            flex: 1, background: CARD, borderRadius: 14,
-            boxShadow: ELEV_MD, border: `1px solid ${BORDER}`,
-            padding: "18px 20px 16px", minWidth: 0, fontFamily: FONT,
-          }}
-        >
-          {/* Header */}
-          <div style={{
-            display: "flex", alignItems: "flex-start",
-            justifyContent: "space-between", gap: 12, marginBottom: 4,
-          }}>
-            <div style={{ minWidth: 0 }}>
-              {/* Badges */}
-              <div style={{ display: "flex", gap: 5, marginBottom: 8, flexWrap: "wrap" }}>
-                {[
-                  { text: torneo.deporte?.toUpperCase(), color: CU, bg: CU_DIM, border: CU_BOR },
-                  { text: (FORMATO_LABELS[torneo.formato] ?? torneo.formato ?? "").toUpperCase(), color: MUTED, bg: BG, border: BORDER },
-                  torneo.publicado
-                    ? { text: "● PUBLICADO", color: PALETTE.success ?? "#22C55E", bg: PALETTE.successDim ?? "#F0FDF4", border: PALETTE.successBorder ?? "#BBF7D0" }
-                    : { text: "○ BORRADOR",  color: HINT, bg: BG, border: BORDER },
-                ].map(({ text, color, bg, border }) => text ? (
-                  <span key={text} style={{
-                    fontSize: 9, fontWeight: 700, color, background: bg,
-                    border: `1px solid ${border}`, borderRadius: 5,
-                    padding: "2px 8px", letterSpacing: "0.08em",
-                  }}>{text}</span>
-                ) : null)}
-              </div>
-
-              {/* Name + edit */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <h2 style={{
-                  margin: 0, fontSize: 22, fontWeight: 800,
-                  color: TEXT, letterSpacing: "-0.025em", lineHeight: 1,
-                }}>
-                  {torneo.nombre}
-                </h2>
-                <motion.button
-                  whileHover={{ scale: 1.1, background: CU_DIM }}
-                  whileTap={{ scale: 0.92 }}
-                  transition={spring}
-                  onClick={() => onNavigate("ajustes")}
-                  title="Editar ajustes"
-                  style={{
-                    background: BG, border: `1px solid ${BORDER}`,
-                    borderRadius: 7, padding: "4px 6px", cursor: "pointer",
-                    display: "flex", alignItems: "center", color: HINT,
-                  }}
-                >
-                  <Pencil size={12} />
-                </motion.button>
-              </div>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.03, background: CU_DIM, borderColor: CU }}
-              whileTap={{ scale: 0.96 }}
-              transition={spring}
-              onClick={onCreate}
-              style={{
-                flexShrink: 0, display: "flex", alignItems: "center", gap: 5,
-                background: "transparent", color: CU, border: `1.5px solid ${CU_BOR}`,
-                borderRadius: 9, padding: "7px 13px",
-                fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-              }}
-            >
-              <Plus size={12} /> Nuevo torneo
-            </motion.button>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: CU_DIM, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${CU_BOR}` }}>
+            <Trophy size={24} color={CU} />
           </div>
-
-          {/* Meta pills */}
-          <MetaRow torneo={torneo} />
-
-          {/* Stat chips — flex, not full-width */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
-            <StatChip value={equipos.length}                  label="EQUIPOS"  icon={Users}       iconColor="#F97316" iconBg="#FFF7ED" />
-            <StatChip value={partidos.length}                  label="PARTIDOS" icon={Shirt}       iconColor="#3B82F6" iconBg="#EFF6FF" />
-            <StatChip value={`${finalizados}/${partidos.length}`} label="JUGADOS"  icon={LayoutGrid}  iconColor="#10B981" iconBg="#ECFDF5" />
-          </div>
-
-          {/* Checklist header */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: 7, marginBottom: 2,
-            paddingBottom: 8, borderBottom: `1px solid ${BORDER}`,
-          }}>
-            <div style={{
-              width: 18, height: 18, borderRadius: 5, background: CU_DIM,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <CheckCircle size={10} color={CU} />
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: HINT, letterSpacing: "0.07em" }}>
-              CONFIGURACIÓN DEL TORNEO
-            </span>
-          </div>
-
           <div>
-            {checks.map((c, i) => (
-              <CheckItem
-                key={c.label}
-                done={c.done}
-                label={c.label}
-                sublabel={c.sublabel}
-                actionLabel={c.actionLabel}
-                onAction={() => onNavigate(c.mod)}
-                delay={i * 0.04}
-              />
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em" }}>{torneo.nombre}</h2>
+            <div style={{ fontSize: 13, color: MUTED }}>Administrar y ver detalles del torneo</div>
+          </div>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.02, background: CU_DIM }}
+          whileTap={{ scale: 0.96 }}
+          transition={spring}
+          onClick={() => onNavigate("ajustes")}
+          style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", color: TEXT, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: FONT }}
+        >
+          <Settings size={16} /> Configuración
+        </motion.button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* ── Main content (Left Column) ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          
+          {/* KPI Cards */}
+          <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+            {[
+              { value: equipos.length, label: "Equipos Registrados", icon: Users, color: "#3B82F6", bg: "rgba(59, 130, 246, 0.1)", border: "rgba(59, 130, 246, 0.2)" },
+              { value: programados, label: "Partidos Programados", icon: Calendar, color: "#10B981", bg: "rgba(16, 185, 129, 0.1)", border: "rgba(16, 185, 129, 0.2)" },
+              { value: totalJugadores, label: "Jugadores Totales", icon: Shirt, color: CU, bg: CU_DIM, border: CU_BOR }
+            ].map((kpi, i) => (
+              <motion.div key={i} {...fadeUp(i * 0.05)} style={{ flex: "1 1 200px", background: CARD, borderRadius: 16, padding: 20, border: `1px solid ${BORDER}`, display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: kpi.bg, border: `1px solid ${kpi.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <kpi.icon size={20} color={kpi.color} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: TEXT, lineHeight: 1 }}>{kpi.value}</div>
+                  <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>{kpi.label}</div>
+                </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* CTA */}
-          <AnimatePresence>
-            {pendingFixture && (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
-                whileTap={{ scale: 0.97 }}
-                transition={spring}
-                onClick={() => onNavigate("fixtures")}
-                style={{
-                  marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
-                  background: CU, color: "#FFF", border: "none",
-                  borderRadius: 10, padding: "10px 20px",
-                  fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: "pointer",
-                  boxShadow: ELEV_CU,
-                }}
-              >
-                Generar fixture <ArrowRight size={14} />
-              </motion.button>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
-        {/* ── Right column ── */}
-        <motion.div
-          {...fadeUp(0.08)}
-          className="w-full lg:w-[264px] lg:flex-shrink-0"
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          {/* Próximo partido */}
-          <div style={{
-            background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`,
-            boxShadow: ELEV_SM, overflow: "hidden", fontFamily: FONT,
-          }}>
-            {/* Header strip */}
-            <div style={{
-              padding: "10px 14px", borderBottom: `1px solid ${BORDER}`,
-              display: "flex", alignItems: "center", gap: 7,
-              background: BG,
-            }}>
-              <Calendar size={12} color={CU} />
-              <span style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>Próximo partido</span>
+          {/* Próximos Partidos Table */}
+          <motion.div {...fadeUp(0.15)} style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, overflow: "hidden" }}>
+            <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: TEXT }}>Próximos Partidos</h3>
+              <button onClick={() => onNavigate("fixtures")} style={{ background: "none", border: "none", color: CU, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>Ver todos</button>
             </div>
+            
+            {proximosPartidos.length > 0 ? (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: BG, color: MUTED, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      <th style={{ padding: "12px 24px", fontWeight: 600 }}>Hora</th>
+                      <th style={{ padding: "12px 24px", fontWeight: 600 }}>Equipo Local</th>
+                      <th style={{ padding: "12px 24px", fontWeight: 600 }}>Equipo Visitante</th>
+                      <th style={{ padding: "12px 24px", fontWeight: 600 }}>Lugar</th>
+                      <th style={{ padding: "12px 24px", fontWeight: 600 }}>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {proximosPartidos.map((p, i) => (
+                      <tr key={p.id} style={{ borderBottom: i < proximosPartidos.length - 1 ? `1px solid ${BORDER}` : "none", background: "transparent", transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                        <td style={{ padding: "16px 24px", color: TEXT, fontWeight: 500 }}>
+                          {new Date(p.fechaHora).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: "50%", background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: MUTED }}>
+                              {getEquipoNombre(p.equipoLocalId).charAt(0)}
+                            </div>
+                            <span style={{ fontWeight: 600, color: TEXT }}>{getEquipoNombre(p.equipoLocalId)}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: "50%", background: BG, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: MUTED }}>
+                              {getEquipoNombre(p.equipoVisitaId).charAt(0)}
+                            </div>
+                            <span style={{ fontWeight: 600, color: TEXT }}>{getEquipoNombre(p.equipoVisitaId)}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px 24px", color: MUTED }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}><MapPin size={14} /> {p.lugar || "Sede Principal"}</div>
+                        </td>
+                        <td style={{ padding: "16px 24px" }}>
+                          <button style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 6, padding: "6px 12px", color: TEXT, fontSize: 12, cursor: "pointer", fontFamily: FONT }}>Ver detalles</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ padding: "40px 20px", textAlign: "center" }}>
+                <Calendar size={32} color={BORDER} style={{ margin: "0 auto 12px" }} />
+                <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>Sin partidos próximos</div>
+                <div style={{ fontSize: 13, color: MUTED }}>No hay encuentros programados para las próximas fechas.</div>
+              </div>
+            )}
+          </motion.div>
 
-            <div style={{ padding: "14px 16px" }}>
-              {proximoPartido ? (
-                <>
-                  {proximoPartido.ronda && (
-                    <div style={{
-                      fontSize: 9, fontWeight: 700, color: HINT, textAlign: "center",
-                      letterSpacing: "0.08em", marginBottom: 12,
-                    }}>
-                      JORNADA {proximoPartido.ronda}
-                    </div>
-                  )}
+        </div>
 
-                  {/* Teams */}
-                  <div style={{
-                    display: "flex", alignItems: "center",
-                    justifyContent: "space-between", gap: 6, marginBottom: 10,
-                  }}>
-                    {/* Local */}
-                    <div style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: "50%",
-                        background: BG, border: `2px solid ${BORDER}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        margin: "0 auto 5px",
-                        fontSize: 15, fontWeight: 900, color: CU,
-                        overflow: "hidden",
-                      }}>
-                        {getEquipo(proximoPartido.equipoLocalId)?.logo
-                          ? <img src={getEquipo(proximoPartido.equipoLocalId).logo} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-                          : getEquipoNombre(proximoPartido.equipoLocalId).charAt(0)
-                        }
-                      </div>
-                      <div style={{
-                        fontSize: 10, fontWeight: 700, color: TEXT,
-                        lineHeight: 1.2, overflow: "hidden",
-                        textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        maxWidth: 70, margin: "0 auto",
-                      }}>
-                        {getEquipoNombre(proximoPartido.equipoLocalId)}
-                      </div>
-                    </div>
+        {/* ── Right column (Sidebar Widgets) ── */}
+        <motion.div {...fadeUp(0.1)} className="w-full lg:w-[320px] lg:flex-shrink-0" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          
+          {/* Estado de Configuración */}
+          <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, padding: 20 }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: TEXT }}>Estado de Configuración</h3>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: MUTED }}>Equipos</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{equipos.length}/16</span>
+                </div>
+                <div style={{ height: 6, background: BG, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min((equipos.length / 16) * 100, 100)}%`, background: CU, borderRadius: 3 }} />
+                </div>
+              </div>
 
-                    {/* VS */}
-                    <div style={{
-                      fontSize: 11, fontWeight: 900, color: CU,
-                      background: CU_DIM, border: `1.5px solid ${CU_BOR}`,
-                      borderRadius: 7, padding: "4px 8px", flexShrink: 0,
-                    }}>VS</div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: MUTED }}>Partidos</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{programados} Programados</span>
+                </div>
+                <div style={{ height: 6, background: BG, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: partidos.length ? `${Math.min((programados / partidos.length) * 100, 100)}%` : "0%", background: "#10B981", borderRadius: 3 }} />
+                </div>
+              </div>
 
-                    {/* Visita */}
-                    <div style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{
-                        width: 40, height: 40, borderRadius: "50%",
-                        background: BG, border: `2px solid ${BORDER}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        margin: "0 auto 5px",
-                        fontSize: 15, fontWeight: 900, color: MUTED,
-                        overflow: "hidden",
-                      }}>
-                        {getEquipo(proximoPartido.equipoVisitaId)?.logo
-                          ? <img src={getEquipo(proximoPartido.equipoVisitaId).logo} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="" />
-                          : getEquipoNombre(proximoPartido.equipoVisitaId).charAt(0)
-                        }
-                      </div>
-                      <div style={{
-                        fontSize: 10, fontWeight: 700, color: TEXT,
-                        lineHeight: 1.2, overflow: "hidden",
-                        textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        maxWidth: 70, margin: "0 auto",
-                      }}>
-                        {getEquipoNombre(proximoPartido.equipoVisitaId)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Date + venue */}
-                  <div style={{
-                    background: BG, borderRadius: 8, border: `1px solid ${BORDER}`,
-                    padding: "8px 10px", marginBottom: 12, textAlign: "center",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontSize: 11, color: MUTED, marginBottom: 2 }}>
-                      <Clock size={10} />
-                      {new Date(proximoPartido.fechaHora).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
-                      {" · "}
-                      {new Date(proximoPartido.fechaHora).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                    {proximoPartido.lugar && (
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 10, color: HINT }}>
-                        <MapPin size={9} />{proximoPartido.lugar}
-                      </div>
-                    )}
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02, background: CU_DIM }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={spring}
-                    onClick={() => onNavigate("fixtures")}
-                    style={{
-                      width: "100%", background: "transparent", color: CU,
-                      border: `1.5px solid ${CU_BOR}`, borderRadius: 9,
-                      padding: "8px 0", fontSize: 11, fontWeight: 700,
-                      fontFamily: FONT, cursor: "pointer",
-                    }}
-                  >
-                    Ver calendario completo
-                  </motion.button>
-                </>
-              ) : (
-                <>
-                  <div style={{ textAlign: "center", padding: "10px 0 12px" }}>
-                    <Calendar size={28} color={CU} style={{ opacity: 0.18, marginBottom: 8 }} />
-                    <div style={{ fontSize: 12, fontWeight: 700, color: TEXT, marginBottom: 4 }}>
-                      Sin partidos programados
-                    </div>
-                    <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
-                      Configura el calendario para programar los partidos automáticamente.
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.02, boxShadow: ELEV_CU }}
-                    whileTap={{ scale: 0.97 }}
-                    transition={spring}
-                    onClick={() => onNavigate("fixtures")}
-                    style={{
-                      width: "100%", background: CU, color: "#FFF", border: "none",
-                      borderRadius: 9, padding: "9px 0", fontSize: 11, fontWeight: 700,
-                      fontFamily: FONT, cursor: "pointer", boxShadow: ELEV_CU,
-                    }}
-                  >
-                    Ir a Gestión de Partidos
-                  </motion.button>
-                </>
-              )}
+              <div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: MUTED }}>Jugadores</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{totalJugadores} Activos</span>
+                </div>
+                <div style={{ height: 6, background: BG, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: "100%", background: "#3B82F6", borderRadius: 3 }} />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Acciones rápidas */}
-          <AccionesRapidas onNavigate={onNavigate} />
+          {/* Ajustes Rápidos */}
+          <div style={{ background: CARD, borderRadius: 16, border: `1px solid ${BORDER}`, padding: 20 }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: TEXT }}>Ajustes Rápidos</h3>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { icon: FileDown, label: "Reglas del torneo", color: MUTED, bg: BG },
+                { icon: LayoutGrid, label: "Formato de juego", color: CU, bg: CU_DIM },
+                { icon: MapPin, label: "Sede principal", color: "#10B981", bg: "rgba(16, 185, 129, 0.1)" }
+              ].map((ajuste, i) => (
+                <button key={i} onClick={() => onNavigate("ajustes")} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: 12, background: "transparent", border: "none", borderRadius: 8, cursor: "pointer", transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = BG} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: ajuste.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ajuste.icon size={16} color={ajuste.color} />
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{ajuste.label}</span>
+                  <ChevronRight size={14} color={MUTED} style={{ marginLeft: "auto" }} />
+                </button>
+              ))}
+            </div>
+          </div>
+
         </motion.div>
       </div>
-
-      {/* Info cards */}
-      <InfoCards onInfoClick={onInfoClick} />
     </>
   );
 }

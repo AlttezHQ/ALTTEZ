@@ -394,7 +394,13 @@ export const useTorneosStore = create(
         const torneo   = s.torneos.find(t => t.id === torneoId);
         if (!torneo) return;
 
-        const partidos = s.partidos.filter(p => p.torneoId === torneoId);
+        const partidos = s.partidos.filter(p =>
+          p.torneoId === torneoId &&
+          p.equipoLocalId &&
+          p.equipoVisitaId &&
+          p.estado !== LEGACY_MATCH_STATUS.BYE &&
+          !p.metadata?.placeholder
+        );
         const equipos  = s.equipos.filter(e => e.torneoId === torneoId);
         const sedes    = s.sedes.filter(se => se.torneoId === torneoId);
         const arbitros = s.arbitros.filter(a => a.torneoId === torneoId);
@@ -536,8 +542,13 @@ export const useTorneosStore = create(
       getPosicionesByGrupo(torneoId, categoriaId) {
         const s       = get();
         const cat     = s.categorias.find(c => c.id === categoriaId);
-        const partidos = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId || !p.categoriaId));
-        const equipos  = s.equipos.filter(e => e.torneoId === torneoId);
+        const partidos = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId));
+        const teamIds = new Set();
+        partidos.forEach(p => {
+          if (p.equipoLocalId) teamIds.add(p.equipoLocalId);
+          if (p.equipoVisitaId) teamIds.add(p.equipoVisitaId);
+        });
+        const equipos  = s.equipos.filter(e => e.torneoId === torneoId && (!categoriaId || teamIds.has(e.id)));
         const pointsConfig = cat?.pointsConfig ?? DEFAULT_POINTS_CONFIG;
         return calculateGroupStandings(partidos, equipos, pointsConfig);
       },
@@ -548,8 +559,13 @@ export const useTorneosStore = create(
       getClasificados(torneoId, categoriaId) {
         const s         = get();
         const cat       = s.categorias.find(c => c.id === categoriaId);
-        const partidos  = s.partidos.filter(p => p.torneoId === torneoId);
-        const equipos   = s.equipos.filter(e => e.torneoId === torneoId);
+        const partidos  = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId));
+        const teamIds = new Set();
+        partidos.forEach(p => {
+          if (p.equipoLocalId) teamIds.add(p.equipoLocalId);
+          if (p.equipoVisitaId) teamIds.add(p.equipoVisitaId);
+        });
+        const equipos   = s.equipos.filter(e => e.torneoId === torneoId && (!categoriaId || teamIds.has(e.id)));
         const config    = get().getCompetitionConfig(categoriaId) ?? {};
         const groupStandings = calculateGroupStandings(
           partidos, equipos, config.pointsConfig ?? DEFAULT_POINTS_CONFIG

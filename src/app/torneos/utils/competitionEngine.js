@@ -423,6 +423,7 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
         orden:          globalOrder++,
         source:         "knockout",
         metadata:       {
+          placeholder: !(localTeam && visitaTeam),
           seeding: {
             localSeed:  localTeam?.seed ?? null,
             visitaSeed: visitaTeam?.seed ?? null,
@@ -462,6 +463,7 @@ export function generateKnockoutBracket(qualifiedTeams, config = {}) {
           arbitroId:      null,
           orden:          globalOrder++,
           source:         "knockout",
+          metadata:       { placeholder: true },
           createdAt:      NOW(),
         });
       }
@@ -508,10 +510,16 @@ export function advanceKnockoutWinner(knockoutMatches, matchId, winnerTeamId) {
 
   return knockoutMatches.map(m => {
     if (m.id !== targetMatch.id) return m;
+    const nextLocalId = isLocalSlot ? winnerTeamId : m.equipoLocalId;
+    const nextVisitaId = isLocalSlot ? m.equipoVisitaId : winnerTeamId;
     return {
       ...m,
-      equipoLocalId:  isLocalSlot ? winnerTeamId : m.equipoLocalId,
-      equipoVisitaId: isLocalSlot ? m.equipoVisitaId : winnerTeamId,
+      equipoLocalId:  nextLocalId,
+      equipoVisitaId: nextVisitaId,
+      metadata: {
+        ...(m.metadata ?? {}),
+        placeholder: !(nextLocalId && nextVisitaId),
+      },
     };
   });
 }

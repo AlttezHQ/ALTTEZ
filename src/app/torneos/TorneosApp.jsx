@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { useLocation, useNavigate, Navigate } from "react-router-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, FileSpreadsheet, AlertTriangle, Building2, Mail } from "lucide-react";
 import { PALETTE } from "../../shared/tokens/palette";
@@ -36,7 +36,7 @@ const TEXT   = PALETTE.text;
 const MUTED  = PALETTE.textMuted;
 const BORDER = PALETTE.border;
 const EASE   = [0.22, 1, 0.36, 1];
-const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT   = "var(--font-inter), sans-serif";
 
 const PAGE_ANIM = {
   initial:    { opacity: 0, y: 8 },
@@ -151,8 +151,9 @@ function withInitTimeout(promise, label) {
 }
 
 export default function TorneosApp() {
-  const location       = useLocation();
-  const navigate       = useNavigate();
+  const pathname       = usePathname();
+  const searchParams   = useSearchParams();
+  const router         = useRouter();
   const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
@@ -180,7 +181,7 @@ export default function TorneosApp() {
   const [requiresAuth, setRequiresAuth] = useState(false);
   const [initError, setInitError] = useState(null);
   const [initStatus, setInitStatus] = useState(() => hadDataOnMount ? "ready" : "idle");
-  const initialAuthTab = new URLSearchParams(location.search).get("auth") === "register" ? "register" : "login";
+  const initialAuthTab = searchParams?.get("auth") === "register" ? "register" : "login";
 
   // Persist activeModule
   useEffect(() => {
@@ -205,7 +206,7 @@ export default function TorneosApp() {
           if (!cancelled) {
             setRequiresAuth(true);
             setInitialLoading(false);
-            navigate(`/torneos?auth=${initialAuthTab}`, { replace: true });
+            router.replace(`/torneos?auth=${initialAuthTab}`);
           }
           return;
         }
@@ -216,7 +217,7 @@ export default function TorneosApp() {
         // y recargar en background sin mostrar el loader completo.
         if (hadDataOnMount && initStatus === "ready") {
           if (!cancelled) {
-            if (location.search) navigate("/torneos", { replace: true });
+            if (searchParams?.toString()) router.replace("/torneos");
             // Refresh silencioso en background para sincronizar cambios remotos
             loadTorneos().catch(() => {});
           }
@@ -228,7 +229,7 @@ export default function TorneosApp() {
         setInitStatus("idle");
 
         if (!cancelled) {
-          if (location.search) navigate("/torneos", { replace: true });
+          if (searchParams?.toString()) router.replace("/torneos");
         }
 
         const profile = auth.profile;
@@ -328,21 +329,6 @@ export default function TorneosApp() {
 
   const hasLocalData = torneos && torneos.length > 0;
 
-  if (isLoggingOut) {
-    return <AlttezLoader fullScreen text="Cerrando sesión..." />;
-  }
-
-  // Mostrar loader solo en la primera carga real (sin datos previos).
-  // Si ya habia datos en el store al montar (re-focus), no mostrar el spinner.
-  if ((auth.loadingAuth || auth.loadingProfile || initialLoading || storeLoading) && !hasLocalData) {
-    return <AlttezLoader fullScreen text="Cargando torneos..." />;
-  }
-
-  // Auth gate — show login/register if no active session
-  if (requiresAuth || !auth.user) {
-    return <Navigate to="/auth/login?redirect=/torneos" replace />;
-  }
-
   const userRoles = auth.user?.user_metadata?.roles || [];
   const hasOrganizadorRole = userRoles.includes("organizador");
   const isLegacyOrganizer = !hasOrganizadorRole && initStatus === "ready";
@@ -357,9 +343,24 @@ export default function TorneosApp() {
     }
   }, [isLegacyOrganizer, auth]);
 
+  if (isLoggingOut) {
+    return <AlttezLoader fullScreen text="Cerrando sesión..." />;
+  }
+
+  // Mostrar loader solo en la primera carga real (sin datos previos).
+  // Si ya habia datos en el store al montar (re-focus), no mostrar el spinner.
+  if ((auth.loadingAuth || auth.loadingProfile || initialLoading || storeLoading) && !hasLocalData) {
+    return <AlttezLoader fullScreen text="Cargando torneos..." />;
+  }
+
+  // Auth gate — show login/register if no active session
+  if (requiresAuth || !auth.user) {
+    return null;
+  }
+
   if (!hasOrganizadorRole && !isLegacyOrganizer) {
     return (
-      <div style={{ minHeight:"100vh", background:"#FAFAF8", position:"relative" }}>
+      <div style={{ minHeight:"100vh", background: BG, position:"relative" }}>
         <ToastContainer />
         <Suspense fallback={<AlttezLoader fullScreen text="Cargando entorno..." />}>
           <TorneosOnboarding onComplete={() => window.location.reload()} />

@@ -18,7 +18,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-size: clamp(14px, 0.85rem + 0.2vw, 16px);
-  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-overflow-scrolling: touch;
@@ -86,7 +86,7 @@ a:has(> span) {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sora), system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 h1 { font-size: clamp(28px, 5vw + 12px, 56px); }
@@ -164,43 +164,43 @@ h4 { font-size: clamp(14px, 1vw + 8px, 20px); }
   --t-base: 200ms ease;
   --t-slow: 300ms ease;
 
-  --color-bronce: #CE8946;
-  --color-bronce-hi: #D8A06B;
-  --color-bronce-deep: #B7832D;
-  --color-bronce-dim: rgba(206, 137, 70, 0.12);
-  --color-bronce-border: rgba(206, 137, 70, 0.28);
-  --color-bronce-glow: rgba(206, 137, 70, 0.18);
-  --color-bronce-focus: rgba(206, 137, 70, 0.34);
-  --color-bronce-ice: #F6F1EA;
-  --color-success: #2fa56f;
-  --color-success-dim: rgba(47,165,111,0.10);
-  --color-amber: #d89a2b;
-  --color-amber-dim: rgba(216,154,43,0.10);
-  --color-danger: #d95c5c;
-  --color-danger-dim: rgba(217,92,92,0.10);
-  --color-bg: #F6F1EA;
-  --color-bg-panel: #EDE8D0;
-  --color-bg-elevated: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-glass: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(246,241,234,0.8) 100%);
-  --color-border: #EDE8D0;
-  --color-border-hi: #E1D6C7;
-  --color-text: #1F1F1D;
-  --color-text-muted: #667085;
-  --color-text-hint: #98a2b3;
+  --color-bronce: #C27A42;
+  --color-bronce-hi: #D48E56;
+  --color-bronce-deep: #A16233;
+  --color-bronce-dim: rgba(194, 122, 66, 0.12);
+  --color-bronce-border: rgba(194, 122, 66, 0.28);
+  --color-bronce-glow: rgba(194, 122, 66, 0.18);
+  --color-bronce-focus: rgba(194, 122, 66, 0.34);
+  --color-bronce-ice: #0F111A;
+  --color-success: #22C55E;
+  --color-success-dim: rgba(34,197,94,0.10);
+  --color-amber: #F5BE05;
+  --color-amber-dim: rgba(245,190,5,0.10);
+  --color-danger: #EF4444;
+  --color-danger-dim: rgba(239,68,68,0.10);
+  --color-bg: #0F111A;
+  --color-bg-panel: #181B2A;
+  --color-bg-elevated: #21253A;
+  --color-surface: #181B2A;
+  --color-surface-glass: linear-gradient(180deg, rgba(24, 27, 42, 0.85) 0%, rgba(15, 17, 26, 0.8) 100%);
+  --color-border: #22273F;
+  --color-border-hi: #323B5C;
+  --color-text: #F5F7FA;
+  --color-text-muted: #9EACBF;
+  --color-text-hint: #6F7D93;
 }
 
 .dark {
-  --color-bg: #121212;
-  --color-bg-panel: #1E1E1E;
-  --color-bg-elevated: #2A2A2A;
-  --color-surface: #1E1E1E;
-  --color-surface-glass: linear-gradient(180deg, rgba(30,30,30,0.85) 0%, rgba(18,18,18,0.8) 100%);
-  --color-border: #333333;
-  --color-border-hi: #444444;
-  --color-text: #E0E0E0;
-  --color-text-muted: #A0A0A0;
-  --color-text-hint: #666666;
+  --color-bg: #0F111A;
+  --color-bg-panel: #181B2A;
+  --color-bg-elevated: #21253A;
+  --color-surface: #181B2A;
+  --color-surface-glass: linear-gradient(180deg, rgba(24, 27, 42, 0.85) 0%, rgba(15, 17, 26, 0.8) 100%);
+  --color-border: #22273F;
+  --color-border-hi: #323B5C;
+  --color-text: #F5F7FA;
+  --color-text-muted: #9EACBF;
+  --color-text-hint: #6F7D93;
 
   /* Adjust shadows for dark mode */
   --shadow-subtle: 0 1px 4px rgba(0,0,0,0.4);

@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Shield, Users, Upload, Plus, Trash2, CheckCircle2, ChevronRight, Save, Info, AlertTriangle } from "lucide-react";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
@@ -127,7 +130,7 @@ export default function RegistroEquipoPage() {
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 12px", color: TEXT }}>¡Registro completado!</h2>
             <p style={{ color: MUTED, fontSize: 14, lineHeight: 1.6, marginBottom: 32 }}>La información del equipo y la plantilla han sido guardadas correctamente en la base de datos del torneo.</p>
-            <Link to={`/t/${slug}?tab=equipos`} style={{ display: "inline-block", background: CU, color: "#FFF", padding: "14px 32px", borderRadius: 12, textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
+            <Link href={`/t/${slug}?tab=equipos`} style={{ display: "inline-block", background: CU, color: "#FFF", padding: "14px 32px", borderRadius: 12, textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
               Ir a la página del Torneo
             </Link>
           </motion.div>
@@ -185,7 +188,7 @@ export default function RegistroEquipoPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           {/* Sección 1: Información General */}
           <section style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
-            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB", display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, background: CARD, display: "flex", alignItems: "center", gap: 10 }}>
               <Info size={18} color={CU} />
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Información General</h3>
             </div>
@@ -218,7 +221,7 @@ export default function RegistroEquipoPage() {
 
           {/* Sección 2: Plantilla de Jugadores */}
           <section style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: "hidden", boxShadow: ELEVATION.card }}>
-            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, background: "#FDFDFB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, background: CARD, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Users size={18} color={CU} />
                 <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Plantilla de Jugadores</h3>
@@ -258,7 +261,7 @@ export default function RegistroEquipoPage() {
                   </div>
                 ) : (
                   formData.jugadores.map((j) => (
-                    <div key={j.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "#FDFDFB", borderRadius: 12, border: `1px solid ${BORDER}` }}>
+                    <div key={j.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: CARD, borderRadius: 12, border: `1px solid ${BORDER}` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                         <div style={{ width: 32, height: 32, borderRadius: 8, background: CARD, border: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: CU }}>{j.dorsal || "-"}</div>
                         <div>
