@@ -374,9 +374,29 @@ export default function AjustesPage({ onGoTorneos }) {
               El torneo es público. Cualquiera con el enlace puede ver el fixture y la tabla de posiciones.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ flex: 1, background: BG, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "9px 12px", fontSize: 11, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Abrir vista pública"
+                style={{
+                  flex: 1,
+                  background: BG,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 8,
+                  padding: "9px 12px",
+                  fontSize: 11,
+                  color: TEXT,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 {publicUrl}
-              </div>
+              </a>
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={handleCopy}

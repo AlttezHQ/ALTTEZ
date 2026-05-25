@@ -267,37 +267,108 @@ export async function saveCategorias(torneoId, categorias) {
 
 export async function getTorneoPublico(slug) {
   if (!isSupabaseReady) return null;
-  const { data: torneoRow, error: te } = await supabase
+  const torneoView = await supabase
     .from("vw_torneo_publico_info")
     .select("slug,nombre,deporte,temporada,formato,estado,fecha_inicio,fecha_fin,sede_principal,organizador_nombre,publicado,descripcion,portada,perfil,contacto,premios,patrocinadores,visibilidad,reglamento_url")
     .eq("slug", slug)
-    .single();
-  if (te || !torneoRow) return null;
+    .maybeSingle();
 
-  const [equiposRes, partidosRes, categoriasRes] = await Promise.all([
-    supabase
-      .from("vw_torneo_publico_equipos")
-      .select("slug,categoria_id,categoria_nombre,nombre,escudo,color,grupo")
-      .eq("slug", slug),
-    supabase
-      .from("vw_torneo_publico_partidos")
-      .select("slug,id_partido,categoria_id,categoria_nombre,fase,ronda,grupo,equipo_local_nombre,equipo_visita_nombre,cancha,hora_inicio,goles_local,goles_visita,estado_partido,orden")
+  const torneoRow = torneoView.data;
+
+  async function loadPublicFromViews() {
+    const [equiposRes, partidosRes, categoriasRes] = await Promise.all([
+      supabase
+        .from("vw_torneo_publico_equipos")
+        .select("slug,categoria_id,categoria_nombre,nombre,escudo,color,grupo")
+        .eq("slug", slug),
+      supabase
+        .from("vw_torneo_publico_partidos")
+        .select("slug,id_partido,categoria_id,categoria_nombre,fase,ronda,grupo,equipo_local_nombre,equipo_visita_nombre,cancha,hora_inicio,goles_local,goles_visita,estado_partido,orden")
+        .eq("slug", slug)
+        .order("orden"),
+      supabase
+        .from("vw_torneo_publico_categorias")
+        .select("slug,categoria_id,nombre,format")
+        .eq("slug", slug),
+    ]);
+
+    if (equiposRes.error || partidosRes.error || categoriasRes.error) return null;
+
+    return {
+      torneo: mapPublicTorneo(torneoRow),
+      equipos: (equiposRes.data ?? []).map(mapPublicEquipo),
+      partidos: (partidosRes.data ?? []).map(mapPublicPartido),
+      categorias: (categoriasRes.data ?? []).map(mapPublicCategoria),
+    };
+  }
+
+  async function loadPublicFallback() {
+    const { data: torneoBase, error: torneoError } = await supabase
+      .from("torneos")
+      .select("id,slug,nombre,deporte,temporada,formato,estado,fecha_inicio,fecha_fin,sede_principal,organizador_nombre,publicado,descripcion,portada,perfil,contacto,premios,patrocinadores,visibilidad,reglamento_url")
       .eq("slug", slug)
-      .order("orden"),
-    supabase
-      .from("vw_torneo_publico_categorias")
-      .select("slug,categoria_id,nombre,format")
-      .eq("slug", slug),
-  ]);
+      .single();
 
-  if (equiposRes.error || partidosRes.error || categoriasRes.error) return null;
+    if (torneoError || !torneoBase || !torneoBase.publicado) return null;
 
-  return {
-    torneo:   mapPublicTorneo(torneoRow),
-    equipos:  (equiposRes.data ?? []).map(mapPublicEquipo),
-    partidos: (partidosRes.data ?? []).map(mapPublicPartido),
-    categorias: (categoriasRes.data ?? []).map(mapPublicCategoria),
-  };
+    const torneoId = torneoBase.id;
+    const [equiposRes, partidosRes, categoriasRes] = await Promise.all([
+      supabase.from("torneo_equipos").select("id,nombre,escudo,color,grupo,torneo_id").eq("torneo_id", torneoId),
+      supabase.from("torneo_partidos").select("id,fase,ronda,grupo,equipo_local_id,equipo_visita_id,goles_local,goles_visita,estado,fecha_hora,lugar,orden,torneo_id").eq("torneo_id", torneoId).order("orden"),
+      supabase.from("torneo_categorias").select("id,nombre,format,torneo_id,teams,points_config,tiebreakers").eq("torneo_id", torneoId),
+    ]);
+
+    if (equiposRes.error || partidosRes.error || categoriasRes.error) return null;
+
+    const equiposById = new Map((equiposRes.data ?? []).map(e => [e.id, e]));
+    return {
+      torneo: mapPublicTorneo(torneoBase),
+      equipos: (equiposRes.data ?? []).map(e => ({
+        id: e.id,
+        nombre: e.nombre,
+        logo: e.escudo,
+        escudo: e.escudo,
+        color: e.color,
+        grupo: e.grupo,
+        categoriaId: null,
+        categoriaNombre: null,
+      })),
+      partidos: (partidosRes.data ?? []).map(p => {
+        const local = equiposById.get(p.equipo_local_id);
+        const visita = equiposById.get(p.equipo_visita_id);
+        return {
+          id: p.id,
+          categoriaId: null,
+          categoriaNombre: null,
+          fase: p.fase,
+          ronda: p.ronda,
+          grupo: p.grupo,
+          equipoLocalId: local?.nombre || p.equipo_local_id || "TBD",
+          equipoVisitaId: visita?.nombre || p.equipo_visita_id || "TBD",
+          golesLocal: p.goles_local,
+          golesVisita: p.goles_visita,
+          estado: p.estado,
+          fechaHora: p.fecha_hora,
+          cancha: p.lugar,
+          lugar: p.lugar,
+          orden: p.orden,
+          source: ["octavos", "cuartos", "semis", "final", "tercer_puesto"].includes(p.fase) ? "knockout" : "group",
+        };
+      }),
+      categorias: (categoriasRes.data ?? []).map(c => ({
+        id: c.id,
+        nombre: c.nombre,
+        format: c.format,
+        pointsConfig: c.points_config ?? { win: 3, draw: 1, loss: 0 },
+        tiebreakers: c.tiebreakers ?? DEFAULT_TIEBREAKERS,
+      })),
+    };
+  }
+
+  const publicData = await loadPublicFromViews();
+  if (publicData) return publicData;
+
+  return await loadPublicFallback();
 }
 
 export async function fetchAllTorneos() {
