@@ -324,15 +324,39 @@ function ActiveDashboard({ torneo, equipos, partidos, onInfoClick, onNavigate, o
             <div style={{ fontSize: 13, color: MUTED }}>Administrar y ver detalles del torneo</div>
           </div>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02, background: CU_DIM }}
-          whileTap={{ scale: 0.96 }}
-          transition={spring}
-          onClick={() => onNavigate("ajustes")}
-          style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", color: TEXT, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: FONT }}
-        >
-          <Settings size={16} /> Configuración
-        </motion.button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <motion.button
+            whileHover={{ scale: 1.02, background: CU_DIM }}
+            whileTap={{ scale: 0.96 }}
+            transition={spring}
+            onClick={onCreate}
+            style={{
+              background: CU_DIM,
+              border: `1px solid ${CU_BOR}`,
+              borderRadius: 8,
+              padding: "8px 16px",
+              color: TEXT,
+              fontSize: 13,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              fontFamily: FONT,
+            }}
+          >
+            <Plus size={16} color={CU} /> Crear torneo
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02, background: CU_DIM }}
+            whileTap={{ scale: 0.96 }}
+            transition={spring}
+            onClick={() => onNavigate("ajustes")}
+            style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 16px", color: TEXT, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: FONT }}
+          >
+            <Settings size={16} /> Configuración
+          </motion.button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">

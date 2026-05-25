@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, Bell, Moon, Sun, User, Menu, ChevronDown, Activity, LogOut, Settings as SettingsIcon, X, Clock } from "lucide-react";
 import { PALETTE, ELEVATION } from "../../../../shared/tokens/palette";
 
+const THEME_STORAGE_KEY = "alttez_torneos_theme";
 const CARD   = PALETTE.surface;
 const TEXT   = PALETTE.text;
 const MUTED  = PALETTE.textMuted;
@@ -25,6 +26,28 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
   
   const menuRef = useRef(null);
   const notifRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)")?.matches ?? false;
+    const initialTheme = storedTheme === "light" || storedTheme === "dark"
+      ? storedTheme
+      : (prefersLight ? "light" : "dark");
+
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(initialTheme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
+    setIsDark(initialTheme === "dark");
+  }, []);
+
+  const applyTheme = (nextTheme) => {
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(nextTheme);
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    setIsDark(nextTheme === "dark");
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -147,7 +170,15 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
         </div>
 
         {/* Theme Toggle */}
-        <motion.button onClick={() => setIsDark(!isDark)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} style={{ background: "none", border: "none", cursor: "pointer", color: MUTED }}>
+        <motion.button
+          onClick={() => applyTheme(isDark ? "light" : "dark")}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          style={{ background: "none", border: "none", cursor: "pointer", color: MUTED }}
+          aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          aria-pressed={isDark}
+          title={isDark ? "Tema oscuro activo" : "Tema claro activo"}
+        >
           {isDark ? <Moon size={20} /> : <Sun size={20} color={CU} />}
         </motion.button>
 

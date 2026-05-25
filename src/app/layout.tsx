@@ -25,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${sora.variable} antialiased`} style={{ background: "#111315", color: "#F5F7F8" }}>
+      <body className={`${inter.variable} ${sora.variable} antialiased`} style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Settings, Globe, Copy, Check, Info, Image, Gift, Phone, Users, Plus, Trash2, Shield } from "lucide-react";
 import { useTorneosStore } from "../store/useTorneosStore";
@@ -43,6 +43,8 @@ export default function AjustesPage({ onGoTorneos }) {
   const [saved, setSaved]   = useState(false);
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState({ perfil: false, portada: false, sponsor: false });
+  const perfilInputRef = useRef(null);
+  const portadaInputRef = useRef(null);
 
   if (!torneoActivoId || !torneo) {
     return <ModuleEmptyState icon={Settings} title="Selecciona un torneo" subtitle="Abre un torneo para ver y editar sus ajustes." ctaLabel="Ver torneos" onCta={onGoTorneos} />;
@@ -60,6 +62,17 @@ export default function AjustesPage({ onGoTorneos }) {
     navigator.clipboard.writeText(publicUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleImageUpload = async (file, folder, field) => {
+    if (!file) return;
+    setUploading(u => ({ ...u, [field]: true }));
+    try {
+      const url = await uploadImage(file, folder);
+      if (url) await actualizarTorneo(torneo.id, { [field]: url });
+    } finally {
+      setUploading(u => ({ ...u, [field]: false }));
+    }
   };
 
   return (
@@ -150,44 +163,83 @@ export default function AjustesPage({ onGoTorneos }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 8 }}>LOGO / PERFIL</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center", border: `2px dashed ${BORDER}`, borderRadius: 12, padding: 16 }}>
+            <div
+              onClick={() => !uploading.perfil && perfilInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => {
+                if ((e.key === "Enter" || e.key === " ") && !uploading.perfil) {
+                  e.preventDefault();
+                  perfilInputRef.current?.click();
+                }
+              }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                alignItems: "center",
+                border: `2px dashed ${BORDER}`,
+                borderRadius: 12,
+                padding: 16,
+                cursor: uploading.perfil ? "wait" : "pointer",
+                background: torneo.perfil ? "rgba(194,122,66,0.04)" : "transparent",
+                minHeight: 170,
+                justifyContent: "center",
+                textAlign: "center",
+                transition: "background 0.18s ease, border-color 0.18s ease",
+              }}
+            >
               {torneo.perfil ? (
-                <img src={torneo.perfil} alt="Perfil" style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }} />
+                <img src={torneo.perfil} alt="Perfil" style={{ width: 84, height: 84, borderRadius: "50%", objectFit: "cover", border: `1px solid ${BORDER}` }} />
               ) : (
-                <div style={{ width: 80, height: 80, borderRadius: "50%", background: BG, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 84, height: 84, borderRadius: "50%", background: BG, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${BORDER}` }}>
                   <Settings size={32} color={BORDER} />
                 </div>
               )}
-              <input 
-                type="file" accept="image/*"
+              <div style={{ fontSize: 12, fontWeight: 700, color: TEXT }}>
+                {uploading.perfil ? "Subiendo logo..." : (torneo.perfil ? "Cambiar logo" : "Elegir archivo")}
+              </div>
+              <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.4 }}>
+                PNG, JPG o WEBP. Haz clic para cargar o reemplazar el logo del torneo.
+              </div>
+              <input
+                ref={perfilInputRef}
+                type="file"
+                accept="image/*"
                 disabled={uploading.perfil}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return;
-                  setUploading(u => ({ ...u, perfil: true }));
-                  const url = await uploadImage(file, "perfil");
-                  if (url) await actualizarTorneo(torneo.id, { perfil: url });
-                  setUploading(u => ({ ...u, perfil: false }));
+                  e.target.value = "";
+                  await handleImageUpload(file, "perfil", "perfil");
                 }}
-                style={{ fontSize: 10, width: "100%" }}
+                style={{ display: "none" }}
               />
             </div>
           </div>
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: "block", marginBottom: 8 }}>FOTO DE PORTADA</label>
-            <div style={{ border: `2px dashed ${BORDER}`, borderRadius: 12, height: 140, background: torneo.portada ? `url(${torneo.portada}) center/cover` : BG, position: "relative", overflow: "hidden" }}>
+            <div
+              onClick={() => !uploading.portada && portadaInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => {
+                if ((e.key === "Enter" || e.key === " ") && !uploading.portada) {
+                  e.preventDefault();
+                  portadaInputRef.current?.click();
+                }
+              }}
+              style={{ border: `2px dashed ${BORDER}`, borderRadius: 12, height: 140, background: torneo.portada ? `url(${torneo.portada}) center/cover` : BG, position: "relative", overflow: "hidden", cursor: uploading.portada ? "wait" : "pointer" }}
+            >
               <input 
+                ref={portadaInputRef}
                 type="file" accept="image/*"
                 disabled={uploading.portada}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
-                  if (!file) return;
-                  setUploading(u => ({ ...u, portada: true }));
-                  const url = await uploadImage(file, "portada");
-                  if (url) await actualizarTorneo(torneo.id, { portada: url });
-                  setUploading(u => ({ ...u, portada: false }));
+                  e.target.value = "";
+                  await handleImageUpload(file, "portada", "portada");
                 }}
-                style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+                style={{ display: "none" }}
               />
               <div style={{ position: "absolute", bottom: 0, width: "100%", background: "rgba(0,0,0,0.4)", color: "#FFF", fontSize: 10, textAlign: "center", padding: "4px 0" }}>
                 {uploading.portada ? "Subiendo..." : "Clic para cambiar portada"}
