@@ -72,10 +72,12 @@ export default function WellnessDrawer({
 
   useEffect(() => {
     if (!athlete) return;
-    setRpe(athlete.rpe ?? null);
-    setStatus(athlete.status ?? "P");
-    setNotes("");
-    setVals({ sleep_quality: 3, fatigue_level: 3, stress_level: 3, doms_level: 3 });
+    queueMicrotask(() => {
+      setRpe(athlete.rpe ?? null);
+      setStatus(athlete.status ?? "P");
+      setNotes("");
+      setVals({ sleep_quality: 3, fatigue_level: 3, stress_level: 3, doms_level: 3 });
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [athlete?.id]);
 

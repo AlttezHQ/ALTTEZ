@@ -922,29 +922,31 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
         });
       });
 
-      setData(p => ({
-        ...p,
-        nombre: initialData.nombre || p.nombre,
-        deporte: initialData.deporte || p.deporte,
-        temporada: initialData.temporada || p.temporada,
-        fechaInicio: initialData.fechaInicio || p.fechaInicio,
-        fechaFin: initialData.fechaFin || p.fechaFin,
-        organizador: initialData.organizador || p.organizador,
-        sedePrincipal: initialData.sedePrincipal || p.sedePrincipal,
-        descripcion: initialData.descripcion || p.descripcion,
-        formato: initialData.formato || p.formato,
-        categorias: initialData.categorias || p.categorias,
-        arbitros: initialData.arbitros || p.arbitros,
-        horarios: initialData.horarios || p.horarios,
-        sedeUbicacion: initialData.sedeUbicacion || p.sedeUbicacion,
-        numCanchas: initialData.numCanchas || p.numCanchas,
-        duracionPartido: initialData.duracionPartido || p.duracionPartido,
-        margenEntrePartidos: initialData.margenEntrePartidos || p.margenEntrePartidos
-      }));
+      queueMicrotask(() => {
+        setData(p => ({
+          ...p,
+          nombre: initialData.nombre || p.nombre,
+          deporte: initialData.deporte || p.deporte,
+          temporada: initialData.temporada || p.temporada,
+          fechaInicio: initialData.fechaInicio || p.fechaInicio,
+          fechaFin: initialData.fechaFin || p.fechaFin,
+          organizador: initialData.organizador || p.organizador,
+          sedePrincipal: initialData.sedePrincipal || p.sedePrincipal,
+          descripcion: initialData.descripcion || p.descripcion,
+          formato: initialData.formato || p.formato,
+          categorias: initialData.categorias || p.categorias,
+          arbitros: initialData.arbitros || p.arbitros,
+          horarios: initialData.horarios || p.horarios,
+          sedeUbicacion: initialData.sedeUbicacion || p.sedeUbicacion,
+          numCanchas: initialData.numCanchas || p.numCanchas,
+          duracionPartido: initialData.duracionPartido || p.duracionPartido,
+          margenEntrePartidos: initialData.margenEntrePartidos || p.margenEntrePartidos
+        }));
 
-      setStructures(mappedStructures);
-      setTeams(mappedTeams);
-      setIsLoaded(true);
+        setStructures(mappedStructures);
+        setTeams(mappedTeams);
+        setIsLoaded(true);
+      });
       return;
     }
   }, []);
@@ -962,24 +964,28 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setStep(parsed.step || 1);
-        setData(p => ({ ...p, ...(parsed.data || {}) }));
-        setStructures(p => ({ ...p, ...(parsed.structures || {}) }));
-        setTeams(p => ({ ...p, ...(parsed.teams || {}) }));
-        if (parsed.data?.categorias?.length > 0) {
-          setCatId(parsed.data.categorias[0].id);
-          const collapsed = {};
-          parsed.data.categorias.forEach((c, i) => { collapsed[c.id] = i !== 0; });
-          setCollapsedCats(collapsed);
-        }
+        queueMicrotask(() => {
+          setStep(parsed.step || 1);
+          setData(p => ({ ...p, ...(parsed.data || {}) }));
+          setStructures(p => ({ ...p, ...(parsed.structures || {}) }));
+          setTeams(p => ({ ...p, ...(parsed.teams || {}) }));
+          if (parsed.data?.categorias?.length > 0) {
+            setCatId(parsed.data.categorias[0].id);
+            const collapsed = {};
+            parsed.data.categorias.forEach((c, i) => { collapsed[c.id] = i !== 0; });
+            setCollapsedCats(collapsed);
+          }
+        });
       } catch (e) { console.error("Error loading saved wizard state", e); }
     } else if (data.categorias.length > 0) {
-      setCatId(data.categorias[0].id);
-      const collapsed = {};
-      data.categorias.forEach((c, i) => { collapsed[c.id] = i !== 0; });
-      setCollapsedCats(collapsed);
+      queueMicrotask(() => {
+        setCatId(data.categorias[0].id);
+        const collapsed = {};
+        data.categorias.forEach((c, i) => { collapsed[c.id] = i !== 0; });
+        setCollapsedCats(collapsed);
+      });
     }
-    setIsLoaded(true);
+    queueMicrotask(() => setIsLoaded(true));
   }, [initialData]);
 
   // Always keep categories sorted
@@ -988,7 +994,9 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       const sorted = [...data.categorias].sort((a, b) => a.nombre.localeCompare(b.nombre, undefined, { numeric: true }));
       const isDifferent = sorted.some((c, i) => c.id !== data.categorias[i].id);
       if (isDifferent) {
-        setData(p => ({ ...p, categorias: sorted }));
+        queueMicrotask(() => {
+          setData(p => ({ ...p, categorias: sorted }));
+        });
       }
     }
   }, [data.categorias]);

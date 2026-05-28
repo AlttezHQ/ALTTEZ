@@ -679,7 +679,9 @@ export default function MatchCenter({ clubId }) {
 
   // Cuando cambia el partido seleccionado, recargar stats
   useEffect(() => {
-    setPlayerStats(buildInitialStats(selectedMatchId));
+    queueMicrotask(() => {
+      setPlayerStats(buildInitialStats(selectedMatchId));
+    });
   }, [selectedMatchId, buildInitialStats]);
 
   // ── Jugador seleccionado para analytics ────────────────────────────────────

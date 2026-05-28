@@ -105,7 +105,7 @@ export default function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!isSupabaseReady) {
-      setLoadingAuth(false);
+      queueMicrotask(() => setLoadingAuth(false));
       return;
     }
 

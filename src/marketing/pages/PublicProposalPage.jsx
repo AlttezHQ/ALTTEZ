@@ -1628,7 +1628,7 @@ export default function PublicProposalPage() {
   const BEN_ICONS = [Ico.Key, Ico.Globe, Ico.Shield, Ico.Star];
 
   // Section label component — SaaS badge style
-  const SectionLabel = ({ n, label }) => (
+  const renderSectionLabel = (n, label) => (
     <motion.div
       initial={{ opacity:0, x:-15 }}
       whileInView={{ opacity:1, x:0 }}
@@ -1654,7 +1654,7 @@ export default function PublicProposalPage() {
   );
 
   // Primary CTA button
-  const PrimaryBtn = ({ onClick, disabled, children }) => (
+  const renderPrimaryBtn = ({ onClick, disabled, children }) => (
     <motion.button onClick={onClick} disabled={disabled}
       whileHover={!disabled ? { y:-2, boxShadow:`0 12px 32px rgba(206,137,70,0.36)` } : {}}
       whileTap={!disabled ? { scale:0.975 } : {}}
@@ -1666,7 +1666,7 @@ export default function PublicProposalPage() {
   );
 
   // Secondary CTA button
-  const SecondaryBtn = ({ onClick, disabled, children }) => (
+  const renderSecondaryBtn = ({ onClick, disabled, children }) => (
     <motion.button onClick={onClick} disabled={disabled}
       whileHover={!disabled ? { y:-2, borderColor:colors.text, boxShadow:colors.shadow } : {}}
       whileTap={!disabled ? { scale:0.975 } : {}}
@@ -1877,7 +1877,7 @@ export default function PublicProposalPage() {
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{ background:colors.bg, padding:"132px max(6vw, 32px) 120px", transition:"background 0.4s ease" }}>
         <div style={{ maxWidth:1280, margin:"0 auto" }}>
-          <SectionLabel n="01" label="La propuesta" />
+          {renderSectionLabel("01", "La propuesta")}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 64 }}>
             {/* Top Row: Context & Quote */}
@@ -1903,7 +1903,7 @@ export default function PublicProposalPage() {
                   marginTop: 8
                 }}>
                 <div style={{ fontSize:16, color:colors.text, lineHeight:1.7, fontWeight:W.regular, fontStyle:"italic", transition:"color 0.4s ease" }}>
-                  "Tu red y visión comercial son exactamente lo que necesitamos para abrir las primeras puertas y acelerar nuestra tracción en el mercado."
+                  &quot;Tu red y visi?n comercial son exactamente lo que necesitamos para abrir las primeras puertas y acelerar nuestra tracci?n en el mercado.&quot;
                 </div>
                 <div style={{ marginTop:16, fontSize:12, fontWeight:W.semibold, color:B.bronce, letterSpacing:"0.12em", textTransform:"uppercase" }}>
                   Equipo ALTTEZ
@@ -2052,7 +2052,7 @@ export default function PublicProposalPage() {
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{ background:colors.card, padding:"132px max(6vw, 32px) 120px", transition:"background 0.4s ease" }}>
         <div style={{ maxWidth:1280, margin:"0 auto" }}>
-          <SectionLabel n="02" label="¿Qué nos aportas tú?" />
+          {renderSectionLabel("02", "¿Qué nos aportas tú?")}
 
           <div className="proposal-grid-2" style={{ alignItems:"start", gap:"64px 104px" }}>
             {/* Left: benefits */}
@@ -2127,7 +2127,7 @@ export default function PublicProposalPage() {
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{ background:colors.bgAlt, padding:"132px max(6vw, 32px) 120px", transition:"background 0.4s ease" }}>
         <div style={{ maxWidth:1280, margin:"0 auto" }}>
-          <SectionLabel n="03" label="Tu decisión" />
+          {renderSectionLabel("03", "Tu decisión")}
 
           <div className="proposal-grid-2" style={{ alignItems:"start" }}>
             {/* Left: context */}
@@ -2175,9 +2175,11 @@ export default function PublicProposalPage() {
                     <div style={{ fontSize:13.5, color:colors.textMuted, marginTop:4, fontWeight:W.regular }}>Completa tus datos y firma digitalmente para iniciar.</div>
                   </div>
                 </div>
-                <PrimaryBtn onClick={() => !isClosed && setShowSignModal(true)} disabled={isClosed}>
-                  Aceptar y continuar
-                </PrimaryBtn>
+                {renderPrimaryBtn({
+                  onClick: () => !isClosed && setShowSignModal(true),
+                  disabled: isClosed,
+                  children: "Aceptar y continuar",
+                })}
                 <div style={{ textAlign:"center", marginTop:14, fontSize:12.5, color:colors.textDim, fontWeight:W.bold, letterSpacing:"0.02em" }}>
                   Rápido · Seguro · 100% Digital
                 </div>
@@ -2196,9 +2198,11 @@ export default function PublicProposalPage() {
                     <div style={{ fontSize:13.5, color:colors.textMuted, marginTop:4, fontWeight:W.regular }}>Propón tus términos y te respondemos en 24h.</div>
                   </div>
                 </div>
-                <SecondaryBtn onClick={() => !isClosed && setShowInlineCounter(!showInlineCounter)} disabled={isClosed}>
-                  Prefiero proponer otra idea
-                </SecondaryBtn>
+                {renderSecondaryBtn({
+                  onClick: () => !isClosed && setShowInlineCounter(!showInlineCounter),
+                  disabled: isClosed,
+                  children: "Prefiero proponer otra idea",
+                })}
                 <div style={{ textAlign:"center", marginTop:14, fontSize:12.5, color:colors.textDim, fontWeight:W.bold, letterSpacing:"0.02em" }}>
                   {ALTTEZ_EMAIL}
                 </div>
@@ -2317,7 +2321,7 @@ export default function PublicProposalPage() {
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section style={{ background:colors.bg, padding:"132px max(6vw, 32px) 120px", borderTop:`1px solid ${colors.borderSft}`, transition:"background 0.4s ease" }}>
         <div style={{ maxWidth:1280, margin:"0 auto" }}>
-          <SectionLabel n="04" label="¿Cómo funciona?" />
+          {renderSectionLabel("04", "¿Cómo funciona?")}
 
           <motion.h2 initial={{ opacity:0, y:24 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:"-100px" }} transition={{ duration:0.6, ease:E }}
             style={{ margin:"0 0 76px", fontSize:"clamp(30px, 3.2vw, 48px)", fontWeight:W.bold, lineHeight:1.08, letterSpacing:"-0.035em", color:colors.text }}>

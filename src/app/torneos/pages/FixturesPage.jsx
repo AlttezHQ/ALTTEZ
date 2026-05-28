@@ -507,7 +507,9 @@ export default function FixturesPage({ onGoTorneos }) {
   // Enforce first group expanded by default if not set
   useEffect(() => {
     if (groupKeys.length > 0 && expandedDates[groupKeys[0]] === undefined) {
-      setExpandedDates(prev => ({ ...prev, [groupKeys[0]]: true }));
+      queueMicrotask(() => {
+        setExpandedDates(prev => ({ ...prev, [groupKeys[0]]: true }));
+      });
     }
   }, [groupKeys, expandedDates]);
 

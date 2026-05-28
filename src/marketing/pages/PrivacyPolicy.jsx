@@ -11,6 +11,7 @@
 
 import { PRIVACY_EMAIL } from "../data/contactConfig";
 import { MARKETING_BRAND as B } from "../theme/brand.js";
+import Link from "next/link";
 
 const LAST_UPDATED = "2026-04-21";
 const VERSION = "1.0";
@@ -140,7 +141,7 @@ export default function PrivacyPolicy() {
         top: 0,
         zIndex: 10,
       }}>
-        <a
+        <Link
           href="/"
           style={{
             fontSize: 10, textTransform: "uppercase", letterSpacing: "1.5px",
@@ -151,7 +152,7 @@ export default function PrivacyPolicy() {
           onMouseLeave={e => { e.currentTarget.style.color = B.textMuted; }}
         >
           ← Volver
-        </a>
+        </Link>
         <div style={{ width: 1, height: 20, background: B.border }} />
         <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
           ALTTEZ

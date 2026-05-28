@@ -187,7 +187,7 @@ export function CRMApp() {
   useEffect(() => {
     if (!persistedMode || persistedMode === "demo" || !isSupabaseReady) return;
     let cancelled = false;
-    setAuthVerifying(true);
+    queueMicrotask(() => setAuthVerifying(true));
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (cancelled) return;
       setAuthVerifying(false);

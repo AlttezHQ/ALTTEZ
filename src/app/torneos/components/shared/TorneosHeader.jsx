@@ -39,7 +39,7 @@ export default function TorneosHeader({ onLogout, onDeleteAccount, userName = ""
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(initialTheme);
     window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
-    setIsDark(initialTheme === "dark");
+    queueMicrotask(() => setIsDark(initialTheme === "dark"));
   }, []);
 
   const applyTheme = (nextTheme) => {

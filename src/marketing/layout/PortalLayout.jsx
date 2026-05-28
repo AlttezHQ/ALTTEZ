@@ -27,7 +27,7 @@ export default function PortalLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    setIsOpen(false);
+    queueMicrotask(() => setIsOpen(false));
   }, [pathname]);
 
   useEffect(() => {

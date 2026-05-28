@@ -85,7 +85,7 @@ export default function PublicTorneoPage() {
   // Si hay cambios en defaultTab por URL, reaccionar
   useEffect(() => {
     if (searchParams.get("tab")) {
-      setActiveTab(searchParams.get("tab"));
+      queueMicrotask(() => setActiveTab(searchParams.get("tab")));
     }
   }, [searchParams]);
 
@@ -138,7 +138,7 @@ export default function PublicTorneoPage() {
   // Ensure active tab is valid
   useEffect(() => {
     if (activeTab === "bracket" && !hasBracket) {
-      setActiveTab("fixture");
+      queueMicrotask(() => setActiveTab("fixture"));
     }
   }, [activeTab, hasBracket]);
 
