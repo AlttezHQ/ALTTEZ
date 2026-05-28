@@ -1,0 +1,119 @@
+.card {
+  background: var(--color-surface, #181b2a);
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #22273f);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 28px rgba(23, 26, 28, 0.07);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-bg, #0f111a);
+  border: 1px solid var(--color-border, #22273f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: #c27a42;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.logoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text, #f5f7fa);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: 11px;
+  color: var(--color-text-muted, #9eacbf);
+  margin-top: 2px;
+}
+
+.menuWrapper {
+  position: relative;
+}
+
+.menuButton {
+  background: none;
+  border: 1px solid var(--color-border, #22273f);
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--color-text-muted, #9eacbf);
+}
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 100;
+  background: var(--color-surface, #181b2a);
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #22273f);
+  padding: 6px;
+  min-width: 170px;
+}
+
+.menuItem,
+.menuItemMuted,
+.menuItemDanger {
+  width: 100%;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.menuItem {
+  color: var(--color-text, #f5f7fa);
+}
+
+.menuItemMuted {
+  color: var(--color-text-muted, #9eacbf);
+}
+
+.menuItemDanger {
+  color: #ef4444;
+}
+
+.menuDivider {
+  height: 1px;
+  background: var(--color-border, #22273f);
+  margin: 4px 0;
+}
