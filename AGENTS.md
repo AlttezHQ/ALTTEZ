@@ -18,7 +18,7 @@ El proyecto está en proceso de transición hacia un stack basado en:
 
 El código principal reside en `src/`:
 - `src/app/`: Enrutamiento y páginas de Next.js (App Router).
-- `src/components/`: Componentes React globales reutilizables.
+- `src/components/`: Componentes React globales reutilizables (incluye shadcn/ui).
 - `src/marketing/`: Vistas y datos referentes a la landing page y marketing.
 - `src/shared/`: Clientes de API, Hooks y layouts compartidos (e.g., cliente de Supabase, layouts de Auth).
 - `data/`: Scripts del pipeline de analítica de datos (DBT y dags de Airflow). **No borrar ni ignorar**, es un desarrollo activo.
@@ -47,4 +47,23 @@ El código principal reside en `src/`:
 - Mantener los componentes pequeños, modulares y reutilizables.
 - Utilizar TypeScript para los nuevos archivos de la carpeta `src/app/`.
 - No alterar ni borrar código de `data/` a menos que sea solicitado explícitamente para tareas de analítica.
+
+---
+
+## 5. UI/UX & Sistema de Diseño Premium (Director de Arte)
+
+Cualquier tarea relacionada con interfaces de usuario debe ejecutarse bajo el rol estricto de **Director de Arte Frontend y Arquitecto**.
+**Objetivo:** Lograr una estética enterprise, luminosa, limpia y estructurada, inspirada en plataformas SaaS de alto nivel.
+
+**Reglas Inquebrantables de Diseño y Arquitectura:**
+1. **Paleta Luminosa y Profesional:** Abandona el modo oscuro forzado. Utiliza superficies limpias (`bg-white` o `#FFFFFF`), fondos neutros muy suaves para contrastar paneles (ej. `bg-slate-50` o `#F8F9FA`) y textos de alta legibilidad (`text-slate-900`, `text-slate-500`).
+2. **Acento de Marca:** Utiliza nuestro color bronce corporativo (`var(--color-bronce)`, `#C27A42`) de forma quirúrgica: solo para botones de acción principales, íconos activos, pasos completados o barras de progreso.
+3. **Jerarquía Visual (Elevación):** Separa los módulos utilizando tarjetas blancas con sombras amplias y muy suaves (ej. `shadow-sm` o `shadow-md` de Tailwind) con bordes redondeados (`rounded-xl` o `rounded-2xl`). Cero efectos translúcidos (glassmorphism).
+4. **Arquitectura Atómica (PROHIBIDO CÓDIGO MONOLÍTICO):** Tienes estrictamente prohibido generar o modificar vistas complejas en un solo archivo. Toda pantalla debe ser fragmentada en sub-componentes lógicos más pequeños antes de ser ensamblada. Si ves un archivo pesado, tu primer paso es dividirlo.
+5. **Construcción:** Ensambla la interfaz usando exclusivamente componentes estructurales de `shadcn/ui` (Cards, Badges, Progress, Buttons) y utilidades limpias de Tailwind v4.
 <!-- END:nextjs-agent-rules -->
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

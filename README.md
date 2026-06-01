@@ -44,3 +44,10 @@ Repositorio privado del ecosistema operativo deportivo ALTTEZ.
 - `/confirmar/[clubId]/[eventId]` - Confirmacion publica de asistencia.
 
 Consulta [AGENTS.md](./AGENTS.md) para reglas de trabajo con agentes.
+
+## Principios del Proyecto
+
+Las reglas operativas inamovibles del repositorio viven en
+[`.specify/memory/constitution.md`](./.specify/memory/constitution.md). Cualquier
+spec, plan o implementacion nueva debe alinearse con esa constitucion antes de
+expandir arquitectura, estilos o tooling.
