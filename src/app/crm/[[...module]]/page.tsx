@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import ErrorBoundary from "@/shared/ui/ErrorBoundary";
 
 const CRMApp = dynamic(() => import("@/app/shell/CRMApp").then((mod) => mod.CRMApp), {
   ssr: false,
@@ -12,5 +13,9 @@ const CRMApp = dynamic(() => import("@/app/shell/CRMApp").then((mod) => mod.CRMA
 });
 
 export default function CRMRoute() {
-  return <CRMApp />;
+  return (
+    <ErrorBoundary>
+      <CRMApp />
+    </ErrorBoundary>
+  );
 }

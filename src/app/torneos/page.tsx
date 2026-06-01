@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import AlttezLoader from "@/app/torneos/components/shared/AlttezLoader";
+import ErrorBoundary from "@/shared/ui/ErrorBoundary";
 
 // Import TorneosApp dynamically to avoid SSR issues with its heavy client logic
 const TorneosApp = dynamic(() => import("./TorneosApp"), {
@@ -10,5 +11,9 @@ const TorneosApp = dynamic(() => import("./TorneosApp"), {
 });
 
 export default function TorneosPage() {
-  return <TorneosApp />;
+  return (
+    <ErrorBoundary>
+      <TorneosApp />
+    </ErrorBoundary>
+  );
 }

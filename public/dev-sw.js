@@ -1,4 +1,4 @@
-// Empty service worker to overwrite the old Vite PWA cache without looping
-self.addEventListener('install', function(e) {
+// Dev service worker kept intentionally minimal to avoid sticky caches during local development.
+self.addEventListener("install", () => {
   self.skipWaiting();
 });

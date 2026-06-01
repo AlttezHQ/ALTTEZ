@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, X, FileSpreadsheet, AlertTriangle, Building2, Mail } from "lucide-react";
@@ -157,6 +157,9 @@ export default function TorneosApp() {
   const auth           = useAuth();
   const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
   const torneos        = useTorneosStore(s => s.torneos);
+  const equipos        = useTorneosStore(s => s.equipos);
+  const partidos       = useTorneosStore(s => s.partidos);
+  const categorias     = useTorneosStore(s => s.categorias);
   const storeLoading   = useTorneosStore(s => s.loading);
   const storeError     = useTorneosStore(s => s.error);
   const torneoActivo   = torneoActivoId ? torneos.find(t => t.id === torneoActivoId) ?? null : null;
@@ -278,6 +281,19 @@ export default function TorneosApp() {
   const goTo      = (mod) => { setActiveModule(mod); setMobileDrawerOpen(false); };
   const goTorneos = ()    => setActiveModule("torneos");
 
+  const activeEquipos = useMemo(
+    () => (torneoActivoId ? equipos.filter((equipo) => equipo.torneoId === torneoActivoId) : []),
+    [equipos, torneoActivoId],
+  );
+  const activePartidos = useMemo(
+    () => (torneoActivoId ? partidos.filter((partido) => partido.torneoId === torneoActivoId) : []),
+    [partidos, torneoActivoId],
+  );
+  const activeCategorias = useMemo(
+    () => (torneoActivoId ? categorias.filter((categoria) => categoria.torneoId === torneoActivoId) : []),
+    [categorias, torneoActivoId],
+  );
+
   const handleCreate  = (torneo = null) => {
     setEditingTorneo(torneo);
     setActiveModule("crear");
@@ -328,6 +344,139 @@ export default function TorneosApp() {
   const sidebarActive = activeModule === "crear" ? null : activeModule;
 
   const hasLocalData = torneos && torneos.length > 0;
+  const accountEmail = auth.user?.email ?? "";
+  const accountDisplayName =
+    auth.profile?.full_name ||
+    auth.user?.user_metadata?.full_name ||
+    auth.user?.user_metadata?.name ||
+    torneoActivo?.nombre ||
+    "Administrador";
+
+  const headerSearchItems = useMemo(() => {
+    const moduleItems = [
+      { id: "module-inicio", label: "Inicio", description: "Resumen operativo del torneo", module: "inicio", keywords: "dashboard inicio resumen" },
+      { id: "module-torneos", label: "Torneos", description: "Lista y administracion de torneos", module: "torneos", keywords: "torneos lista administracion" },
+      { id: "module-equipos", label: "Equipos", description: "Gestion de plantillas y registros", module: "equipos", keywords: "equipos jugadores delegados" },
+      { id: "module-categorias", label: "Categorias", description: "Centro operativo de categorias", module: "categorias", keywords: "categorias grupos incidencias" },
+      { id: "module-fixtures", label: "Fixtures", description: "Calendario, cruces y resultados", module: "fixtures", keywords: "fixtures calendario partidos" },
+      { id: "module-grupos", label: "Fase de grupos", description: "Tablas y clasificacion", module: "grupos", keywords: "grupos tablas posiciones" },
+      { id: "module-fase-final", label: "Fase final", description: "Llaves y cruces definitivos", module: "fase_final", keywords: "fase final bracket eliminacion" },
+      { id: "module-programacion", label: "Gestion de partidos", description: "Programacion y canchas", module: "programacion", keywords: "programacion canchas arbitros" },
+      { id: "module-estadisticas", label: "Estadisticas", description: "Analitica deportiva del torneo", module: "estadisticas", keywords: "estadisticas goles rendimiento" },
+      { id: "module-ajustes", label: "Configuracion", description: "Ajustes del torneo activo", module: "ajustes", keywords: "configuracion ajustes torneo" },
+      { id: "module-publica", label: "Vista publica", description: "Portal publico del torneo", module: "publica", keywords: "publica portal visibilidad" },
+    ];
+
+    const categoryItems = activeCategorias.map((categoria) => ({
+      id: `category-${categoria.id}`,
+      label: categoria.nombre,
+      description: "Abrir categoria en centro operativo",
+      module: "categorias",
+      keywords: `categoria ${categoria.nombre}`,
+    }));
+
+    const teamItems = activeEquipos.map((equipo) => ({
+      id: `team-${equipo.id}`,
+      label: equipo.nombre,
+      description: `${equipo.grupo || "Sin categoria"} · abrir en equipos`,
+      module: "equipos",
+      keywords: `equipo ${equipo.nombre} ${equipo.grupo || ""} ${equipo.delegado || ""}`,
+    }));
+
+    const matchItems = activePartidos.slice(0, 20).map((partido) => ({
+      id: `match-${partido.id}`,
+      label: `${partido.equipoLocalNombre || "Local"} vs ${partido.equipoVisitaNombre || "Visita"}`,
+      description: `${partido.fase || "Fixture"} · abrir en fixtures`,
+      module: "fixtures",
+      keywords: `partido fixture ${partido.equipoLocalNombre || ""} ${partido.equipoVisitaNombre || ""} ${partido.fase || ""}`,
+    }));
+
+    return [...moduleItems, ...categoryItems, ...teamItems, ...matchItems];
+  }, [activeCategorias, activeEquipos, activePartidos]);
+
+  const headerNotifications = useMemo(() => {
+    if (!torneoActivoId || !torneoActivo) return [];
+
+    const nextNotifications = [];
+    const equiposSinJugadores = activeEquipos.filter((equipo) => (equipo.jugadores || []).length === 0);
+    const equiposSinDelegado = activeEquipos.filter((equipo) => !(equipo.delegado || equipo.entrenador));
+    const partidosSinFecha = activePartidos.filter((partido) => !partido.fechaHora && partido.estado !== "finalizado");
+    const partidosProgramados = activePartidos
+      .filter((partido) => partido.fechaHora && partido.estado !== "finalizado")
+      .sort((left, right) => new Date(left.fechaHora) - new Date(right.fechaHora));
+    const categoriasSinEquipos = activeCategorias.filter((categoria) =>
+      !activeEquipos.some((equipo) => (equipo.grupo || "General") === categoria.nombre),
+    );
+
+    if (torneoActivo.estado === "borrador") {
+      nextNotifications.push({
+        id: `draft-${torneoActivo.id}`,
+        title: "Torneo en borrador",
+        desc: `${torneoActivo.nombre} aun no ha sido publicado ni activado.`,
+        time: "Ahora",
+        module: "ajustes",
+        tone: "info",
+      });
+    }
+
+    if (partidosSinFecha.length > 0) {
+      nextNotifications.push({
+        id: `schedule-${torneoActivo.id}`,
+        title: "Partidos sin programar",
+        desc: `${partidosSinFecha.length} partidos necesitan fecha, sede o arbitro.`,
+        time: "Pendiente",
+        module: "fixtures",
+        tone: "warning",
+      });
+    }
+
+    if (equiposSinJugadores.length > 0) {
+      nextNotifications.push({
+        id: `roster-${torneoActivo.id}`,
+        title: "Equipos incompletos",
+        desc: `${equiposSinJugadores.length} equipos todavia no tienen jugadores registrados.`,
+        time: "Pendiente",
+        module: "equipos",
+        tone: "warning",
+      });
+    }
+
+    if (equiposSinDelegado.length > 0) {
+      nextNotifications.push({
+        id: `contacts-${torneoActivo.id}`,
+        title: "Contactos faltantes",
+        desc: `${equiposSinDelegado.length} equipos no tienen delegado o entrenador asignado.`,
+        time: "Pendiente",
+        module: "equipos",
+        tone: "info",
+      });
+    }
+
+    if (categoriasSinEquipos.length > 0) {
+      nextNotifications.push({
+        id: `categories-empty-${torneoActivo.id}`,
+        title: "Categorias sin equipos",
+        desc: `${categoriasSinEquipos.length} categorias del torneo aun no tienen equipos vinculados.`,
+        time: "Pendiente",
+        module: "categorias",
+        tone: "danger",
+      });
+    }
+
+    if (partidosProgramados.length > 0) {
+      const proximo = partidosProgramados[0];
+      nextNotifications.push({
+        id: `next-match-${proximo.id}`,
+        title: "Proximo partido",
+        desc: `${proximo.equipoLocalNombre || "Local"} vs ${proximo.equipoVisitaNombre || "Visita"}${proximo.fechaHora ? ` · ${new Date(proximo.fechaHora).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}` : ""}`,
+        time: "Agenda",
+        module: "fixtures",
+        tone: "success",
+      });
+    }
+
+    return nextNotifications;
+  }, [activeCategorias, activeEquipos, activePartidos, torneoActivo, torneoActivoId]);
 
   const userRoles = auth.user?.user_metadata?.roles || [];
   const hasOrganizadorRole = userRoles.includes("organizador");
@@ -399,13 +548,131 @@ export default function TorneosApp() {
     );
   }
 
-  const accountEmail = auth.user?.email ?? "";
-  const accountDisplayName =
-    auth.profile?.full_name ||
-    auth.user?.user_metadata?.full_name ||
-    auth.user?.user_metadata?.name ||
-    torneoActivo?.nombre ||
-    "Administrador";
+  /* const headerSearchItems = useMemo(() => {
+    const moduleItems = [
+      { id: "module-inicio", label: "Inicio", description: "Resumen operativo del torneo", module: "inicio", keywords: "dashboard inicio resumen" },
+      { id: "module-torneos", label: "Torneos", description: "Lista y administracion de torneos", module: "torneos", keywords: "torneos lista administracion" },
+      { id: "module-equipos", label: "Equipos", description: "Gestion de plantillas y registros", module: "equipos", keywords: "equipos jugadores delegados" },
+      { id: "module-categorias", label: "Categorias", description: "Centro operativo de categorias", module: "categorias", keywords: "categorias grupos incidencias" },
+      { id: "module-fixtures", label: "Fixtures", description: "Calendario, cruces y resultados", module: "fixtures", keywords: "fixtures calendario partidos" },
+      { id: "module-grupos", label: "Fase de grupos", description: "Tablas y clasificacion", module: "grupos", keywords: "grupos tablas posiciones" },
+      { id: "module-fase-final", label: "Fase final", description: "Llaves y cruces definitivos", module: "fase_final", keywords: "fase final bracket eliminacion" },
+      { id: "module-programacion", label: "Gestion de partidos", description: "Programacion y canchas", module: "programacion", keywords: "programacion canchas arbitros" },
+      { id: "module-estadisticas", label: "Estadisticas", description: "Analitica deportiva del torneo", module: "estadisticas", keywords: "estadisticas goles rendimiento" },
+      { id: "module-ajustes", label: "Configuracion", description: "Ajustes del torneo activo", module: "ajustes", keywords: "configuracion ajustes torneo" },
+      { id: "module-publica", label: "Vista publica", description: "Portal publico del torneo", module: "publica", keywords: "publica portal visibilidad" },
+    ];
+
+    const categoryItems = activeCategorias.map((categoria) => ({
+      id: `category-${categoria.id}`,
+      label: categoria.nombre,
+      description: "Abrir categoria en centro operativo",
+      module: "categorias",
+      keywords: `categoria ${categoria.nombre}`,
+    }));
+
+    const teamItems = activeEquipos.map((equipo) => ({
+      id: `team-${equipo.id}`,
+      label: equipo.nombre,
+      description: `${equipo.grupo || "Sin categoria"} · abrir en equipos`,
+      module: "equipos",
+      keywords: `equipo ${equipo.nombre} ${equipo.grupo || ""} ${equipo.delegado || ""}`,
+    }));
+
+    const matchItems = activePartidos.slice(0, 20).map((partido) => ({
+      id: `match-${partido.id}`,
+      label: `${partido.equipoLocalNombre || "Local"} vs ${partido.equipoVisitaNombre || "Visita"}`,
+      description: `${partido.fase || "Fixture"} · abrir en fixtures`,
+      module: "fixtures",
+      keywords: `partido fixture ${partido.equipoLocalNombre || ""} ${partido.equipoVisitaNombre || ""} ${partido.fase || ""}`,
+    }));
+
+    return [...moduleItems, ...categoryItems, ...teamItems, ...matchItems];
+  }, [activeCategorias, activeEquipos, activePartidos]);
+
+  const headerNotifications = useMemo(() => {
+    if (!torneoActivoId || !torneoActivo) return [];
+
+    const nextNotifications = [];
+    const equiposSinJugadores = activeEquipos.filter((equipo) => (equipo.jugadores || []).length === 0);
+    const equiposSinDelegado = activeEquipos.filter((equipo) => !(equipo.delegado || equipo.entrenador));
+    const partidosSinFecha = activePartidos.filter((partido) => !partido.fechaHora && partido.estado !== "finalizado");
+    const partidosProgramados = activePartidos
+      .filter((partido) => partido.fechaHora && partido.estado !== "finalizado")
+      .sort((left, right) => new Date(left.fechaHora) - new Date(right.fechaHora));
+    const categoriasSinEquipos = activeCategorias.filter((categoria) =>
+      !activeEquipos.some((equipo) => (equipo.grupo || "General") === categoria.nombre),
+    );
+
+    if (torneoActivo.estado === "borrador") {
+      nextNotifications.push({
+        id: `draft-${torneoActivo.id}`,
+        title: "Torneo en borrador",
+        desc: `${torneoActivo.nombre} aun no ha sido publicado ni activado.`,
+        time: "Ahora",
+        module: "ajustes",
+        tone: "info",
+      });
+    }
+
+    if (partidosSinFecha.length > 0) {
+      nextNotifications.push({
+        id: `schedule-${torneoActivo.id}`,
+        title: "Partidos sin programar",
+        desc: `${partidosSinFecha.length} partidos necesitan fecha, sede o arbitro.`,
+        time: "Pendiente",
+        module: "fixtures",
+        tone: "warning",
+      });
+    }
+
+    if (equiposSinJugadores.length > 0) {
+      nextNotifications.push({
+        id: `roster-${torneoActivo.id}`,
+        title: "Equipos incompletos",
+        desc: `${equiposSinJugadores.length} equipos todavia no tienen jugadores registrados.`,
+        time: "Pendiente",
+        module: "equipos",
+        tone: "warning",
+      });
+    }
+
+    if (equiposSinDelegado.length > 0) {
+      nextNotifications.push({
+        id: `contacts-${torneoActivo.id}`,
+        title: "Contactos faltantes",
+        desc: `${equiposSinDelegado.length} equipos no tienen delegado o entrenador asignado.`,
+        time: "Pendiente",
+        module: "equipos",
+        tone: "info",
+      });
+    }
+
+    if (categoriasSinEquipos.length > 0) {
+      nextNotifications.push({
+        id: `categories-empty-${torneoActivo.id}`,
+        title: "Categorias sin equipos",
+        desc: `${categoriasSinEquipos.length} categorias del torneo aun no tienen equipos vinculados.`,
+        time: "Pendiente",
+        module: "categorias",
+        tone: "danger",
+      });
+    }
+
+    if (partidosProgramados.length > 0) {
+      const proximo = partidosProgramados[0];
+      nextNotifications.push({
+        id: `next-match-${proximo.id}`,
+        title: "Proximo partido",
+        desc: `${proximo.equipoLocalNombre || "Local"} vs ${proximo.equipoVisitaNombre || "Visita"}${proximo.fechaHora ? ` · ${new Date(proximo.fechaHora).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}` : ""}`,
+        time: "Agenda",
+        module: "fixtures",
+        tone: "success",
+      });
+    }
+
+    return nextNotifications;
+  }, [activeCategorias, activeEquipos, activePartidos, torneoActivo, torneoActivoId]); */
 
   return (
     <div className="flex min-h-screen font-sans" style={{ background: BG, fontFamily: FONT }}>
@@ -477,6 +744,9 @@ export default function TorneosApp() {
           userName={accountDisplayName}
           userEmail={accountEmail}
           onMenuToggle={() => setMobileDrawerOpen(o => !o)}
+          onSearchNavigate={(item) => item?.module && goTo(item.module)}
+          searchItems={headerSearchItems}
+          notifications={headerNotifications}
         />
 
         <main className="flex-1 overflow-y-auto" style={{ padding: "24px 20px 48px" }}>
