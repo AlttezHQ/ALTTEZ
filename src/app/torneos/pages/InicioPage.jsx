@@ -649,8 +649,8 @@ function WelcomeScreen({ onCreate, onImport, onInfoClick }) {
 }
 
 // ── Root export ───────────────────────────────────────────────────────────────
-export default function InicioPage({ onCreate, onImport, onInfoClick, onNavigate }) {
-  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
+export default function InicioPage({ torneoId, onCreate, onImport, onInfoClick, onNavigate }) {
+  const torneoActivoId = torneoId;
   const torneos        = useTorneosStore(s => s.torneos);
   const allEquipos     = useTorneosStore(s => s.equipos);
   const allPartidos    = useTorneosStore(s => s.partidos);

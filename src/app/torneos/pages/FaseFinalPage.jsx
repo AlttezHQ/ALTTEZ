@@ -137,8 +137,8 @@ function KnockoutResultModal({ match, equipos, onSave, onClose }) {
     </div>
   );
 }
-export default function FaseFinalPage({ onGoTorneos }) {
-  const torneoActivoId  = useTorneosStore(s => s.torneoActivoId);
+export default function FaseFinalPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
   const allPartidos     = useTorneosStore(s => s.partidos);
   const allEquipos      = useTorneosStore(s => s.equipos);
   const allCategorias   = useTorneosStore(s => s.categorias);

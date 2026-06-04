@@ -10,7 +10,7 @@ const MUTED  = PALETTE.textMuted;
 const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 const EASE   = [0.22, 1, 0.36, 1];
 
-export default function ModuleEmptyState({ icon: Icon, title, subtitle, ctaLabel, onCta }) {
+export default function ModuleEmptyState({ icon: Icon, title, subtitle, ctaLabel = null, onCta = null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

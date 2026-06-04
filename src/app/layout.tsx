@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Sora, Geist } from "next/font/google";
+import { Inter, Sora, Geist, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,19 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
+// Marca ALTTEZ v1.1: Manrope (tipografía oficial) + JetBrains Mono (datos/números)
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
+
 export const metadata: Metadata = {
   title: "ALTTEZ | Ecosistema Operativo Deportivo",
   description: "Organiza hoy. Escala mañana. Todos los deportes, un solo sistema.",
@@ -28,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-      <body className={`${inter.variable} ${sora.variable} antialiased`} style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
+      <body className={`${inter.variable} ${sora.variable} ${manrope.variable} ${jetbrainsMono.variable} antialiased`} style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
         <Providers>{children}</Providers>
       </body>
     </html>

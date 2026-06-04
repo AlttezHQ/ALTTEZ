@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { PALETTE } from "../../tokens/palette";
 
 /**
  * @component PasswordInput
@@ -22,15 +21,18 @@ export default function PasswordInput({ value, onChange, onKeyDown, placeholder,
         autoComplete={autoComplete}
         style={{
           width: "100%",
-          fontSize: 13,
-          padding: "11px 40px 11px 13px",
-          background: PALETTE.surface,
-          border: `1px solid ${hasError ? PALETTE.danger : PALETTE.border}`,
+          fontSize: 15,
+          fontWeight: 500,
+          padding: "14px 44px 14px 16px",
+          backgroundColor: "#FFFFFF",
+          border: `1px solid ${hasError ? "#D95C5C" : "#E2D9C9"}`,
           borderRadius: 12,
-          color: PALETTE.text,
+          color: "#1F1F1D",
           fontFamily: "inherit",
           outline: "none",
           boxSizing: "border-box",
+          boxShadow: "inset 0 1px 2px rgba(31,31,29,0.04)",
+          transition: "all 0.2s ease",
         }}
       />
       <button
@@ -42,7 +44,7 @@ export default function PasswordInput({ value, onChange, onKeyDown, placeholder,
           transform: "translateY(-50%)",
           background: "none", border: "none",
           cursor: "pointer", padding: 2,
-          color: PALETTE.textMuted, display: "flex",
+          color: "#667085", display: "flex",
           alignItems: "center",
         }}
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}

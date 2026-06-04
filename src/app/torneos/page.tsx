@@ -1,19 +1,24 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import AlttezLoader from "@/app/torneos/components/shared/AlttezLoader";
-import ErrorBoundary from "@/shared/ui/ErrorBoundary";
+import { useRouter } from "next/navigation";
+import InicioPage from "./pages/InicioPage";
 
-// Import TorneosApp dynamically to avoid SSR issues with its heavy client logic
-const TorneosApp = dynamic(() => import("./TorneosApp"), {
-  ssr: false,
-  loading: () => <AlttezLoader fullScreen text="Cargando entorno..." />
-});
+export default function TorneosGlobalInicio() {
+  const router = useRouter();
 
-export default function TorneosPage() {
   return (
-    <ErrorBoundary>
-      <TorneosApp />
-    </ErrorBoundary>
+    <div style={{ flex: 1, padding: "24px" }}>
+      <InicioPage
+        torneoId={null}
+        onNavigate={(mod: string) => {
+          if (mod === "torneos") router.push("/torneos/lista");
+        }}
+        onCreate={() => router.push("/torneos/crear")}
+        onImport={() => {}}
+        onInfoClick={(mod: string) => {
+           router.push("/torneos/lista");
+        }}
+      />
+    </div>
   );
 }

@@ -80,8 +80,8 @@ function GroupCard({label,rows,matches,equipos,qualifyCount,defaultOpen}){
   );
 }
 
-export default function GruposPage({onGoTorneos,onNavigate}){
-  const torneoActivoId=useTorneosStore(s=>s.torneoActivoId);
+export default function GruposPage({ torneoId, onGoTorneos, onNavigate }){
+  const torneoActivoId = torneoId;
   const allPartidos=useTorneosStore(s=>s.partidos);
   const allEquipos=useTorneosStore(s=>s.equipos);
   const allCategorias=useTorneosStore(s=>s.categorias);

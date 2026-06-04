@@ -1307,41 +1307,76 @@ function InteractiveEnvelope({ clientName, onOpen }) {
   const isSliding = phase === "sliding-letter" || phase === "zooming";
   const isZooming = phase === "zooming";
 
+  // Trama de grano sutil (SVG noise) para textura premium sobre fondo oscuro
+  const GRAIN = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       style={{
         position: "fixed", inset: 0, zIndex: 2000,
-        background: "linear-gradient(160deg, #0E0E0C 0%, #070705 100%)",
+        background: "radial-gradient(ellipse 80% 70% at 50% 40%, #1B1813 0%, #0C0B08 58%, #070604 100%)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: FONT, overflow: "hidden",
-        perspective: "1200px" // CRÍTICO: Añade profundidad 3D real al giro de la solapa
+        perspective: "1300px" // CRÍTICO: Añade profundidad 3D real al giro de la solapa
       }}
     >
       {/* Glow ambiental con latido sutil para invitar a la acción */}
-      <motion.div 
-        animate={{ opacity: [0.6, 1, 0.6] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 55% 45% at 50% 50%, rgba(206,137,70,0.08) 0%, transparent 100%)", pointerEvents:"none" }} 
+      <motion.div
+        animate={{ opacity: [0.55, 1, 0.55] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 50% 42% at 50% 47%, rgba(206,137,70,0.16) 0%, transparent 70%)", pointerEvents:"none" }}
       />
+      {/* Grano fino */}
+      <div style={{ position:"absolute", inset:0, backgroundImage:GRAIN, opacity:0.04, mixBlendMode:"overlay", pointerEvents:"none" }} />
+      {/* Viñeta para enfocar el centro */}
+      <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse 90% 90% at 50% 50%, transparent 45%, rgba(0,0,0,0.55) 100%)", pointerEvents:"none" }} />
+
+      {/* Etiqueta personalizada superior */}
+      <AnimatePresence>
+        {phase === "closed" && (
+          <motion.div
+            key="recipient"
+            initial={{ opacity:0, y:-8 }}
+            animate={{ opacity:1, y:0, transition:{ delay:0.35, duration:0.5 } }}
+            exit={{ opacity:0, transition:{ duration:0.2 } }}
+            style={{
+              position:"absolute", top:"calc(50% - 250px)", left:"50%", x:"-50%",
+              zIndex:20, pointerEvents:"none", display:"flex", flexDirection:"column",
+              alignItems:"center", gap:8, whiteSpace:"nowrap",
+            }}
+          >
+            <div style={{ fontSize:10, fontWeight:W.bold, color:B.bronce, letterSpacing:"0.32em", textTransform:"uppercase" }}>Propuesta confidencial</div>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <span style={{ width:24, height:1, background:`linear-gradient(90deg, transparent, ${B.bronceBor})` }} />
+              <span style={{ fontSize:13, fontWeight:W.medium, color:"rgba(246,241,234,0.5)" }}>Preparada para</span>
+              <span style={{ width:24, height:1, background:`linear-gradient(90deg, ${B.bronceBor}, transparent)` }} />
+            </div>
+            <div style={{ fontSize:22, fontWeight:W.bold, color:"#F6F1EA", letterSpacing:"-0.01em" }}>{clientName}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Contenedor del sobre — hace zoom al salir */}
       <motion.div
         animate={isZooming ? { scale: 1.6, opacity: 0, y: -40, transition: { duration: 0.65, ease: [0.4, 0, 1, 1] } } : { scale: 1, opacity: 1 }}
-        style={{ 
-          position:"relative", width:"min(520px, 90vw)", height:360, 
+        style={{
+          position:"relative", width:"min(520px, 90vw)", height:360,
           display:"flex", alignItems:"center", justifyContent:"center",
           transformStyle: "preserve-3d" // Mantiene los hijos en el espacio 3D
         }}
       >
+        {/* Sombra de contacto bajo el sobre */}
+        <div style={{ position:"absolute", bottom:-26, left:"12%", right:"12%", height:46, background:"radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, transparent 72%)", filter:"blur(6px)", zIndex:0 }} />
+
         {/* ── CUERPO DEL SOBRE (fondo) ── */}
         <div style={{
           position:"absolute", inset:0,
-          background:"#131311",
-          borderRadius:20,
-          border:"1.5px solid rgba(206,137,70,0.22)",
-          boxShadow:"0 40px 100px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.04)",
+          background:"linear-gradient(155deg, #221F1A 0%, #16130F 100%)",
+          borderRadius:22,
+          border:`1px solid ${B.bronceBor}`,
+          boxShadow:"0 50px 120px rgba(0,0,0,0.9), 0 0 70px rgba(206,137,70,0.07), inset 0 1px 0 rgba(255,255,255,0.05)",
           zIndex:1,
         }} />
 
@@ -1354,10 +1389,10 @@ function InteractiveEnvelope({ clientName, onOpen }) {
           style={{
             position:"absolute",
             width:"84%", height:"80%",
-            background:"#FAFAF8", // Ajuste a tono marfil premium
+            background:"linear-gradient(170deg, #FFFFFF 0%, #F6F1EA 100%)",
             borderRadius:12,
             padding:"22px 26px",
-            boxShadow:"0 -4px 20px rgba(0,0,0,0.4)",
+            boxShadow:"0 -6px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.8)",
             display:"flex", flexDirection:"column", justifyContent:"space-between",
           }}
         >
@@ -1375,16 +1410,16 @@ function InteractiveEnvelope({ clientName, onOpen }) {
           </div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:"1px solid #EBE6DF", paddingTop:12 }}>
             <div style={{ fontSize:9, color:"#A5A098", fontWeight:W.semibold, letterSpacing:"0.1em" }}>VIGENCIA · 30 DÍAS</div>
-            <div style={{ fontSize:9, color:B.bronce, fontWeight:W.bold, letterSpacing:"0.1em" }}>ALTTEZ S.A.S. ✦</div>
+            <div style={{ fontSize:9, color:B.bronce, fontWeight:W.bold, letterSpacing:"0.1em" }}>ALTTEZ S.A.S.</div>
           </div>
         </motion.div>
 
-        {/* ── SOLAPAS LATERALES ── */}
-        <div style={{ position:"absolute", inset:0, background:"#161614", clipPath:"polygon(0% 0%, 50% 52%, 0% 100%)", borderRadius:"20px 0 0 20px", zIndex:3 }} />
-        <div style={{ position:"absolute", inset:0, background:"#161614", clipPath:"polygon(100% 0%, 50% 52%, 100% 100%)", borderRadius:"0 20px 20px 0", zIndex:3 }} />
+        {/* ── SOLAPAS LATERALES (pliegues con sombreado para leer como sobre real) ── */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(105deg, #1C1915 0%, #131110 100%)", clipPath:"polygon(0% 0%, 50% 52%, 0% 100%)", borderRadius:"22px 0 0 22px", zIndex:3, filter:"drop-shadow(1px 0 0.5px rgba(206,137,70,0.18))" }} />
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(255deg, #1C1915 0%, #131110 100%)", clipPath:"polygon(100% 0%, 50% 52%, 100% 100%)", borderRadius:"0 22px 22px 0", zIndex:3, filter:"drop-shadow(-1px 0 0.5px rgba(206,137,70,0.18))" }} />
 
-        {/* ── SOLAPA INFERIOR ── */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, #121210 0%, #1A1A18 100%)", clipPath:"polygon(0% 100%, 50% 50%, 100% 100%)", borderRadius:"0 0 20px 20px", zIndex:4 }} />
+        {/* ── SOLAPA INFERIOR (más clara para dar volumen) ── */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, #14120F 0%, #221E18 100%)", clipPath:"polygon(0% 100%, 50% 50%, 100% 100%)", borderRadius:"0 0 22px 22px", zIndex:4, filter:"drop-shadow(0 -1px 0.5px rgba(206,137,70,0.16))" }} />
 
         {/* ── SOLAPA SUPERIOR — gira al abrir en 3D real ── */}
         <motion.div
@@ -1394,12 +1429,13 @@ function InteractiveEnvelope({ clientName, onOpen }) {
           }
           style={{
             position:"absolute", top:0, left:0, right:0, height:"50%",
-            background:"linear-gradient(to bottom, #1E1D1B 0%, #151412 100%)",
+            background:"linear-gradient(to bottom, #2B2620 0%, #1A1612 100%)",
             clipPath:"polygon(0% 0%, 50% 100%, 100% 0%)",
-            borderRadius:"20px 20px 0 0",
+            borderRadius:"22px 22px 0 0",
             transformOrigin:"top center",
             backfaceVisibility:"hidden",
-            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.06)" // Borde superior sutil (Glassmorphism de profundidad)
+            boxShadow: "inset 0 1px 1px rgba(255,255,255,0.08)",
+            filter:"drop-shadow(0 1px 1px rgba(206,137,70,0.20))", // Hairline bronce en el borde V de la solapa
           }}
         />
 
@@ -1417,17 +1453,27 @@ function InteractiveEnvelope({ clientName, onOpen }) {
                 top:"50%", left:"50%",
                 x: "-50%", y: "-50%", // SOLUCIÓN: Control nativo de ejes en Framer Motion
                 zIndex:7, cursor:"pointer",
-                width:84, height:84, borderRadius:"50%",
-                background:"radial-gradient(circle at 38% 35%, #EAA95E 0%, #CE8946 50%, #A06830 100%)",
-                boxShadow:"0 8px 28px rgba(206,137,70,0.5), inset 0 2px 5px rgba(255,255,255,0.25), inset 0 -3px 5px rgba(0,0,0,0.2)",
+                width:88, height:88, borderRadius:"50%",
                 display:"flex", alignItems:"center", justifyContent:"center",
               }}
             >
-              <div style={{ position:"absolute", inset:6, borderRadius:"50%", border:"1.5px solid rgba(255,255,255,0.2)" }} />
+              {/* Halo pulsante que invita al clic */}
+              <motion.div
+                animate={{ scale:[1, 1.45, 1], opacity:[0.5, 0, 0.5] }}
+                transition={{ duration:2.4, repeat:Infinity, ease:"easeInOut" }}
+                style={{ position:"absolute", inset:0, borderRadius:"50%", border:`1.5px solid ${B.bronce}`, pointerEvents:"none" }}
+              />
+              {/* Disco del sello */}
+              <div style={{
+                position:"absolute", inset:0, borderRadius:"50%",
+                background:"radial-gradient(circle at 38% 32%, #F0B36A 0%, #CE8946 48%, #9A6028 100%)",
+                boxShadow:"0 10px 32px rgba(206,137,70,0.55), inset 0 2px 6px rgba(255,255,255,0.3), inset 0 -4px 7px rgba(0,0,0,0.28)",
+              }} />
+              <div style={{ position:"absolute", inset:7, borderRadius:"50%", border:"1.5px solid rgba(255,255,255,0.22)" }} />
               <img
                 src={IMG_LOGO} alt="ALTTEZ"
-                // Logo en bajo relieve oscuro en lugar de negro plano
-                style={{ width:42, height:42, objectFit:"contain", filter:"brightness(0) opacity(0.65) drop-shadow(0px 1px 0px rgba(255,255,255,0.3))", pointerEvents:"none" }}
+                // Logo en bajo relieve sobre el lacre
+                style={{ position:"relative", width:44, height:44, objectFit:"contain", filter:"brightness(0) opacity(0.62) drop-shadow(0px 1px 0px rgba(255,255,255,0.35))", pointerEvents:"none" }}
                 onError={e => { e.currentTarget.style.display="none"; }}
               />
             </motion.div>
@@ -1441,19 +1487,25 @@ function InteractiveEnvelope({ clientName, onOpen }) {
           <motion.div
             key="cta"
             initial={{ opacity:0, y:10 }}
-            animate={{ opacity:1, y:0, transition:{ delay:0.5, duration:0.4 } }}
+            animate={{ opacity:1, y:0, transition:{ delay:0.6, duration:0.4 } }}
             exit={{ opacity:0, transition:{ duration:0.2 } }}
             style={{
               position:"absolute",
-              top:"calc(50% + 58px)", left:"50%",
+              top:"calc(50% + 62px)", left:"50%",
               x: "-50%", // SOLUCIÓN: Anclaje correcto del eje X sin afectar la animación de Y
               zIndex:20, pointerEvents:"none",
-              display:"flex", flexDirection:"column", alignItems:"center", gap:5,
+              display:"flex", flexDirection:"column", alignItems:"center", gap:6,
               whiteSpace:"nowrap",
             }}
           >
-            <div style={{ fontSize:11, fontWeight:W.bold, color:B.bronce, letterSpacing:"0.14em", textTransform:"uppercase" }}>Presiona el sello</div>
-            <div style={{ fontSize:10.5, color:"rgba(246,241,234,0.35)", fontWeight:W.medium }}>Para abrir tu propuesta confidencial</div>
+            <motion.div
+              animate={{ opacity:[0.7, 1, 0.7] }}
+              transition={{ duration:2.4, repeat:Infinity, ease:"easeInOut" }}
+              style={{ fontSize:11, fontWeight:W.bold, color:B.bronce, letterSpacing:"0.16em", textTransform:"uppercase" }}
+            >
+              Presiona el sello
+            </motion.div>
+            <div style={{ fontSize:10.5, color:"rgba(246,241,234,0.4)", fontWeight:W.medium }}>para abrir tu propuesta</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1612,6 +1664,10 @@ export default function PublicProposalPage() {
   if (finalStatus) return <SuccessScreen type={finalStatus} proposal={proposal} colors={colors} isDark={isDark} />;
 
   const { client_name, title, subtitle, fecha, rol, participacion_pct, impacto, beneficios = [], description } = proposal;
+  const proposalSectionTitle = proposal.proposal_section_title || "Una alianza estratégica para impulsar ALTTEZ.";
+  const proposalSectionBody = proposal.proposal_section_body || "Buscamos un socio estratégico que nos acompañe en la validación y consolidación de nuestra plataforma de gestión y operation deportiva. Esta alianza busca integrar el software en un club piloto para validar el modelo y escalar regionalmente.";
+  const proposalQuoteText = proposal.proposal_quote_text || "Tu red y visión comercial son exactamente lo que necesitamos para abrir las primeras puertas y acelerar nuestra tracción en el mercado.";
+  const proposalQuoteAuthor = proposal.proposal_quote_author || "Equipo ALTTEZ";
 
   if (!envelopeOpened) return <InteractiveEnvelope clientName={client_name} onOpen={() => setEnvelopeOpened(true)} />;
   const pct      = Number(participacion_pct || 0);
@@ -1884,10 +1940,10 @@ export default function PublicProposalPage() {
             <div className="proposal-grid-2">
               <motion.div initial={{ opacity:0, y:28 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true, margin:"-100px" }} transition={{ duration:0.65, ease:E }}>
                 <h2 style={{ margin:"0 0 24px", fontSize:"clamp(32px, 3.8vw, 54px)", fontWeight:W.bold, lineHeight:1.06, letterSpacing:"-0.035em", color:colors.text, transition:"color 0.4s ease" }}>
-                  Una alianza estratégica<br />para impulsar <span style={{ color:B.bronce }}>ALTTEZ.</span>
+                  {proposalSectionTitle}
                 </h2>
                 <p style={{ color:colors.textMuted, fontSize:17, lineHeight:1.75, fontWeight:W.regular, maxWidth:620, transition:"color 0.4s ease" }}>
-                  Buscamos un socio estratégico que nos acompañe en la validación y consolidación de nuestra plataforma de gestión y operation deportiva. Esta alianza busca integrar el software en un club piloto para validar el modelo y escalar regionalmente.
+                  {proposalSectionBody}
                 </p>
               </motion.div>
 
@@ -1903,10 +1959,10 @@ export default function PublicProposalPage() {
                   marginTop: 8
                 }}>
                 <div style={{ fontSize:16, color:colors.text, lineHeight:1.7, fontWeight:W.regular, fontStyle:"italic", transition:"color 0.4s ease" }}>
-                  &quot;Tu red y visi?n comercial son exactamente lo que necesitamos para abrir las primeras puertas y acelerar nuestra tracci?n en el mercado.&quot;
+                  &quot;{proposalQuoteText}&quot;
                 </div>
                 <div style={{ marginTop:16, fontSize:12, fontWeight:W.semibold, color:B.bronce, letterSpacing:"0.12em", textTransform:"uppercase" }}>
-                  Equipo ALTTEZ
+                  {proposalQuoteAuthor}
                 </div>
               </motion.div>
             </div>

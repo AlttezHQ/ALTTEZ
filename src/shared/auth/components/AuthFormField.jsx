@@ -5,13 +5,13 @@
  */
 export function AuthFormField({ label, error, children }) {
   return (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-[#1F1F1D]/70 mb-1.5 ml-1">
+    <div className="mb-5">
+      <label className="block text-[11px] font-bold uppercase tracking-[0.08em] text-[#1F1F1D]/55 mb-2">
         {label}
       </label>
       {children}
       {error && (
-        <div className="text-[11px] font-medium text-[#D95C5C] mt-1.5 ml-1">
+        <div className="text-[11px] font-medium text-[#D95C5C] mt-2">
           {error}
         </div>
       )}
@@ -29,16 +29,17 @@ export function mkAuthInput(hasError) {
   // devolviendo estilos en línea, PERO idealmente los componentes deberían usar className.
   return {
     width: "100%",
-    fontSize: "14px",
+    fontSize: "15px",
+    fontWeight: 500,
     padding: "14px 16px",
     backgroundColor: "#FFFFFF",
-    border: `1px solid ${hasError ? "#D95C5C" : "#EDE8D0"}`,
+    border: `1px solid ${hasError ? "#D95C5C" : "#E2D9C9"}`,
     borderRadius: "12px",
     color: "#1F1F1D",
     fontFamily: "inherit",
     outline: "none",
     boxSizing: "border-box",
     transition: "all 0.2s ease",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+    boxShadow: "inset 0 1px 2px rgba(31,31,29,0.04)",
   };
 }

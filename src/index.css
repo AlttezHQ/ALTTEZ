@@ -6,6 +6,19 @@
   padding: 0;
 }
 
+@theme {
+  --color-grafito: #111315;
+  --color-marfil: #F5F7F8;
+  --color-cobre: #C27A42;
+  --color-azul-rendimiento: #3F6D85;
+  --color-exito: #22C55E;
+  --color-advertencia: #F5BE05;
+  --color-riesgo: #EF4444;
+  --color-informacion: #3F6B85;
+  --color-neutro: #6B7280;
+}
+
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;

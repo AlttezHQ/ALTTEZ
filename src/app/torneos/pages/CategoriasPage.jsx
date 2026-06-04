@@ -9,8 +9,8 @@ import GlobalStateCard from "../components/categories/GlobalStateCard";
 import CategoriesToolbar from "../components/categories/CategoriesToolbar";
 import styles from "./CategoriasPage.module.css";
 
-export default function CategoriasPage({ onGoTorneos, onNavigate }) {
-  const torneoActivoId = useTorneosStore((state) => state.torneoActivoId);
+export default function CategoriasPage({ torneoId, onGoTorneos, onNavigate }) {
+  const torneoActivoId = torneoId;
   const allEquipos = useTorneosStore((state) => state.equipos);
   const allCategorias = useTorneosStore((state) => state.categorias);
   const allPartidos = useTorneosStore((state) => state.partidos);

@@ -6,7 +6,7 @@
  * @version 2.0.0
  */
 
-const ALLOWED_REDIRECTS = ["/crm", "/torneos", "/launcher"];
+const ALLOWED_REDIRECTS = ["/crm", "/torneos", "/launcher", "/interno"];
 
 /**
  * Determina el destino post-login implementando Smart Routing.
@@ -24,14 +24,14 @@ export function getPostLoginRedirect({ redirectPath, currentPath, userMetadata, 
   const impliedClubRole = roles.includes("club") || Boolean(profile?.club_id);
   const impliedOrganizadorRole = roles.includes("organizador");
 
-  // 1. Prioridad Máxima: Usuarios Multi-Entorno siempre pasan por el App Launcher
-  if (impliedClubRole && impliedOrganizadorRole) {
-    return "/launcher";
-  }
-
-  // 2. Redirect explícito (si es válido)
+  // 1. Prioridad Máxima: redirect explícito válido (ej. "Acceso interno" → /interno)
   if (redirectPath && ALLOWED_REDIRECTS.some(r => redirectPath.startsWith(r))) {
     return redirectPath;
+  }
+
+  // 2. Usuarios Multi-Entorno (sin redirect explícito) pasan por el App Launcher
+  if (impliedClubRole && impliedOrganizadorRole) {
+    return "/launcher";
   }
 
   // 3. Si venía de una ruta de producto válida

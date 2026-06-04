@@ -58,20 +58,14 @@ export default function AppLauncher() {
               whileHover={{ y: -6, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/crm")}
-              className="glass-panel"
-              style={{
-                display: "flex", flexDirection: "column",
-                padding: "40px 32px", cursor: "pointer",
-                transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-                height: "100%",
-              }}
+              className="flex flex-col p-10 cursor-pointer h-full bg-[#181B2A] border border-[#22273F] rounded-2xl shadow-[0_14px_34px_rgba(0,0,0,0.5)] transition-all duration-300 group"
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-bronce)";
-                e.currentTarget.style.boxShadow = "var(--shadow-bronce)";
+                e.currentTarget.style.borderColor = "var(--color-cobre)";
+                e.currentTarget.style.boxShadow = "0 10px 24px rgba(194,122,66,0.25)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border)";
-                e.currentTarget.style.boxShadow = "var(--shadow-card)";
+                e.currentTarget.style.borderColor = "#22273F";
+                e.currentTarget.style.boxShadow = "0 14px 34px rgba(0,0,0,0.5)";
               }}
             >
               <div style={{
@@ -94,20 +88,14 @@ export default function AppLauncher() {
               whileHover={{ y: -6, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push("/torneos")}
-              className="glass-panel"
-              style={{
-                display: "flex", flexDirection: "column",
-                padding: "40px 32px", cursor: "pointer",
-                transition: "border-color 0.3s ease, box-shadow 0.3s ease",
-                height: "100%",
-              }}
+              className="flex flex-col p-10 cursor-pointer h-full bg-[#181B2A] border border-[#22273F] rounded-2xl shadow-[0_14px_34px_rgba(0,0,0,0.5)] transition-all duration-300 group"
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-bronce)";
-                e.currentTarget.style.boxShadow = "var(--shadow-bronce)";
+                e.currentTarget.style.borderColor = "var(--color-cobre)";
+                e.currentTarget.style.boxShadow = "0 10px 24px rgba(194,122,66,0.25)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--color-border)";
-                e.currentTarget.style.boxShadow = "var(--shadow-card)";
+                e.currentTarget.style.borderColor = "#22273F";
+                e.currentTarget.style.boxShadow = "0 14px 34px rgba(0,0,0,0.5)";
               }}
             >
               <div style={{

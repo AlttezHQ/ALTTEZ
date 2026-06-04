@@ -25,11 +25,29 @@ const BASE_NAV_ITEMS = [
   { id: "ajustes",       icon: Settings,        label: "Configuración" },
 ];
 
+import { usePathname, useRouter } from "next/navigation";
+
 export default function TorneosSidebar({
-  active, onNav, torneoActivo, isCollapsed, onToggle,
+  torneoActivo, isCollapsed, onToggle,
   userName = "", userEmail = "", onLogout, onDeleteAccount,
   categorias = [], isMobileDrawer = false
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  // Determinar activo por los segmentos de la ruta
+  const segments = pathname.split("/").filter(Boolean);
+  let active = "torneos";
+  if (segments.length === 1 && segments[0] === "torneos") {
+     active = "inicio";
+  } else if (segments.length === 2 && segments[1] === "lista") {
+     active = "torneos";
+  } else if (segments.length === 2 && segments[1] !== "lista") {
+     active = "inicio";
+  } else if (segments.length > 2) {
+     active = segments[2];
+  }
+
+  const torneoId = torneoActivo?.id || "";
   const [openUser, setOpenUser] = useState(false);
   const displayName = userName || "Administrador";
 
@@ -146,7 +164,17 @@ export default function TorneosSidebar({
               <motion.button
                 whileHover={{ x: collapsed ? 0 : 2 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onNav(id)}
+                onClick={() => {
+                  if (id === "torneos") return router.push(`/torneos/lista`);
+                  
+                  if (!torneoId) {
+                    if (id === "inicio") router.push(`/torneos`);
+                    return;
+                  }
+
+                  if (id === "inicio") router.push(`/torneos/${torneoId}`);
+                  else router.push(`/torneos/${torneoId}/${id}`);
+                }}
                 title={collapsed ? label : ""}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 10,

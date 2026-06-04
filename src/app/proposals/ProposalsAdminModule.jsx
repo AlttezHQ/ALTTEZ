@@ -15,7 +15,8 @@ import {
 import { showToast } from "../../shared/ui/Toast";
 import { PALETTE as C } from "../../shared/tokens/palette";
 
-const FONT = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT = "var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
+const MONO = "var(--font-mono), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace";
 const CU   = "#CE8946";
 const CU_HI = "#D8A06B";
 const CU_DIM = "rgba(206,137,70,0.10)";
@@ -28,14 +29,19 @@ const HINT = "#9ca3af";
 const BORDER = "#E9E2D7";
 const DANGER = "#D95C5C";
 const SUCCESS = "#2FA56F";
+const AMBER = "#B7831F";
+const WHISPER = "rgba(31,31,29,0.10)";
+const CREATE_MODAL_STATE_KEY = "alttez_interno_proposals_create_modal";
+const CREATE_MODAL_DRAFT_KEY = "alttez_interno_proposals_create_draft";
+const PROPOSALS_UI_STATE_KEY = "alttez_interno_proposals_ui_state";
 
 const EASE = [0.22, 1, 0.36, 1];
 
 // ── Status config ──
 const STATUS_MAP = {
   creada:          { label:"Creada",         color:"#667085", bg:"rgba(102,112,133,0.10)", border:"rgba(102,112,133,0.24)" },
-  enviada:         { label:"Enviada",         color:"#2563eb", bg:"rgba(37,99,235,0.08)",  border:"rgba(37,99,235,0.24)" },
-  aceptada:        { label:"Aceptada ✓",     color: SUCCESS,  bg:"rgba(47,165,111,0.08)", border:"rgba(47,165,111,0.24)" },
+  enviada:         { label:"Enviada",         color: AMBER,    bg:"rgba(183,131,31,0.10)", border:"rgba(183,131,31,0.26)" },
+  aceptada:        { label:"Aceptada",        color: SUCCESS,  bg:"rgba(47,165,111,0.08)", border:"rgba(47,165,111,0.24)" },
   contrapropuesta: { label:"Contrapropuesta", color: CU,       bg: CU_DIM,                 border: CU_BOR },
   rechazada:       { label:"Rechazada",       color: DANGER,   bg:"rgba(217,92,92,0.08)",  border:"rgba(217,92,92,0.24)" },
 };
@@ -44,6 +50,7 @@ const STATUS_MAP = {
 const Ico = {
   Plus: () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke={CARD} strokeWidth="2" strokeLinecap="round"/></svg>,
   Copy: () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke={MUTED} strokeWidth="1.8"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke={MUTED} strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  Edit: () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke={MUTED} strokeWidth="1.8" strokeLinecap="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke={MUTED} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Eye: () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke={MUTED} strokeWidth="1.8"/><circle cx="12" cy="12" r="3" stroke={MUTED} strokeWidth="1.8"/></svg>,
   Trash: () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><polyline points="3,6 5,6 21,6" stroke={DANGER} strokeWidth="1.8" strokeLinecap="round"/><path d="M19 6l-1 14H6L5 6" stroke={DANGER} strokeWidth="1.8" strokeLinecap="round"/><path d="M10 11v6M14 11v6M9 6V4h6v2" stroke={DANGER} strokeWidth="1.8" strokeLinecap="round"/></svg>,
   Send: () => <svg width={16} height={16} viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke={CU} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -81,7 +88,7 @@ function buildProposalLink(proposal) {
 function StatusBadge({ status }) {
   const s = STATUS_MAP[status] || STATUS_MAP.creada;
   return (
-    <span style={{ display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:999, fontSize:11, fontWeight:700, color: s.color, background: s.bg, border:`1px solid ${s.border}`, letterSpacing:"0.06em", whiteSpace:"nowrap" }}>
+    <span style={{ display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:8, fontSize:11, fontWeight:700, color: s.color, background: s.bg, border:`1px solid ${s.border}`, letterSpacing:"0.08em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
       {s.label}
     </span>
   );
@@ -112,6 +119,10 @@ function EmptyProposals({ onCreate }) {
 const EMPTY_FORM = {
   client_name:"", title:"Construyamos juntos el futuro de ALTTEZ.", subtitle:"Una alianza estratégica para impulsar ALTTEZ.",
   description:"Gracias a tu red, contactos y visión comercial, podemos abrir juntos las puertas del próximo nivel. Esta es una invitación a ser parte del proyecto desde el inicio.",
+  proposal_section_title:"Una alianza estratégica para impulsar ALTTEZ.",
+  proposal_section_body:"Buscamos un socio estratégico que nos acompañe en la validación y consolidación de nuestra plataforma de gestión y operation deportiva. Esta alianza busca integrar el software en un club piloto para validar el modelo y escalar regionalmente.",
+  proposal_quote_text:"Tu red y visión comercial son exactamente lo que necesitamos para abrir las primeras puertas y acelerar nuestra tracción en el mercado.",
+  proposal_quote_author:"Equipo ALTTEZ",
   fecha: new Date().toISOString().slice(0,10),
   rol:"Serás el puente clave para que ALTTEZ ingrese al piloto con el club.",
   participacion_pct: 10,
@@ -126,15 +137,68 @@ const EMPTY_FORM = {
   cliff_pdf:"Se establece un periodo de carencia o \"Cliff\" estricto de seis (6) meses, o hasta la firma formal del contrato de integración con el primer club piloto (lo que ocurra primero). Si el Aliado abandona el proyecto, es desvinculado o la alianza se disuelve antes de cumplirse este hito, la participación consolidada será del 0%, sin derecho a reclamación económica, indemnización o emisión de acciones.",
 };
 
-function CreateModal({ clubId, onCreated, onClose }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+function readSessionJson(key, fallback) {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeSessionJson(key, value) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
+function removeSessionItem(key) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {}
+}
+
+function CreateModal({ clubId, initialData = null, onSaved, onClose }) {
+  const isEditing = !!initialData?.id;
+  const [form, setForm] = useState(() => {
+    const stored = readSessionJson(CREATE_MODAL_DRAFT_KEY, null);
+    if (
+      stored?.clubId === (clubId || "local") &&
+      stored?.proposalId === (initialData?.id || null) &&
+      stored?.form
+    ) {
+      return { ...EMPTY_FORM, ...initialData, ...stored.form };
+    }
+    return initialData
+      ? { ...EMPTY_FORM, ...initialData }
+      : stored?.clubId === (clubId || "local") && stored?.proposalId == null && stored?.form
+      ? { ...EMPTY_FORM, ...stored.form }
+      : { ...EMPTY_FORM };
+  });
   const [saving, setSaving] = useState(false);
-  const [step, setStep] = useState(1); // 1: portada, 2: términos, 3: legal, 4: revisión
+  const [step, setStep] = useState(() => {
+    const stored = readSessionJson(CREATE_MODAL_DRAFT_KEY, null);
+    return stored?.clubId === (clubId || "local") && stored?.proposalId === (initialData?.id || null) && Number.isInteger(stored?.step)
+      ? stored.step
+      : 1;
+  }); // 1: portada, 2: términos, 3: legal, 4: revisión
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const setBeneficio = (i, v) => setForm(f => { const b = [...f.beneficios]; b[i] = v; return { ...f, beneficios: b }; });
   const addBeneficio = () => setForm(f => ({ ...f, beneficios: [...f.beneficios, ""] }));
   const removeBeneficio = (i) => setForm(f => ({ ...f, beneficios: f.beneficios.filter((_,idx) => idx !== i) }));
+
+  useEffect(() => {
+    writeSessionJson(CREATE_MODAL_DRAFT_KEY, {
+      clubId: clubId || "local",
+      proposalId: initialData?.id || null,
+      form,
+      step,
+    });
+  }, [clubId, form, initialData?.id, step]);
 
   async function handleSave(status = "creada") {
     if (!form.client_name.trim() || !form.title.trim()) {
@@ -147,17 +211,27 @@ function CreateModal({ clubId, onCreated, onClose }) {
     }
     setSaving(true);
     try {
-      const p = await insertProposal({
+      const payload = {
         club_id: clubId || "local",
         ...form,
         beneficios: form.beneficios.map(b => b.trim()).filter(Boolean),
         participacion_pct: Number(form.participacion_pct),
         status,
-      });
-      showToast(`Propuesta para ${form.client_name} creada exitosamente.`, "success");
-      onCreated(p);
+      };
+      const p = isEditing
+        ? await updateProposal(initialData.id, payload)
+        : await insertProposal(payload);
+      removeSessionItem(CREATE_MODAL_DRAFT_KEY);
+      removeSessionItem(CREATE_MODAL_STATE_KEY);
+      showToast(
+        isEditing
+          ? `Propuesta de ${form.client_name} actualizada exitosamente.`
+          : `Propuesta para ${form.client_name} creada exitosamente.`,
+        "success"
+      );
+      onSaved(p);
     } catch {
-      showToast("Error al crear la propuesta. Inténtalo de nuevo.", "error");
+      showToast(isEditing ? "Error al actualizar la propuesta. Inténtalo de nuevo." : "Error al crear la propuesta. Inténtalo de nuevo.", "error");
     }
     setSaving(false);
   }
@@ -194,8 +268,8 @@ function CreateModal({ clubId, onCreated, onClose }) {
               <Ico.Briefcase />
             </div>
             <div>
-              <div style={{ fontFamily: FONT, fontWeight:800, fontSize:16, color: TEXT }}>Nueva propuesta</div>
-              <div style={{ fontFamily: FONT, fontSize:12, color: MUTED, marginTop:2 }}>Configura portada, términos y acuerdo PDF</div>
+              <div style={{ fontFamily: FONT, fontWeight:800, fontSize:16, color: TEXT }}>{isEditing ? "Editar propuesta" : "Nueva propuesta"}</div>
+              <div style={{ fontFamily: FONT, fontSize:12, color: MUTED, marginTop:2 }}>{isEditing ? "Actualiza portada, términos y acuerdo PDF" : "Configura portada, términos y acuerdo PDF"}</div>
             </div>
           </div>
           <button onClick={onClose} style={{ width:36, height:36, minHeight:36, borderRadius:10, border:`1px solid ${BORDER}`, background: BG, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -248,6 +322,24 @@ function CreateModal({ clubId, onCreated, onClose }) {
                 <label style={labelStyle}>Descripción de apertura</label>
                 <textarea rows={3} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.description} onChange={e => set("description", e.target.value)} onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
                 <div style={fieldNoteStyle}>Es el primer párrafo que lee el aliado al abrir el enlace confidencial.</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Título del bloque “La propuesta”</label>
+                <textarea rows={2} style={{ ...inputStyle, resize:"vertical", lineHeight:1.35 }} value={form.proposal_section_title} onChange={e => set("proposal_section_title", e.target.value)} placeholder="Ej. Una alianza estratégica para impulsar ALTTEZ." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Es el gran titular que aparece en la sección editorial de la propuesta pública.</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Texto del bloque “La propuesta”</label>
+                <textarea rows={4} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.proposal_section_body} onChange={e => set("proposal_section_body", e.target.value)} placeholder="Ej. Buscamos un socio estratégico que nos acompañe..." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+                <div style={fieldNoteStyle}>Este párrafo aparece debajo del titular en la columna izquierda.</div>
+              </div>
+              <div>
+                <label style={labelStyle}>Cita destacada</label>
+                <textarea rows={3} style={{ ...inputStyle, resize:"vertical", lineHeight:1.6 }} value={form.proposal_quote_text} onChange={e => set("proposal_quote_text", e.target.value)} placeholder="Ej. Tu red y visión comercial son exactamente..." onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
+              </div>
+              <div>
+                <label style={labelStyle}>Autor de la cita</label>
+                <input style={inputStyle} value={form.proposal_quote_author} onChange={e => set("proposal_quote_author", e.target.value)} placeholder="Ej. Equipo ALTTEZ" onFocus={e => { e.target.style.borderColor=CU; }} onBlur={e => { e.target.style.borderColor=BORDER; }} />
               </div>
             </div>
           )}
@@ -321,6 +413,8 @@ function CreateModal({ clubId, onCreated, onClose }) {
                     { label:"Fecha", value: form.fecha },
                     { label:"Título", value: form.title },
                     { label:"Subtítulo", value: form.subtitle },
+                    { label:"Bloque propuesta", value: form.proposal_section_title || "Sin título editorial" },
+                    { label:"Cita", value: form.proposal_quote_text || "Sin cita destacada" },
                     { label:"Participación", value: `${form.participacion_pct}% de ALTTEZ` },
                     { label:"Rol", value: form.rol || "Sin rol definido" },
                     { label:"Beneficios", value: `${form.beneficios.filter(b => b.trim()).length} puntos configurados` },
@@ -362,18 +456,20 @@ function CreateModal({ clubId, onCreated, onClose }) {
                 disabled={saving}
                 style={{ flex:1, padding:"12px", borderRadius:12, border:`1px solid ${BORDER}`, background: BG, color: TEXT, fontSize:13, fontWeight:700, fontFamily: FONT, cursor:"pointer" }}
               >
-                Guardar borrador
+                {isEditing ? "Guardar cambios" : "Guardar borrador"}
               </button>
-              <button
-                onClick={() => handleSave("enviada")}
-                disabled={saving}
-                style={{ flex:2, padding:"12px 20px", borderRadius:12, border:"none", background:`linear-gradient(135deg, ${CU} 0%, #B7832D 100%)`, color: CARD, fontSize:14, fontWeight:800, fontFamily: FONT, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:`0 6px 18px rgba(206,137,70,0.26)` }}
-              >
-                {saving
-                  ? <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:0.8, ease:"linear" }} style={{ width:16, height:16, border:"2px solid rgba(255,255,255,0.3)", borderTopColor: CARD, borderRadius:"50%" }} />
-                  : <><Ico.Send /> Crear y enviar</>
-                }
-              </button>
+              {!isEditing && (
+                <button
+                  onClick={() => handleSave("enviada")}
+                  disabled={saving}
+                  style={{ flex:2, padding:"12px 20px", borderRadius:12, border:"none", background:`linear-gradient(135deg, ${CU} 0%, #B7832D 100%)`, color: CARD, fontSize:14, fontWeight:800, fontFamily: FONT, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:`0 6px 18px rgba(206,137,70,0.26)` }}
+                >
+                  {saving
+                    ? <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:0.8, ease:"linear" }} style={{ width:16, height:16, border:"2px solid rgba(255,255,255,0.3)", borderTopColor: CARD, borderRadius:"50%" }} />
+                    : <><Ico.Send /> Crear y enviar</>
+                  }
+                </button>
+              )}
             </>
           )}
         </div>
@@ -522,12 +618,21 @@ function DetailPanel({ proposal, onClose, onStatusChange }) {
 // Main Module
 // ════════════════════════════════════════════════
 export default function ProposalsAdminModule({ clubId, mode }) {
+  const initialUiState = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(() => {
+    const stored = readSessionJson(CREATE_MODAL_STATE_KEY, null);
+    return stored?.clubId === (clubId || "local") ? !!stored?.open : false;
+  });
   const [selected, setSelected] = useState(null);
+  const [editingProposal, setEditingProposal] = useState(null);
   const [deleting, setDeleting] = useState(null);
-  const [filter, setFilter] = useState("todas");
+  const [filter, setFilter] = useState(() => {
+    return initialUiState?.clubId === (clubId || "local") && initialUiState?.filter
+      ? initialUiState.filter
+      : "todas";
+  });
 
   useEffect(() => {
     if (clubId) setProposalsClubId(clubId);
@@ -537,10 +642,69 @@ export default function ProposalsAdminModule({ clubId, mode }) {
     });
   }, [clubId]);
 
-  const handleCreated = useCallback((p) => {
-    setProposals(prev => [p, ...prev]);
+  useEffect(() => {
+    writeSessionJson(CREATE_MODAL_STATE_KEY, {
+      clubId: clubId || "local",
+      open: showCreate,
+    });
+  }, [clubId, showCreate]);
+
+  useEffect(() => {
+    writeSessionJson(PROPOSALS_UI_STATE_KEY, {
+      clubId: clubId || "local",
+      filter,
+      selectedId: selected?.id ?? null,
+      scrollY: typeof window !== "undefined" ? window.scrollY : 0,
+    });
+  }, [clubId, filter, selected]);
+
+  useEffect(() => {
+    const restore = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
+    if (restore?.clubId !== (clubId || "local")) return;
+    if (typeof restore?.scrollY !== "number") return;
+
+    const raf = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: restore.scrollY, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [clubId, loading]);
+
+  useEffect(() => {
+    const handlePageStateSave = () => {
+      writeSessionJson(PROPOSALS_UI_STATE_KEY, {
+        clubId: clubId || "local",
+        filter,
+        selectedId: selected?.id ?? null,
+        scrollY: window.scrollY,
+      });
+    };
+
+    window.addEventListener("pagehide", handlePageStateSave);
+    document.addEventListener("visibilitychange", handlePageStateSave);
+    return () => {
+      window.removeEventListener("pagehide", handlePageStateSave);
+      document.removeEventListener("visibilitychange", handlePageStateSave);
+    };
+  }, [clubId, filter, selected]);
+
+  useEffect(() => {
+    if (loading || selected) return;
+    const restore = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
+    if (restore?.clubId !== (clubId || "local") || !restore?.selectedId) return;
+
+    const proposal = proposals.find((item) => item.id === restore.selectedId);
+    if (proposal) {
+      setSelected(proposal);
+    }
+  }, [clubId, loading, proposals, selected]);
+
+  const handleSaved = useCallback((p) => {
+    setProposals(prev => {
+      const exists = prev.some((item) => item.id === p.id);
+      return exists ? prev.map((item) => (item.id === p.id ? p : item)) : [p, ...prev];
+    });
     setShowCreate(false);
-    // Auto-abrir detalle para copiar el link
+    setEditingProposal(null);
     setSelected(p);
   }, []);
 
@@ -568,6 +732,23 @@ export default function ProposalsAdminModule({ clubId, mode }) {
 
   const counts = proposals.reduce((acc, p) => { acc[p.status] = (acc[p.status]||0)+1; return acc; }, {});
 
+  const handleOpenCreate = useCallback(() => {
+    setEditingProposal(null);
+    setShowCreate(true);
+  }, []);
+
+  const handleEditProposal = useCallback((proposal) => {
+    setEditingProposal(proposal);
+    setShowCreate(true);
+  }, []);
+
+  const handleCloseCreate = useCallback(() => {
+    setShowCreate(false);
+    setEditingProposal(null);
+    removeSessionItem(CREATE_MODAL_DRAFT_KEY);
+    removeSessionItem(CREATE_MODAL_STATE_KEY);
+  }, []);
+
   return (
     <div style={{ fontFamily: FONT, background: BG, minHeight:"calc(100vh - 64px)", position:"relative" }}>
       {/* ── Main Content ── */}
@@ -576,13 +757,13 @@ export default function ProposalsAdminModule({ clubId, mode }) {
         {/* Page Header */}
         <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:20, marginBottom:28, flexWrap:"wrap" }}>
           <div>
-            <h1 style={{ margin:0, fontFamily: FONT, fontSize:28, fontWeight:900, color: TEXT, letterSpacing:"-0.02em" }}>Propuestas comerciales</h1>
+            <h1 style={{ margin:0, fontFamily: FONT, fontSize:32, fontWeight:700, color: TEXT, letterSpacing:"-0.02em", lineHeight:1.2 }}>Propuestas comerciales</h1>
             <p style={{ margin:"6px 0 0", fontFamily: FONT, fontSize:14, color: MUTED }}>
               Gestiona y envía propuestas confidenciales a clientes, socios e inversionistas.
             </p>
           </div>
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={handleOpenCreate}
             style={{ display:"flex", alignItems:"center", gap:8, padding:"12px 20px", borderRadius:13, border:"none", background:`linear-gradient(135deg, ${CU} 0%, #B7832D 100%)`, color: CARD, fontSize:14, fontWeight:800, fontFamily: FONT, cursor:"pointer", boxShadow:`0 8px 24px rgba(206,137,70,0.28)`, flexShrink:0 }}
           >
             <Ico.Plus /> Nueva propuesta
@@ -590,16 +771,21 @@ export default function ProposalsAdminModule({ clubId, mode }) {
         </div>
 
         {/* KPIs */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(160px, 1fr))", gap:14, marginBottom:24 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(180px, 1fr))", gap:16, marginBottom:24 }}>
           {[
-            { label:"Total", value: proposals.length, color: TEXT },
-            { label:"Aceptadas", value: counts.aceptada || 0, color: SUCCESS },
-            { label:"Pendientes", value: (counts.enviada || 0) + (counts.creada || 0), color:"#2563eb" },
-            { label:"Contrapropuestas", value: counts.contrapropuesta || 0, color: CU },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ padding:"18px 20px", borderRadius:14, background: CARD, border:`1px solid ${BORDER}`, boxShadow:"0 4px 12px rgba(23,26,28,0.05)" }}>
-              <div style={{ fontFamily: FONT, fontSize:11, fontWeight:700, color: MUTED, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>{label}</div>
-              <div style={{ fontFamily: FONT, fontSize:30, fontWeight:900, color, lineHeight:1 }}>{value}</div>
+            { label:"Total", value: proposals.length, color: TEXT, accent: "rgba(31,31,29,0.18)" },
+            { label:"Aceptadas", value: counts.aceptada || 0, color: SUCCESS, accent: SUCCESS },
+            { label:"Pendientes", value: (counts.enviada || 0) + (counts.creada || 0), color: TEXT, accent: "#F5BE05" },
+            { label:"Contrapropuestas", value: counts.contrapropuesta || 0, color: CU, accent: CU },
+          ].map(({ label, value, color, accent }) => (
+            <div key={label}
+              style={{ position:"relative", overflow:"hidden", padding:"22px 22px", borderRadius:16, background: CARD, border:`1px solid ${WHISPER}`, boxShadow:"0 10px 28px rgba(31,31,29,0.04)", minHeight:120, display:"flex", flexDirection:"column", justifyContent:"space-between", transition:"border-color 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = CU_BOR; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = WHISPER; }}
+            >
+              <div style={{ position:"absolute", top:0, left:0, width:3, height:"100%", background: accent }} />
+              <div style={{ fontFamily: FONT, fontSize:11, fontWeight:700, color: MUTED, textTransform:"uppercase", letterSpacing:"0.12em" }}>{label}</div>
+              <div style={{ fontFamily: MONO, fontSize:40, fontWeight:700, color, lineHeight:1 }}>{value}</div>
             </div>
           ))}
         </div>
@@ -627,7 +813,7 @@ export default function ProposalsAdminModule({ clubId, mode }) {
             <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1, ease:"linear" }} style={{ width:36, height:36, border:`3px solid ${BORDER}`, borderTopColor: CU, borderRadius:"50%", margin:"0 auto" }} />
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyProposals onCreate={() => setShowCreate(true)} />
+          <EmptyProposals onCreate={handleOpenCreate} />
         ) : (
           <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
             {filtered.map((p, i) => {
@@ -641,21 +827,24 @@ export default function ProposalsAdminModule({ clubId, mode }) {
                   onMouseLeave={(e) => { e.currentTarget.style.boxShadow="0 4px 12px rgba(23,26,28,0.04)"; e.currentTarget.style.borderColor=BORDER; }}
                 >
                   {/* Avatar */}
-                  <div style={{ width:46, height:46, borderRadius:14, background:`linear-gradient(135deg, ${CU_DIM}, rgba(206,137,70,0.05))`, border:`1.5px solid ${CU_BOR}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:18, fontWeight:900, color: CU }}>
+                  <div style={{ width:48, height:48, borderRadius:"50%", background:"#FFEFE4", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:18, fontWeight:800, color: CU }}>
                     {(p.client_name || "?").charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-                      <div style={{ fontFamily: FONT, fontWeight:800, fontSize:15, color: TEXT, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:200 }}>{p.client_name}</div>
+                      <div style={{ fontFamily: FONT, fontWeight:700, fontSize:16, color: TEXT, lineHeight:1.25, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", maxWidth:280 }}>{p.title}</div>
                       <StatusBadge status={p.status} />
-                      {isDemo && <span style={{ fontSize:10, padding:"2px 8px", borderRadius:999, background:"rgba(216,154,43,0.12)", border:"1px solid rgba(216,154,43,0.28)", color:"#d89a2b", fontWeight:700 }}>DEMO</span>}
+                      {isDemo && <span style={{ fontSize:10, padding:"2px 8px", borderRadius:8, background:"rgba(216,154,43,0.12)", border:"1px solid rgba(216,154,43,0.28)", color:"#d89a2b", fontWeight:700, letterSpacing:"0.08em" }}>DEMO</span>}
                     </div>
-                    <div style={{ fontFamily: FONT, fontSize:13, color: MUTED, marginTop:3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.title}</div>
-                    <div style={{ display:"flex", gap:16, marginTop:5, flexWrap:"wrap" }}>
-                      <span style={{ fontFamily: FONT, fontSize:11, color: HINT }}>📅 {fmtDate(p.fecha)}</span>
-                      <span style={{ fontFamily: FONT, fontSize:11, color: CU, fontWeight:700 }}>◎ {p.participacion_pct}%</span>
+                    <div style={{ fontFamily: FONT, fontSize:13, color: MUTED, marginTop:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.client_name}</div>
+                    <div style={{ display:"flex", gap:16, marginTop:6, flexWrap:"wrap", alignItems:"center" }}>
+                      <span style={{ display:"inline-flex", alignItems:"center", gap:6, fontFamily: MONO, fontSize:12, color: MUTED }}>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.7"/><path d="M3 10h18M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
+                        {fmtDate(p.fecha)}
+                      </span>
+                      <span style={{ fontFamily: MONO, fontSize:14, color: CU, fontWeight:700 }}>{p.participacion_pct}%</span>
                       {p.status === "aceptada" && p.signed_name && (() => {
                         let displayName = p.signed_name;
                         if (p.signed_name && p.signed_name.startsWith("{")) {
@@ -664,7 +853,10 @@ export default function ProposalsAdminModule({ clubId, mode }) {
                           } catch (e) {}
                         }
                         return (
-                          <span style={{ fontFamily: FONT, fontSize:11, color: SUCCESS }}>✓ Firmado por {displayName}</span>
+                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontFamily: FONT, fontSize:11, color: SUCCESS, fontWeight:600 }}>
+                            <svg width={13} height={13} viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            Firmado por {displayName}
+                          </span>
                         );
                       })()}
                     </div>
@@ -672,6 +864,17 @@ export default function ProposalsAdminModule({ clubId, mode }) {
 
                   {/* Actions */}
                   <div style={{ display:"flex", gap:8, flexShrink:0 }} onClick={(e) => e.stopPropagation()}>
+                    {!isDemo && (
+                      <button
+                        title="Editar propuesta"
+                        onClick={() => handleEditProposal(p)}
+                        style={{ width:36, height:36, minHeight:36, borderRadius:10, border:`1px solid ${BORDER}`, background: BG, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background=CU_DIM; e.currentTarget.style.borderColor=CU_BOR; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background=BG; e.currentTarget.style.borderColor=BORDER; }}
+                      >
+                        <Ico.Edit />
+                      </button>
+                    )}
                     <button
                       title="Copiar enlace"
                       onClick={() => copyLink(p)}
@@ -714,7 +917,7 @@ export default function ProposalsAdminModule({ clubId, mode }) {
 
       {/* ── Modals ── */}
       <AnimatePresence>
-        {showCreate && <CreateModal clubId={clubId} onCreated={handleCreated} onClose={() => setShowCreate(false)} />}
+        {showCreate && <CreateModal clubId={clubId} initialData={editingProposal} onSaved={handleSaved} onClose={handleCloseCreate} />}
       </AnimatePresence>
 
       <AnimatePresence>

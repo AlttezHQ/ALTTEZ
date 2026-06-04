@@ -120,6 +120,9 @@ export default function PortalLayout({ children }) {
           </nav>
 
           <div className="desktop-nav" style={{ display: "none", alignItems: "center", gap: 12 }}>
+            <Link href="/interno" style={{
+              color: B.muted || "#667085", fontSize: 12, fontWeight: 600, textDecoration: "none", padding: "8px 10px", opacity: 0.7
+            }}>Acceso interno</Link>
             <Link href="/auth/login" style={{
               color: B.text, fontSize: 13, fontWeight: 700, textDecoration: "none", padding: "8px 16px"
             }}>Log in</Link>
@@ -174,7 +177,8 @@ export default function PortalLayout({ children }) {
                 { to: "/torneos", label: "ALTTEZ Torneos" },
                 { to: "/quienes-somos", label: "Compañía" },
                 { to: "/precios", label: "Precios" },
-                { to: "/contacto", label: "Contacto" }
+                { to: "/contacto", label: "Contacto" },
+                { to: "/interno", label: "Acceso interno" }
               ].map((item, i) => (
                 <motion.div
                   key={item.to}

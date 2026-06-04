@@ -541,8 +541,8 @@ const modalPrimaryDoneStyle = {
   cursor: "pointer",
 };
 
-export default function EquiposPage({ onGoTorneos }) {
-  const torneoActivoId = useTorneosStore((state) => state.torneoActivoId);
+export default function EquiposPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
   const allTorneos = useTorneosStore((state) => state.torneos);
   const allEquipos = useTorneosStore((state) => state.equipos);
   const agregarEquipo = useTorneosStore((state) => state.agregarEquipo);

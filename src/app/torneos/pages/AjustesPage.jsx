@@ -175,8 +175,8 @@ function AjustesPageContent({
   );
 }
 
-export default function AjustesPage({ onGoTorneos }) {
-  const torneoActivoId = useTorneosStore((state) => state.torneoActivoId);
+export default function AjustesPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
   const torneos = useTorneosStore((state) => state.torneos);
   const actualizarTorneo = useTorneosStore((state) => state.actualizarTorneo);
   const publicarTorneo = useTorneosStore((state) => state.publicarTorneo);

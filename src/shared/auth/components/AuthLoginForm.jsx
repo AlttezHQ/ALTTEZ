@@ -49,11 +49,11 @@ export default function AuthLoginForm({ onRegisterClick, onRecoverClick }) {
   const googleRedirect = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
-    <div className="relative w-full max-w-[440px] mx-auto font-sans">
+    <div className="relative w-full max-w-[440px] mx-auto">
       <button
         onClick={() => router.push("/")}
         type="button"
-        className="absolute -top-12 left-0 flex items-center gap-2 text-xs font-bold text-[#CE8946] hover:text-[#D8A06B] transition-colors bg-transparent border-none cursor-pointer"
+        className="flex items-center gap-2 mb-5 text-xs font-bold text-[#CE8946] hover:text-[#D8A06B] transition-colors bg-transparent border-none cursor-pointer p-0"
       >
         <ArrowLeft size={14} strokeWidth={3} />
         Volver al ecosistema
@@ -63,20 +63,19 @@ export default function AuthLoginForm({ onRegisterClick, onRecoverClick }) {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="bg-white rounded-[24px] p-8 sm:p-10 shadow-xl border border-[#EDE8D0]"
+        className="bg-white rounded-[20px] p-8 sm:p-10 border border-[#EDE8D0]"
+        style={{ boxShadow: "0 1px 2px rgba(31,31,29,0.04), 0 18px 48px rgba(31,31,29,0.10)" }}
       >
-        <div className="flex flex-col items-center gap-3 mb-8 text-center">
-          <div className="w-14 h-14 rounded-[14px] bg-[#F6F1EA] border border-[#EDE8D0] flex items-center justify-center text-[#CE8946] mb-2">
-            <LogIn size={24} />
+        <div className="mb-8">
+          <div className="w-11 h-11 rounded-xl bg-[#F6F1EA] border border-[#EDE8D0] flex items-center justify-center text-[#CE8946] mb-5">
+            <LogIn size={20} />
           </div>
-          <div>
-            <h1 className="text-[26px] font-extrabold tracking-tight text-[#1F1F1D] leading-tight">
-              Iniciar sesión
-            </h1>
-            <p className="text-xs text-[#1F1F1D]/60 mt-1.5 font-medium">
-              Ingresa tus credenciales para continuar
-            </p>
-          </div>
+          <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-[#1F1F1D] leading-none">
+            Iniciar sesión
+          </h1>
+          <p className="text-[13px] text-[#1F1F1D]/55 mt-2.5 font-medium">
+            Ingresa tus credenciales para continuar
+          </p>
         </div>
 
         {msg && (

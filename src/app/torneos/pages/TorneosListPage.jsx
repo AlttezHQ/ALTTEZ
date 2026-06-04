@@ -139,7 +139,7 @@ export default function TorneosListPage({ onCreate, onAbrir, onEdit }) {
               <div style={{ display: "flex", gap: 8, borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
                 <motion.button
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => { setTorneoActivo(t.id); onAbrir?.(); }}
+                  onClick={() => { setTorneoActivo(t.id); onAbrir?.(t.id); }}
                   style={{ flex: 1, background: isActivo ? CU : CU_DIM, color: isActivo ? "#FFF" : CU, border: `1px solid ${CU_BOR}`, borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: "pointer" }}
                 >
                   {isActivo ? "Abierto" : "Abrir"}

@@ -43,9 +43,13 @@ El código principal reside en `src/`:
 - **Archivos Temporales:** No generes archivos `.txt` de logs de depuración (como `debug_match_*.txt` o `page_dump_*.txt`) en la raíz del proyecto.
 - Si requieres escribir logs de depuración o capturas de pantalla, hazlo exclusivamente dentro de la carpeta `artifacts/`, la cual está configurada para ser ignorada por Git.
 
-### C. Buenas Prácticas de Código
+### C. Documentación Continua Obligatoria
+- **Actualización en Tiempo Real:** Cada vez que se genere una nueva estructura arquitectónica (ej. transición a App Router, nuevos módulos importantes) o se realice un cambio significativo en la lógica base del sistema, **debe documentarse inmediatamente**. Ya sea actualizando este archivo `AGENTS.md`, modificando los artefactos relevantes o creando reportes técnicos, nunca se debe avanzar asumiendo que los cambios están sobreentendidos.
+
+### D. Buenas Prácticas de Código
 - Mantener los componentes pequeños, modulares y reutilizables.
 - Utilizar TypeScript para los nuevos archivos de la carpeta `src/app/`.
+- **Manejo de Estado (Zustand vs URL):** La fuente de la verdad para entidades activas (ej. el torneo seleccionado, el ID del registro) **debe ser siempre la URL** (`useParams` o `searchParams`). Zustand se utilizará de forma pasiva (como caché de datos) y no debe almacenar IDs activos, previniendo fallos críticos de desincronización durante la navegación hacia atrás (browser back).
 - No alterar ni borrar código de `data/` a menos que sea solicitado explícitamente para tareas de analítica.
 
 ---
@@ -53,14 +57,21 @@ El código principal reside en `src/`:
 ## 5. UI/UX & Sistema de Diseño Premium (Director de Arte)
 
 Cualquier tarea relacionada con interfaces de usuario debe ejecutarse bajo el rol estricto de **Director de Arte Frontend y Arquitecto**.
-**Objetivo:** Lograr una estética enterprise, luminosa, limpia y estructurada, inspirada en plataformas SaaS de alto nivel.
+**Objetivo:** Lograr una estética enterprise, basada en el Manual de Marca v2.0 (estilo oscuro, estructurado y enfocado en rendimiento deportivo).
 
-**Reglas Inquebrantables de Diseño y Arquitectura:**
-1. **Paleta Luminosa y Profesional:** Abandona el modo oscuro forzado. Utiliza superficies limpias (`bg-white` o `#FFFFFF`), fondos neutros muy suaves para contrastar paneles (ej. `bg-slate-50` o `#F8F9FA`) y textos de alta legibilidad (`text-slate-900`, `text-slate-500`).
-2. **Acento de Marca:** Utiliza nuestro color bronce corporativo (`var(--color-bronce)`, `#C27A42`) de forma quirúrgica: solo para botones de acción principales, íconos activos, pasos completados o barras de progreso.
-3. **Jerarquía Visual (Elevación):** Separa los módulos utilizando tarjetas blancas con sombras amplias y muy suaves (ej. `shadow-sm` o `shadow-md` de Tailwind) con bordes redondeados (`rounded-xl` o `rounded-2xl`). Cero efectos translúcidos (glassmorphism).
+**Reglas Inquebrantables de Diseño y Arquitectura (Manual v2.0):**
+1. **Paleta Cromática Oficial (Dark Mode):** 
+   - **Grafito (`#111315` - 60%):** Color base para fondos que transmite fuerza y tecnología.
+   - **Marfil (`#F5F7F8` - 25%):** Color secundario para textos y claridad en la interfaz.
+   - **Cobre (`#C27A42` - 10%):** Acento principal. Úsalo quirúrgicamente para botones de acción principal, íconos activos y progreso.
+   - **Azul Rendimiento (`#3F6D85` - 5%):** Color funcional para datos, métricas y gráficos.
+   - **Estados:** Éxito (`#22C55E`), Advertencia (`#F5BE05`), Riesgo (`#EF4444`), Información (`#3F6B85`), Neutro (`#6B7280`).
+2. **Tipografía Oficial:**
+   - **Sora Bold:** Uso exclusivo para Títulos y Encabezados (Headings H1-H4).
+   - **Inter Regular:** Uso para textos, interfaz (UI), tablas y etiquetas.
+3. **Sistema Visual (Módulos y Profundidad):** Utiliza "Líneas tácticas" y un Grid Estructural. Las interfaces modulares deben estar bien definidas con contrastes (tarjetas grises/oscuras sobre fondo Grafito) sin usar transparencias tipo glassmorphism. La iconografía debe ser lineal (2px), minimalista y de esquinas redondeadas.
 4. **Arquitectura Atómica (PROHIBIDO CÓDIGO MONOLÍTICO):** Tienes estrictamente prohibido generar o modificar vistas complejas en un solo archivo. Toda pantalla debe ser fragmentada en sub-componentes lógicos más pequeños antes de ser ensamblada. Si ves un archivo pesado, tu primer paso es dividirlo.
-5. **Construcción:** Ensambla la interfaz usando exclusivamente componentes estructurales de `shadcn/ui` (Cards, Badges, Progress, Buttons) y utilidades limpias de Tailwind v4.
+5. **Construcción:** Ensambla la interfaz usando exclusivamente componentes estructurales de `shadcn/ui` y utilidades limpias de Tailwind v4 alineadas a los tokens corporativos.
 <!-- END:nextjs-agent-rules -->
 
 <!-- SPECKIT START -->

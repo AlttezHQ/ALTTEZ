@@ -17,8 +17,8 @@ const FONT   = "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 
 import { useTorneosStore } from "../store/useTorneosStore";
 
-export default function ProgramacionPage() {
-  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
+export default function ProgramacionPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
   const torneos = useTorneosStore(s => s.torneos);
   const equipos = useTorneosStore(s => s.equipos);
   const sedes = useTorneosStore(s => s.sedes);

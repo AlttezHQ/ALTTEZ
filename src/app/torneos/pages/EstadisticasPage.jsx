@@ -78,9 +78,9 @@ function TablaPosiciones({ posiciones, titulo }) {
   );
 }
 
-export default function EstadisticasPage({ onGoTorneos }) {
-  const torneoActivoId = useTorneosStore(s => s.torneoActivoId);
-  const allTorneos     = useTorneosStore(s => s.torneos);
+export default function EstadisticasPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
+  const allTorneos = useTorneosStore(s => s.torneos);
   const allEquipos     = useTorneosStore(s => s.equipos);
   const allPartidos    = useTorneosStore(s => s.partidos);
 

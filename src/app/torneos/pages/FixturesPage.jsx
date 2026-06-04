@@ -38,8 +38,8 @@ const ESTADO_CFG = {
   pendiente: { label: "Pendiente", color: MUTED, dot: MUTED },
 };
 
-export default function FixturesPage({ onGoTorneos }) {
-  const torneoActivoId = useTorneosStore((state) => state.torneoActivoId);
+export default function FixturesPage({ torneoId, onGoTorneos }) {
+  const torneoActivoId = torneoId;
   const allTorneos = useTorneosStore((state) => state.torneos);
   const allEquipos = useTorneosStore((state) => state.equipos);
   const allPartidos = useTorneosStore((state) => state.partidos);
