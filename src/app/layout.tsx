@@ -40,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
+    <html lang="es" suppressHydrationWarning className={"font-sans " + geist.variable}>
       <body className={`${inter.variable} ${sora.variable} ${manrope.variable} ${jetbrainsMono.variable} antialiased`} style={{ background: "var(--color-bg)", color: "var(--color-text)" }}>
         <Providers>{children}</Providers>
       </body>

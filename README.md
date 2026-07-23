@@ -51,3 +51,16 @@ Las reglas operativas inamovibles del repositorio viven en
 [`.specify/memory/constitution.md`](./.specify/memory/constitution.md). Cualquier
 spec, plan o implementacion nueva debe alinearse con esa constitucion antes de
 expandir arquitectura, estilos o tooling.
+
+## Mapa vigente del repositorio
+
+Las carpetas rastreadas y necesarias para el producto son:
+
+- .github/: CI, build y seguridad.
+- .specify/: constitucion, especificaciones y automatizacion de trabajo.
+- data/: pipeline analítico aislado de Airflow, dbt y Snowflake; actualmente no lo ejecuta la aplicación.
+- public/: activos PWA, marca y service worker de produccion.
+- src/: rutas Next.js, CRM, torneos, marketing, UI compartida, servicios y pruebas.
+- supabase/: migraciones, configuracion y Edge Functions.
+
+Las carpetas locales de agentes, herramientas, artefactos, documentacion interna y dependencias se mantienen fuera de Git mediante .gitignore.

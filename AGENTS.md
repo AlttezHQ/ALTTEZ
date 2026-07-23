@@ -18,7 +18,7 @@ El proyecto está en proceso de transición hacia un stack basado en:
 
 El código principal reside en `src/`:
 - `src/app/`: Enrutamiento y páginas de Next.js (App Router).
-- `src/components/`: Componentes React globales reutilizables (incluye shadcn/ui).
+- `src/shared/ui/`: Componentes React globales reutilizables del producto.
 - `src/marketing/`: Vistas y datos referentes a la landing page y marketing.
 - `src/shared/`: Clientes de API, Hooks y layouts compartidos (e.g., cliente de Supabase, layouts de Auth).
 - `data/`: Scripts del pipeline de analítica de datos (DBT y dags de Airflow). **No borrar ni ignorar**, es un desarrollo activo.
