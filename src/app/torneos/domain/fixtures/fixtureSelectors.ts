@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { calcularPosiciones } from "../../utils/fixturesEngine";
 import {
   mapFixtureMatchRow,
@@ -9,10 +7,57 @@ import {
   mapUpcomingMatch,
 } from "./fixtureMappers";
 
-function buildCategories(input: any) {
+type Entity = Record<string, unknown>;
+type FixtureFilters = {
+  filterJornada: string;
+  filterQuery: string;
+  filterEstado: string;
+  expandedDates: Record<string, boolean>;
+};
+
+type ScheduleReport = {
+  total?: number;
+  scheduled?: number;
+  unscheduled?: number;
+  unscheduledMatches?: Entity[];
+};
+
+type FixturesPageInput = {
+  torneoActivoId?: string | null;
+  selectedCategory?: string | null;
+  allCategorias: Entity[];
+  allEquipos: Entity[];
+  allPartidos: Entity[];
+  allSedes: Entity[];
+  allArbitros: Entity[];
+  allTorneos: Entity[];
+  stateConfig: Record<string, { label: string; color: string; dot: string }>;
+  colors: {
+    primary: string;
+    border: string;
+  };
+  filters: FixtureFilters;
+  scheduleReport?: ScheduleReport | null;
+};
+
+function getString(entity: Entity | undefined, key: string, fallback = "") {
+  const value = entity?.[key];
+  return typeof value === "string" ? value : fallback;
+}
+
+function getNumber(entity: Entity | undefined, key: string, fallback = 0) {
+  const value = entity?.[key];
+  return typeof value === "number" ? value : fallback;
+}
+
+function hasTorneo(entity: Entity, torneoId?: string | null) {
+  return getString(entity, "torneoId") === torneoId;
+}
+
+function buildCategories(input: FixturesPageInput) {
   const configured = input.allCategorias
-    .filter((category) => category.torneoId === input.torneoActivoId)
-    .map((category) => category.nombre)
+    .filter((category) => hasTorneo(category, input.torneoActivoId))
+    .map((category) => getString(category, "nombre"))
     .filter(Boolean);
 
   if (configured.length > 0) {
@@ -22,21 +67,22 @@ function buildCategories(input: any) {
   return [
     ...new Set(
       input.allEquipos
-        .filter((team) => team.torneoId === input.torneoActivoId)
-        .map((team) => team.grupo || "General"),
+        .filter((team) => hasTorneo(team, input.torneoActivoId))
+        .map((team) => getString(team, "grupo", "General")),
     ),
   ].sort();
 }
 
-function groupMatches(matches: any[]) {
-  return matches.reduce((accumulator: Record<string, any[]>, match: any) => {
-    const key = match.fechaHora
-      ? new Date(match.fechaHora).toLocaleDateString("es-AR", {
+function groupMatches(matches: Entity[]) {
+  return matches.reduce<Record<string, Entity[]>>((accumulator, match) => {
+    const fechaHora = getString(match, "fechaHora");
+    const key = fechaHora
+      ? new Date(fechaHora).toLocaleDateString("es-AR", {
           weekday: "long",
           day: "2-digit",
           month: "long",
         })
-      : `Fecha ${match.ronda || 1}`;
+      : `Fecha ${getNumber(match, "ronda", 1)}`;
 
     if (!accumulator[key]) {
       accumulator[key] = [];
@@ -47,7 +93,7 @@ function groupMatches(matches: any[]) {
   }, {});
 }
 
-function sortGroupKeys(groups: Record<string, any[]>) {
+function sortGroupKeys(groups: Record<string, Entity[]>) {
   return Object.keys(groups).sort((left, right) => {
     if (left.startsWith("Fecha ") && right.startsWith("Fecha ")) {
       return (
@@ -58,16 +104,18 @@ function sortGroupKeys(groups: Record<string, any[]>) {
 
     const leftMatch = groups[left][0];
     const rightMatch = groups[right][0];
+    const leftFechaHora = getString(leftMatch, "fechaHora");
+    const rightFechaHora = getString(rightMatch, "fechaHora");
 
-    if (leftMatch?.fechaHora && rightMatch?.fechaHora) {
-      return new Date(leftMatch.fechaHora) - new Date(rightMatch.fechaHora);
+    if (leftFechaHora && rightFechaHora) {
+      return new Date(leftFechaHora).getTime() - new Date(rightFechaHora).getTime();
     }
 
-    return (leftMatch?.ronda || 0) - (rightMatch?.ronda || 0);
+    return getNumber(leftMatch, "ronda") - getNumber(rightMatch, "ronda");
   });
 }
 
-export function selectFixturesPageViewModel(input: any) {
+export function selectFixturesPageViewModel(input: FixturesPageInput) {
   const categories = input.torneoActivoId ? buildCategories(input) : [];
   const activeCategory = input.selectedCategory || categories[0] || null;
 
@@ -75,45 +123,49 @@ export function selectFixturesPageViewModel(input: any) {
     input.torneoActivoId && activeCategory
       ? input.allCategorias.find(
           (category) =>
-            category.torneoId === input.torneoActivoId &&
-            category.nombre === activeCategory,
+            hasTorneo(category, input.torneoActivoId) &&
+            getString(category, "nombre") === activeCategory,
         ) ?? null
       : null;
 
+  const activeCategoryId = getString(activeCategoryConfig ?? undefined, "id");
+
   const tournament = input.torneoActivoId
-    ? input.allTorneos.find((item) => item.id === input.torneoActivoId) ?? null
+    ? input.allTorneos.find((item) => getString(item, "id") === input.torneoActivoId) ?? null
     : null;
 
   const categoryMatches = input.allPartidos.filter((match) => {
-    if (match.torneoId !== input.torneoActivoId || !activeCategory) return false;
-    if (activeCategoryConfig?.id) return match.categoriaId === activeCategoryConfig.id;
-    return (match.grupo || "General") === activeCategory;
+    if (!hasTorneo(match, input.torneoActivoId) || !activeCategory) return false;
+    if (activeCategoryId) return getString(match, "categoriaId") === activeCategoryId;
+    return getString(match, "grupo", "General") === activeCategory;
   });
 
-  const categoryMatchTeamIds = new Set();
+  const categoryMatchTeamIds = new Set<string>();
   categoryMatches.forEach((match) => {
-    if (match.equipoLocalId) categoryMatchTeamIds.add(match.equipoLocalId);
-    if (match.equipoVisitaId) categoryMatchTeamIds.add(match.equipoVisitaId);
+    const localId = getString(match, "equipoLocalId");
+    const visitId = getString(match, "equipoVisitaId");
+    if (localId) categoryMatchTeamIds.add(localId);
+    if (visitId) categoryMatchTeamIds.add(visitId);
   });
 
   const categoryTeams = input.allEquipos.filter(
     (team) =>
-      team.torneoId === input.torneoActivoId &&
-      ((team.grupo || "General") === activeCategory ||
-        categoryMatchTeamIds.has(team.id)),
+      hasTorneo(team, input.torneoActivoId) &&
+      (getString(team, "grupo", "General") === activeCategory ||
+        categoryMatchTeamIds.has(getString(team, "id"))),
   );
 
   const standings = calcularPosiciones(categoryMatches, categoryTeams).map(mapStandingRow);
 
-  const teamsById = new Map(input.allEquipos.map((team) => [team.id, team]));
-  const venues = input.allSedes.filter((venue) => venue.torneoId === input.torneoActivoId);
+  const teamsById = new Map(input.allEquipos.map((team) => [getString(team, "id"), team]));
+  const venues = input.allSedes.filter((venue) => hasTorneo(venue, input.torneoActivoId));
   const referees = input.allArbitros.filter(
-    (referee) => referee.torneoId === input.torneoActivoId,
+    (referee) => hasTorneo(referee, input.torneoActivoId),
   );
-  const venuesById = new Map(venues.map((venue) => [venue.id, venue]));
-  const refereesById = new Map(referees.map((referee) => [referee.id, referee]));
+  const venuesById = new Map(venues.map((venue) => [getString(venue, "id"), venue]));
+  const refereesById = new Map(referees.map((referee) => [getString(referee, "id"), referee]));
   const categoriesById = new Map(
-    input.allCategorias.map((category) => [category.id, category]),
+    input.allCategorias.map((category) => [getString(category, "id"), category]),
   );
 
   const mapperContext = {
@@ -138,15 +190,15 @@ export function selectFixturesPageViewModel(input: any) {
 
       if (input.filters.filterEstado !== "Todos los estados") {
         filteredMatches = filteredMatches.filter(
-          (match) => match.estado === input.filters.filterEstado,
+          (match) => getString(match, "estado") === input.filters.filterEstado,
         );
       }
 
       if (input.filters.filterQuery) {
         const query = input.filters.filterQuery.toLowerCase();
         filteredMatches = filteredMatches.filter((match) => {
-          const localName = teamsById.get(match.equipoLocalId)?.nombre?.toLowerCase() || "";
-          const visitaName = teamsById.get(match.equipoVisitaId)?.nombre?.toLowerCase() || "";
+          const localName = getString(teamsById.get(getString(match, "equipoLocalId")), "nombre").toLowerCase();
+          const visitaName = getString(teamsById.get(getString(match, "equipoVisitaId")), "nombre").toLowerCase();
           return localName.includes(query) || visitaName.includes(query);
         });
       }
@@ -170,22 +222,22 @@ export function selectFixturesPageViewModel(input: any) {
 
   const totalMatches = categoryMatches.length;
   const playedMatches = categoryMatches.filter(
-    (match) => match.estado === "finalizado",
+    (match) => getString(match, "estado") === "finalizado",
   ).length;
   const scheduledMatches = categoryMatches.filter(
-    (match) => match.estado === "programado",
+    (match) => getString(match, "estado") === "programado",
   ).length;
   const pendingMatches = totalMatches - playedMatches - scheduledMatches;
 
   const upcomingMatches = categoryMatches
-    .filter((match) => match.estado === "programado")
-    .sort((left, right) => new Date(left.fechaHora) - new Date(right.fechaHora))
+    .filter((match) => getString(match, "estado") === "programado")
+    .sort((left, right) => new Date(getString(left, "fechaHora")).getTime() - new Date(getString(right, "fechaHora")).getTime())
     .slice(0, 3)
     .map((match) => mapUpcomingMatch(match, mapperContext));
 
-  const matchesWithDate = categoryMatches.filter((match) => match.fechaHora);
-  const scheduledDatesMap = matchesWithDate.reduce((accumulator, match) => {
-    const key = new Date(match.fechaHora).toISOString().slice(0, 10);
+  const matchesWithDate = categoryMatches.filter((match) => getString(match, "fechaHora"));
+  const scheduledDatesMap = matchesWithDate.reduce<Record<string, Entity[]>>((accumulator, match) => {
+    const key = new Date(getString(match, "fechaHora")).toISOString().slice(0, 10);
     if (!accumulator[key]) accumulator[key] = [];
     accumulator[key].push(match);
     return accumulator;
@@ -209,7 +261,7 @@ export function selectFixturesPageViewModel(input: any) {
       };
     });
 
-  const maxRound = Math.max(0, ...categoryMatches.map((match) => match.ronda || 0));
+  const maxRound = Math.max(0, ...categoryMatches.map((match) => getNumber(match, "ronda")));
 
   return {
     categories,

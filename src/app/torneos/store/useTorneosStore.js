@@ -1,16 +1,27 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { calcularPosiciones } from "../utils/fixturesEngine";
 import {
-  calculateGroupStandings,
-  applyTiebreakers,
-  getQualifiedTeams,
   createBracketSeededEvent,
   createRoundAdvancedEvent,
   createTiebreakerAppliedEvent,
   DEFAULT_POINTS_CONFIG,
   DEFAULT_TIEBREAKERS,
 } from "../utils/competitionEngine";
+import {
+  selectTorneoById,
+  selectEquiposByTorneo,
+  selectPartidosByTorneo,
+  selectPartidosByFase,
+  selectPartidosByGrupo,
+  selectSedesByTorneo,
+  selectArbitrosByTorneo,
+  selectCategoriasByTorneo,
+  selectTorneoActivo,
+  selectPosicionesByTorneo,
+  selectCompetitionConfig,
+  selectPosicionesByGrupo,
+  selectClasificados,
+} from "./selectors";
 import { LEGACY_MATCH_STATUS, MATCH_STATUS, toLegacyMatchStatus } from "../domain/fixtureState";
 import { optimizeSchedule } from "../utils/scheduleOptimizer";
 import * as svc from "../services/torneosService";
@@ -511,28 +522,12 @@ export const useTorneosStore = create(
       },
 
       getCategoriasByTorneo(torneoId) {
-        return get().categorias.filter(c => c.torneoId === torneoId);
+        return selectCategoriasByTorneo(get(), torneoId);
       },
 
-      /** Devuelve la configuración de competencia de una categoría (merge con defaults). */
+      /** Configuración de competencia de una categoría (merge con defaults). */
       getCompetitionConfig(categoriaId) {
-        const cat = get().categorias.find(c => c.id === categoriaId);
-        if (!cat) return null;
-        return {
-          groupsCount:          cat.groupsCount          ?? 2,
-          groupLegs:            cat.groupLegs            ?? 1,
-          qualifyPerGroup:      cat.qualifyPerGroup       ?? 2,
-          assignmentMethod:     cat.assignmentMethod      ?? "auto_serpentina",
-          allowBestThirds:      cat.allowBestThirds       ?? false,
-          bestThirdsCount:      cat.bestThirdsCount       ?? 0,
-          pointsConfig:         cat.pointsConfig          ?? { ...DEFAULT_POINTS_CONFIG },
-          tiebreakers:          cat.tiebreakers           ?? [...DEFAULT_TIEBREAKERS],
-          initialKnockoutRound: cat.initialKnockoutRound  ?? "auto",
-          crossingMethod:       cat.crossingMethod        ?? "auto_position",
-          knockoutTiebreakRule: cat.knockoutTiebreakRule  ?? "penalties",
-          playoffLegs:          cat.playoffLegs           ?? 1,
-          finalLegs:            cat.finalLegs             ?? 1,
-        };
+        return selectCompetitionConfig(get(), categoriaId);
       },
 
       /**
@@ -540,37 +535,14 @@ export const useTorneosStore = create(
        * @returns {{ [groupLabel]: standingRow[] }}
        */
       getPosicionesByGrupo(torneoId, categoriaId) {
-        const s       = get();
-        const cat     = s.categorias.find(c => c.id === categoriaId);
-        const partidos = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId));
-        const teamIds = new Set();
-        partidos.forEach(p => {
-          if (p.equipoLocalId) teamIds.add(p.equipoLocalId);
-          if (p.equipoVisitaId) teamIds.add(p.equipoVisitaId);
-        });
-        const equipos  = s.equipos.filter(e => e.torneoId === torneoId && (!categoriaId || teamIds.has(e.id)));
-        const pointsConfig = cat?.pointsConfig ?? DEFAULT_POINTS_CONFIG;
-        return calculateGroupStandings(partidos, equipos, pointsConfig);
+        return selectPosicionesByGrupo(get(), torneoId, categoriaId);
       },
 
       /**
        * Devuelve equipos clasificados para la fase final.
        */
       getClasificados(torneoId, categoriaId) {
-        const s         = get();
-        const cat       = s.categorias.find(c => c.id === categoriaId);
-        const partidos  = s.partidos.filter(p => p.torneoId === torneoId && (!categoriaId || p.categoriaId === categoriaId));
-        const teamIds = new Set();
-        partidos.forEach(p => {
-          if (p.equipoLocalId) teamIds.add(p.equipoLocalId);
-          if (p.equipoVisitaId) teamIds.add(p.equipoVisitaId);
-        });
-        const equipos   = s.equipos.filter(e => e.torneoId === torneoId && (!categoriaId || teamIds.has(e.id)));
-        const config    = get().getCompetitionConfig(categoriaId) ?? {};
-        const groupStandings = calculateGroupStandings(
-          partidos, equipos, config.pointsConfig ?? DEFAULT_POINTS_CONFIG
-        );
-        return getQualifiedTeams(groupStandings, config, partidos);
+        return selectClasificados(get(), torneoId, categoriaId);
       },
 
       /**
@@ -628,46 +600,43 @@ export const useTorneosStore = create(
       // ── Selectors ────────────────────────────────────────────────────────
 
       getTorneoById(id) {
-        return get().torneos.find(t => t.id === id) ?? null;
+        return selectTorneoById(get(), id);
       },
 
       getEquiposByTorneo(torneoId) {
-        return get().equipos.filter(e => e.torneoId === torneoId);
+        return selectEquiposByTorneo(get(), torneoId);
       },
 
       getPartidosByTorneo(torneoId) {
-        return get().partidos.filter(p => p.torneoId === torneoId);
+        return selectPartidosByTorneo(get(), torneoId);
       },
 
       getPartidosByFase(torneoId, fase) {
-        return get().partidos.filter(p => p.torneoId === torneoId && p.fase === fase);
+        return selectPartidosByFase(get(), torneoId, fase);
       },
 
       getPartidosByGrupo(torneoId, grupo) {
-        return get().partidos.filter(p => p.torneoId === torneoId && p.grupo === grupo);
+        return selectPartidosByGrupo(get(), torneoId, grupo);
       },
 
       getPosicionesByTorneo(torneoId) {
-        const partidos = get().partidos.filter(p => p.torneoId === torneoId);
-        const equipos  = get().equipos.filter(e => e.torneoId === torneoId);
-        return calcularPosiciones(partidos, equipos);
+        return selectPosicionesByTorneo(get(), torneoId);
       },
 
       getSedesByTorneo(torneoId) {
-        return get().sedes.filter(s => s.torneoId === torneoId);
+        return selectSedesByTorneo(get(), torneoId);
       },
 
       getArbitrosByTorneo(torneoId) {
-        return get().arbitros.filter(a => a.torneoId === torneoId);
+        return selectArbitrosByTorneo(get(), torneoId);
       },
 
       getCategoriasTorneo(torneoId) {
-        return get().categorias.filter(c => c.torneoId === torneoId);
+        return selectCategoriasByTorneo(get(), torneoId);
       },
 
       getTorneoActivo() {
-        const id = get().torneoActivoId;
-        return id ? get().torneos.find(t => t.id === id) ?? null : null;
+        return selectTorneoActivo(get());
       },
 
       async loadTorneosFromSupabase() {
@@ -716,7 +685,17 @@ export const useTorneosStore = create(
         }
       },
     }),
-    { name: "alttez-torneos-store" }
+    {
+      name: "alttez-torneos-store",
+      // La verdad de los datos es Supabase (loadTorneosFromSupabase revalida al entrar).
+      // Solo persistimos preferencias ligeras: torneo "último abierto" y borrador del wizard.
+      // Persistir los datasets completos causaba (a) riesgo de quota con cientos de equipos
+      // y (b) datos stale entre sesiones (el guard `torneos.length===0` saltaba el refetch).
+      partialize: (state) => ({
+        torneoActivoId: state.torneoActivoId,
+        wizardDraft: state.wizardDraft,
+      }),
+    }
   )
 );
 

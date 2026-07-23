@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 const DEFAULT_STATE = {
   label: "Pendiente",
   color: "#7A7F85",
@@ -7,26 +5,27 @@ const DEFAULT_STATE = {
 };
 
 type FixtureEntity = Record<string, unknown>;
+type FixtureState = { label: string; color: string; dot: string };
 type MapperContext = {
-  teamsById: Map<unknown, Record<string, unknown>>;
-  venuesById: Map<unknown, Record<string, unknown>>;
-  refereesById: Map<unknown, Record<string, unknown>>;
-  categoriesById: Map<unknown, Record<string, unknown>>;
-  stateConfig: Record<string, { label: string; color: string; dot: string }>;
+  teamsById: Map<unknown, FixtureEntity>;
+  venuesById: Map<unknown, FixtureEntity>;
+  refereesById: Map<unknown, FixtureEntity>;
+  categoriesById: Map<unknown, FixtureEntity>;
+  stateConfig: Record<string, FixtureState>;
   colors: {
     primary: string;
     border: string;
   };
 };
 
-function getEntityString(entity: FixtureEntity, key: string) {
-  const value = entity[key];
-  return typeof value === "string" ? value : "";
+function getEntityString(entity: FixtureEntity | undefined, key: string, fallback = "") {
+  const value = entity?.[key];
+  return typeof value === "string" ? value : fallback;
 }
 
-function getEntityNumber(entity: FixtureEntity, key: string) {
+function getEntityNumber(entity: FixtureEntity, key: string, fallback = 0) {
   const value = entity[key];
-  return typeof value === "number" ? value : null;
+  return typeof value === "number" ? value : fallback;
 }
 
 function getEntityDateValue(entity: FixtureEntity, key: string) {
@@ -36,14 +35,14 @@ function getEntityDateValue(entity: FixtureEntity, key: string) {
 
 export function mapStandingRow(row: FixtureEntity) {
   return {
-    equipoId: row.equipoId,
-    nombre: row.nombre,
-    pj: row.pj,
-    pg: row.pg,
-    pe: row.pe,
-    pp: row.pp,
-    dg: row.dg,
-    pts: row.pts,
+    equipoId: getEntityString(row, "equipoId"),
+    nombre: getEntityString(row, "nombre"),
+    pj: getEntityNumber(row, "pj"),
+    pg: getEntityNumber(row, "pg"),
+    pe: getEntityNumber(row, "pe"),
+    pp: getEntityNumber(row, "pp"),
+    dg: getEntityNumber(row, "dg"),
+    pts: getEntityNumber(row, "pts"),
   };
 }
 
@@ -58,20 +57,20 @@ export function mapFixtureMatchRow(match: FixtureEntity, context: MapperContext)
   const fechaHora = getEntityDateValue(match, "fechaHora");
 
   return {
-    id: match.id,
-    localName: local?.nombre ?? "TBD",
-    localColor: local?.color ?? context.colors.primary,
-    visitaName: visita?.nombre ?? "TBD",
-    visitaColor: visita?.color ?? context.colors.border,
+    id: getEntityString(match, "id"),
+    localName: getEntityString(local, "nombre", "TBD"),
+    localColor: getEntityString(local, "color", context.colors.primary),
+    visitaName: getEntityString(visita, "nombre", "TBD"),
+    visitaColor: getEntityString(visita, "color", context.colors.border),
     hourLabel: fechaHora
       ? new Date(fechaHora).toLocaleTimeString("es-CO", {
           hour: "2-digit",
           minute: "2-digit",
         })
       : "--:--",
-    venueLabel: venue?.nombre || "Sin cancha",
+    venueLabel: getEntityString(venue, "nombre", "Sin cancha"),
     resultLabel: isCompleted
-      ? `${match.golesLocal ?? 0} - ${match.golesVisita ?? 0}`
+      ? `${getEntityNumber(match, "golesLocal")} - ${getEntityNumber(match, "golesVisita")}`
       : "VS",
     isCompleted,
     state,
@@ -80,15 +79,13 @@ export function mapFixtureMatchRow(match: FixtureEntity, context: MapperContext)
 }
 
 export function mapUpcomingMatch(match: FixtureEntity, context: MapperContext) {
-  const localName =
-    context.teamsById.get(match.equipoLocalId)?.nombre ?? "TBD";
-  const visitaName =
-    context.teamsById.get(match.equipoVisitaId)?.nombre ?? "TBD";
+  const localName = getEntityString(context.teamsById.get(match.equipoLocalId), "nombre", "TBD");
+  const visitaName = getEntityString(context.teamsById.get(match.equipoVisitaId), "nombre", "TBD");
   const fechaHora = getEntityDateValue(match, "fechaHora");
   const date = fechaHora ? new Date(fechaHora) : null;
 
   return {
-    id: match.id,
+    id: getEntityString(match, "id"),
     localName,
     visitaName,
     dateLabel: date
@@ -115,36 +112,33 @@ export function mapSchedulingMatch(match: FixtureEntity, context: MapperContext)
   const fechaHora = getEntityDateValue(match, "fechaHora");
 
   return {
-    id: match.id,
-    localName: local?.nombre ?? "TBD",
-    visitaName: visita?.nombre ?? "TBD",
+    id: getEntityString(match, "id"),
+    localName: getEntityString(local, "nombre", "TBD"),
+    visitaName: getEntityString(visita, "nombre", "TBD"),
     hourLabel: fechaHora
       ? new Date(fechaHora).toLocaleTimeString("es-CO", {
           hour: "2-digit",
           minute: "2-digit",
         })
       : "",
-    venueLabel: venue?.nombre || "",
-    refereeLabel: referee?.nombre || "",
+    venueLabel: getEntityString(venue, "nombre"),
+    refereeLabel: getEntityString(referee, "nombre"),
     state,
     raw: match,
   };
 }
 
 export function mapScheduleReportMatch(match: FixtureEntity, context: MapperContext) {
-  const localName =
-    context.teamsById.get(match.equipoLocalId)?.nombre ?? "TBD";
-  const visitaName =
-    context.teamsById.get(match.equipoVisitaId)?.nombre ?? "TBD";
+  const localName = getEntityString(context.teamsById.get(match.equipoLocalId), "nombre", "TBD");
+  const visitaName = getEntityString(context.teamsById.get(match.equipoVisitaId), "nombre", "TBD");
   const categoryName =
-    context.categoriesById.get(match.categoriaId)?.nombre ??
-    match.grupo ??
-    "General";
+    getEntityString(context.categoriesById.get(match.categoriaId), "nombre") ||
+    getEntityString(match, "grupo", "General");
 
   return {
-    id: match.id,
+    id: getEntityString(match, "id"),
     matchLabel: `${categoryName}: ${localName} vs ${visitaName}`,
-    roundLabel: getEntityNumber(match, "ronda") ?? "-",
-    stateLabel: getEntityString(match, "estado") || "pendiente",
+    roundLabel: getEntityNumber(match, "ronda", Number.NaN) || "-",
+    stateLabel: getEntityString(match, "estado", "pendiente"),
   };
 }

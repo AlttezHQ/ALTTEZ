@@ -637,7 +637,14 @@ export default function ProposalsAdminModule({ clubId, mode }) {
   useEffect(() => {
     if (clubId) setProposalsClubId(clubId);
     getProposals().then(data => {
-      setProposals(data || []);
+      const nextProposals = data || [];
+      const restore = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
+      const restoredProposal = restore?.clubId === (clubId || "local") && restore?.selectedId
+        ? nextProposals.find((item) => item.id === restore.selectedId) ?? null
+        : null;
+
+      setProposals(nextProposals);
+      setSelected(restoredProposal);
       setLoading(false);
     });
   }, [clubId]);
@@ -687,16 +694,6 @@ export default function ProposalsAdminModule({ clubId, mode }) {
     };
   }, [clubId, filter, selected]);
 
-  useEffect(() => {
-    if (loading || selected) return;
-    const restore = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
-    if (restore?.clubId !== (clubId || "local") || !restore?.selectedId) return;
-
-    const proposal = proposals.find((item) => item.id === restore.selectedId);
-    if (proposal) {
-      setSelected(proposal);
-    }
-  }, [clubId, loading, proposals, selected]);
 
   const handleSaved = useCallback((p) => {
     setProposals(prev => {

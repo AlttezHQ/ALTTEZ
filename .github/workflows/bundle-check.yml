@@ -6,7 +6,7 @@ on:
 
 jobs:
   check:
-    name: Bundle Size Check
+    name: Next Bundle Size Check
     runs-on: ubuntu-latest
 
     steps:
@@ -23,15 +23,20 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check bundle sizes (warn >500KB)
+      - name: Check Next chunks (warn >500KB)
         run: |
           OVERSIZED=0
+          if [ ! -d ".next/static/chunks" ]; then
+            echo "No Next chunks directory found"
+            exit 1
+          fi
+
           while IFS= read -r f; do
             SIZE=$(du -k "$f" | cut -f1)
             echo "WARNING: $f exceeds 500KB (${SIZE}KB)"
             OVERSIZED=1
-          done < <(find dist/assets -name "*.js" -size +500k)
+          done < <(find .next/static/chunks -name "*.js" -size +500k)
 
           if [ "$OVERSIZED" -eq 0 ]; then
-            echo "All chunks within 500KB limit"
+            echo "All Next chunks within 500KB limit"
           fi

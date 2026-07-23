@@ -38,16 +38,10 @@ export default function ProposalsWorkspace({ clubId, onLogout }) {
   const searchParams = useSearchParams();
   const sectionParam = searchParams.get("section");
   const resolvedSection = VALID_SECTIONS.has(sectionParam) ? sectionParam : DEFAULT_SECTION;
-  const [section, setSection] = useState(resolvedSection);
+  const section = resolvedSection;
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
-    setSection(resolvedSection);
-  }, [resolvedSection]);
-
   const handleSectionChange = (nextSection) => {
-    setSection(nextSection);
-
     const params = new URLSearchParams(searchParams.toString());
     if (nextSection === DEFAULT_SECTION) {
       params.delete("section");
@@ -60,7 +54,9 @@ export default function ProposalsWorkspace({ clubId, onLogout }) {
     router.replace(nextUrl, { scroll: false });
   };
 
-  if (clubId) setProposalsClubId(clubId);
+  useEffect(() => {
+    if (clubId) setProposalsClubId(clubId);
+  }, [clubId]);
 
   return (
     <div style={{ minHeight: "100vh", background: MARFIL, position: "relative" }}>

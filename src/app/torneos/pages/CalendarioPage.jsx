@@ -60,8 +60,10 @@ const inputSm = {
   outline: "none", width: "100%", boxSizing: "border-box",
 };
 
-export default function CalendarioPage({ onGoTorneos }) {
-  const torneoActivoId  = useTorneosStore(s => s.torneoActivoId);
+export default function CalendarioPage({ torneoId, onGoTorneos }) {
+  // URL = fuente de verdad: el id llega como prop desde el route wrapper (useParams),
+  // no del store. (Antes leía torneoActivoId del store — acoplaba estado a navegación.)
+  const torneoActivoId  = torneoId;
   const allTorneos      = useTorneosStore(s => s.torneos);
   const allEquipos      = useTorneosStore(s => s.equipos);
   const allPartidos     = useTorneosStore(s => s.partidos);

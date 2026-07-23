@@ -145,9 +145,12 @@ export default function TorneosSidebar({
       <nav style={{ flex: 1, padding: "8px", overflowX: "hidden", overflowY: "auto", position: "relative" }}>
         {NAV_ITEMS.map(({ id, icon: Icon, label }) => {
           const isActive = active === id;
+          // Items que requieren un torneo abierto; sin torneoId quedan deshabilitados
+          const requiresTorneo = id !== "inicio" && id !== "torneos";
+          const isDisabled = requiresTorneo && !torneoId;
           return (
             <div key={id} style={{ position: "relative", marginBottom: 4 }}>
-              {isActive && (
+              {isActive && !isDisabled && (
                 <motion.div
                   layoutId="activeTorneosNav"
                   initial={false}
@@ -162,11 +165,13 @@ export default function TorneosSidebar({
                 />
               )}
               <motion.button
-                whileHover={{ x: collapsed ? 0 : 2 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={isDisabled ? undefined : { x: collapsed ? 0 : 2 }}
+                whileTap={isDisabled ? undefined : { scale: 0.98 }}
+                disabled={isDisabled}
                 onClick={() => {
+                  if (isDisabled) return;
                   if (id === "torneos") return router.push(`/torneos/lista`);
-                  
+
                   if (!torneoId) {
                     if (id === "inicio") router.push(`/torneos`);
                     return;
@@ -175,17 +180,19 @@ export default function TorneosSidebar({
                   if (id === "inicio") router.push(`/torneos/${torneoId}`);
                   else router.push(`/torneos/${torneoId}/${id}`);
                 }}
-                title={collapsed ? label : ""}
+                title={collapsed ? label : (isDisabled ? "Abre un torneo primero" : "")}
                 style={{
                   width: "100%", display: "flex", alignItems: "center", gap: 10,
                   justifyContent: collapsed ? "center" : "flex-start",
-                  padding: "9px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+                  padding: "9px 10px", borderRadius: 8, border: "none",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
                   background: "transparent",
-                  color: isActive ? "var(--color-bronce)" : "var(--color-text-muted)",
-                  fontSize: 13, fontWeight: isActive ? 700 : 500,
+                  color: isActive && !isDisabled ? "var(--color-bronce)" : "var(--color-text-muted)",
+                  opacity: isDisabled ? 0.4 : 1,
+                  fontSize: 13, fontWeight: isActive && !isDisabled ? 700 : 500,
                   fontFamily: FONT, textAlign: "left",
                   position: "relative", zIndex: 1,
-                  transition: "color 0.2s"
+                  transition: "color 0.2s, opacity 0.2s"
                 }}
               >
                 <Icon size={18} style={{ flexShrink: 0 }} />

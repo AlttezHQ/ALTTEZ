@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AlertTriangle, Building2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "../../shared/auth";
 import { useTorneosStore } from "./store/useTorneosStore";
 import { isSupabaseReady } from "../../shared/lib/supabase";
@@ -16,8 +17,20 @@ import { PALETTE } from "../../shared/tokens/palette";
 const BG = PALETTE.bg;
 const CARD = PALETTE.surface;
 const BORDER = PALETTE.border;
+type AuthUser = {
+  id?: string;
+  email?: string;
+  user_metadata?: {
+    roles?: string[];
+  };
+};
 
-function TorneosStatusScreen({ icon: Icon, title, subtitle }: { icon: any, title: string, subtitle: string }) {
+type AuthProfile = {
+  club_id?: string | null;
+  full_name?: string | null;
+};
+
+function TorneosStatusScreen({ icon: Icon, title, subtitle }: { icon: LucideIcon, title: string, subtitle: string }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: BG, padding: "24px" }}>
       <div style={{ width: "100%", maxWidth: 720, background: CARD, borderRadius: 24, border: `1px solid ${BORDER}`, boxShadow: "0 24px 64px rgba(23,26,28,0.10)", padding: "24px 20px" }}>
@@ -32,15 +45,19 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
   const pathname = usePathname();
 
   const auth = useAuth();
+  const authUser = auth.user as AuthUser | null;
+  const authProfile = auth.profile as AuthProfile | null;
   
   const loadTorneos = useTorneosStore((s) => s.loadTorneosFromSupabase);
-  const torneos = useTorneosStore((s) => s.torneos);
   const storeLoading = useTorneosStore((s) => s.loading);
   const storeError = useTorneosStore((s) => s.error);
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [initStatus, setInitStatus] = useState<string>("loading");
   const [initError, setInitError] = useState<string | null>(null);
+  // Garantiza que la revalidación de datos corra una sola vez por entrada al módulo
+  // (el layout persiste entre navegaciones de rutas hijas, así que el effect monta una vez).
+  const didLoadRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,14 +68,14 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
         
         if (auth.loadingAuth || auth.loadingProfile) return;
         
-        if (!auth.user) {
+        if (!authUser) {
           if (!cancelled) {
             router.replace(`/auth/login?redirect=/torneos`);
           }
           return;
         }
 
-        const profile = auth.profile;
+        const profile = authProfile;
         if (!profile) {
           if (!cancelled) {
             setInitStatus("missing-profile");
@@ -69,8 +86,8 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
         }
 
         const organization = {
-          id: (profile as any).club_id ?? (auth.user as any).id,
-          nombre: (profile as any).full_name ?? (auth.user as any).email ?? "Organización ALTTEZ",
+          id: profile.club_id ?? authUser.id,
+          nombre: profile.full_name ?? authUser.email ?? "Organización ALTTEZ",
         };
 
         if (!organization?.id) {
@@ -81,8 +98,11 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
           return;
         }
 
-        // Cargar torneos
-        if (torneos.length === 0) {
+        // Revalidar datos desde Supabase. La verdad es el servidor; ya no
+        // dependemos de datos persistidos en localStorage (que quedaban stale).
+        // didLoadRef evita re-disparos cuando el store cambia tras cargar.
+        if (!didLoadRef.current) {
+          didLoadRef.current = true;
           await loadTorneos();
         }
 
@@ -90,11 +110,11 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
           setInitStatus("ready");
           setInitialLoading(false);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("[TORNEOS INIT ERROR]", error);
         if (!cancelled) {
           setInitStatus("error");
-          setInitError(error?.message || "Error al inicializar");
+          setInitError(error instanceof Error ? error.message : "Error al inicializar");
           setInitialLoading(false);
         }
       }
@@ -102,13 +122,13 @@ export default function TorneosGlobalLayout({ children }: { children: React.Reac
 
     init();
     return () => { cancelled = true; };
-  }, [auth.loadingAuth, auth.loadingProfile, auth.user, auth.profile, loadTorneos, router, torneos.length]);
+  }, [auth.loadingAuth, auth.loadingProfile, auth.user, auth.profile, loadTorneos, router]);
 
   if (initialLoading || auth.loadingAuth || auth.loadingProfile || storeLoading) {
     return <AlttezLoader fullScreen text="Cargando entorno..." />;
   }
 
-  const userRoles = (auth.user as any)?.user_metadata?.roles || [];
+  const userRoles = authUser?.user_metadata?.roles || [];
   const hasOrganizadorRole = userRoles.includes("organizador");
 
   if (!hasOrganizadorRole) {

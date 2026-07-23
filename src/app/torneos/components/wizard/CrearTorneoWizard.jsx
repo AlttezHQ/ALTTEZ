@@ -10,6 +10,7 @@ import {
   Download, Upload, Search, Filter, HelpCircle, FileText, AlertCircle, AlertTriangle, MapPin, User, Save, Edit3, Trash2, Wand2, Check, Camera, Clock
 } from "lucide-react";
 import { useTorneosStore } from "../../store/useTorneosStore";
+import { showToast } from "../../../../shared/ui/Toast";
 import { calculateTournamentMath, recommendStructure, calculateSchedulingStats, estimateProjectedEndDate, getFeasibilitySuggestions } from "../../utils/tournamentAlgorithms";
 import {
   DEFAULT_GROUPS_PLUS_KNOCKOUT_CONFIG,
@@ -1072,7 +1073,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     if (step === 2) {
       const emptyCats = data.categorias.filter(c => (teams[c.id]?.length || 0) < 2);
       if (emptyCats.length > 0) {
-        alert("Hay categorías con menos de 2 equipos. Por favor elimina las categorías vacías o agrega más equipos.");
+        showToast("Hay categorías con menos de 2 equipos. Elimina las categorías vacías o agrega más equipos.", "warning");
         return;
       }
       setData(p => ({
@@ -1249,8 +1250,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
     const state = { step, data, structures, teams };
     localStorage.setItem("crear_torneo_wizard", JSON.stringify(state));
     localStorage.setItem('wizard_draft_saved', JSON.stringify(state));
-    // Optional: show a small toast or feedback
-    alert("Borrador guardado correctamente");
+    showToast("Borrador guardado correctamente", "success");
   };
 
   const handleReshuffle = () => {
@@ -1363,7 +1363,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
 
     if (!hasContent) {
-      alert("No hay suficientes equipos cargados para generar un fixture.");
+      showToast("No hay suficientes equipos cargados para generar un fixture.", "warning");
       return;
     }
 
@@ -1547,7 +1547,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
 
         if (nameIdx === -1) {
            setIsImporting(false);
-           alert("El archivo debe contener al menos una columna llamada 'Equipo' o 'Nombre'");
+           showToast("El archivo debe contener al menos una columna llamada 'Equipo' o 'Nombre'", "error");
            return;
         }
 
@@ -1605,7 +1605,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
       } catch (err) {
         console.error("Error parsing Excel:", err);
         setIsImporting(false);
-        alert("Hubo un error leyendo el archivo Excel. Asegúrate de usar la plantilla.");
+        showToast("Hubo un error leyendo el archivo Excel. Asegúrate de usar la plantilla.", "error");
       }
       
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -3153,7 +3153,7 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                   </button>
                   <button 
                     onClick={() => {
-                      alert("¡Fixture definitivo generado! El sistema ha bloqueado las jornadas para este borrador.");
+                      showToast("¡Fixture definitivo generado! El sistema bloqueó las jornadas para este borrador.", "success");
                       handleNext();
                     }}
                     style={{ background: CU, color: "#FFF", border: "none", padding: "10px 24px", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(181, 143, 76, 0.2)", transition: "all 0.2s" }}
@@ -3757,8 +3757,8 @@ export default function CrearTorneoWizard({ onFinish, onBack, initialData = null
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {[
                         { icon: Clock, label: "Ajustar horarios", onClick: () => setStep(5) },
-                        { icon: Zap, label: "Regenerar calendario", onClick: () => alert("Regenerando...") },
-                        { icon: Save, label: "Guardar borrador", onClick: () => alert("Guardado") }
+                        { icon: Zap, label: "Regenerar calendario", onClick: () => showToast("Regenerando calendario...", "info") },
+                        { icon: Save, label: "Guardar borrador", onClick: () => showToast("Borrador guardado", "success") }
                       ].map((action, i) => (
                         <button key={i} onClick={action.onClick} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", background: BG, borderRadius: 12, border: `1px solid ${BORDER}`, cursor: "pointer", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = CU_BOR} onMouseLeave={e => e.currentTarget.style.borderColor = BORDER}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
