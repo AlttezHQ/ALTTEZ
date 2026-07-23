@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Sora, Geist, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -16,7 +15,7 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-// Marca ALTTEZ v1.1: Manrope (tipografía oficial) + JetBrains Mono (datos/números)
+// Marca ALTTEZ v1.1: Manrope (tipografÃ­a oficial) + JetBrains Mono (datos/nÃºmeros)
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
@@ -31,7 +30,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "ALTTEZ | Ecosistema Operativo Deportivo",
-  description: "Organiza hoy. Escala mañana. Todos los deportes, un solo sistema.",
+  description: "Organiza hoy. Escala maÃ±ana. Todos los deportes, un solo sistema.",
 };
 
 export default function RootLayout({
