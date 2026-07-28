@@ -177,7 +177,7 @@ export default function RegistroEquipoPage() {
       <main style={{ maxWidth: 800, margin: "40px auto", padding: "0 24px 80px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, background: CU_DIM, border: `1px solid ${CU_BOR}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            {formData.escudo ? <img src={formData.escudo} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Shield size={32} color={CU} />}
+            {formData.escudo ? <img src={formData.escudo} alt="Escudo del equipo" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Shield size={32} color={CU} />}
           </div>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 4px", letterSpacing: "-0.03em" }}>{formData.nombre}</h1>
@@ -195,7 +195,7 @@ export default function RegistroEquipoPage() {
             <div style={{ padding: 24 }}>
               <div style={{ display: "flex", gap: 16, alignItems: "center", padding: 16, background: BG, borderRadius: 16, border: `1px dashed ${BORDER}`, marginBottom: 24 }}>
                 <div style={{ width: 64, height: 64, borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {formData.escudo ? <img src={formData.escudo} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Upload size={24} color={HINT} />}
+                  {formData.escudo ? <img src={formData.escudo} alt="Escudo del equipo" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Upload size={24} color={HINT} />}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: TEXT, marginBottom: 4 }}>ESCUDO O LOGO DEL EQUIPO</div>

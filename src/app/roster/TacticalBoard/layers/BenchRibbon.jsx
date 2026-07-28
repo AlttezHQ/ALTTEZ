@@ -66,7 +66,7 @@ function BenchCard({ bench, saludVal, isDragged, isActivating, onPointerDown, ac
           border: `2px solid ${saludColor(saludVal)}`,
           boxShadow: `0 0 8px ${saludColor(saludVal)}44`,
         }}>
-          <img src={avatar(a?.photo)} alt="" style={{
+          <img src={avatar(a?.photo)} alt={a?.name || "Jugador"} style={{
             width: "100%", height: "100%",
             objectFit: "cover", objectPosition: "top center",
           }}/>

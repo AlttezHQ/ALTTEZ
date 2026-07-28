@@ -251,7 +251,7 @@ export default function IntelDock({
           position: "relative", height: 128, overflow: "hidden",
           background: "radial-gradient(120% 80% at 50% 0%, rgba(47,107,255,0.18) 0%, transparent 70%)",
         }}>
-          <img src={avatar(athlete.photo)} alt="" style={{
+          <img src={avatar(athlete.photo)} alt={athlete.name || "Jugador"} style={{
             width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center",
             filter: "brightness(0.82) contrast(1.05)",
           }}/>
