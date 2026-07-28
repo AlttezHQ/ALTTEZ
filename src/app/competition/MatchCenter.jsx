@@ -42,12 +42,6 @@ const TARJETA_OPTIONS = [
   { value: "roja",     label: "R", color: "#E24B4A" },
 ];
 
-/** Limites maximos por campo para validacion */
-const FIELD_LIMITS = {
-  minutosJugados: 120, goles: 10, asistencias: 10,
-  recuperaciones: 30, duelosGanados: 20,
-};
-
 // ── Framer Motion variants ────────────────────────────────────────────────────
 const fadeUp = {
   initial: { opacity: 0, y: 14 },
@@ -368,7 +362,7 @@ function FatigaIndicator({ rpe }) {
 }
 
 /** Player Card Pro — estética Ultimate Team Charcoal/Neon */
-function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial, onSelect, selected }) {
+function PlayerCardPro({ athlete, stats, alttezScore, rpe, onSelect, selected }) {
   const ovr     = calcOVR(getAthleteScoreHistory(athlete.id));
   const alert   = rpe != null ? getPerformanceAlert(rpe, alttezScore) : null;
   const scoreColor = alttezScore >= 7 ? C.bronce : alttezScore >= 4 ? C.amber : C.danger;
@@ -517,7 +511,7 @@ function PlayerCardPro({ athlete, stats, alttezScore, rpe, historial: _historial
 }
 
 /** Analytics panel para un jugador seleccionado */
-function PlayerAnalytics({ athlete, stats, rpe, historial: _historial }) {
+function PlayerAnalytics({ athlete, stats, rpe }) {
   const scoreHistory = useMemo(() => getAthleteScoreHistory(athlete.id), [athlete.id]);
   const currentScore = stats ? calcALTTEZScore(stats) : 0;
   const recommendations = useMemo(

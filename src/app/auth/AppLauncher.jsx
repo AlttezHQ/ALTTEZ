@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Building2, Trophy, LogOut } from "lucide-react";
-import { PALETTE } from "../../shared/tokens/palette";
 import AuthShell from "../../shared/auth/components/AuthShell";
 import { useAuth } from "../../shared/auth";
 import PageTransition from "../../shared/ui/animations/PageTransition";

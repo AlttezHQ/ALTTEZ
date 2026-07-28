@@ -1,5 +1,4 @@
 import { Component } from "react";
-import { PALETTE as C } from "../tokens/palette";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
 export default class ErrorBoundary extends Component {

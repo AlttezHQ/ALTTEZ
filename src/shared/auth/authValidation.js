@@ -19,16 +19,6 @@ import { sanitizeEmail, sanitizeTextFinal } from "../utils/sanitize";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
 
-/**
- * Campos requeridos según producto/source.
- * CRM necesita más datos porque registra un club completo.
- * Torneos solo necesita nombre de organizador + ciudad.
- */
-const REQUIRED_FIELDS = {
-  crm:     ["nombre", "ciudad", "entrenador", "categorias"],
-  torneos: ["nombre", "ciudad"],
-};
-
 // ── Normalización ─────────────────────────────────────────────────────────────
 
 /**

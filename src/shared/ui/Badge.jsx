@@ -13,7 +13,6 @@
  *  <Badge color={PALETTE.danger} size="xs" variant="solid">riesgo</Badge>
  */
 import { cva } from "class-variance-authority";
-import { PALETTE as C } from "../tokens/palette";
 
 /** Deriva fondo y borde a partir de un color hex o rgb */
 function deriveOpacities(color) {

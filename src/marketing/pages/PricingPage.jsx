@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";

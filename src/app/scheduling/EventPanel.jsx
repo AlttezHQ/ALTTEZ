@@ -3,9 +3,8 @@
  * @description Panel lateral de evento seleccionado con RSVP, disponibilidad y WhatsApp reminder.
  */
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { PALETTE as C } from "../../shared/tokens/palette";
-import GlassPanel from "../../shared/ui/GlassPanel";
 import Badge from "../../shared/ui/Badge";
 import { supabase, isSupabaseReady } from "../../shared/lib/supabase";
 import { showToast } from "../../shared/ui/Toast";

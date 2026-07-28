@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, MapPin, Send } from "lucide-react";
 import { usePageTitle } from "../../shared/hooks/usePageTitle";
 import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 
