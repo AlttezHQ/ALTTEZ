@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -78,7 +79,7 @@ export default function PortalLayout({ children }) {
         }}>
           
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ height: 20 }} />
+            <Image src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" width={20} height={20} style={{ height: 20, width: "auto" }} />
             <span style={{ fontFamily: F.display, fontWeight: 800, fontSize: 16, color: B.text, letterSpacing: "-0.04em" }}>ALTTEZ.</span>
           </Link>
 

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { MARKETING_FONTS as F } from "../theme/brand";
@@ -69,7 +70,7 @@ export default function DashboardPreview() {
           <div style={{ width: 260, borderRight: `1px solid ${GLASS_BORDER}`, padding: "32px 24px", display: "flex", flexDirection: "column", position: "relative", zIndex: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <img src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" style={{ height: 16, filter: "invert(1)" }} />
+                <Image src="/branding/alttez-symbol-transparent.png" alt="ALTTEZ" width={16} height={16} style={{ height: 16, width: "auto", filter: "invert(1)" }} />
               </div>
               <span style={{ color: "white", fontFamily: F.display, fontWeight: 800, fontSize: 18, letterSpacing: "-0.04em" }}>ALTTEZ</span>
             </div>

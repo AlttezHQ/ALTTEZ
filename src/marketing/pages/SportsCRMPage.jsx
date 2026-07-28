@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -78,7 +79,7 @@ function CRMPreview() {
         background: "#F7F6F3",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <img src="/branding/alttez-symbol-transparent.png" alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+          <Image src="/branding/alttez-symbol-transparent.png" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: "contain" }} />
           <span style={{ color: "#0F0F0F", fontSize: 10, fontWeight: 800, letterSpacing: "1.4px" }}>ALTTEZ</span>
         </div>
         <span style={{ color: "#6B7280", fontSize: 9 }}>Bienvenido, Entrenador</span>
@@ -383,7 +384,7 @@ export default function SportsCRMPage() {
                   background: B.primarySoft, border: "1px solid rgba(206, 137, 70,0.18)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <img src="/branding/alttez-symbol-transparent.png" alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
+                  <Image src="/branding/alttez-symbol-transparent.png" alt="" width={13} height={13} style={{ width: 13, height: 13, objectFit: "contain" }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: B.text, marginBottom: 2 }}>{product.label}</div>

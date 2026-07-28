@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { PALETTE } from "../../tokens/palette";
 
@@ -16,7 +17,7 @@ function BrandSymbol() {
       display: "flex", alignItems: "center", justifyContent: "center",
       boxShadow: "0 10px 28px rgba(23,26,28,0.08)",
     }}>
-      <img src={BRAND_SYMBOL} alt="ALTTEZ" style={{ width: 24, height: 24, objectFit: "contain" }} />
+      <Image src={BRAND_SYMBOL} alt="ALTTEZ" width={24} height={24} style={{ width: 24, height: 24, objectFit: "contain" }} />
     </div>
   );
 }
