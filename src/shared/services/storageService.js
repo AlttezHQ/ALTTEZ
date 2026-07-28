@@ -16,7 +16,6 @@ import {
 } from "../constants/initialStates";
 import { validateSesion } from "../constants/schemas";
 
-const DEFAULT_CLUB = { nombre:"", disciplina:"", ciudad:"", entrenador:"", temporada:"", categorias:[], campos:[], descripcion:"", telefono:"", email:"" };
 
 // ── Callback para errores de cuota (inyectado desde App) ──
 let _onStorageError = null;
@@ -192,7 +191,9 @@ export function importBackup(jsonString) {
   }
 }
 
-export default {
+const storageService = {
   getMode, clearAll, loadDemoState, loadProductionState, logout,
   calcStats, buildSesion, exportBackup, importBackup, setStorageErrorHandler,
 };
+
+export default storageService;

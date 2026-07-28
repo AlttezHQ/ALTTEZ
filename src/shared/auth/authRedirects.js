@@ -71,7 +71,7 @@ export function getPostLogoutRedirect() {
  * @param {string} source - "universal" | "torneos" | "crm"
  * @returns {string} Ruta destino
  */
-export function getPostRegisterRedirect(source) {
+export function getPostRegisterRedirect() {
   // Con el SSO, el source suele ser universal. El routing lo enviará a CRM para onboarding
   return "/crm";
 }

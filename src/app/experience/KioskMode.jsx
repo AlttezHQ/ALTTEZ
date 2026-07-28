@@ -22,7 +22,7 @@ export default function KioskMode() {
   const session = useStore(state => state.session);
 
   const [selected, setSelected] = useState(null); // athlete
-  const [_lastChecked, setLastChecked] = useState({}); // athleteId → timestamp
+  const [, setLastChecked] = useState({}); // athleteId → timestamp
 
   const presentAthletes = athletes.filter(a => a.status === "P");
 

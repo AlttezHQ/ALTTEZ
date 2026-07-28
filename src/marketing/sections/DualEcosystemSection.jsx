@@ -52,8 +52,6 @@ export default function DualEcosystemSection() {
     });
   }, [smoothProgress, activeIndex]);
 
-  const activeData = CONTENT[activeIndex];
-
   return (
     <section ref={containerRef} style={{
       position: "relative",

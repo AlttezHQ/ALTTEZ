@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Shield, Users, Upload, Plus, Trash2, CheckCircle2, ChevronRight, Save, Info, AlertTriangle } from "lucide-react";
+import { Trophy, Shield, Users, Upload, Plus, Trash2, CheckCircle2, Save, Info, AlertTriangle } from "lucide-react";
 import { PALETTE, ELEVATION } from "../../../shared/tokens/palette";
 import { supabase, isSupabaseReady } from "../../../shared/lib/supabase";
 import { uploadImage } from "../utils/storageHelper";

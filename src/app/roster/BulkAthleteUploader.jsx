@@ -37,8 +37,6 @@ import { sanitizeText, sanitizePhone } from "../../shared/utils/sanitize";
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const REQUIRED_HEADERS = ["name", "pos", "posCode", "dob"];
-const OPTIONAL_HEADERS  = ["contact"];
-const ALL_HEADERS       = [...REQUIRED_HEADERS, ...OPTIONAL_HEADERS];
 
 const MAX_ROWS    = 200;  // Límite de seguridad por lote
 const MAX_FILE_MB = 2;    // Máximo 2 MB
@@ -273,10 +271,13 @@ export default function BulkAthleteUploader({ onCommit, onCancel, clubId }) {
 
     try {
       // Strip internal meta-fields antes de enviar
-      const payload = validRows.map(({ _rowIndex, _errors, _valid, ...athlete }) => ({
-        ...athlete,
-        club_id: clubId,
-      }));
+      const payload = validRows.map((row) => {
+        const athlete = { ...row };
+        delete athlete._rowIndex;
+        delete athlete._errors;
+        delete athlete._valid;
+        return { ...athlete, club_id: clubId };
+      });
       await onCommit(payload);
       setStage("done");
     } catch (err) {

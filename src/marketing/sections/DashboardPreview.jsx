@@ -1,7 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
-import { Activity, Users, Zap, Search, Bell, Menu } from "lucide-react";
+import { MARKETING_FONTS as F } from "../theme/brand";
+import { Activity, Users, Zap, Search, Bell } from "lucide-react";
 
 export default function DashboardPreview() {
   const containerRef = useRef(null);

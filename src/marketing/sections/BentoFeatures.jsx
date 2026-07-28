@@ -89,7 +89,7 @@ function BentoCard({ feat, idx }) {
         className="hz-glow"
       />
       <motion.div style={{ position: "absolute", inset: 0, opacity: 0, zIndex: 0 }} 
-        onUpdate={(latest) => {
+        onUpdate={() => {
           if (rectRef.current) {
             rectRef.current.style.setProperty('--mouseX', `${smoothMouseX.get()}px`);
             rectRef.current.style.setProperty('--mouseY', `${smoothMouseY.get()}px`);

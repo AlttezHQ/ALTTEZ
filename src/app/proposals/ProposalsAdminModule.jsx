@@ -13,12 +13,10 @@ import {
   setProposalsClubId,
 } from "../../shared/services/proposalsService";
 import { showToast } from "../../shared/ui/Toast";
-import { PALETTE as C } from "../../shared/tokens/palette";
 
 const FONT = "var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 const MONO = "var(--font-mono), 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace";
 const CU   = "#CE8946";
-const CU_HI = "#D8A06B";
 const CU_DIM = "rgba(206,137,70,0.10)";
 const CU_BOR = "rgba(206,137,70,0.28)";
 const BG   = "#F6F1EA";
@@ -562,7 +560,7 @@ function DetailPanel({ proposal, onClose, onStatusChange }) {
               displayName = parsed.name;
               displayEmail = parsed.email;
               displaySig = parsed.sig;
-            } catch (e) {}
+            } catch {}
           }
           return (
             <div style={{ padding:"16px", borderRadius:12, background:"rgba(47,165,111,0.07)", border:"1px solid rgba(47,165,111,0.24)", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -617,7 +615,7 @@ function DetailPanel({ proposal, onClose, onStatusChange }) {
 // ════════════════════════════════════════════════
 // Main Module
 // ════════════════════════════════════════════════
-export default function ProposalsAdminModule({ clubId, mode }) {
+export default function ProposalsAdminModule({ clubId }) {
   const initialUiState = readSessionJson(PROPOSALS_UI_STATE_KEY, null);
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -847,7 +845,7 @@ export default function ProposalsAdminModule({ clubId, mode }) {
                         if (p.signed_name && p.signed_name.startsWith("{")) {
                           try {
                             displayName = JSON.parse(p.signed_name).name;
-                          } catch (e) {}
+                          } catch {}
                         }
                         return (
                           <span style={{ display:"inline-flex", alignItems:"center", gap:5, fontFamily: FONT, fontSize:11, color: SUCCESS, fontWeight:600 }}>

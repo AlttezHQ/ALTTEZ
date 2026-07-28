@@ -106,7 +106,6 @@ function AttrRow({ label, value, accent = C.blue }) {
 export default function IntelDock({
   selectedStarter,
   historial = [],
-  _phase,
   phaseLabel,
   instructions,
   onInstructions,

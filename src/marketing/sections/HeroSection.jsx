@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
-import { MARKETING_BRAND as B, MARKETING_FONTS as F } from "../theme/brand";
 import DashboardPreview from "./DashboardPreview";
 
 export default function HeroSection() {

@@ -27,6 +27,7 @@
  * @returns {string} URL de retrato JPEG
  */
 export const getAvatarUrl = (photo, _bg) => {
+  void _bg;
   // Caso 1 — base64 subida por el usuario
   if (typeof photo === "string" && photo.startsWith("data:")) return photo;
 

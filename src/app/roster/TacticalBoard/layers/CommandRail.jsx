@@ -21,7 +21,7 @@
  * @version 1.0 — Broadcast Arena
  */
 import { motion } from "framer-motion";
-import { PALETTE as C, ELEVATION } from "../../../../shared/tokens/palette";
+import { PALETTE as C } from "../../../../shared/tokens/palette";
 
 function RailBlock({ label, children, accent = C.blue }) {
   return (
