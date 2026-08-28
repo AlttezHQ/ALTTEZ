@@ -64,3 +64,23 @@ Las carpetas rastreadas y necesarias para el producto son:
 - supabase/: migraciones, configuracion y Edge Functions.
 
 Las carpetas locales de agentes, herramientas, artefactos, documentacion interna y dependencias se mantienen fuera de Git mediante .gitignore.
+
+# Supabase keep-alive
+
+El workflow `.github/workflows/supabase-keep-alive.yml` ejecuta diariamente una
+consulta de solo lectura contra `public.keep_alive` para generar actividad de base
+de datos en proyectos Supabase Free. Tambien puede ejecutarse manualmente desde
+GitHub Actions.
+
+Configura este secreto en **GitHub > Settings > Secrets and variables >
+Actions**:
+
+- `SUPABASE_PUBLISHABLE_KEY`: clave publishable (`sb_publishable_...`) o, para
+  proyectos legacy, la clave `anon`. Nunca uses `service_role` o una secret key.
+
+Despues de configurarlos, ejecuta **Supabase Keep Alive > Run workflow** y
+confirma que el job termine con `HTTP 200`. Los cron de GitHub Actions solo se
+ejecutan desde la rama predeterminada y GitHub puede deshabilitarlos tras periodos
+prolongados sin actividad del repositorio; revisa tambien los correos de aviso de
+Supabase. Un plan Supabase pago es la unica garantia de que el proyecto no sea
+pausado automaticamente por inactividad.

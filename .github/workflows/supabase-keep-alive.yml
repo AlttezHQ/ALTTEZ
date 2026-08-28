@@ -1,0 +1,59 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Daily database activity; the uncommon minute reduces cron congestion.
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
+
+jobs:
+  query-database:
+    name: Query Supabase database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: https://rwqqdwlldbegkivqvtwk.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          if [[ -z "$SUPABASE_PUBLISHABLE_KEY" ]]; then
+            echo "Missing SUPABASE_PUBLISHABLE_KEY repository secret."
+            exit 1
+          fi
+
+      - name: Generate user database activity
+        shell: bash
+        run: |
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          http_status="$(curl \
+            --silent \
+            --show-error \
+            --retry 3 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --header "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            --header "Accept: application/json" \
+            "$SUPABASE_URL/rest/v1/keep_alive?select=id&limit=1")"
+
+          if [[ "$http_status" != "200" ]]; then
+            echo "Supabase database query failed with HTTP $http_status."
+            sed -E 's/(sb_(publishable|secret)_[A-Za-z0-9_-]+)/[REDACTED]/g' "$response_file"
+            exit 1
+          fi
+
+          echo "Supabase database query completed successfully (HTTP 200)."
