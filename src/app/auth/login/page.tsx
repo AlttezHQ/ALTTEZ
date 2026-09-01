@@ -3,18 +3,23 @@
 import { Suspense } from "react";
 import AuthLoginForm from "@/shared/auth/components/AuthLoginForm";
 import AuthShell from "@/shared/auth/components/AuthShell";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
+  const withRedirect = (path: string) => redirect ? `${path}?redirect=${encodeURIComponent(redirect)}` : path;
   return (
     <AuthShell maxWidth={500}>
-      <Suspense fallback={<div style={{ color: 'white', textAlign: 'center', padding: '20px' }}>Cargando...</div>}>
         <AuthLoginForm 
-          onRegisterClick={() => router.push("/auth/register")} 
-          onRecoverClick={() => router.push("/auth/recover")} 
+          onRegisterClick={() => router.push(withRedirect("/auth/register"))}
+          onRecoverClick={() => router.push(withRedirect("/auth/recover"))}
         />
-      </Suspense>
     </AuthShell>
   );
+}
+
+export default function LoginPage() {
+  return <Suspense fallback={<AuthShell maxWidth={500}><p>Cargando acceso...</p></AuthShell>}><LoginContent /></Suspense>;
 }

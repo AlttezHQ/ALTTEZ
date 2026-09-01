@@ -15,7 +15,7 @@ const sora = Sora({
   subsets: ["latin"],
 });
 
-// Marca ALTTEZ v1.1: Manrope (tipografía oficial) + JetBrains Mono (datos/números)
+// Marca ALTTEZ v1.1: Manrope (tipografÃ­a oficial) + JetBrains Mono (datos/nÃºmeros)
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
@@ -29,8 +29,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ALTTEZ | Ecosistema Operativo Deportivo",
-  description: "Organiza hoy. Escala mañana. Todos los deportes, un solo sistema.",
+  title: "ALTTEZ Torneos | Operación competitiva",
+  description: "Crea, programa y opera competencias deportivas desde ALTTEZ Torneos.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

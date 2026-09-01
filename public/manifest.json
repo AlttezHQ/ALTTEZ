@@ -1,13 +1,13 @@
 {
-  "name": "ALTTEZ",
-  "short_name": "ALTTEZ",
-  "description": "CRM Deportivo Inteligente - Gestiona tu club con rendimiento profesional",
+  "name": "ALTTEZ Torneos",
+  "short_name": "Torneos",
+  "description": "Crea, programa y opera competencias deportivas desde ALTTEZ Torneos",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#05070B",
-  "theme_color": "#0B1220",
+  "background_color": "#111315",
+  "theme_color": "#111315",
   "lang": "es",
   "dir": "ltr",
   "categories": ["sports", "business", "productivity"],
@@ -45,24 +45,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Mi Club",
-      "short_name": "Club",
-      "description": "Ver el estado del club",
-      "url": "/?view=miclub",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
-    },
-    {
-      "name": "Plantilla",
-      "short_name": "Plantilla",
-      "description": "Gestion de atletas",
-      "url": "/?view=plantilla",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
-    },
-    {
-      "name": "Entrenamiento",
-      "short_name": "Entreno",
-      "description": "Plan de entrenamiento",
-      "url": "/?view=entrenamiento",
+      "name": "Mis torneos",
+      "short_name": "Torneos",
+      "description": "Abrir la operación de torneos",
+      "url": "/torneos",
       "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }
   ],

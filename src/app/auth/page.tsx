@@ -1,7 +1,5 @@
-"use client";
-
-import LandingPage from "@/shared/auth/LandingPage";
+import { redirect } from "next/navigation";
 
 export default function AuthPage() {
-  return <LandingPage />;
+  redirect("/auth/login?redirect=/torneos");
 }

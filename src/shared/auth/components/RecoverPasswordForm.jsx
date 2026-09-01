@@ -13,7 +13,7 @@ const CU = PALETTE.bronce;
  * @description Formulario de recuperación de contraseña vía Supabase resetPasswordForEmail.
  * Muestra feedback de éxito cuando se envía el email de recuperación.
  */
-export default function RecoverPasswordForm({ onBack }) {
+export default function RecoverPasswordForm({ onBack, redirectPath = "" }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,8 @@ export default function RecoverPasswordForm({ onBack }) {
     setLoading(true);
     setError(null);
     try {
-      const redirectTo = `${window.location.origin}/crm`;
+      const safeRedirect = typeof redirectPath === "string" && redirectPath.startsWith("/torneos") ? redirectPath : "/torneos";
+      const redirectTo = `${window.location.origin}${safeRedirect}`;
       const { error: err } = await supabase.auth.resetPasswordForEmail(clean, { redirectTo });
       if (err) {
         setError(err.message || "No se pudo enviar el email de recuperación");

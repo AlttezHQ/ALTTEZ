@@ -1,119 +1,17 @@
-import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
 
-/**
- * @component AuthShell
- * @description Marco de autenticación ALTTEZ — diseño split-screen premium.
- * Izquierda: panel de marca (grafito + bronce). Derecha: formulario sobre marfil.
- * En móvil el panel de marca se oculta y el formulario ocupa todo.
- *
- * Inyecta estilos globales scoped (.alttez-auth-root): tipografía Manrope,
- * corrección de autofill (relleno gris del navegador) y focus ring bronce.
- */
-
-const FONT = "var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif";
 const LOGO = "/branding/alttez-symbol-transparent.png";
 
-const AUTH_CSS = `
-  .alttez-auth-root, .alttez-auth-root input, .alttez-auth-root button, .alttez-auth-root h1, .alttez-auth-root p, .alttez-auth-root span, .alttez-auth-root label {
-    font-family: ${FONT};
-  }
-  /* Fix autofill: el navegador pinta un relleno gris/azul sobre el input */
-  .alttez-auth-root input:-webkit-autofill,
-  .alttez-auth-root input:-webkit-autofill:hover,
-  .alttez-auth-root input:-webkit-autofill:focus,
-  .alttez-auth-root input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
-    -webkit-text-fill-color: #1F1F1D !important;
-    caret-color: #1F1F1D;
-    transition: background-color 9999s ease-in-out 0s;
-  }
-  /* Focus ring bronce uniforme (vence el border inline vía !important) */
-  .alttez-auth-root input:focus {
-    border-color: #CE8946 !important;
-    box-shadow: 0 0 0 3px rgba(206,137,70,0.15) !important;
-  }
-`;
-
 function BrandPanel() {
-  return (
-    <div
-      className="alttez-auth-brand"
-      style={{
-        position: "relative", width: "48%", maxWidth: 620, minHeight: "100vh", flexShrink: 0,
-        background: "linear-gradient(160deg, #232019 0%, #161310 100%)",
-        overflow: "hidden", display: "flex", flexDirection: "column",
-        justifyContent: "space-between", padding: "48px 44px",
-      }}
-    >
-      {/* Glow bronce + grilla sutil */}
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 60% 50% at 30% 25%, rgba(206,137,70,0.16) 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", inset: 0, opacity: 0.5, pointerEvents: "none", backgroundImage: "linear-gradient(rgba(246,241,234,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(246,241,234,0.05) 1px, transparent 1px)", backgroundSize: "56px 56px", maskImage: "radial-gradient(circle at 30% 30%, rgba(0,0,0,1) 0%, transparent 75%)", WebkitMaskImage: "radial-gradient(circle at 30% 30%, rgba(0,0,0,1) 0%, transparent 75%)" }} />
-
-      {/* Logo */}
-      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
-        <img src={LOGO} alt="ALTTEZ" style={{ height: 30, width: "auto" }} onError={(e) => { e.currentTarget.style.display = "none"; }} />
-        <span style={{ fontFamily: FONT, fontSize: 20, fontWeight: 800, letterSpacing: "0.08em", color: "#F6F1EA" }}>ALTTEZ</span>
-      </div>
-
-      {/* Tagline */}
-      <div style={{ position: "relative", maxWidth: 380 }}>
-        <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, letterSpacing: "0.26em", textTransform: "uppercase", color: "#CE8946", marginBottom: 20 }}>
-          Ecosistema operativo deportivo
-        </div>
-        <h2 style={{ fontFamily: FONT, fontSize: "clamp(30px, 3.4vw, 40px)", fontWeight: 800, lineHeight: 1.08, letterSpacing: "-0.03em", color: "#F6F1EA", margin: 0 }}>
-          Organiza hoy.<br />Escala mañana.
-        </h2>
-        <p style={{ fontFamily: FONT, fontSize: 14.5, lineHeight: 1.65, color: "rgba(246,241,234,0.55)", marginTop: 22 }}>
-          Todos los deportes, un solo sistema. Gestión de clubes, torneos y operación en una sola plataforma.
-        </p>
-      </div>
-
-      {/* Footer */}
-      <div style={{ position: "relative", fontFamily: FONT, fontSize: 12, color: "rgba(246,241,234,0.4)" }}>
-        © {new Date().getFullYear()} ALTTEZ S.A.S.
-      </div>
-    </div>
-  );
+  return <aside className="auth-shell__brand"><div className="auth-shell__brand-grid" aria-hidden="true" /><Link className="auth-shell__logo" href="/" aria-label="ALTTEZ Torneos, volver al inicio"><Image src={LOGO} alt="" width={26} height={26} /><span>ALTTEZ Torneos</span></Link><div className="auth-shell__statement"><p>Acceso seguro para organizadores</p><h2>Tu torneo, bajo control.</h2><div className="auth-shell__systems"><span>Competencias</span><span>Programación</span><span>Portal público</span></div></div><div className="auth-shell__foot"><span>Operación competitiva deportiva</span><span>© {new Date().getFullYear()} ALTTEZ S.A.S.</span></div></aside>;
 }
 
 export default function AuthShell({ children, maxWidth = 440 }) {
-  return (
-    <div className="alttez-auth-root light" style={{ minHeight: "100vh", display: "flex", background: "#F6F1EA", fontFamily: FONT }}>
-      <style>{AUTH_CSS}</style>
-
-      {/* Panel de marca (oculto en móvil) */}
-      <div className="alttez-auth-brand-wrap">
-        <BrandPanel />
-      </div>
-
-      {/* Columna del formulario */}
-      <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", overflow: "hidden" }}>
-        {/* Grilla sutil de fondo */}
-        <div
-          style={{
-            position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.4,
-            backgroundImage: "linear-gradient(#EDE8D0 1px, transparent 1px), linear-gradient(90deg, #EDE8D0 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-            maskImage: "radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 80%)",
-            WebkitMaskImage: "radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 80%)",
-          }}
-        />
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{ width: "100%", maxWidth, position: "relative", zIndex: 2 }}
-        >
-          {children}
-        </motion.div>
-      </div>
-
-      <style>{`
-        .alttez-auth-brand-wrap { display: block; }
-        @media (max-width: 860px) {
-          .alttez-auth-brand-wrap { display: none; }
-        }
-      `}</style>
-    </div>
-  );
+  return <div className="alttez-auth-root light"><BrandPanel /><main className="auth-shell__main"><div className="auth-shell__mobile-brand"><Image src={LOGO} alt="" width={26} height={26} /><strong>ALTTEZ</strong></div><div className="auth-shell__content" style={{ maxWidth }}>{children}</div></main><style>{`
+    .alttez-auth-root{min-height:100dvh;display:grid;grid-template-columns:minmax(360px,42%) 1fr;background:#EEECE7;color:#111315;font-family:var(--font-inter),sans-serif}.alttez-auth-root *{box-sizing:border-box}.auth-shell__brand{position:relative;min-height:100dvh;padding:42px clamp(32px,4vw,64px);overflow:hidden;background:#111315;color:#F5F7F8;display:flex;flex-direction:column;justify-content:space-between}.auth-shell__brand-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(245,247,248,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(245,247,248,.04) 1px,transparent 1px);background-size:64px 64px;mask-image:linear-gradient(145deg,black,transparent 72%)}
+    .auth-shell__logo{position:relative;display:flex;align-items:center;gap:12px;color:#F5F7F8;text-decoration:none;font:750 16px/1 var(--font-sora),sans-serif;letter-spacing:.08em}.auth-shell__logo img,.auth-shell__mobile-brand img{width:26px;height:26px;object-fit:contain;filter:brightness(0) invert(1)}.auth-shell__statement{position:relative;max-width:560px}.auth-shell__statement>p{margin:0 0 24px;color:#C27A42;font-size:11px;font-weight:650;letter-spacing:.12em;text-transform:uppercase}.auth-shell__statement h2{max-width:520px;margin:0;font:650 clamp(40px,4.8vw,72px)/.98 var(--font-sora),sans-serif;letter-spacing:-.055em;text-wrap:balance}.auth-shell__systems{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:38px;padding-top:22px;border-top:1px solid #303438;color:#8E959B;font-size:11px}.auth-shell__systems span:before{content:"";display:inline-block;width:5px;height:5px;margin-right:8px;border-radius:50%;background:#C27A42;vertical-align:1px}.auth-shell__foot{position:relative;display:flex;justify-content:space-between;gap:20px;color:#666D72;font-size:9px;letter-spacing:.04em}
+    .auth-shell__main{position:relative;min-width:0;display:flex;align-items:center;justify-content:center;padding:56px clamp(24px,7vw,112px)}.auth-shell__content{width:100%}.auth-shell__mobile-brand{display:none;align-items:center;gap:10px;margin-bottom:56px;font:750 14px/1 var(--font-sora),sans-serif;letter-spacing:.07em}.auth-shell__mobile-brand img{filter:none}.alttez-auth-root input:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px #F8F7F3 inset!important;-webkit-text-fill-color:#111315!important}.alttez-auth-root input:focus{border-color:#C27A42!important;box-shadow:0 0 0 3px rgba(194,122,66,.14)!important}.alttez-auth-root button:focus-visible,.alttez-auth-root a:focus-visible{outline:3px solid rgba(194,122,66,.4);outline-offset:3px}
+    @media(max-width:880px){.alttez-auth-root{display:block}.auth-shell__brand{display:none}.auth-shell__main{min-height:100dvh;display:block;padding:32px 24px 56px}.auth-shell__mobile-brand{display:flex}.auth-shell__content{margin:0 auto}}@media(prefers-reduced-motion:reduce){.alttez-auth-root *{transition-duration:.01ms!important}}
+  `}</style></div>;
 }

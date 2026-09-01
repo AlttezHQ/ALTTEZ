@@ -1,9 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { PALETTE } from "../../tokens/palette";
 import { signInWithGoogle } from "../../services/authService";
-
-const SPRING = { type: "spring", stiffness: 380, damping: 28 };
 
 function GoogleIcon() {
   return (
@@ -21,7 +18,7 @@ function GoogleIcon() {
  * @description Botón de inicio de sesión con Google reutilizable.
  * Acepta redirectTo para definir la URL de retorno post-OAuth.
  */
-export default function GoogleLoginButton({ redirectTo = window.location.origin, disabled = false, label = "Continuar con Google" }) {
+export default function GoogleLoginButton({ redirectTo = "", disabled = false, label = "Continuar con Google" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -40,26 +37,24 @@ export default function GoogleLoginButton({ redirectTo = window.location.origin,
 
   return (
     <div>
-      <motion.button
+      <button
         type="button"
         onClick={handleGoogle}
         disabled={disabled || loading}
-        whileHover={{ y: -1, borderColor: PALETTE.bronce }}
-        whileTap={{ scale: 0.97 }}
-        transition={SPRING}
         style={{
-          width: "100%", minHeight: 46,
-          borderRadius: 12, border: `1px solid ${PALETTE.border}`,
+          width: "100%", minHeight: 50,
+          borderRadius: 8, border: "1px solid #CDC9C1",
           background: PALETTE.surface, color: PALETTE.text,
           fontSize: 12, fontWeight: 700, fontFamily: "inherit",
           cursor: (disabled || loading) ? "not-allowed" : "pointer",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           opacity: (disabled || loading) ? 0.65 : 1,
+          transition: "transform 160ms cubic-bezier(.22,1,.36,1), border-color 160ms cubic-bezier(.22,1,.36,1)",
         }}
       >
         <GoogleIcon />
         {loading ? "Redirigiendo..." : label}
-      </motion.button>
+      </button>
       {error && (
         <div style={{
           marginTop: 6, fontSize: 11, color: PALETTE.danger,

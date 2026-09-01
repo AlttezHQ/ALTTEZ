@@ -37,15 +37,14 @@ export default function PasswordInput({ value, onChange, onKeyDown, placeholder,
       />
       <button
         type="button"
-        tabIndex={-1}
         onClick={() => setVisible(v => !v)}
         style={{
           position: "absolute", right: 12, top: "50%",
           transform: "translateY(-50%)",
           background: "none", border: "none",
-          cursor: "pointer", padding: 2,
+          cursor: "pointer", padding: 8,
           color: "#667085", display: "flex",
-          alignItems: "center",
+          alignItems: "center", borderRadius: 6,
         }}
         aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
       >
