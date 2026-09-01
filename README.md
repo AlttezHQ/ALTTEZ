@@ -47,23 +47,31 @@ Consulta [AGENTS.md](./AGENTS.md) para reglas de trabajo con agentes.
 
 ## Principios del Proyecto
 
-Las reglas operativas inamovibles del repositorio viven en
-[`.specify/memory/constitution.md`](./.specify/memory/constitution.md). Cualquier
-spec, plan o implementacion nueva debe alinearse con esa constitucion antes de
-expandir arquitectura, estilos o tooling.
+Las reglas operativas están en [AGENTS.md](./AGENTS.md), la estructura canónica
+en [ARCHITECTURE.md](./ARCHITECTURE.md) y la responsabilidad por área en
+[OWNERSHIP.md](./OWNERSHIP.md). Cualquier plan o implementación debe consultar
+estos documentos antes de expandir arquitectura, estilos o tooling.
 
 ## Mapa vigente del repositorio
 
-Las carpetas rastreadas y necesarias para el producto son:
+La arquitectura detallada y las reglas para ubicar código están en
+[ARCHITECTURE.md](./ARCHITECTURE.md). Los responsables por área se encuentran en
+[OWNERSHIP.md](./OWNERSHIP.md).
+
+Las raíces rastreadas y necesarias para el producto son:
 
 - .github/: CI, build y seguridad.
 - .specify/: constitucion, especificaciones y automatizacion de trabajo.
-- data/: pipeline analítico aislado de Airflow, dbt y Snowflake; actualmente no lo ejecuta la aplicación.
+- data/: pipeline analítico aislado de Airflow, dbt y Snowflake; la aplicación no lo ejecuta directamente.
 - public/: activos PWA, marca y service worker de produccion.
 - src/: rutas Next.js, CRM, torneos, marketing, UI compartida, servicios y pruebas.
 - supabase/: migraciones, configuracion y Edge Functions.
 
 Las carpetas locales de agentes, herramientas, artefactos, documentacion interna y dependencias se mantienen fuera de Git mediante .gitignore.
+
+No se usan carpetas genéricas `frontend/` y `backend/`: `src/`, `supabase/` y
+`data/` ya representan las fronteras de producto web, backend transaccional y
+analítica, respetando las convenciones de sus herramientas.
 
 # Supabase keep-alive
 
