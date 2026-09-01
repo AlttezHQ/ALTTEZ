@@ -1,82 +1,50 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
+"use client";
+
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import DashboardPreview from "./DashboardPreview";
 
+const PROOF = [
+  "Clubes y competiciones en una sola infraestructura",
+  "Operación privada y portales públicos conectados",
+  "Datos, calendario y gestión con trazabilidad",
+];
+
 export default function HeroSection() {
+  const router = useRouter();
   return (
-    <section className="relative pt-[180px] pb-[120px] bg-grafito overflow-hidden" style={{
-      backgroundImage: `
-        linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)
-      `,
-      backgroundSize: "40px 40px"
-    }}>
-      {/* Soft Structuralism Radial Mesh */}
-      <div 
-        className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[120vw] h-[80vh] opacity-30 pointer-events-none z-0"
-        style={{
-          background: `radial-gradient(ellipse at top, var(--color-cobre) 0%, transparent 60%)`,
-        }} 
-      />
-
-      <div className="max-w-[1400px] mx-auto px-6 relative z-10">
-        <div className="text-center flex flex-col items-center">
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-widest text-marfil/70 mb-10">
-              <span className="w-1.5 h-1.5 rounded-full bg-cobre" />
-              El Nuevo Estándar Operativo
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: [0.32, 0.72, 0, 1] }}
-            className="m-0 text-[clamp(56px,9vw,110px)] font-[var(--font-sora)] font-extrabold text-marfil leading-[0.9] tracking-[-0.05em] max-w-[1100px]"
-          >
-            Menos gestión.<br/>
-            <span className="text-cobre">Más fútbol.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            className="mt-8 mb-12 text-[clamp(18px,2.5vw,24px)] text-marfil/70 leading-relaxed max-w-[680px]"
-          >
-            El sistema operativo definitivo que automatiza la logística de tu club y la gestión de tus competiciones.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.32, 0.72, 0, 1] }}
-            className="flex gap-4 items-center"
-          >
-            <button className="group flex items-center gap-4 py-2 pr-2 pl-8 bg-marfil text-grafito border-none rounded-full text-base font-bold cursor-pointer transition-all duration-300 shadow-[0_12px_32px_rgba(0,0,0,0.3)] hover:scale-[0.98]">
-              Solicitar Demo
-              <div className="w-10 h-10 rounded-full bg-grafito/10 flex items-center justify-center transition-all duration-300 group-hover:bg-grafito group-hover:text-marfil">
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-[0.5px]" />
-              </div>
+    <section className="alttez-hero">
+      <div className="alttez-hero__grid" aria-hidden="true" />
+      <div className="alttez-hero__frame">
+        <div className="alttez-hero__copy">
+          <p className="alttez-hero__kicker">Infraestructura operativa deportiva</p>
+          <h1>El deporte exige<span>control.</span></h1>
+          <p className="alttez-hero__lede">ALTTEZ conecta la gestión de clubes, competiciones y operación deportiva en un sistema preparado para trabajar todos los días.</p>
+          <div className="alttez-hero__actions">
+            <button className="alttez-hero__primary" onClick={() => router.push("/contacto?origen=hero")}>
+              Hablar con ALTTEZ <span aria-hidden="true"><ArrowRight size={17} /></span>
             </button>
-
-            <button className="flex items-center gap-3 px-8 py-4 bg-transparent text-marfil border border-white/20 rounded-full text-base font-bold cursor-pointer transition-colors hover:bg-white/5">
-              <Play size={18} />
-              Ver plataforma
-            </button>
-          </motion.div>
+            <button className="alttez-hero__secondary" onClick={() => document.getElementById("ecosistema-alttez")?.scrollIntoView({ behavior: "smooth" })}>Explorar el ecosistema</button>
+          </div>
+          <ul className="alttez-hero__proof" aria-label="Capacidades principales">
+            {PROOF.map((item) => <li key={item}><CheckCircle2 size={15} aria-hidden="true" />{item}</li>)}
+          </ul>
         </div>
-
-        {/* Dashboard Preview Injection */}
-        <div className="mt-[100px]">
+        <div className="alttez-hero__product" aria-label="Vista del ecosistema ALTTEZ">
+          <div className="alttez-hero__product-label"><span>ALTTEZ / Ecosistema</span><span>Operación conectada</span></div>
           <DashboardPreview />
         </div>
       </div>
+      <style>{`
+        .alttez-hero{position:relative;width:100vw;max-width:100%;min-height:100dvh;overflow:hidden;background:#111315;color:#F5F7F8;padding:clamp(132px,14vw,190px) 0 clamp(72px,8vw,112px)}
+        .alttez-hero__grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(245,247,248,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(245,247,248,.045) 1px,transparent 1px);background-size:64px 64px;mask-image:linear-gradient(to bottom,black 0%,transparent 88%)}
+        .alttez-hero__frame{position:relative;width:calc(100% - 48px);max-width:1480px;margin:0 auto;display:grid;grid-template-columns:minmax(340px,.82fr) minmax(560px,1.18fr);gap:clamp(48px,6vw,104px);align-items:center}.alttez-hero__copy{max-width:640px;min-width:0}
+        .alttez-hero__kicker{margin:0 0 28px;color:#C27A42;font:600 12px/1 var(--font-inter),sans-serif;letter-spacing:.13em;text-transform:uppercase}.alttez-hero h1{margin:0;font-family:var(--font-sora),sans-serif;font-size:clamp(58px,6.6vw,108px);font-weight:700;line-height:.92;letter-spacing:-.06em;text-wrap:balance}.alttez-hero h1 span{display:block;color:#C27A42}.alttez-hero__lede{width:100%;max-width:590px;margin:34px 0 0;color:#B7BDC2;font:400 clamp(17px,1.45vw,21px)/1.6 var(--font-inter),sans-serif;text-wrap:pretty;overflow-wrap:anywhere}
+        .alttez-hero__actions{display:flex;align-items:center;gap:12px;margin-top:38px}.alttez-hero__actions button{min-height:52px;border-radius:8px;font:650 14px/1 var(--font-inter),sans-serif;cursor:pointer;transition:transform 180ms cubic-bezier(.22,1,.36,1),background-color 180ms cubic-bezier(.22,1,.36,1),border-color 180ms cubic-bezier(.22,1,.36,1)}.alttez-hero__actions button:active{transform:scale(.98)}.alttez-hero__actions button:focus-visible{outline:3px solid rgba(194,122,66,.42);outline-offset:3px}
+        .alttez-hero__primary{display:inline-flex;align-items:center;gap:18px;padding:5px 6px 5px 20px;border:1px solid #C27A42;background:#C27A42;color:#F5F7F8}.alttez-hero__primary span{width:40px;height:40px;display:grid;place-items:center;border-radius:5px;background:#111315;transition:transform 180ms cubic-bezier(.22,1,.36,1)}.alttez-hero__primary:hover{background:#D48E56;border-color:#D48E56}.alttez-hero__primary:hover span{transform:translateX(2px)}.alttez-hero__secondary{padding:0 20px;color:#F5F7F8;background:transparent;border:1px solid #3A3E42}.alttez-hero__secondary:hover{border-color:#747A80;background:#191C1F}
+        .alttez-hero__proof{list-style:none;padding:26px 0 0;margin:34px 0 0;border-top:1px solid #303438;display:grid;gap:11px}.alttez-hero__proof li{display:flex;gap:10px;align-items:center;color:#92999F;font:500 12px/1.45 var(--font-inter),sans-serif}.alttez-hero__proof svg{color:#C27A42;flex:none}.alttez-hero__product{min-width:0}.alttez-hero__product-label{display:flex;justify-content:space-between;margin-bottom:12px;color:#7E858B;font:600 10px/1 var(--font-inter),sans-serif;letter-spacing:.1em;text-transform:uppercase}
+        @media(max-width:1050px){.alttez-hero__frame{grid-template-columns:minmax(0,1fr)}.alttez-hero__copy{max-width:760px}}@media(max-width:640px){.alttez-hero{padding-top:116px}.alttez-hero__frame{width:calc(100vw - 32px);max-width:calc(100vw - 32px);gap:48px}.alttez-hero h1{font-size:clamp(50px,17vw,72px)}.alttez-hero__actions{width:100%;align-items:stretch;flex-direction:column}.alttez-hero__actions button{width:100%;max-width:100%;justify-content:center}.alttez-hero__primary{justify-content:space-between!important}.alttez-hero__product-label span:last-child{display:none}}@media(prefers-reduced-motion:reduce){.alttez-hero *{scroll-behavior:auto!important;transition-duration:.01ms!important}}
+      `}</style>
     </section>
   );
 }

@@ -53,7 +53,7 @@ export default function DualEcosystemSection() {
   }, [smoothProgress, activeIndex]);
 
   return (
-    <section ref={containerRef} style={{
+    <section id="ecosistema-alttez" ref={containerRef} style={{
       position: "relative",
       background: B.bgSoft,
       fontFamily: F.body,
